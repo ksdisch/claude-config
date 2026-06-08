@@ -1,0 +1,21 @@
+# This repo holds ONLY authored Claude Code content (commands/, skills/, agents/,
+# CLAUDE.md, statusline). Never let machine state or secrets in, even by accident.
+.DS_Store
+*.bak
+*.bak-*
+*.tmp
+*.log
+
+# Belt-and-suspenders: things that live in ~/.claude but must never be committed
+settings.local.json
+.mcp.json
+.credentials*
+*secret*
+*.key
+*.pem
+history.jsonl
+projects/
+sessions/
+shell-snapshots/
+statsig/
+telemetry/
