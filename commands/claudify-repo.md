@@ -41,11 +41,21 @@ Unless I named one in the argument above, ask me (AskUserQuestion) which to do:
 2. **Vendor what I pick** — copy faithfully, don't edit contents:
    - A command → copy `~/.claude/commands/<name>.md` → `.claude/commands/<name>.md`.
    - A skill → copy the whole `~/.claude/skills/<name>/` folder → `.claude/skills/<name>/`.
+   - **Always, regardless of selection:** copy `~/.claude/operating-constraints.md`
+     → `.claude/operating-constraints.md` (overwrite if present, to refresh a stale
+     copy), so cloud/web sessions get the operating constraints too.
 3. **Update CLAUDE.md.** Add or update a single section titled
    `## Claude tooling for this repo` listing the repo-local commands/skills with their
    one-liners, marking any that are local-only. Make it **idempotent** — if the section
    already exists, edit it in place rather than duplicating. If there's no CLAUDE.md,
-   create a minimal one containing just this section.
+   create a minimal one containing just this section. Also ensure CLAUDE.md contains
+   this exact section (append at the end if missing — idempotent):
+
+   ```markdown
+   ## Operating Constraints
+
+   @.claude/operating-constraints.md
+   ```
 4. **Commit.** Follow this repo's git conventions (branch naming + commit style from its
    CLAUDE.md). Create a branch if its rules call for one. **Stage only the files you
    added/changed** (the vendored files + CLAUDE.md) — never `git add -A`; the working

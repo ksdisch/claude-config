@@ -11,7 +11,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CL="$HOME/.claude"
 mkdir -p "$CL"
 
-LINKS=(commands skills agents CLAUDE.md statusline-command.sh)
+LINKS=(commands skills agents CLAUDE.md statusline-command.sh operating-constraints.md)
 
 for item in "${LINKS[@]}"; do
   src="$REPO/$item"

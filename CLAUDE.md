@@ -1,3 +1,9 @@
+# Operating Constraints
+
+@~/.claude/operating-constraints.md
+
+---
+
 # Claude Code Modes
 
 Three structured modes for working with Claude Code. Type the trigger phrase to activate.
