@@ -50,7 +50,10 @@ When I say "new feature mode" or "feature mode", before building anything:
 - Always create a feature branch before making changes
 - Branch naming: `feat/`, `fix/`, `refactor/`, `docs/`
 - Commit frequently with descriptive messages
-- Never push to main autonomously, but you may push when I explicitly authorize the specific commit (e.g. "yes, push to main", "commit and push to main"). A blanket pre-approval doesn't count — each push needs its own go-ahead.
+- **Keep me in the loop, don't gate on me (updated 2026-06-13).** Commit, push, open PRs, and merge them to `main` autonomously — no per-push go-ahead needed. In exchange, brief me at the point of action (what changed, commit SHA, PR link, whether you merged) and recap at session end. I'd rather be told after the fact than asked before — but nothing happens silently.
+- Still branch + PR for every change; the PR is the durable record that keeps me briefed, not a gate. Don't push straight to `main`.
+- Pause and ask first only for genuinely irreversible/destructive ops: force-push, history rewrite, deleting remote refs/branches, production deploys.
+- A specific project's `CLAUDE.md` may tighten this back (e.g. require my merge, or hold risky changes for a heads-up); the project rule wins where it does.
 
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
