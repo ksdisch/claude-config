@@ -1,6 +1,7 @@
 ---
 description: Reframe a repo's .claude/orchestrator.md from a human-paused dispatch persona into a mode-independent invariants & gates doc (keeps the pipeline as one optional mode, kills the autonomy↔pause deadlock). Docs-only. Pass an optional path to a specific file/repo.
 argument-hint: [optional path to the orchestrator file or repo root]
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep
 ---
 
 Target (optional): $ARGUMENTS — if blank, use this repo's `.claude/orchestrator.md`.

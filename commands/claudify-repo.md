@@ -1,6 +1,7 @@
 ---
 description: Set up this repo's Claude Code tooling. Run at a repo root — pick which of your global slash commands/skills to vendor into the repo (so they work in cloud/web sessions and for collaborators), and/or brainstorm new repo-specific automations via the recommender. Updates CLAUDE.md with a tooling reference section.
 argument-hint: [optional: "port", "brainstorm", or blank for the menu]
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task
 ---
 
 Requested mode (optional): $ARGUMENTS

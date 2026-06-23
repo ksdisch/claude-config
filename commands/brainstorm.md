@@ -1,6 +1,7 @@
 ---
 description: Multi-mode structured brainstorm. Launches blind agent teams to diverge on ideas for evolving THIS project, runs a two-sided critic gate that kills the WRONG-KIND ideas for the chosen mode, refines the survivors, and — only on your go-ahead — captures each as a docs/ideas vision doc + a linked backlog stub. Pick a MODE first; each mode flips the scoring function. Modes: Moonshot (bold/visionary — the default), QuickWin, Subtract, Harden, Premortem, Friction, Delight, Positioning, Reach. Project-agnostic; uses ultracode multi-agent orchestration.
 argument-hint: [mode] [seed — theme/horizon/leash, e.g. "harden trust boundaries" or "moonshot phone agency, off-leash"]
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, ToolSearch, WebSearch, WebFetch
 ---
 
 Input (optional): $ARGUMENTS

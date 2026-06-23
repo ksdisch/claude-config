@@ -1,6 +1,7 @@
 ---
 description: With a target → autonomously plan/build/test/verify it end-to-end and report. With NO target → triage your backlog into ranked candidates (pros/cons/heuristic blast radius/logic), let you pick one or launch a collaborative brainstorm for something new, then build the choice autonomously. Uses ultracode multi-agent orchestration.
 argument-hint: [optional target; omit to triage the backlog / brainstorm]
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task, ToolSearch, WebSearch, WebFetch
 ---
 
 Target (optional): $ARGUMENTS

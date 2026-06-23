@@ -1,5 +1,6 @@
 ---
 description: Open a session — orient on project state (branch, recent commits, open PRs), recap from the last /wrap log, offer an optional recall question, then route into the project's session-start spec (e.g., .claude/session-start.md). Project-agnostic.
+allowed-tools: Bash, Read, Glob, Grep
 ---
 
 Session begin.

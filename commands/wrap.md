@@ -1,5 +1,6 @@
 ---
 description: End-of-session wrap-up that recaps the work, explains the why, builds vocabulary, quizzes via active recall, and suggests next moves. Saves to a dated file and prints to chat. Project-agnostic.
+allowed-tools: Bash, Read, Write, Glob, Grep
 ---
 
 Session wrap-up.
