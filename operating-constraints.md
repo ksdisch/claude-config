@@ -29,6 +29,16 @@ Pause only for something that genuinely needs me: an irreversible/destructive
 action, a real scope change, or input only I can provide. Otherwise proceed end
 to end.
 
+**Track multi-step work.** For any request with 3+ distinct steps, work that spans
+multiple files, or several tool calls, maintain a visible task list and keep it
+current as you go: create it up front, keep exactly one item in progress, and mark
+each item done the moment it's verified — never batch completions at the end or mark
+unverified work complete. Add newly discovered steps to the list instead of doing
+them silently. Skip it for single-step edits, quick lookups, or conversational
+answers; it should track real work, not narrate trivia. This holds in subagent,
+cron, cloud, and autonomous runs too, where the list is often the main signal I have
+into what you're doing.
+
 **Unattended runs only** — applies when you're running as a subagent, on a
 schedule/cron, in a cloud one-shot, or in an explicitly autonomous flow like
 `/autonomous-milestone`; never in an interactive session: I'm not watching live and
