@@ -1,6 +1,7 @@
 ---
 description: Generate a FULL simulated SQL mock interview as an MP3 you listen to as an observer (local two-voice TTS)
 argument-hint: "[N questions] [straight|tough] [archetype focus] [male|mixed] [--play]"
+allowed-tools: Bash, Read, Write, ToolSearch, mcp__plugin_voicemode_voicemode__service
 ---
 
 Generate a **fully-simulated, listen-as-an-observer SQL mock interview** and render it to a single **MP3** using Kyle's local Kokoro TTS — interviewer in one voice, ideal candidate in another. This is the audio counterpart to `/mock-sql-interview` (voice, Kyle performs) and `/mock-sql-demo` (text self-play). Target: the **STEAMe Data Analytics Engineer** Postgres SQL screen. The point is for Kyle to **internalize what a strong candidate's think-aloud sounds like** by ear (commute/walk listening, spaced repetition).

@@ -1,6 +1,7 @@
 ---
 description: Test-first loop — write failing tests for a spec, confirm they fail for the right reason, commit them, then write code until they pass WITHOUT modifying the tests. Pass the module + behavior to specify as the argument.
 argument-hint: <module path + behavior to specify>
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep
 ---
 
 Task: $ARGUMENTS

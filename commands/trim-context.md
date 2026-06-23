@@ -1,6 +1,7 @@
 ---
 description: Find and fix sources of Claude Code "token bloat" in a repo — oversized CLAUDE.md (vs the 40k-char limit), bloated memory files, large always-loaded files, and .claude/ cruft — then auto-apply the fixes. Optionally sweeps every repo under a parent dir. Run at a repo root, or pass a repo path / repos root.
 argument-hint: [optional: a repo path, or a parent dir like ~/Projects to sweep all repos under it]
+allowed-tools: Bash, Read, Edit, Glob, Grep
 ---
 
 Target (optional): $ARGUMENTS

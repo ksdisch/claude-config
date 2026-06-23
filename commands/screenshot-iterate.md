@@ -1,6 +1,7 @@
 ---
 description: Visual loop — implement against a mock, screenshot the running app with a browser tool, compare, and iterate until it matches. Pass the mock image (e.g. @mock.png) plus what to build as the argument.
 argument-hint: <@mock.png + what to implement>
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, ToolSearch
 ---
 
 Task: $ARGUMENTS

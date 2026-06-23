@@ -1,6 +1,7 @@
 ---
 description: One-shot prompt rewrite — diagnose a rough draft, steer you to the right workflow archetype (linear, TDD, subagent-assisted, ultracode multi-agent, autonomous, etc.), recommend ONE model + effort level + rough cost, fill gaps, and return a ready-to-paste optimized prompt. Advisory only; never executes the task.
 argument-hint: <paste your rough prompt draft here>
+allowed-tools: Bash, Read, Glob, Grep, WebSearch, WebFetch, Task
 ---
 
 # Prompt Optimizer

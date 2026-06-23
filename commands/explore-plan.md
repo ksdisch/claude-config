@@ -1,6 +1,7 @@
 ---
 description: Explore → plan → confirm before any code. Reads the relevant code, plans without editing, proposes 2–3 ranked approaches, and waits for you to pick one before implementing. Pass the issue # or task as the argument.
 argument-hint: <issue # or task description>
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task
 ---
 
 Task: $ARGUMENTS
