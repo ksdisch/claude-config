@@ -14,7 +14,7 @@ vendors copies of into individual project repos.
 | Path | What |
 |---|---|
 | `commands/` | Global slash commands (`/envsetup`, `/boot_server`, `/tdd`, `/explore-plan`, …) |
-| `skills/` | Global skills (`kickoff`, `mini`, `notebook-init`, `narrate`, …) |
+| `skills/` | Global skills (`kickoff`, `mini`, `notebook-init`, `narrate`, `project-guide`, …) |
 | `agents/` | Global subagents (empty for now; future ones land here) |
 | `CLAUDE.md` | Global instructions loaded into every session |
 | `statusline-command.sh` | Custom statusline script |
