@@ -1,5 +1,5 @@
 ---
-description: Generate a self-contained handoff prompt I can paste into a fresh Claude Code session to continue this work without losing context. Captures hard-won lessons, what's done, and where the plan stands. Stops the current work after generating. Project-agnostic.
+description: Generate a self-contained handoff prompt I can paste into a fresh Claude Code session to continue this work without losing context. Captures hard-won lessons, what's done, and where the plan stands. Also prints a short plain-English 'what's next & why' briefing for me, so I stay oriented across the handoff. Stops the current work after generating. Project-agnostic.
 argument-hint: "[--audio [short|long]]"
 allowed-tools: Bash, Read, Write, Glob, Grep, Task, Skill, ToolSearch, SendUserFile, mcp__plugin_voicemode_voicemode__service
 ---
@@ -37,12 +37,13 @@ what the fresh session cannot derive from `git status`, `git log`,
 
 Print the handoff as a single fenced code block so I can copy it verbatim.
 Do not narrate before the block. After the block, the only things allowed are
-(1) the short run-config recommendation described in "Run-config recommendation"
-below (2–4 lines, OUTSIDE the block — it's a note to me, not part of the
-paste-able prompt), and (2) the audio step **only if `--audio` was passed** (see
-"Audio narration"). Neither pollutes the paste-able block. After that, **STOP** —
-do not continue the current work and do not ask "what's next." I'll start a
-fresh session.
+(1) the "For Kyle" briefing (see "'For Kyle' briefing" below), then (2) the short
+run-config recommendation described in "Run-config recommendation" below (2–4
+lines) — both OUTSIDE the block, notes to me, not part of the paste-able prompt —
+and (3) the audio step **only if `--audio` was passed** (see "Audio narration").
+None of these pollute the paste-able block. After that, **STOP** — do not
+continue the current work and do not ask "what's next." I'll start a fresh
+session.
 
 Match my CLAUDE.md preferences: structured, concise but thorough, no filler,
 name tradeoffs, quote exact paths/branches/PRs/commands rather than
@@ -96,9 +97,29 @@ uncertainty, flag the assumption so the fresh session can revisit. Don't
 paper over gaps to make the handoff look tidy — gaps are exactly what the
 fresh session needs to know about.
 
-## Run-config recommendation (the one thing printed after the code block)
+## "For Kyle" briefing (first note printed after the code block)
 
-After the fenced block, print a 2–4 line note — OUTSIDE the block, addressed to
+Right after the fenced block, print a short plain-English briefing addressed to me — OUTSIDE
+the block, never part of the paste. It's the human-facing twin of the machine handoff: its job
+is to keep me oriented and engaged across the session boundary, the way a project's
+`LEARNING.md` does. Label it clearly so I know it's for me, not for the paste:
+
+> **📋 For Kyle — what the next session will build, and why**
+
+Cover, in 4–6 lines / ~120 words max:
+- **What** it's about to build — the next chunk of work, in plain language.
+- **How** — the approach in one sentence (the shape of it, not step-by-step).
+- **Why** — the reasoning/motive: why this, why now, what it unblocks or proves.
+
+Voice: explain it like I'm sharp but new to the jargon — plain English, define any term the
+first time, clearer not longer. It's the plain-English distillation of "Where the plan stands"
+(the next concrete action) — the forward-looking "what's coming + why," not a recap of what's
+done. If the next step is genuinely uncertain or pending my decision, say that plainly instead
+of inventing a plan.
+
+## Run-config recommendation (the second note printed after the code block)
+
+After the "For Kyle" briefing, print a 2–4 line note — OUTSIDE the block, addressed to
 me — telling me how to RUN the fresh session. It is never part of the
 paste-able prompt (the fresh session can't set its own model/effort). Base the
 pick on the *nature of the next concrete action* from "Where the plan stands,"
