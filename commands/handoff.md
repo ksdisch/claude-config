@@ -167,6 +167,8 @@ and never changes their content.
    artifacts if there's a convention, else
    `~/Projects/_audio/<ISO-date>-<project>-handoff.mp3`. The skill ensures Kokoro
    is up, renders the MP3, and `SendUserFile`s it to me.
-3. **One line in chat** with the saved path. If Kokoro is unavailable, say so
-   plainly — the text handoff still stands; don't claim an MP3 exists if it
-   doesn't.
+3. **One line in chat** with the saved path, then — on its own line, in a fenced
+   code block — a ready-to-run play command: `afplay "<full-path>"` (the real
+   absolute path). That way I can copy-paste it to listen if I want to, or ignore
+   it. If Kokoro is unavailable, say so plainly — the text handoff still stands;
+   don't claim an MP3 exists if it doesn't (and print no play command).
