@@ -65,9 +65,11 @@ change the brief or the routing below — generate it, then continue to step 3.
 2. **Hand it to the `narrate` skill** (`~/.claude/skills/narrate/`) with
    `voice=am_adam` and `out=~/Projects/_audio/<ISO-date>-<project>-begin.mp3`.
    The skill ensures Kokoro is up, renders the MP3, and `SendUserFile`s it to me.
-3. **One line** with the saved path, then carry on with step 3. If Kokoro is
-   unavailable, say so in one line and continue — the on-screen brief stands;
-   never claim an MP3 exists if it doesn't.
+3. **One line** with the saved path, then — on its own line, in a fenced code
+   block — a ready-to-run play command: `afplay "<full-path>"` (the real absolute
+   path) so I can copy-paste it to listen if I want to, then carry on with step 3.
+   If Kokoro is unavailable, say so in one line and continue — the on-screen brief
+   stands; never claim an MP3 exists if it doesn't (and print no play command).
 
 ## 3. Offer one optional recall question (single offer, accept skip cleanly)
 

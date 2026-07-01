@@ -99,6 +99,9 @@ extra artifact; it doesn't change the saved file.
    basename** (e.g. `docs/session-logs/<same-name>.mp3`) so the text and audio
    recaps stay paired. The skill ensures Kokoro is up, renders the MP3, and
    `SendUserFile`s it to me.
-3. **One line in chat** with the MP3 path, alongside the wrap-log path. If Kokoro
-   is unavailable, say so — the written wrap still stands; never claim an MP3
-   exists if it doesn't.
+3. **One line in chat** with the MP3 path, alongside the wrap-log path, then — on
+   its own line, in a fenced code block — a ready-to-run play command:
+   `afplay "<full-path>"` (the real absolute path). That way I can copy-paste it
+   to listen if I want to, or ignore it. If Kokoro is unavailable, say so — the
+   written wrap still stands; never claim an MP3 exists if it doesn't (and print
+   no play command).
