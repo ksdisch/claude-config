@@ -32,10 +32,7 @@ name or the working directory basename; abbreviate if long (e.g.
 `job-search-toolkit` → `jst`, `cowork-second-brain` → `csb`). Slug = a 3–5
 word summary of the session's primary work. Don't dump the full wrap-up
 into chat — I'll read it from the file. In chat, just print the saved path
-and a one-line confirmation.
-
-As the final step, open the saved file so I don't have to open it manually:
-run `open <path-to-file>` via Bash.
+(as a clickable link) and a one-line confirmation. Don't open the file for me.
 
 Sections, in this order:
 
@@ -84,7 +81,7 @@ that already exist in CLAUDE.md or the backlog unless they changed today.
 
 ## Audio narration (only if `--audio` was passed)
 
-After the wrap-up file is saved (and opened), also produce a spoken version so I
+After the wrap-up file is saved, also produce a spoken version so I
 can re-listen to the recap on a walk — spaced repetition by ear. This is an
 extra artifact; it doesn't change the saved file.
 
