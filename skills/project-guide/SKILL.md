@@ -152,8 +152,11 @@ After saving, hand the **Talking points** (short) or Talking points + the top
 decisions from §5 (long) to the [[narrate]] skill (`~/.claude/skills/narrate/`,
 `voice=am_adam`, `out=~/Projects/_audio/<ISO-date>-<project>-guide.mp3`). Follow
 narrate's "writing for the ear" rules — convert paths/PR numbers to speech, drop
-SHAs. One line in chat with the MP3 path; if Kokoro is down, say so and continue
-— the written guide stands.
+SHAs. One line in chat with the MP3 path, then — on its own line, in a fenced
+code block — a ready-to-run play command: `afplay "<full-path>"` (the real
+absolute path), so I can copy-paste it to listen if I want to, or ignore it. If
+Kokoro is down, say so and continue — the written guide stands; never claim an
+MP3 exists if it doesn't (and print no play command).
 
 ---
 
