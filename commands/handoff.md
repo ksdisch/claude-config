@@ -35,15 +35,16 @@ what the fresh session cannot derive from `git status`, `git log`,
 
 ## Output format
 
-Print the handoff as a single fenced code block so I can copy it verbatim.
-Do not narrate before the block. After the block, the only things allowed are
-(1) the "For Kyle" briefing (see "'For Kyle' briefing" below), then (2) the short
-run-config recommendation described in "Run-config recommendation" below (2–4
-lines) — both OUTSIDE the block, notes to me, not part of the paste-able prompt —
-and (3) the audio step **only if `--audio` was passed** (see "Audio narration").
-None of these pollute the paste-able block. After that, **STOP** — do not
-continue the current work and do not ask "what's next." I'll start a fresh
-session.
+Print the handoff as a single fenced code block so I can copy it verbatim —
+and print it **LAST**, so it's the final thing in the response, right above my
+prompt box. Before the block, in this order: (1) the "For Kyle" briefing (see
+"'For Kyle' briefing" below), then (2) the short run-config recommendation
+described in "Run-config recommendation" below (2–4 lines), then (3) the audio
+note **only if `--audio` was passed** (see "Audio narration") — all OUTSIDE
+the block, notes to me, not part of the paste-able prompt; none of these
+pollute the block. Then the fenced block, with nothing after it. Once it's
+printed, **STOP** — do not continue the current work and do not ask "what's
+next." I'll start a fresh session.
 
 Match my CLAUDE.md preferences: structured, concise but thorough, no filler,
 name tradeoffs, quote exact paths/branches/PRs/commands rather than
@@ -97,10 +98,10 @@ uncertainty, flag the assumption so the fresh session can revisit. Don't
 paper over gaps to make the handoff look tidy — gaps are exactly what the
 fresh session needs to know about.
 
-## "For Kyle" briefing (first note printed after the code block)
+## "For Kyle" briefing (printed FIRST, at the top of the response)
 
-Right after the fenced block, print a short plain-English briefing addressed to me — OUTSIDE
-the block, never part of the paste. It's the human-facing twin of the machine handoff: its job
+Open the response with a short plain-English briefing addressed to me — before
+the fenced block, never part of the paste. It's the human-facing twin of the machine handoff: its job
 is to keep me oriented and engaged across the session boundary, the way a project's
 `LEARNING.md` does. Label it clearly so I know it's for me, not for the paste:
 
@@ -117,7 +118,7 @@ first time, clearer not longer. It's the plain-English distillation of "Where th
 done. If the next step is genuinely uncertain or pending my decision, say that plainly instead
 of inventing a plan.
 
-## Run-config recommendation (the second note printed after the code block)
+## Run-config recommendation (the second note, still before the code block)
 
 After the "For Kyle" briefing, print a 2–4 line note — OUTSIDE the block, addressed to
 me — telling me how to RUN the fresh session. It is never part of the
@@ -150,8 +151,10 @@ ambiguous between two modes, name both and say what tips it.
 ## Audio narration (only if `--audio` was passed)
 
 Generate a spoken version of the brief so I can listen to it on a walk instead
-of reading the block. This runs AFTER the code block and the run-config note,
-and never changes their content.
+of reading the block. Render the MP3 BEFORE printing the code block; its chat
+note (path + play command) goes after the run-config note, so the paste-able
+block stays the last thing in the output. It never changes the other sections'
+content.
 
 1. **Write a speakable script** — NOT the paste-able block (that's written for a
    fresh AI; reading its scaffolding aloud is useless). Condense for the ear:
