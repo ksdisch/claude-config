@@ -13,6 +13,7 @@ For notebooks that already exist. Three branching workflows; user picks one (or 
 - [[interview-prep]] — create or extend an interview-prep notebook (specialized template)
 - [[audio-series]] — generate a whole episodic *audio* series/season (+ optional per-episode study aids) for an existing notebook
 - **notebook-assist** (this skill) — work *with* a notebook that already exists: refine an artifact idea, brainstorm new ones, manage sources
+- [[notebook-merge]] — fold 2+ overlapping notebooks into ONE (sources, notes, regenerated artifacts, archival) — bigger than a source-management job
 
 ## Workflow
 
