@@ -32,17 +32,18 @@ Keep it to a few high-leverage AskUserQuestions:
 - **Flagship series** — build a sequential "season" (Ep 1→N, each assumes the last)? How many episodes (default **6–8**)? Confirm "at least one building series" if they want a course feel.
 - **Standalone breadth** — also generate re-listenable standalones across the rest of the material? Tiered: whole-topic, cross-cutting, micro/snackable, opinion.
 - **Length & format mix** — lengths can be mixed (`short`/`default`/`long`); `deep_dive` is the workhorse, with `debate`/`critique`/`brief` for variety. Don't over-optimize length.
+- **Source scope** — whole notebook (default) or a **subset of sources**: pass `source_ids` to `studio_create` (a HARD boundary — excluded sources can't leak in; focus_prompt alone is soft steering). Get IDs from `nlm source list` or the sidecar manifest; on merged notebooks the manifest's origin column addresses each half ("just the <X> content"). Each episode may carry its own subset.
 - **Study aids** — both Study Guide + Quiz per episode / quizzes only / study guides only / none; and scope (series only vs all episodes). See Step 5.
 
 ### 3. Design the curriculum
 Read the sources (`notebook_describe`) and existing artifacts. Produce a plan; **do not create anything yet**.
 - **Thorough mode (optional):** if the user has opted into multi-agent orchestration (e.g. ultracode on, or they say "workflow"), fan out a design pass — drafters per lane (the flagship series; standalone lanes by theme; an opinion/critique lane) → one editor that dedupes, orders, and picks a launch batch. Otherwise design inline.
-- **Output per episode:** title, `audio_format`, `audio_length`, a concrete **focus_prompt** (scoped + source-grounded; series episodes say "assumes episodes 1–N"), and `seriesOrder` for the flagship.
+- **Output per episode:** title, `audio_format`, `audio_length`, a concrete **focus_prompt** (scoped + source-grounded; series episodes say "assumes episodes 1–N"), optional `source_ids` subset, and `seriesOrder` for the flagship.
 - **Dedupe** against the 4–N existing audio episodes; differentiate overlapping angles explicitly in the focus prompts.
 - Present the plan (flagship series + standalone library grouped by tier + a recommended launch batch). Get a go-ahead. Audio is expensive/outward — never create without an explicit "go".
 
 ### 4. Generate the audio — quota-aware batches
-`studio_create(notebook_id, artifact_type="audio", audio_format=…, audio_length=…, focus_prompt=…, confirm=True)`.
+`studio_create(notebook_id, artifact_type="audio", audio_format=…, audio_length=…, focus_prompt=…, source_ids=[…] if scoped, confirm=True)`.
 - **Batch ~5–6 at a time.** Concurrency cap is ~11 — firing more in one shot makes the extras fail with `Could not create audio`.
 - **Poll to completion, don't defer.** Pattern: `Bash sleep` with `run_in_background:true` → `TaskOutput(block:true)` → `studio_status`. (Foreground `sleep` is blocked.)
 - **`studio_status` returns the WHOLE notebook** and gets large fast — it'll be persisted to a file. Filter with `jq` on that file: `jq -c '.summary'` and `jq -r '.artifacts[] | select(.status!="completed") | "\(.status)\t\(.type)\t\(.artifact_id)"'`. (`status:"unknown"` + a non-null `audio_url` = effectively done.)
@@ -68,7 +69,7 @@ These are **text artifacts → NOT subject to the audio quota**, and they tolera
 ### 6. Log to the sidecar
 Update `~/Projects/NotebookLMs/<alias>/README.md` (per [[notebook-init]] conventions):
 - **Audio series table:** Ep · title · format · length · status · artifact ID, plus a note on the "Ep N —" display scheme.
-- **Standalone backlog:** each with its verbatim focus_prompt and a ✅ marker once created (so future rounds just re-fire what's left).
+- **Standalone backlog:** each with its verbatim focus_prompt (+ `source_ids` if scoped) and a ✅ marker once created (so future rounds just re-fire what's left).
 - **Study aids section:** the naming scheme + topic tags.
 - **Quota deferrals:** any episodes blocked, with prompts ready and the expected reset window.
 Refresh the [[notebook-init]] INDEX entry if scope changed.
@@ -81,5 +82,6 @@ Refresh the [[notebook-init]] INDEX entry if scope changed.
 - **Reports/quizzes:** no audio quota, big batches OK, generate independent of audio.
 - **Rename only after completion** — auto-titles overwrite early renames.
 - **`studio_status` returns the whole notebook** — `jq` the persisted file for your in-flight IDs.
+- **Source scoping:** `source_ids` on `studio_create`/`notebook_query` hard-limits generation to a subset (focus_prompt is soft) — the lever for merged notebooks and zoomed episodes; log any subset in the backlog beside its prompt.
 - **Generate nothing without an explicit go-ahead** — audio is expensive and outward-facing.
 - **Sidecar is the source of truth** — series + backlog (with prompts) + study aids + deferrals.

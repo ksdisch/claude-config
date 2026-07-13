@@ -30,18 +30,19 @@ Keep it to a few high-leverage AskUserQuestions:
 - **Flagship season** — sequential Ep 1→N, default **4–6 episodes** (video quota is scarcer than audio and watching costs foreground attention).
 - **Season visual style** — pick ONE explicit `visual_style` for the whole flagship season (its visual identity): classic, whiteboard, watercolor, anime, kawaii, retro_print, heritage, paper_craft. **Never `auto_select` for series episodes** — per-episode auto picks can break coherence. Standalones may vary freely.
 - **Format mix** — `explainer` is the workhorse (series episodes, whole-topic standalones); `brief` for the micro/snackable tier. **No opinion lane** — users wanting debate/critique go to [[audio-series]].
+- **Source scope** — whole notebook (default) or a **subset of sources**: pass `source_ids` to `studio_create` (a HARD boundary — excluded sources can't leak in; focus_prompt alone is soft steering). Get IDs from `nlm source list` or the sidecar manifest; on merged notebooks the manifest's origin column addresses each half ("just the <X> content"). Each episode may carry its own subset.
 - **Study aids** — both Study Guide + Quiz per episode / quizzes only / guides only / none; and scope. **Mirror seasons skip study aids the audio season already generated** (same topics → duplicates).
 
 ### 3. Design the curriculum
 Read the sources (`notebook_describe`) and existing artifacts. Produce a plan; **do not create anything yet**.
-- **Output per episode:** title, `video_format`, `visual_style`, a concrete **focus_prompt** (scoped + source-grounded; series episodes say "assumes episodes 1–N"), and `seriesOrder` for the flagship.
+- **Output per episode:** title, `video_format`, `visual_style`, a concrete **focus_prompt** (scoped + source-grounded; series episodes say "assumes episodes 1–N"), optional `source_ids` subset, and `seriesOrder` for the flagship.
 - **Video-only prompt lever:** focus prompts should also direct the *visual treatment* — "show the schema as a diagram; walk the join step by step". Use it in every episode prompt.
 - **Dedupe** across BOTH audio and video titles. Mirror seasons intentionally reuse the audio arc's `Ep N — <topic>` titles — audio and video sit in separate Studio-panel sections, so identical titles pair rather than collide.
 - **Thorough mode (optional):** if the user has opted into multi-agent orchestration, fan out drafters per lane → one editor that dedupes, orders, and picks a launch batch. Otherwise design inline.
 - Present the plan (flagship season + standalones by tier + recommended launch batch). Get a go-ahead. Video is expensive/outward — **never create without an explicit "go"**.
 
 ### 4. Generate the video — reconnaissance batching
-`studio_create(notebook_id, artifact_type="video", video_format=…, visual_style=…, focus_prompt=…, confirm=True)`.
+`studio_create(notebook_id, artifact_type="video", video_format=…, visual_style=…, focus_prompt=…, source_ids=[…] if scoped, confirm=True)`.
 - **Smoke test first:** on any run where the sidecar has no prior video-quota observations, fire ONE video solo before batching — validates params and confirms rename-after-completion behavior.
 - **Batch 2–3 at a time** (video limits are undocumented — unlike audio's known ~11-concurrent / rolling-24h caps — so start conservative). Poll each batch to completion before the next: `Bash sleep` with `run_in_background:true` → `TaskOutput(block:true)` → `studio_status`. (Foreground `sleep` is blocked.)
 - **`studio_status` returns the WHOLE notebook** — `jq` the persisted file: `jq -c '.summary'` and `jq -r '.artifacts[] | select(.status!="completed") | "\(.status)\t\(.type)\t\(.artifact_id)"'`.
@@ -62,7 +63,7 @@ Identical to [[audio-series]] step 5: per episode, `studio_create(artifact_type=
 ### 6. Log to the sidecar
 Update `~/Projects/NotebookLMs/<alias>/README.md` (per [[notebook-init]] conventions):
 - **Video series table:** Ep · title · **format** · **style** · status · artifact ID, plus a note on the "Ep N —" display scheme and season style.
-- **Standalone backlog:** verbatim focus prompts, ✅ once created.
+- **Standalone backlog:** verbatim focus prompts (+ `source_ids` if scoped), ✅ once created.
 - **Study aids section:** naming scheme + topic tags.
 - **Quota deferrals + Video quota observations:** blocked episodes with prompts ready; the empirical quota log (until confirmed numbers graduate into this skill).
 Refresh the [[notebook-init]] INDEX entry if scope changed.
@@ -73,6 +74,7 @@ Refresh the [[notebook-init]] INDEX entry if scope changed.
 - **Video quota is UNKNOWN:** smoke-test 1 → batch 2–3 → observe → log to sidecar → PR confirmed numbers back into this skill.
 - **Style = season identity:** one explicit style per flagship season; never `auto_select` for series episodes.
 - **Focus prompts direct the visuals**, not just the content — video's extra lever.
+- **Source scoping:** `source_ids` on `studio_create`/`notebook_query` hard-limits generation to a subset (focus_prompt is soft) — the lever for merged notebooks and zoomed episodes; log any subset in the backlog beside its prompt.
 - **No debate/critique in video** — opinion content routes to [[audio-series]].
 - **Mirror seasons** reuse the audio arc's titles (pairing is intentional) and skip already-generated study aids.
 - **Mobile titling:** lead with `Ep N —`; never a shared long prefix.

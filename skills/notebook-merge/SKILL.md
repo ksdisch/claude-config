@@ -38,6 +38,7 @@ Present ONE plan; **create nothing without an explicit "go"**:
 - **Artifact menu, two lists:**
   - *Recreate* — old artifacts re-fired from recorded prompts, titles adapted. Skip whole-notebook generics (e.g. a plain Briefing Doc) — re-synthesize those over the union instead. Absorb topology: only the non-survivors' artifacts (the survivor's are already live).
   - *Synthesize* — 3–5 NEW cross-notebook artifacts only the merge makes possible (bridge deep_dive connecting the halves, comparative report, combined mind map, …). This is the merge's payoff — always propose some.
+  - Either list may scope an artifact to a **source subset** via `source_ids` on `studio_create` (a HARD boundary — excluded sources can't leak in). The manifest's origin column makes each original notebook's half addressable post-merge ("a deep_dive over just the <A> sources"), so recreated artifacts can match their original scope exactly.
 - **Disposal preview:** which originals get archive-renamed; the delete decision is deferred to Phase 5.
 
 ### 3. Migrate
@@ -86,4 +87,5 @@ Fire the approved menu only:
 - **Cap check before anything**; strategic selection is the pressure valve.
 - **2s add spacing; count-parity verification** — silent add failures are real (Medium, paywalls).
 - **Cross-notebook synthesis artifacts are the payoff** — always propose them, don't just restore parity.
+- **Post-merge, the halves stay addressable** — filter the manifest by origin → `source_ids` for hard-scoped artifacts and queries; merging never costs the ability to study one side alone.
 - **Sidecar + INDEX stay truthful at every phase** — provenance, outcomes, backlog, merged-into pointers.
