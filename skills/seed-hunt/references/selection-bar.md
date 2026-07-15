@@ -22,10 +22,14 @@ become the fit-pilot's named risks in the next project's KICKOFF.
    only if it offers a primitive re-implementable small AND a claim measurable as a
    narrow delta at hobby scale. *(forge-gap D1; decay-pin KICKOFF framing.)*
 
-2. **Cheap + deterministic or it dies.** No GPU/training; models via OpenRouter at
-   pennies (decay-pin's entire v1+v2: ~350+ episodes, single-digit dollars). Success must
-   be gradable by a deterministic oracle — mechanical pass/fail — never an LLM judge.
-   Papers whose evaluation is inherently judge-y (open-ended generation quality) fail.
+2. **Cheap + deterministic or it dies.** No training runs or rented-GPU dependence;
+   models via OpenRouter at pennies (decay-pin's entire v1+v2: ~350+ episodes,
+   single-digit dollars) **or local open-weights small enough for the laptop at
+   ~$0/trial** (letter amended 2026-07-15, Kyle sign-off, at the workspace/J-lens pick —
+   local activation/gradient access can be *more* deterministic than API text: outcomes
+   read as logit rankings, no parse floor, no provider stalls). Success must be gradable
+   by a deterministic oracle — mechanical pass/fail — never an LLM judge. Papers whose
+   evaluation is inherently judge-y (open-ended generation quality) fail.
    *(forge-gap; decay-pin grader.py, D6.)*
 
 3. **Prefer a mechanically verifiable manipulation.** decay-pin's superpower: the
@@ -184,3 +188,13 @@ become the fit-pilot's named risks in the next project's KICKOFF.
 | decay-pin (`~/Projects/decay-pin`) | arXiv 2606.22528 — Governance Decay + Constraint Pinning | M0–M5 | 0%→100%→0% arc (floor/truncate/pinned) on 3 models, replicated on a 2nd task; v2 strategy axis: truncate 20/20 · summarize 2/40 (STRATEGY-NULL) · head-tail 0/40 (PROTECTIVE) | M5, PR #18, merge `5ae1a0a` (2026-07-06) |
 | lossy-wall (`~/Projects/lossy-wall`) | arXiv 2606.25449 — Brittle Memory / reclaim eval | M0–M5 | v1 claims 1–3 REPRODUCED + independent-build cross-check AGREE 6/6; M4 logic PARTIAL (deepseek clears; correction-flip confound); M5 boundary REPRODUCED (cliff tracks the budget: N=4@300 → N=12@600); ≈$2.13 total | M5+D31, PR #33, merge `2de5b4d` (2026-07-09) |
 | ghost-patch (`~/Projects/ghost-patch`) | arXiv 2607.04537 — "Obey, Diverge, Collapse" repair-failure chain | M0–M4 | chain closed end-to-end on 2 cheap models: obey NULL ×2 (awareness precondition NULL across 6 models incl. paper's Kimi ~25% vs 63%; single-pass drop +4.0/+3.6 pts) → recover REPORTED ×2 (78.3%/52.6%, pass-1 front-loaded) → compound REPORTED-qwen (pass-1-only escape 30.4%, curve [7,7,7,7,7]) / UNDERPOWERED-deepseek (wholesale-rewrite verifier starvation) → collapse UNDERPOWERED ×2 pre-declared + descriptive IDR 6/12 = 50% stuck-half; ~$1.42 total | M4 + close-out, PRs #13–15, merge `0cafc77` (2026-07-14) |
+
+**Queue note (2026-07-15):** the #5 slot was re-decided at this date's hunt. Pick = the
+Anthropic workspace/J-lens paper ("Verbalizable Representations Form a Global Workspace
+in Language Models", transformer-circuits.pub/2026/workspace — no arXiv ID; internals/
+interpretability surface, local open-weights). It displaced the same-morning-scaffolded
+**blind-cite** (arXiv 2607.09349, Deceptive Grounding, RAG surface), which is **parked
+next-in-queue** with its approved KICKOFF intact at `~/Projects/blind-cite` — park, not
+kill; zero spend, no lessons to harvest. Both were range picks; deciding factors were
+timeliness (workspace paper 9 days old, ecosystem replicating fast) and the internals
+skill axis. The next hunt should treat blind-cite as the default #6 before sweeping.
