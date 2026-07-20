@@ -106,7 +106,7 @@ critic raises only that), and **defaults** (leash · horizon · survivors · cap
 
 > **Not modes (on purpose):** backlog-operations (groom/prune/sequence/decompose/coverage) operate on the
 > *backlog corpus*, not the product — a Diverge→critic-gate engine is the wrong shape for a dedup/sort/checklist
-> task. They belong in a future `/backlog-hygiene`, not here.
+> task. They belong in `/backlog-hygiene`, not here.
 
 ---
 
