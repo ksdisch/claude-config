@@ -54,8 +54,13 @@ copy-paste:
    every section that referenced the old assumption now reflects the new one. That
    rippling is what makes it read native rather than patched.
 4. **Hold the length.** Tighten or cut elsewhere as you add, so the result stays
-   roughly as long as the original. Files get reweaved repeatedly — a thrice-reweaved
-   `plan.md` must still read lean, not 3× its size.
+   roughly as long as the original. This is hardest — and matters most — when the
+   follow-up is a *decision or scope-add* ("use SQLite instead"), which drags in
+   genuinely new consequences that resist compression; a follow-up that merely
+   *clarifies* something the target already gestured at compresses cleanly. So when
+   you're folding in a decision, expect the creep and pay it back by cutting hardest.
+   Files get reweaved repeatedly — a thrice-reweaved `plan.md` must still read lean,
+   not 3× its size.
 5. **Preserve voice, structure, and closers.** Keep the original's tone, section
    shape, heading hierarchy, formatting habits, and any closing blocks (a Q1/Q2/Q3 +
    TLDR pattern, a "Next steps" list, a status line).
@@ -106,6 +111,6 @@ flag that too.
 | Pasting the follow-up answer in full | It already lives above in the thread. Compress to the digestible cut. |
 | Changing only the one line, leaving later sections stale | That's a normal edit. Reweave threads the consequence through every dependent section. |
 | Reweaving what code *does* | Behavior changes are ordinary edits, governed by tests. Hand it off; reweave is for prose/plans. |
-| Letting the target grow every round | Hold the length — tighten elsewhere as you add, especially for repeatedly-reweaved files. |
+| Letting the target grow — worst when folding in a *decision/scope-add* (new consequences resist compression), less so for a clarification | Hold the length: expect the creep, pay it back by cutting hardest elsewhere. Repeatedly-reweaved files especially. |
 | Emitting a file's reweave into chat (or a chat answer into a new file) | Land where the target lived. Moving it is a different request. |
 | Forcing material that has no home | Say it doesn't fit, or flag it as new scope — don't mangle the target to absorb it. |
