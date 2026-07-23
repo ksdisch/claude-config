@@ -63,3 +63,29 @@ When I say "new feature mode" or "feature mode", before building anything:
 
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
+
+---
+
+## Reference Doc Maintenance
+
+`~/Projects/claude-config/docs/command-skill-reference.md` is the living index of every custom slash command, skill, and agent. **Keep it in sync as part of any commit that touches a skill, command, or agent — never batch updates later.**
+
+This rule fires everywhere (this file is the global CLAUDE.md), so it covers global items in this repo AND project-specific items in any project.
+
+### When to update
+
+| Action | What to do in the reference doc |
+|---|---|
+| Add a new global skill (`skills/<name>/`) | Add a row to the appropriate category table under "Global Skills" |
+| Add a new global command (`commands/<name>.md`) | Add a row to the appropriate category table under "Global Commands" |
+| Add a project-specific skill or command | Add a row under that project's section in "Project-Specific Items"; create the section if the project isn't listed yet |
+| Rename or change the description of any item | Find its row and edit in place |
+| Delete any item | Remove its row; remove the project section entirely if it's now empty |
+| Add a custom subagent (`agents/<name>/`) | Add it to the "Custom Subagents" section at the bottom |
+| A new project gets a `.claude/` with skills or commands | Add a new `### Project Name` subsection under "Project-Specific Items" with a one-line description of what the project is |
+
+### Format rules
+- One-line description per entry: what it does, not how it works
+- For global items: assign to the most fitting existing category; only create a new category if nothing fits
+- For project-specific sections: include a one-sentence description of the project above the table(s)
+- Commit the reference doc update in the **same commit** as the skill/command change (or as an immediately following commit on the same branch)
