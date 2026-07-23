@@ -1,0 +1,294 @@
+# Command & Skill Reference
+
+A complete index of every custom slash command, skill, and project-specific automation in this setup. Global items are available everywhere; project-specific items live in that project's `.claude/` folder and are only active when you're working in that project.
+
+**How to invoke:**
+- **Commands** → type `/command-name` in the Claude Code prompt
+- **Skills** → Claude invokes them automatically, or you type `/skill-name`
+- **Project-specific** items → same syntax, only available inside that project
+
+---
+
+## Global Commands
+
+Available in every Claude Code session. Live in `commands/`.
+
+### Session Lifecycle
+
+| Command | What it does |
+|---|---|
+| `/begin` | Open a session — orients on project state (branch, recent commits, open PRs), recaps from the last `/wrap` log, offers a recall question, then routes into the project's session-start spec. |
+| `/wrap` | End-of-session close-out — recaps the work, explains the why, builds vocabulary, quizzes via active recall, and suggests next moves. Saves a dated log to `.claude/`. |
+| `/catchup` | Mid-session audio catch-up — narrates the session so far (or just the most recent output) as an MP3, then keeps working. Does not end the session. |
+| `/handoff` | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context. Also prints a plain-English "what's next & why" briefing. |
+
+### Planning & Exploration
+
+| Command | What it does |
+|---|---|
+| `/explore-plan` | Explore → plan → confirm before any code. Reads relevant code, proposes 2–3 ranked approaches, and waits for approval before implementing. |
+| `/brainstorm` | Multi-mode structured brainstorm using blind parallel agent teams. Modes: Moonshot, QuickWin, Subtract, Harden, Premortem, Friction, Delight, Positioning, Reach. Produces vision docs + backlog stubs. |
+| `/autonomous-milestone` | With a target → autonomously plan/build/test/verify end-to-end. With no target → triages the backlog into ranked candidates, lets you pick, then builds. Uses multi-agent ultracode orchestration. |
+| `/prompt-optimize` | One-shot prompt rewriter — diagnoses a rough draft, recommends the right workflow archetype + model + effort level, and returns a ready-to-paste optimized prompt. Advisory only; never executes. |
+| `/reframe-orchestrator` | Restructures a repo's `.claude/orchestrator.md` from a human-paused dispatch persona into a mode-independent invariants-and-gates doc. Docs only. |
+
+### Development Workflows
+
+| Command | What it does |
+|---|---|
+| `/tdd` | Test-first loop — write failing tests for a spec, confirm they fail for the right reason, commit them, then write implementation until they pass without modifying the tests. |
+| `/screenshot-iterate` | Visual loop — implement against a mock, screenshot the running app, compare to target, fix diffs, repeat until it matches. |
+| `/smoke-test` | Sets up a manual smoke test — figures out what to verify, opens needed pages in Chrome, then gives you a precise do-this / see-that checklist. |
+| `/trim-context` | Finds and fixes token bloat in a repo — oversized CLAUDE.md, bloated memory files, large always-loaded files, `.claude/` cruft. |
+
+### Environment & Setup
+
+| Command | What it does |
+|---|---|
+| `/boot_server` | Detects how the project is served, starts the dev server in the background, waits until ready, and opens the running page in Chrome. Pass `"live"` to open the deployed page instead. |
+| `/envsetup` | Opens the project's `.env` in your editor and the credential-generation page in Chrome, with a key stub + source comment pre-added. |
+| `/claudify-repo` | Vendors chosen global commands/skills into a repo (so they work in cloud/web sessions and for collaborators) and launches the recommender to design project-specific automations. |
+
+### Learning & Interviews
+
+| Command | What it does |
+|---|---|
+| `/mock-sql-interview` | Live voice mock SQL interview — Claude is the interviewer, you write and run real SQL out loud. Defaults to the STEAMe Data Analytics Engineer 30-minute PostgreSQL format. |
+| `/mock-sql-demo` | Text self-play mock SQL interview — Claude plays both interviewer and ideal candidate, then debriefs you. |
+| `/mock-sql-audio` | Generates a fully-simulated two-voice SQL mock interview as an MP3 (local Kokoro TTS) you listen to as an observer. |
+
+---
+
+## Global Skills
+
+Available everywhere. Live in `skills/`. Claude invokes these automatically when the context matches, or you can request them directly.
+
+### Project Kickoff & Setup
+
+| Skill | What it does |
+|---|---|
+| `kickoff` | Turns a raw idea into a structured launch — runs a deep adaptive discovery interview, produces an approved kickoff brief + phased plan, then scaffolds the project folder, git repo, and private GitHub repo. |
+| `mini` | Kicks off a new mini coding project under `~/Projects/mini/` — short discovery interview (idea, problem, scope, tech) then full repo scaffold. |
+
+### Session & Context Management
+
+| Skill | What it does |
+|---|---|
+| `reorient` | Use when returning to a project after a real gap (days to months). Rebuilds fluency and routes the next move to the right skill. NOT for ordinary session starts (use `/begin`). |
+| `reweave` | Re-integrates a follow-up answer into the original response at the source so you get one clean standalone version instead of mentally splicing the update back in. |
+| `ship-and-route` | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). |
+| `backlog-hygiene` | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. |
+| `replenish` | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. |
+
+### Quality & Debugging
+
+| Skill | What it does |
+|---|---|
+| `bug-hunt` | Proactively hunts for bugs you don't know about — fans out specialized finder agents, adversarially verifies every finding, and presents a ranked triage list. Optionally hands bugs to systematic-debugging. |
+| `artifacts-audit` | Audits a codebase against a canonical artifact taxonomy, then produces a concrete generation + maintenance plan. Plans only; does not write artifacts. |
+| `artifacts-generate` | Implements an artifact plan produced by `artifacts-audit`. Supports one-at-a-time (maximum oversight) or batch generation of READMEs, ADRs, design docs, diagrams, runbooks, etc. |
+| `seed-hunt` | Post-research-project workflow — verifies the repo is truly closed, harvests lessons into the selection bar, sweeps arXiv for candidate papers, scores a shortlist, and presents a decision brief. |
+
+### NotebookLM
+
+| Skill | What it does |
+|---|---|
+| `notebook-init` | Bootstraps a new NotebookLM notebook end-to-end — interview, source curation, creation, baseline artifact generation, local sidecar. |
+| `notebook-assist` | Works with existing notebooks in three modes: refine an artifact idea, brainstorm new artifacts by reading the notebook, or manage sources (add/list/refresh/remove). |
+| `notebook-merge` | Merges 2+ existing notebooks into one unified notebook — migrates sources and notes, regenerates artifacts, proposes new cross-notebook synthesis, archives originals. |
+| `audio-series` | Generates an episodic NotebookLM audio course from an existing notebook — a flagship "building" season plus standalones, with optional Study Guide + Quiz per episode. |
+| `video-series` | Generates an episodic NotebookLM video course from an existing notebook — same episodic structure as `audio-series` but video overviews with per-season visual style. |
+| `nlm-skill` | Expert guide for the `nlm` CLI and NotebookLM MCP server — use when interacting with NotebookLM programmatically. |
+
+### Research & Writing
+
+| Skill | What it does |
+|---|---|
+| `research-paper` | End-of-project write-up for reproduce-and-measure research projects. From a completed repo's recorded results — produces a professional research paper and a presenter pack. |
+| `paper-eli5` | Rewrites someone else's research paper into plain English 1:1 (same headings, same paragraph order, nothing summarized or dropped). Equations and tables stay verbatim with a plain-words gloss. |
+| `project-guide` | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. |
+| `narrate` | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. |
+
+### Interview Prep
+
+| Skill | What it does |
+|---|---|
+| `interview-prep` | Initializes and maintains a NotebookLM notebook for job interview prep — auto-bundles your job-search dossier, generates baseline artifacts (anticipated questions, STAR stories, company facts, critique audio) and a "Screen Ready" podcast season. |
+
+### UI & Frontend
+
+| Skill | What it does |
+|---|---|
+| `match-the-mock` | Implements a UI against a visual target using see-and-correct iteration — screenshot → compare → fix → repeat. The auto-triggering sibling of `/screenshot-iterate`. |
+
+---
+
+## Project-Specific Items
+
+Items only available inside their respective project.
+
+---
+
+### A2C Auctions (`~/Desktop/A2CAuctions/`)
+
+Prospecting and outreach automation for auction consignor leads.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `replenish-a2c` | Use when the prospecting pipeline has run thin — refills `prospects.md` by running audit and prospecting lanes in parallel, generating ranked leads and auto-drafted first-touch outreach. |
+| `stage-a2c` | Stages unsent first-touch outreach into Gmail drafts and LinkedIn compose windows. Reconciles which prospects still need messages before writing or reusing drafts. Never auto-sends. |
+
+---
+
+### clinical-data-etl
+
+Data pipeline for clinical health records using dbt and Postgres.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `add-source` | Wires a brand-new raw data source into the pipeline end-to-end — pandera schema, idempotent ingestion loader, raw table, dbt staging model, and optionally a new star schema for a new analytical subject. |
+| `new-dbt-model` | Scaffolds a new dbt model following established conventions — correct layer + prefix, paired `schema.yml` entry with tests, and the incremental config pattern. |
+
+---
+
+### Constellation
+
+A planet-and-powers interactive puzzle game.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `new-planet` | Scaffolds a new planet across all sides of the planet contract — `planetN.ts` config, colocated test file, and ordered `PLANETS` entry in `registry.ts`. Models on `planet3.ts` ("Nebula Core"). |
+| `new-power` | Scaffolds a new astronaut power across all sides of the power contract — `PowerId` literal, Spellbook tile, puzzle component, registration in `App.tsx`, and cast handler. Models on Freeze Stars. |
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/verify-planet` | Headlessly verifies a planet end-to-end via Playwright MCP and the `?test=1` bridge — boots the game, runs the AUTONOMY.md playbook subset for that planet, and reports per-step PASS/FAIL + overall verdict. |
+| `/moonshot` | Deprecated alias — now the "Moonshot" mode of `/brainstorm`. Prefer `/brainstorm` going forward. |
+
+---
+
+### DogHood
+
+A full-stack dog-walking / pet-care app (Supabase + Postgres + PostGIS).
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `adr-new` | Scaffolds the next Architecture Decision Record — auto-increments zero-padded number, copies the template, pre-fills title/status/date, and adds a row to `docs/adr/README.md`. |
+| `new-migration` | Scaffolds a new Supabase Postgres + PostGIS migration — timestamped SQL file with RLS-by-default boilerplate, plus an optional pgTAP test stub. |
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/new-scope` | Scaffolds a scope brief in `docs/scopes/` from the canonical template. A scope = one unit of shippable work = one PR. |
+| `/reconcile-backlog` | Fixes doc ↔ git drift — cross-checks BACKLOG.md, README, and CHANGELOG against what actually merged, shows the drift table, and applies corrections on a `docs/` branch. |
+| `/scheduled-reconcile` | Unattended weekly doc-drift reconcile (driven by a Claude Code scheduled trigger). Autonomously fixes unambiguous drift; drafts a PR for ambiguous cases. |
+| `/ship` | Gate-aware commit → push → PR for current work. Applies orchestrator blast-radius + manual-smoke gates, uses the guard-hook-safe PR recipe. Explicitly does not merge. |
+| `/verify` | Derives the right verification tier for the current diff — maps changed paths to exact checks (typecheck, deno check, pgTAP, RLS auditor) and produces a paste-ready Verification block for the PR body. |
+
+---
+
+### home-base (Learning Hub)
+
+A personal learning hub — NotebookLM-backed course catalog with audio/video episodes.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `course-builder` | Builds a full multi-format course for any topic — interviews for syllabus, gets one approval, then autonomously authors every material: lessons, exercises, visualizations, flashcards, quizzes, reading. |
+| `episode-review` | Post-episode review-and-quiz workflow — runs reflection, quizzes you, and logs score + listened status to the progress store. |
+| `review-next` | Read-only "what to review next" planner — reads the local progress store and ranks the shakiest material by mastery. |
+| `youtube-breakdown` | Converts a YouTube transcript or URL into one of four formats: Study Notes, Quick Reference, Critique, or Actionable Insights. Saves the output and integrates with the hub catalog. |
+| `catalog-doctor` | Health-checks the topic catalog — reconciles what the hub parsed against live `nlm studio status` and reports drift. Read-only. |
+| `api-types-sync` | Reconciles the frontend TypeScript API types (`frontend/src/api/types.ts`) with the backend Pydantic models after schema changes. |
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/build-course` | Thin entry point to `course-builder` — interviews for topic and level, proposes a syllabus, gets approval, then autonomously authors all materials. |
+
+---
+
+### job-search-mas
+
+Multi-agent job-search pipeline — daily scanning, scoring, tailored application generation.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `job-scanner` | Daily job scanner — searches for new healthcare data/analytics listings, scores them against your profile, selects the top 2–3, and writes results to the vault. |
+| `job-fit-check` | Pre-application gate — scores a job listing 1–10, identifies top 3 strengths and top 2 gaps, classifies tier, checks for duplicates, and flags a Corewell-departure signal. |
+| `tailor-materials` | Generates a tailored application kit — one JD-matched resume + matching cover letter in Modern Executive aesthetic saved as `.docx` files. |
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/run-pipeline` | Runs the full pipeline interactively: hunt → validate → format-JD → score → route → brief. |
+| `/process-queue` | Morning manual workflow — walks through the Tier 2 queue and lets you decide skip / archive / tailor for each candidate. |
+| `/confirm-submitted` | Promotes one or more application stubs from materials-ready to applied with a `submitted_at` timestamp. |
+| `/check-bake-stats` | Aggregates nightly logs, briefing sidecars, manifests, and vault stubs into `pipeline/bake-stats.json` and prints the headline. Surfaces Phase 3 trigger signals. |
+| `/check-format` | Runs the format guard against a tailored `.docx` file (resume or cover letter). Validates ATS-safe fonts, margins, and structure. |
+| `/check-voice` | Runs the voice/tone guard against a resume or cover letter. Validates consistency with your personal brand. |
+| `/check-profile` | Reads `00-canonical-inputs/search-spec.json` and pretty-prints a human-readable summary of priority roles, bench capabilities, and source files. |
+| `/check-slack` | Inspects the last Slack delivery result from the pipeline briefing sidecar. Prints a setup checklist if `SLACK_WEBHOOK_URL` isn't configured. |
+| `/check-sms` | Inspects the last SMS delivery result from the pipeline briefing sidecar. Prints a setup checklist if Twilio env vars aren't configured. |
+
+---
+
+### personal-health-elt
+
+Apple Health data ingestion pipeline into a local Postgres data warehouse.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `new-loader` | Scaffolds a new idempotent Apple Health ingest loader under `ingest/loaders/` — pre-wires the two-level idempotency contract and multi-source dedup rule, plus raw DDL, staging model, and pytest. |
+
+---
+
+### stopwatch (Tempo)
+
+A biofeedback / rhythm-tracking browser app.
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/add-panel` | Scaffolds a new Rhythm Insights panel — creates `js/rhythm-panel-<key>.js`, registers it via `RhythmInsights.register`, wires the HTML slot, CLAUDE.md entry, and `sw.js` ASSETS + cache bump. |
+| `/new-engine-module` | Scaffolds a new `js/<name>.js` module and wires all touch-points in one shot — `<script>` tag, CLAUDE.md file-map + Script Load Order chain, `sw.js` ASSETS entry + `CACHE_NAME` bump, test stub. |
+| `/fix-bug` | Repo-tuned bug-fix loop — triages against known-failure playbooks first (stale SW cache is the #1 false alarm), root-causes before editing, adds a regression test, fixes minimally, verifies in a fresh browser context. |
+| `/run-tests` | Runs the appropriate test suites based on the diff — `npm test` (headless engine suite) plus Firestore-rules and Life-OS council suites when their files are in play. Reports with flake-adjudication rules. |
+| `/ship-pr` | Lands current work as a PR — pre-flights the Definition of Done, runs the three pre-commit guard checks, creates the branch/commit with house conventions, pushes and opens the PR. Never merges. |
+
+---
+
+### forge-gap
+
+A research / learning project following a structured learning spine.
+
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/document-stage` | Documents a just-finished stage in the learning spine, teaches the core concepts, then quizzes you via active recall. |
+
+---
+
+## Custom Subagents
+
+No project-specific subagents have been created yet. Global subagent types (e.g., `Explore`, `Plan`, `code-reviewer`) are provided by the Superpowers plugin and live outside this repo.
