@@ -108,7 +108,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | `research-paper` | End-of-project write-up for reproduce-and-measure research projects. From a completed repo's recorded results — produces a professional research paper and a presenter pack. |
 | `paper-eli5` | Rewrites someone else's research paper into plain English 1:1 (same headings, same paragraph order, nothing summarized or dropped). Equations and tables stay verbatim with a plain-words gloss. |
-| `paper-gloss` | Post-processes a `paper-eli5` output: AI proposes jargon terms with plain-English expansions, you trim the list, then every occurrence of each approved term is replaced inline with the expansion followed by the original term in parentheses. Run after `/paper-eli5`. |
+| `paper-gloss` | Post-processes a `paper-eli5` output into an interactive HTML artifact: AI proposes jargon terms with plain-English expansions, you trim the list, then every occurrence becomes a clickable term that reveals the expansion in a popup, plus a full-glossary toggle panel. Delivers a `-glossed.html` file and a published claude.ai Artifact link. Run after `/paper-eli5`. |
 | `project-guide` | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. |
 | `narrate` | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. |
 

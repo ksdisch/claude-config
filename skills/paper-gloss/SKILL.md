@@ -1,22 +1,26 @@
 ---
 name: paper-gloss
-description: Post-process a paper-eli5 output by annotating every occurrence of selected jargon terms with a plain-English expansion followed by the original term in parentheses. AI proposes the candidate term list with expansions; you trim it; the skill runs a context-aware substitution pass across the entire document. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. Output is a new -glossed.md file beside the input.
+description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite.
 ---
 
-# Paper Gloss — annotate every jargon term in a paper-eli5 output
+# Paper Gloss — click-to-reveal jargon glosses
 
 A companion to `/paper-eli5`. Takes a finished eli5 output and produces a second
-pass where every approved technical term is replaced inline at **each occurrence**
-with a plain-English expansion, with the original term immediately following in
-parentheses — so you never have to remember what a term means from an earlier
-paragraph.
+pass where every approved technical term becomes **clickable at each occurrence**
+— tapping it pops up a plain-English expansion, then dismisses. The original
+prose is never rewritten or interrupted; the paper reads exactly as it did, with
+jargon quietly wired up for lookup instead of permanently annotated inline.
 
-Example substitution:
-> **Before:** "The model is trained using backpropagation."
-> **After:** "The model is trained using backpropagation (a step where errors are traced backward through each layer to adjust the model's internal dials)."
+Example: "The model is trained using **backpropagation**" — the term
+`backpropagation` gets a dotted underline. Clicking it opens a small popup: *"a
+step where errors are traced backward through each layer to adjust the model's
+internal dials."* Clicking again, clicking elsewhere, or `Escape` closes it. The
+same expansion also appears as a row in the Glossary panel (📖, fixed top-right)
+so every expansion is still visible at a glance without touching the running text.
 
-The original term is always kept in place; the plain-English expansion is
-inserted immediately after it in parentheses as a gloss.
+Because this is genuinely interactive, the deliverable is a self-contained HTML
+page, not Markdown — delivered both as a file in the repo and as a published
+claude.ai Artifact.
 
 ---
 
@@ -37,20 +41,24 @@ phrases, named methods/architectures, statistical concepts. Do **not** include
 ordinary English words or very common terms (e.g., "model", "data", "method"
 used in plain senses).
 
-For each candidate term, produce one plain-English expansion — a tight phrase or
-clause that conveys the meaning and fits inline in a sentence. Expansions must:
-- Be concise enough to read in-line without interrupting flow (aim for 1 clause,
-  never more than 2 sentences)
-- Capture the term's meaning accurately, not approximately
-- Read naturally as a noun-phrase or clause so they can substitute the term
-  grammatically
+For each candidate term, produce one plain-English expansion. Unlike the old
+inline-parenthetical version, the expansion is read **out of context** — in a
+popup or a glossary row, not stitched into the sentence that contains the term.
+Expansions must:
+- Read as a **standalone mini-definition** — understandable with zero surrounding
+  sentence, e.g. "A method that nudges the model's settings using the error
+  signal from a small random sample of training examples each step." (Not a
+  clause built to slot in after the term grammatically — there's no sentence to
+  slot into anymore.)
+- Be concise (1 clause to 2 sentences) and capture the term's meaning accurately,
+  not approximately.
 
 Present the list as a numbered table:
 
 ```
 | # | Term (as it appears) | Proposed plain-English expansion |
 |---|----------------------|----------------------------------|
-| 1 | stochastic gradient descent | a method that nudges the model's settings using the error signal from a small random sample of training examples each step |
+| 1 | stochastic gradient descent | A method that nudges the model's settings using the error signal from a small random sample of training examples each step. |
 | 2 | …                    | …                                |
 ```
 
@@ -61,81 +69,219 @@ Then **STOP and ask Kyle**:
 > also correct any expansion by writing '4: [your preferred wording]'."
 
 Do not proceed to Phase 2 until you have Kyle's response. This is a hard gate.
+The approved list becomes the literal content of the `GLOSS_TERMS` dictionary in
+Phase 2 — whatever Kyle approves/edits here flows through unchanged.
 
 ---
 
-## Phase 2 — Substitution pass
+## Phase 2 — Generation pass (build the HTML)
 
-Apply the approved glossary. Work section by section, one section at a time,
-appending output to the target file (or a scratch accumulator — see Deliver).
+There is no markdown-to-HTML library or template in this skill — hand-author the
+HTML directly, section by section, the same way you'd hand-author prose. Before
+writing any markup, **load the `artifact-design` skill** and follow its general
+conventions for anything not spelled out below (this spec covers paper-gloss's
+specific content; artifact-design covers general artifact hygiene).
 
-For each section:
-1. Read the section text.
-2. For each paragraph that contains one or more approved terms:
-   - Keep the original term exactly as it appears in the text. Immediately
-     after the term, insert the plain-English expansion in parentheses.
-   - Format: `ORIGINAL_TERM (plain-English expansion)`
-   - Example: "J-lens (the technique that measures how strongly each internal
-     number influences each future word)"
-   - Fit the parenthetical grammatically — if needed, adjust the expansion's
-     wording slightly so it reads naturally as a parenthetical gloss after
-     the term, not as a standalone sentence replacing it.
-   - Every other word in the paragraph is preserved exactly — do not simplify,
-     rephrase, or restructure anything beyond the substitution site.
-   - If a term appears multiple times in one sentence, annotate each occurrence.
-3. For paragraphs with no approved terms: copy verbatim.
+### Document skeleton — construct-by-construct mapping
 
-### Hard constraints for Phase 2
+| eli5.md construct | HTML shape |
+|---|---|
+| Header block (title, authors, source, date, register note) | `<header class="doc-header">` at the top of `<body>`: `<h1>` for the title, a metadata block for authors/source/date, and a short note pointing at the Glossary panel — **not** a full term list (that's what the panel is for) |
+| Section headings (any level) | Mapped 1:1 by depth to `<h1>`–`<h6>`, verbatim text, same order. **Excluded from term-wrapping.** |
+| Paragraphs | One input paragraph → exactly one `<p>` — never merged or split |
+| Lists | `<ul>`/`<ol>` + `<li>`, item-for-item |
+| Equations | `<pre class="equation">` verbatim, inside `<div class="scroll-x">` (`overflow-x:auto`) — never re-typeset as math |
+| Tables | Real `<table><thead>…<tbody>` markup, one input row/column → one output row/column, values unaltered, wrapped in `<div class="scroll-x">` |
+| "In plain words: …" gloss lines | `<p class="plain-words"><em>In plain words:</em> …</p>`, distinct styling (italic + subtle left border/tint). **Included** in term-wrapping. |
+| `[Figure N]` placeholders | `<div class="figure-placeholder">[Figure N] — {rewritten caption}</div>`, dashed border / muted background so it visibly reads as a placeholder |
+| Inline citations (`[12]`, `(Smith et al., 2023)`) | Plain inline text, unchanged. **Never wrapped**, even if a term-like substring appears inside. |
+| References section | Carried verbatim as extracted. **Excluded from term-wrapping** — same bucket as equations/tables/citations. |
 
-- **EVERY occurrence** of an approved term is substituted — not just the first
-  per section or first in the document.
-- **Grammar first.** If pasting the expansion directly produces an ungrammatical
-  sentence, adjust surrounding words minimally to make it read cleanly — but the
-  substitution itself (expansion + (original term)) must be present.
-- **No other edits.** Don't take this pass as an opportunity to rephrase, simplify
-  further, or fix anything else. The only diffs from the input file should be the
-  term substitutions.
-- **Equations, tables, figure placeholders:** pass through verbatim. Do not
-  substitute inside equation blocks, table cells, or `[Figure N]` placeholders.
-  Substitute inside the *plain-words gloss lines* if a term appears there.
-- **Inline citations** (`[12]`, `(Smith et al., 2023)`): stay exactly where they are.
-- **Header block at the top**: update (or append a note to) the header block
-  indicating this is the glossed version and listing the substituted terms.
+### Term-wrapping mechanism
+
+Give each approved term a stable kebab-case slug id (dedupe collisions with
+`-2`, `-3`…). Embed one dictionary, once, in a `<script>` block:
+
+```html
+<script>
+  const GLOSS_TERMS = {
+    "stochastic-gradient-descent": {
+      term: "stochastic gradient descent",
+      expansion: "A method that nudges the model's settings using the error signal from a small random sample of training examples each step."
+    }
+    // one entry per approved term — single source of truth for both tooltips and the panel
+  };
+</script>
+```
+
+Every occurrence of an approved term **inside paragraphs, list items, and
+plain-words lines** (never headings, equations, tables, figure placeholders,
+citations, or references) is wrapped as:
+
+```html
+<button type="button" class="gloss-term" data-term-id="stochastic-gradient-descent">stochastic gradient descent</button>
+```
+
+Use `<button>`, not `<span>` + `onclick` — it's keyboard-focusable for free.
+Reset it in CSS to read inline (`display:inline; background:none; border:none;
+padding:0; margin:0; font:inherit; color:inherit; cursor:pointer;`) so it never
+breaks the paragraph's text flow.
+
+**Hard constraints:**
+- **Every occurrence** gets wrapped — not just the first per section or first in
+  the document.
+- **Longest-match-first, no overlap.** If one approved term is a substring of
+  another (e.g. "gradient descent" inside "stochastic gradient descent"), match
+  the longest one at each text position. Wrapped spans must never overlap or
+  nest — HTML tags can't validly overlap.
+- **No other edits.** The surrounding prose is never rewritten — only wrapped.
+  This is strictly lower-risk than the old parenthetical version, which had to
+  adjust wording so the inserted parenthetical read naturally; here nothing
+  about the sentence changes, so that risk doesn't exist.
+- **Escape literal `<`, `>`, `&`** in source prose as HTML entities before
+  wrapping (papers can contain things like "a < b" or generic-type angle
+  brackets) so the output stays well-formed.
+
+### Visual cue
+
+Terms get a dotted underline (`border-bottom: 1px dotted var(--gloss-underline)`)
+plus a subtle color tint distinct from body text, with a light background
+highlight on `:hover`/`:focus-visible`. This is a static always-visible cue, not
+a hover-reveal — clicking/tapping is the only way to open the expansion.
+
+### Popover
+
+One singleton element in the DOM, not one per occurrence:
+
+```html
+<div id="gloss-popover" class="gloss-popover" role="tooltip" hidden>
+  <button class="gloss-popover-close" aria-label="Close">×</button>
+  <div class="gloss-popover-term"></div>
+  <div class="gloss-popover-expansion"></div>
+</div>
+```
+
+Wire it up with **one delegated listener** on `document` (`click`, checking
+`event.target.closest('.gloss-term')`) — not a per-occurrence `onclick`, since a
+paper can have hundreds of occurrences. On click:
+1. Look up `data-term-id` in `GLOSS_TERMS`; fill in the popover's term + expansion.
+2. Position via `getBoundingClientRect()` of the clicked button, clamped to the
+   viewport width (never widen the page) with a flip-above rule near the bottom.
+3. Only one popover open at a time — opening a new term repositions/repopulates
+   the same singleton rather than spawning another.
+4. Mark the active button (`aria-expanded="true"`, `.gloss-term--active`).
+5. Dismiss via: the close button, clicking the same term again (toggle-close),
+   clicking anywhere outside the popover and outside any `.gloss-term`, or
+   `Escape`. All paths converge on one close function that also clears the
+   active-button state.
+
+### Full-glossary panel
+
+A fixed toggle button, e.g.:
+
+```html
+<button id="gloss-panel-toggle" aria-expanded="false" aria-controls="gloss-panel">📖 Glossary (N)</button>
+```
+
+positioned `fixed; top/right` so it stays reachable while scrolling (N = approved
+term count). Opens a slide-in drawer:
+
+```html
+<aside id="gloss-panel" class="gloss-panel" hidden>
+  <button class="gloss-panel-close" aria-label="Close">×</button>
+  <h2>Glossary</h2>
+  <table>
+    <thead><tr><th>Term</th><th>Plain-English expansion</th></tr></thead>
+    <tbody id="gloss-panel-rows"></tbody>
+  </table>
+</aside>
+```
+
+Render the rows from the **same `GLOSS_TERMS` object** at load time (loop over
+it) — never hand-duplicate the text — so the panel and the tooltips can't drift
+out of sync. `width: min(420px, 90vw)`, full height, own `overflow-y:auto` (term
+counts can run into the dozens). Backdrop overlay behind the drawer; the
+backdrop, the close button, and `Escape` all close it. Opening the panel closes
+any open term popover, and vice versa — only one interactive surface is ever
+open at a time.
+
+### Self-containment & theming
+
+Everything — CSS and JS — inline in one `<style>` and one or two `<script>`
+blocks in the single HTML file. No `<link>` to fonts/CDNs, no external `src=`,
+no `@import`. Theme via CSS variables in `:root` (light defaults), overridden in
+`@media (prefers-color-scheme: dark)`, overridden again (must win) by
+`:root[data-theme="dark"]` / `:root[data-theme="light"]`. Every color/spacing
+value goes through a variable — never a hardcoded color — so both override
+layers apply uniformly. Relative units throughout, a centered readable max-width
+column (~760–880px); equations and tables are the only elements allowed to
+scroll horizontally, in their own `.scroll-x` containers — the page itself must
+never scroll sideways.
 
 ---
 
 ## Phase 3 — Verify
 
-After the pass:
-- Scan the output for each approved term's **exact string**. Verify no bare
-  (un-annotated) occurrences remain. If any are found, go back and annotate them.
-- Confirm paragraph counts per section match the input file (substitution never
-  merges or splits paragraphs).
-- Confirm headings are identical to the input file.
+- **Occurrence coverage:** for each approved term, the count of exact-string
+  occurrences in the source prose (paragraphs, list items, plain-words lines —
+  excluding equations/tables/figure-placeholders/citations/references) equals
+  the count of `.gloss-term` buttons with that `data-term-id` in the output.
+- **No bare occurrences:** scan the output's text nodes for each approved term's
+  exact string outside a `.gloss-term` wrapper — any hit must be fixed.
+- **No overlap/nesting:** confirm longest-match precedence was applied; zero
+  overlapping or nested `.gloss-term` spans.
+- **Dictionary symmetry:** every `data-term-id` in the body resolves to a
+  `GLOSS_TERMS` key, and every dictionary entry is used at least once in the
+  body **and** appears as a row in the glossary panel.
+- **Structure fidelity:** per-section `<p>` count == input paragraph count;
+  heading text and order identical to the input.
+- **Non-prose passthrough:** equations, tables, figure placeholders, citations,
+  and the references section contain zero `class="gloss-term"` occurrences, even
+  where term text coincidentally appears inside.
+- **Well-formedness:** every tag closes; `<`/`>`/`&` in source prose are
+  entity-escaped; exactly one `<html>`/`<head>`/`<body>`/`<title>`; doctype
+  present.
+- **Self-containment:** grep the file for `http://`, `https://`, external
+  `href=`/`src=`, `@import` — zero hits.
+- **Theming completeness:** every variable referenced is defined in `:root`,
+  the dark-media-query block, and both `data-theme` override blocks.
+- **Artifact prerequisites:** non-empty `<title>` present.
 
-Report any discrepancies before delivering.
+Fix any discrepancy and re-verify before claiming done.
 
 ---
 
 ## Phase 4 — Deliver
 
-- **Output path:** same directory as the input file, with `-glossed` appended to
-  the slug before the extension: `<slug>-eli5-glossed.md`.
-- **Header block addition:** add a "Glossed terms" section to the header block
-  listing each substituted term and its expansion, for reference.
-- **Git (when in a repo):** normal global workflow — feature branch, commit, push,
-  PR, merge autonomously, brief Kyle — unless the project CLAUDE.md tightens it.
-  Outside a repo: just write the file.
+- **Output path:** same directory as the input file, `<slug>-eli5-glossed.html`
+  (same directory-resolution logic as before, new extension).
+- Re-confirm the `artifact-design` skill was loaded before finalizing.
+- **Git (when in a repo):** normal global workflow — feature branch, commit,
+  push, PR, merge autonomously, brief Kyle — unless the project CLAUDE.md
+  tightens it. Outside a repo: just write the file.
+- **Publish via the `Artifact` tool:**
+  - `title`: the paper's title, matching the HTML `<title>` tag.
+  - `favicon`: one or two emoji — default to "📖" unless the paper's subject
+    suggests a better fit.
+  - `description`: 1–2 sentences, e.g. "Plain-English rewrite of {title} with N
+    clickable glossary terms and a full glossary panel."
+  - `file_path`: the finished HTML.
+  - **Every run publishes a brand-new artifact** — a new paper each time, never
+    a redeploy of a previous run's URL.
 - **Send the file** to Kyle via SendUserFile.
-- **Final report:** output path; number of terms substituted; per-term occurrence
-  count; any spots where a bare term could not be cleanly substituted (flag with
-  the section + reason).
+- **Final report:** output path; PR link + merge confirmation; Artifact URL;
+  number of approved terms + per-term occurrence tally; any flags (bare
+  occurrences fixed, overlap conflicts resolved via longest-match, garbled or
+  ambiguous regions); confirmation Phase 3 passed clean.
 
 ---
 
 ## Definition of done
 
-The glossed file exists at its output path with the updated header block; Phase 3
-passed clean (no bare approved terms remain, paragraph counts and headings match
-input); the file was sent via SendUserFile; the final report lists path, per-term
-tallies, and every flag.
+The glossed HTML file exists at its output path with the header block, working
+click-to-reveal tooltips on every occurrence of every approved term, and a
+working full-glossary panel; Phase 3 passed clean (no bare or overlapping
+terms, structure matches input, self-contained, themed for light and dark); the
+git branch was committed, pushed, and merged via PR; the Artifact was published;
+the file was sent via SendUserFile; the final report lists path, PR link,
+Artifact URL, per-term tallies, and every flag.
