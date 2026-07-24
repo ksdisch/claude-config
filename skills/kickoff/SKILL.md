@@ -216,6 +216,7 @@ If "scaffold now":
    - `~/Projects/<slug>/README.md` — seeded from the brief: project name, one-liner, "Why" section, "What success looks like (v1)", status line, and a pointer to `docs/KICKOFF.md`.
    - `~/Projects/<slug>/CLAUDE.md` — **project context for future sessions** (critical for continuity): one-liner, the current milestone, link to `docs/KICKOFF.md` as source of truth, the riskiest assumption to keep front-of-mind, and a "conventions: TBD" stub. Keep it tight.
    - A stack-appropriate `.gitignore` and a **minimal** starting point matching the chosen shape (e.g. `main.py` + `requirements.txt`, or `index.html`, or a `sql/` + `notebooks/` skeleton for a data project). **Minimal** — a real starting point, not `hello world`, but do NOT build features. Real building happens in a later session.
+   - Invoke the `project-wiki` skill in INIT mode for `~/Projects/<slug>/`. It will create `PROJECT.md` and `HANDOFF.md` (seeded from the brief), and add the wiki maintenance block to `CLAUDE.md`. The wiki files get committed with the rest of the scaffold.
 3. Initialize and publish:
    ```sh
    cd ~/Projects/<slug>
