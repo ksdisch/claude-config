@@ -116,6 +116,12 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | `interview-prep` | Initializes and maintains a NotebookLM notebook for job interview prep — auto-bundles your job-search dossier, generates baseline artifacts (anticipated questions, STAR stories, company facts, critique audio) and a "Screen Ready" podcast season. |
 
+### Personal Coaching
+
+| Skill | What it does |
+|---|---|
+| `career-coach` | ICF MCC-level career and life coaching — progressive clarity on your next career move, grounded in values, life stage, and what you actually want. Supports multi-session continuity via [SNAPSHOT] / [UPDATE] / [FOCUS] tags. Auto-triggers when you feel stuck, unfulfilled, or at a professional crossroads. |
+
 ### UI & Frontend
 
 | Skill | What it does |
