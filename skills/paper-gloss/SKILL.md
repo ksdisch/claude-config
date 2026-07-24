@@ -13,10 +13,10 @@ paragraph.
 
 Example substitution:
 > **Before:** "The model is trained using backpropagation."
-> **After:** "The model is trained using a step where errors are traced backward through each layer to adjust the model's internal dials (backpropagation)."
+> **After:** "The model is trained using backpropagation (a step where errors are traced backward through each layer to adjust the model's internal dials)."
 
-The substitutions are context-aware: the expansion is rewritten to fit the
-sentence grammatically, not spliced in mechanically.
+The original term is always kept in place; the plain-English expansion is
+inserted immediately after it in parentheses as a gloss.
 
 ---
 
@@ -72,9 +72,14 @@ appending output to the target file (or a scratch accumulator — see Deliver).
 For each section:
 1. Read the section text.
 2. For each paragraph that contains one or more approved terms:
-   - Rewrite only the affected sentences so the term is replaced by its
-     plain-English expansion, with the original term immediately after in
-     parentheses, fitting the sentence grammatically.
+   - Keep the original term exactly as it appears in the text. Immediately
+     after the term, insert the plain-English expansion in parentheses.
+   - Format: `ORIGINAL_TERM (plain-English expansion)`
+   - Example: "J-lens (the technique that measures how strongly each internal
+     number influences each future word)"
+   - Fit the parenthetical grammatically — if needed, adjust the expansion's
+     wording slightly so it reads naturally as a parenthetical gloss after
+     the term, not as a standalone sentence replacing it.
    - Every other word in the paragraph is preserved exactly — do not simplify,
      rephrase, or restructure anything beyond the substitution site.
    - If a term appears multiple times in one sentence, annotate each occurrence.
