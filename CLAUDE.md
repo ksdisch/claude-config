@@ -89,3 +89,15 @@ This rule fires everywhere (this file is the global CLAUDE.md), so it covers glo
 - For global items: assign to the most fitting existing category; only create a new category if nothing fits
 - For project-specific sections: include a one-sentence description of the project above the table(s)
 - Commit the reference doc update in the **same commit** as the skill/command change (or as an immediately following commit on the same branch)
+
+---
+
+## Project Wiki
+
+When working in a project that contains `PROJECT.md`, a `Wiki/` directory, or `HANDOFF.md`, maintain the project wiki using the `project-wiki` skill:
+- Before integrating a new source: read `PROJECT.md` and `Wiki/_index.md`, then report the proposed update scope before making broad changes
+- Record decisions in `Decisions.md`; update `HANDOFF.md` whenever work pauses or state changes
+- Make surgical updates — don't reorganize the entire wiki because a new source was added
+- Label all claims: Fact / Inference / Recommendation / Decision / Proposed / Unresolved / Contradiction
+
+New projects started via `/kickoff` automatically get a wiki initialized. To retroactively initialize all existing projects, run `/wiki-init --all`.
