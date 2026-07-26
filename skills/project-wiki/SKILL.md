@@ -108,8 +108,16 @@ _Last updated: <date>_
 
 | Page | Covers | Last reviewed |
 |------|--------|---------------|
-| [[<topic>]] | <one-line summary> | <date> |
+| [<topic>](<topic>.md) | <one-line summary> | <date> |
 ```
+
+**Link syntax — always relative markdown, never wikilinks.** These files are read on GitHub as often as locally, and GitHub's markdown renderer has no wikilink support: `[[History]]` renders as literal bracketed text, so the index's navigation is dead in the browser. Relative markdown links work in GitHub *and* in Obsidian-style tools, so there is no case for `[[...]]` anywhere in a wiki file.
+
+- Page within `Wiki/` linking to a sibling → `[History](History.md)`
+- Root file (`PROJECT.md`, `HANDOFF.md`) linking into the wiki → `[History](Wiki/History.md)`
+- Wiki page linking back to root → `[Decisions](../Decisions.md)`
+
+If you encounter existing `[[...]]` links while editing a wiki file, convert them in passing — the target is the same name plus `.md`.
 
 ### Step 4: Wire it to CLAUDE.md
 
@@ -132,12 +140,24 @@ Invoke the `project-wiki` skill when wiki updates are needed.
 
 If no `CLAUDE.md` exists, do not create one just for this — note that there's no CLAUDE.md to update.
 
+### Step 4b: Make the wiki discoverable from README.md
+
+GitHub renders `README.md` on the repo homepage and nothing else, so a wiki with no inbound link from the README is effectively invisible to anyone browsing the repo. If a root `README.md` exists and does not already reference `PROJECT.md`, append a one-line pointer at the bottom:
+
+```markdown
+---
+
+📚 **Project wiki:** [PROJECT.md](PROJECT.md) — status, scope, and next actions · [Wiki/_index.md](Wiki/_index.md) — topic pages and history
+```
+
+Drop the `Wiki/_index.md` half if this project has no `Wiki/`. This is the only README edit the skill ever makes: append a pointer, never restructure or rewrite existing README content. If there's no `README.md`, don't create one.
+
 ### Step 5: Commit
 
 Land the new files per the global git workflow — branch + PR, merged autonomously:
 
 1. Create a `docs/wiki-init` branch
-2. Commit **only** the wiki files and the CLAUDE.md edit — never sweep unrelated dirty files into the commit
+2. Commit **only** the wiki files, the CLAUDE.md edit, and the README.md pointer line — never sweep unrelated dirty files into the commit
 3. Push, open a PR, and merge it; include the PR link in the report
 
 Exceptions:
@@ -223,8 +243,8 @@ Rules: eras oldest → newest; milestones dated; PRs cited `#N`; rationale lines
 
 ### Step 4: Update Wiki/_index.md
 
-- If `Wiki/` doesn't exist, create `Wiki/_index.md` using the INIT template with a single `[[History]]` row. (History.md is new synthesized narrative — it exists nowhere else, so this doesn't violate link-don't-duplicate even in repos that skipped `Wiki/` at init.)
-- If it exists, append a `[[History]]` row — don't restructure.
+- If `Wiki/` doesn't exist, create `Wiki/_index.md` using the INIT template with a single `[History](History.md)` row. (History.md is new synthesized narrative — it exists nowhere else, so this doesn't violate link-don't-duplicate even in repos that skipped `Wiki/` at init.)
+- If it exists, append a `[History](History.md)` row — don't restructure. Relative markdown links only, per the INIT link-syntax rule.
 
 ### Step 5: Land and report
 
@@ -300,7 +320,7 @@ Each durable `Wiki/` topic page should contain:
 - <What's unknown or disputed>
 
 ## Related pages
-- [[other-page]] — <why it's related>
+- [other-page](other-page.md) — <why it's related>
 
 ## Relevance to current work
 <How this affects current or upcoming decisions.>
@@ -345,3 +365,5 @@ Then wait for approval before moving anything outside this project.
 - Do not rewrite or delete Decisions.md rows — append and supersede
 - Do not regenerate or reorder Wiki/History.md — it is append-only; BACKFILL runs once, MAINTAIN appends
 - Do not restate decision-ledger or ADR content in History.md — anchor the ID and link the file
+- Do not write `[[wikilinks]]` in any wiki file — GitHub renders them as dead literal text; use relative markdown links
+- Do not rewrite or restructure a project's README.md — the only permitted edit is appending the wiki pointer line
