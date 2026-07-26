@@ -94,3 +94,4 @@ Errors:
 - After a project's wiki is initialized, Claude will maintain it automatically in future sessions (the CLAUDE.md update is what signals this)
 - To maintain the wiki in an already-initialized project, invoke the `project-wiki` skill directly or Claude will invoke it when wiki updates are needed
 - Re-running `/wiki-init` anywhere is safe: INIT never overwrites existing wiki files
+- For a retroactive milestone-by-milestone history page (`Wiki/History.md`), run `/wiki-backfill` after the wiki exists — it mines merged PRs and git history into an append-only evolution narrative
