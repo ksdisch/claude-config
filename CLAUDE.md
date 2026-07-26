@@ -58,6 +58,7 @@ When I say "new feature mode" or "feature mode", before building anything:
 - Commit frequently with descriptive messages
 - **Keep me in the loop, don't gate on me (updated 2026-06-13).** Commit, push, open PRs, and merge them to `main` autonomously — no per-push go-ahead needed. In exchange, brief me at the point of action (what changed, commit SHA, PR link, whether you merged) and recap at session end. I'd rather be told after the fact than asked before — but nothing happens silently.
 - Still branch + PR for every change; the PR is the durable record that keeps me briefed, not a gate. Don't push straight to `main`.
+- **Adversarial review before autonomous merge (added 2026-07-26).** Every PR gets the `adversarial-review` loop (zero-context reviewer → author triage → judge on disputes → fix → re-check) before you merge it yourself. Escape hatch: trivial diffs — docs-only, comment-only, config-typo scale — may skip the loop, but state the skip and reason in the merge brief; never skip silently. Critical and should-fix findings must be fixed or explicitly waived by me before the merge; nice-to-haves become follow-ups listed in the PR comment.
 - Pause and ask first only for genuinely irreversible/destructive ops: force-push, history rewrite, deleting remote refs/branches, production deploys.
 - A specific project's `CLAUDE.md` may tighten this back (e.g. require my merge, or hold risky changes for a heads-up); the project rule wins where it does.
 
