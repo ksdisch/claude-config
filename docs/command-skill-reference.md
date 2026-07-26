@@ -49,6 +49,7 @@ Available in every Claude Code session. Live in `commands/`.
 | `/envsetup` | Opens the project's `.env` in your editor and the credential-generation page in Chrome, with a key stub + source comment pre-added. |
 | `/claudify-repo` | Vendors chosen global commands/skills into a repo (so they work in cloud/web sessions and for collaborators) and launches the recommender to design project-specific automations. |
 | `/wiki-init` | Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and minimum structure for the current project (no args), a specific path, or all top-level projects under ~/Projects/ (`--all`). Idempotent (never overwrites an existing wiki); lands changes via branch + PR. |
+| `/wiki-backfill` | Backfills a retroactive `Wiki/History.md` evolution narrative — mines merged PRs, git history, tags, wrap logs, and ADRs into a milestone-by-milestone, append-only history page for one project or all wiki-bearing projects (`--all`). Refuses to overwrite an existing History.md; lands changes via branch + PR. |
 
 ### Learning & Interviews
 
@@ -70,7 +71,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | `kickoff` | Turns a raw idea into a structured launch — runs a deep adaptive discovery interview, produces an approved kickoff brief + phased plan, then scaffolds the project folder, git repo, and private GitHub repo. Automatically initializes a project wiki. |
 | `mini` | Kicks off a new mini coding project under `~/Projects/mini/` — short discovery interview (idea, problem, scope, tech) then full repo scaffold. |
-| `project-wiki` | Maintain an evidence-controlled project wiki — two modes: INIT (idempotently create PROJECT.md, HANDOFF.md, and optional wiki files; never overwrites) and MAINTAIN (surgical updates when integrating sources, recording decisions, or updating status). Auto-invoked in any project that has wiki sentinel files. |
+| `project-wiki` | Maintain an evidence-controlled project wiki — three modes: INIT (idempotently create PROJECT.md, HANDOFF.md, and optional wiki files; never overwrites), MAINTAIN (surgical updates when integrating sources, recording decisions, updating status, or appending History.md milestones), and BACKFILL (mine merged-PR and git history into an append-only Wiki/History.md evolution narrative). Auto-invoked in any project that has wiki sentinel files. |
 
 ### Session & Context Management
 
