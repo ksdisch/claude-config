@@ -1,6 +1,6 @@
 ---
 name: project-wiki
-description: Maintain an evidence-controlled project wiki. Two modes: INIT (create the minimum structure for a new or existing project) and MAINTAIN (surgical updates when integrating new sources, recording decisions, or updating status). Invoked automatically when Claude detects wiki sentinel files (PROJECT.md, Wiki/, HANDOFF.md), or explicitly via /wiki-init.
+description: "Use when working in a project that has wiki sentinel files (PROJECT.md, a Wiki/ directory, or HANDOFF.md) and project state changes, a decision gets made, work pauses, or a new source needs integrating — or when /wiki-init or another skill (e.g. kickoff) asks to initialize a wiki."
 ---
 
 # Project Wiki
@@ -11,11 +11,12 @@ Maintain a small, evidence-controlled wiki for this project. The goal is to pres
 
 ## Mode selection
 
-Determine the mode from context:
-- **INIT** — no wiki files exist yet, or `/wiki-init` was invoked
-- **MAINTAIN** — wiki files already exist and you're integrating new material, recording a decision, or updating status
+The wiki **sentinel files** are: `PROJECT.md`, a `Wiki/` directory, or `HANDOFF.md` at the repo root.
 
-If called without explicit context, check for `PROJECT.md` or `Wiki/` in the repo root. If present, run MAINTAIN; otherwise run INIT.
+- **MAINTAIN** — at least one sentinel file exists and you're integrating new material, recording a decision, or updating status
+- **INIT** — no sentinel file exists, or `/wiki-init` (or a parent flow like kickoff) explicitly requested initialization. An explicit request always routes to INIT, even if sentinel files exist — INIT is additive, so this is safe.
+
+**INIT is additive and idempotent — never overwrite an existing wiki file.** If some wiki files already exist, create only the missing ones and leave the rest untouched. If `/wiki-init` runs in a fully initialized project (both `PROJECT.md` and `HANDOFF.md` exist), report that the wiki already exists and switch to MAINTAIN — but first run Step 4 if `CLAUDE.md` isn't wired yet.
 
 ---
 
@@ -28,13 +29,13 @@ Before creating anything, do a read-only inventory:
 - Read the project's `CLAUDE.md`, `README.md`, and any existing `PROJECT.md` or `HANDOFF.md`
 - Identify any existing source documents (briefs, specs, design docs, kickoff notes)
 
-### Step 2: Propose the minimum structure
+### Step 2: Choose the minimum structure
 
-Report what you found and recommend only the files the project actually needs right now. Never create empty folders to satisfy structure. The minimum useful starting set is:
+Report what you found and which files you'll create, **then proceed immediately — do not wait for approval**. (The only approval gate is the up-front confirmation in `/wiki-init --all`; a per-project pause here would stall unattended runs.) Never create empty folders to satisfy structure. The minimum starting set is:
 
 ```
-PROJECT.md       — always create this
-HANDOFF.md       — always create this
+PROJECT.md       — always create (if missing)
+HANDOFF.md       — always create (if missing)
 ```
 
 Create the others only when the project actually has the content to fill them:
@@ -42,7 +43,7 @@ Create the others only when the project actually has the content to fill them:
 - `Decisions.md` — if any explicit decisions have already been made
 - `Wiki/_index.md` + first topic page — if there's substantial domain knowledge worth durable capture
 
-### Step 3: Create the files
+### Step 3: Create the missing files
 
 **`PROJECT.md`** — use this template, filling from what you know about the project:
 
@@ -89,9 +90,29 @@ _Last updated: <date>_
 - <path> — <why it matters>
 ```
 
+**`Sources.md`** (when warranted) — use this template:
+
+```markdown
+# Sources
+
+| Source | Location | Type | Authoritative for |
+|--------|----------|------|-------------------|
+| <name> | <path or URL> | brief / spec / export / transcript | <what claims it backs> |
+```
+
+**`Wiki/_index.md`** (when warranted) — use this template:
+
+```markdown
+# Wiki index
+
+| Page | Covers | Last reviewed |
+|------|--------|---------------|
+| [[<topic>]] | <one-line summary> | <date> |
+```
+
 ### Step 4: Wire it to CLAUDE.md
 
-After creating the wiki files, check if the project has a `CLAUDE.md` (or `.claude/CLAUDE.md`). If yes, add this section (before the last heading or at the bottom):
+Check if the project has a `CLAUDE.md` (or `.claude/CLAUDE.md`). If yes — and it doesn't already contain a "Project Wiki" section — append this at the bottom:
 
 ```markdown
 ## Project Wiki
@@ -103,19 +124,35 @@ This project uses the project-wiki skill. When integrating new sources, recordin
 - Record decisions in `Decisions.md`
 - Keep `Wiki/_index.md` current
 
+(`Wiki/`, `Decisions.md`, and `Sources.md` are created on first need — templates live in the skill.)
+
 Invoke the `project-wiki` skill when wiki updates are needed.
 ```
 
 If no `CLAUDE.md` exists, do not create one just for this — note that there's no CLAUDE.md to update.
 
-### Step 5: Report
+### Step 5: Commit
+
+Land the new files per the global git workflow — branch + PR, merged autonomously:
+
+1. Create a `docs/wiki-init` branch
+2. Commit **only** the wiki files and the CLAUDE.md edit — never sweep unrelated dirty files into the commit
+3. Push, open a PR, and merge it; include the PR link in the report
+
+Exceptions:
+- If INIT is running inside a parent flow that manages its own commits (e.g. the kickoff scaffold), skip this step — the parent flow commits the files
+- If the repo has no remote, commit on the branch, merge it into the default branch locally, and delete the branch; note this in the report
+
+### Step 6: Report
 
 Print a concise summary:
 ```
 Wiki initialized in <project-path>
   Created: PROJECT.md, HANDOFF.md [, any others]
-  CLAUDE.md: updated / not found
-  
+  Skipped (already existed): [any]
+  CLAUDE.md: updated / already wired / not found
+  Landed: <PR link> / merged locally (no remote) / committed by parent flow
+
 Next: fill in PROJECT.md scope and next actions if they're still TBD.
 ```
 
@@ -123,12 +160,16 @@ Next: fill in PROJECT.md scope and next actions if they're still TBD.
 
 ## MAINTAIN — Update during ongoing work
 
+### Surgical vs. broad changes
+
+A change is **broad** if it touches 3+ wiki pages, restructures `Wiki/_index.md`, or removes/relocates existing content. For broad changes: report the proposed update scope first, then proceed — pause for approval only if the change would delete existing wiki content or move/rename source material. Single-page surgical updates (a HANDOFF refresh, a new decision row, one topic-page edit) need no report — just make them.
+
 ### Before integrating a new source or making broad wiki changes:
 
 1. Read `PROJECT.md`, `Sources.md` (if it exists), and `Wiki/_index.md` (if it exists)
 2. Inspect the new source or change
 3. Identify which existing pages are affected
-4. **Report the proposed update scope before making broad changes** — don't silently reorganize
+4. Report the proposed update scope (per the broad-change rule above) — don't silently reorganize
 5. Make surgical updates to affected pages only
 6. Preserve useful existing content; don't rewrite things that are still accurate
 7. Add or update source references
@@ -137,6 +178,8 @@ Next: fill in PROJECT.md scope and next actions if they're still TBD.
 10. Update `HANDOFF.md` if the project's state or next actions changed
 
 **Do not reorganize the entire wiki because a new source was added.**
+
+MAINTAIN updates ride the session's normal commits under the standard git workflow — no separate wiki branch or PR.
 
 ### Source rules (enforce these always)
 
@@ -191,8 +234,10 @@ _Last reviewed: <date>_
 
 | ID | Decision | Status | Date | Source/Rationale |
 |----|----------|--------|------|-----------------|
-| D1 | <What was decided> | Approved / Rejected / Proposed / Unresolved | <date> | <why> |
+| D1 | <What was decided> | Approved / Rejected / Proposed / Unresolved / Superseded | <date> | <why> |
 ```
+
+The table is **append-only**: never rewrite or delete an existing row. When a decision replaces an older one, add a new row and mark the old row `Superseded (by D<n>)`.
 
 ---
 
@@ -209,9 +254,11 @@ Then wait for approval before moving anything outside this project.
 
 ## What NOT to do
 
+- Do not overwrite an existing wiki file during INIT — create only what's missing
 - Do not create empty folders or placeholder files to satisfy structure
 - Do not move, rename, or delete source material without explicit authorization
 - Do not silently choose between contradicting sources — flag the contradiction
 - Do not reorganize the entire wiki when adding a single new source
 - Do not duplicate source content — link to it instead
 - Do not state "TBD" without flagging it as an open question to resolve
+- Do not rewrite or delete Decisions.md rows — append and supersede

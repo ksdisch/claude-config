@@ -48,7 +48,7 @@ Available in every Claude Code session. Live in `commands/`.
 | `/boot_server` | Detects how the project is served, starts the dev server in the background, waits until ready, and opens the running page in Chrome. Pass `"live"` to open the deployed page instead. |
 | `/envsetup` | Opens the project's `.env` in your editor and the credential-generation page in Chrome, with a key stub + source comment pre-added. |
 | `/claudify-repo` | Vendors chosen global commands/skills into a repo (so they work in cloud/web sessions and for collaborators) and launches the recommender to design project-specific automations. |
-| `/wiki-init` | Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and minimum structure for the current project (no args), a specific path, or all projects under ~/Projects/ (`--all`). |
+| `/wiki-init` | Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and minimum structure for the current project (no args), a specific path, or all top-level projects under ~/Projects/ (`--all`). Idempotent (never overwrites an existing wiki); lands changes via branch + PR. |
 
 ### Learning & Interviews
 
@@ -70,7 +70,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | `kickoff` | Turns a raw idea into a structured launch — runs a deep adaptive discovery interview, produces an approved kickoff brief + phased plan, then scaffolds the project folder, git repo, and private GitHub repo. Automatically initializes a project wiki. |
 | `mini` | Kicks off a new mini coding project under `~/Projects/mini/` — short discovery interview (idea, problem, scope, tech) then full repo scaffold. |
-| `project-wiki` | Maintain an evidence-controlled project wiki — two modes: INIT (create PROJECT.md, HANDOFF.md, and optional wiki files) and MAINTAIN (surgical updates when integrating sources, recording decisions, or updating status). Auto-invoked in any project that has wiki sentinel files. |
+| `project-wiki` | Maintain an evidence-controlled project wiki — two modes: INIT (idempotently create PROJECT.md, HANDOFF.md, and optional wiki files; never overwrites) and MAINTAIN (surgical updates when integrating sources, recording decisions, or updating status). Auto-invoked in any project that has wiki sentinel files. |
 
 ### Session & Context Management
 
