@@ -1,7 +1,7 @@
 ---
-description: Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and the minimum wiki structure for one project or all projects under ~/Projects/. For ongoing wiki maintenance, the project-wiki skill is invoked automatically in any project that has wiki sentinel files.
+description: Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and the minimum wiki structure for one project or all projects under ~/Projects/. Idempotent (never overwrites existing wiki files). For ongoing wiki maintenance, the project-wiki skill is invoked automatically in any project that has wiki sentinel files.
 argument-hint: "[--all | <project-path>]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill, Agent
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill, Agent, AskUserQuestion
 ---
 
 # /wiki-init
@@ -11,12 +11,12 @@ Initialize a project wiki using the `project-wiki` skill.
 ## Parse `$ARGUMENTS`
 
 - **No args** → initialize the wiki in the **current working directory**
-- **`--all`** → initialize the wiki in every git repo under `~/Projects/` that does not already have a wiki (i.e., no `PROJECT.md` at the repo root)
-- **`<path>`** → initialize the wiki at that specific path
+- **`--all`** → initialize the wiki in every git repo directly under `~/Projects/` (top level only) that does not already have a wiki (i.e., no `PROJECT.md` at the repo root)
+- **`<path>`** → initialize the wiki at that specific path. If the path doesn't exist or isn't a directory, stop and report — don't guess.
 
 ## Single-project mode (no args or explicit path)
 
-Invoke the `project-wiki` skill in INIT mode for the target directory. The skill handles everything: inventory, file creation, CLAUDE.md update, and the summary report.
+Invoke the `project-wiki` skill in INIT mode for the target directory. The skill handles everything: inventory, file creation, CLAUDE.md update, git landing (branch + PR, merged autonomously; local merge if no remote), and the summary report. INIT is idempotent — if the wiki partially exists it creates only the missing files, and if it fully exists the skill reports that and switches to MAINTAIN.
 
 ## `--all` mode
 
@@ -26,13 +26,19 @@ When `--all` is passed, use an Agent to scan and initialize all projects in para
 
 Run:
 ```sh
-ls ~/Projects/
+for d in ~/Projects/*/; do
+  name=$(basename "$d")
+  case "$name" in _*|mini|claude-config) continue ;; esac
+  if [ -d "$d/.git" ] && [ ! -f "$d/PROJECT.md" ]; then echo "$d"; fi
+done
 ```
 
-Filter to directories that:
-1. Contain a `.git` directory (it's a git repo)
-2. Do NOT already have a `PROJECT.md` at the root (wiki doesn't exist yet)
-3. Are not `_kickoffs`, `mini`, or any directory starting with `_` (these are meta folders, not projects)
+This yields top-level git repos with no wiki yet, excluding:
+- `_*` directories (meta folders like `_kickoffs`)
+- `mini` (throwaway experiments — they don't get wikis)
+- `claude-config` (the tooling repo, not a project)
+
+Also note which repos were skipped because `PROJECT.md` already exists (for the preview).
 
 ### Step 2: Preview before acting
 
@@ -47,20 +53,21 @@ Projects to initialize (N total):
 Projects already have a wiki (skipped):
   ~/Projects/some-project (PROJECT.md exists)
   ...
-
-Proceed? (yes to continue, or name specific ones to skip)
 ```
 
-Use `AskUserQuestion` to confirm before writing anything. Let Kyle exclude specific projects if he wants.
+Then use `AskUserQuestion` to confirm before writing anything. Let Kyle exclude specific projects if he wants.
 
 ### Step 3: Initialize each project
 
-After confirmation, use an `Agent` for each project that needs initialization. Spawn them in parallel (one per project). Each agent should:
+After confirmation, spawn one `Agent` per project, in parallel. Each agent's prompt must include all of the following:
 
-1. `cd` into the project directory
-2. Read the project's `README.md`, `CLAUDE.md`, and any existing source docs to understand what the project is
-3. Invoke the `project-wiki` skill in INIT mode
-4. Report back: project name, files created, whether CLAUDE.md was updated
+1. The target project directory (work inside it; `cd` there first)
+2. **"You are running unattended — no questions, no approval gates. Report-and-proceed."**
+3. Read the project's `README.md`, `CLAUDE.md`, and any existing source docs to understand what the project is
+4. Follow the `project-wiki` skill in INIT mode (invoke it via the Skill tool; if that tool is unavailable, read `~/.claude/skills/project-wiki/SKILL.md` and follow it directly)
+5. Never overwrite an existing file; stage **only** the wiki files and the CLAUDE.md edit — leave unrelated dirty files alone
+6. Land the changes per the skill's commit step: `docs/wiki-init` branch → commit → push → PR → merge (merge locally if the repo has no remote)
+7. Return a structured result: project name, files created, files skipped, CLAUDE.md updated (yes/no/not found), PR URL (or "merged locally"), and any errors
 
 ### Step 4: Summary report
 
@@ -70,8 +77,8 @@ After all agents complete, print a summary:
 Wiki initialization complete
 
 Initialized (N projects):
-  ✓ bridge-work — PROJECT.md, HANDOFF.md, CLAUDE.md updated
-  ✓ clinical-data-etl — PROJECT.md, HANDOFF.md, Sources.md, CLAUDE.md updated
+  ✓ bridge-work — PROJECT.md, HANDOFF.md, CLAUDE.md updated — PR #12 (merged)
+  ✓ clinical-data-etl — PROJECT.md, HANDOFF.md, Sources.md, CLAUDE.md updated — PR #3 (merged)
   ...
 
 Skipped (already had wiki):
@@ -86,3 +93,4 @@ Errors:
 - The `project-wiki` skill is what does the actual work — this command is the entry point that handles discovery and batching
 - After a project's wiki is initialized, Claude will maintain it automatically in future sessions (the CLAUDE.md update is what signals this)
 - To maintain the wiki in an already-initialized project, invoke the `project-wiki` skill directly or Claude will invoke it when wiki updates are needed
+- Re-running `/wiki-init` anywhere is safe: INIT never overwrites existing wiki files
