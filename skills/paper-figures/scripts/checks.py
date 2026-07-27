@@ -40,9 +40,27 @@ def png_dimensions(path):
 
 
 def check_capture(path):
-    """Classify one capture as pass / review / fail."""
+    """Classify one capture as pass / review / fail.
+
+    An unreadable or non-PNG file is exactly the bad capture this gate exists
+    to catch — a failed download leaves a zero-byte file, and a 404 leaves an
+    HTML body under a .png name. It is reported as a failing figure, never
+    raised: one bad file must not abort the run and discard every other
+    figure's verdict.
+    """
     size = os.path.getsize(path)
-    width, height = png_dimensions(path)
+    try:
+        width, height = png_dimensions(path)
+    except (ValueError, struct.error, OSError) as exc:
+        return {
+            "path": path,
+            "bytes": size,
+            "width": 0,
+            "height": 0,
+            "bytes_per_px": 0.0,
+            "verdict": "fail",
+            "reason": f"unreadable or not a PNG ({exc.__class__.__name__})",
+        }
     bpp = size / (width * height) if width and height else 0.0
     result = {
         "path": path,

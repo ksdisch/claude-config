@@ -188,6 +188,7 @@ positioned `fixed; top/right` so it stays reachable while scrolling (N = approve
 term count). Opens a slide-in drawer:
 
 ```html
+<div id="gloss-backdrop" class="gloss-backdrop" hidden></div>
 <aside id="gloss-panel" class="gloss-panel" hidden>
   <button class="gloss-panel-close" aria-label="Close">×</button>
   <h2>Glossary</h2>
@@ -197,6 +198,12 @@ term count). Opens a slide-in drawer:
   </table>
 </aside>
 ```
+
+The backdrop **must carry `id="gloss-backdrop"`** (and the matching class). It is
+part of the page's public markup contract, not an internal detail: `/paper-figures`
+hides it by id when it opens a figure lightbox on a page that predates the
+`window.close*` exports below. An unnamed backdrop leaves a full-screen fixed
+overlay stranded over the artifact with its close button already hidden.
 
 Render the rows from the **same `GLOSS_TERMS` object** at load time (loop over
 it) — never hand-duplicate the text — so the panel and the tooltips can't drift

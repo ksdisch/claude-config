@@ -1,11 +1,15 @@
 import os
 import struct
 import sys
+import base64
+import json
+import shutil
+import tempfile
 import unittest
 import zlib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from checks import check_capture, png_dimensions  # noqa: E402
+from checks import check_capture, main as checks_main, png_dimensions  # noqa: E402
 
 
 def write_png(path, w, h, rgb, noise=False):
@@ -79,6 +83,50 @@ class TestChecks(unittest.TestCase):
         dupes = find_duplicates([a, b, c])
         self.assertEqual(len(dupes), 1)
         self.assertEqual(sorted(os.path.basename(p) for p in dupes[0]), ["x.png", "y.png"])
+
+
+class TestBadCapturesFailRatherThanCrash(unittest.TestCase):
+    """A failed download leaves a zero-byte file and a 404 leaves an HTML body,
+    both under a .png name — capture-recipes.md guarantees these reach the gate.
+    They must be reported as failing figures; one of them must never abort the
+    run and discard every other figure's verdict."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        # a valid 1x1 PNG
+        self.good = os.path.join(self.d, "fig-01.png")
+        with open(self.good, "wb") as fh:
+            fh.write(base64.b64decode(
+                b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42m"
+                b"P8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
+        open(os.path.join(self.d, "fig-02.png"), "wb").close()          # zero-byte
+        with open(os.path.join(self.d, "fig-03.png"), "wb") as fh:      # HTML 404 body
+            fh.write(b"<html><body>404 Not Found</body></html>")
+
+    def tearDown(self):
+        shutil.rmtree(self.d, ignore_errors=True)
+
+    def test_zero_byte_capture_is_a_failure_not_an_exception(self):
+        r = check_capture(os.path.join(self.d, "fig-02.png"))
+        self.assertEqual(r["verdict"], "fail")
+        self.assertIn("not a PNG", r["reason"])
+
+    def test_html_body_capture_is_a_failure_not_an_exception(self):
+        r = check_capture(os.path.join(self.d, "fig-03.png"))
+        self.assertEqual(r["verdict"], "fail")
+
+    def test_one_bad_file_does_not_lose_the_other_verdicts(self):
+        out = os.path.join(self.d, "checks.json")
+        rc = checks_main([self.d, "-o", out])
+        self.assertNotEqual(rc, 0, "a run containing bad captures must not report success")
+        with open(out) as fh:
+            payload = json.load(fh)
+        self.assertEqual(payload["checked"], 3, "every figure must still get a verdict")
+        unreadable = [r for r in payload["results"] if "not a PNG" in r["reason"]]
+        self.assertEqual(len(unreadable), 2, "both bad captures must be reported, not raised")
+        # the valid PNG was still reached and classified (it is 1x1, so it fails
+        # on dimensions rather than passing — the point is that it got a verdict)
+        self.assertEqual(len(payload["results"]), 3)
 
 
 if __name__ == "__main__":

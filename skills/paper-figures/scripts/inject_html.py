@@ -7,6 +7,7 @@ remains self-contained and publishable as an Artifact.
 """
 import base64
 import html as htmllib
+import json
 import os
 import re
 
@@ -74,6 +75,20 @@ CSS = """
     }
 """
 
+# The gloss surfaces the lightbox must close, each with its own hook and its own
+# DOM fallback so one missing hook cannot suppress the other's fallback. The ids
+# and the backdrop class mirror the markup paper-gloss/SKILL.md specifies; the
+# class is a belt-and-braces match for pages that style a backdrop without an id.
+GLOSS_SURFACES = [
+    {"hook": "closeGlossPopover", "ids": ["gloss-popover"], "classes": [], "expanded": []},
+    {
+        "hook": "closeGlossPanel",
+        "ids": ["gloss-panel", "gloss-backdrop"],
+        "classes": [".gloss-backdrop"],
+        "expanded": ["gloss-panel-toggle"],
+    },
+]
+
 LIGHTBOX_HTML = """
 <div id="figure-lightbox" class="figure-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure" hidden>
   <button class="figure-lightbox-close" aria-label="Close">&times;</button>
@@ -93,21 +108,27 @@ LIGHTBOX_JS = """
     img.removeAttribute('src');
   }
 
+  // Each gloss surface is closed independently: prefer the hook a
+  // post-amendment paper-gloss run exports, else drive that surface's own
+  // markup. A page that exports only one hook must still get the DOM fallback
+  // for the other, or the lightbox opens on top of a live surface.
+  var GLOSS_SURFACES = __GLOSS_SURFACES__;
+
   function closeGlossSurfaces() {
-    // Preferred path: the exported hooks a post-amendment paper-gloss run provides.
-    var viaHooks = false;
-    if (typeof window.closeGlossPopover === 'function') { window.closeGlossPopover(); viaHooks = true; }
-    if (typeof window.closeGlossPanel === 'function') { window.closeGlossPanel(); viaHooks = true; }
-    if (viaHooks) return;
-    // Fallback for glossed pages generated before those hooks existed: their
-    // close functions are private to an IIFE, so drive the documented markup
-    // directly. Harmless when the elements are absent.
-    ['gloss-popover', 'gloss-panel', 'gloss-backdrop'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.hidden = true;
+    GLOSS_SURFACES.forEach(function (surface) {
+      if (typeof window[surface.hook] === 'function') { window[surface.hook](); return; }
+      surface.ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.hidden = true;
+      });
+      (surface.classes || []).forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (el) { el.hidden = true; });
+      });
+      (surface.expanded || []).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.setAttribute('aria-expanded', 'false');
+      });
     });
-    var toggle = document.getElementById('gloss-panel-toggle');
-    if (toggle) toggle.setAttribute('aria-expanded', 'false');
     document.querySelectorAll('.gloss-term--active').forEach(function (b) {
       b.classList.remove('gloss-term--active');
       b.setAttribute('aria-expanded', 'false');
@@ -136,6 +157,12 @@ LIGHTBOX_JS = """
 })();
 </script>
 """
+
+
+def lightbox_js(surfaces=None):
+    """Render the lightbox script with the gloss-surface table baked in."""
+    table = json.dumps(surfaces if surfaces is not None else GLOSS_SURFACES)
+    return LIGHTBOX_JS.replace("__GLOSS_SURFACES__", table)
 
 
 def caption_of(body):
@@ -185,5 +212,5 @@ def inject_html(doc, images):
     if ".paper-figure {" not in out:
         out = out.replace("</style>", CSS + "\n</style>", 1)
     if 'id="figure-lightbox"' not in out:
-        out = out.replace("</body>", LIGHTBOX_HTML + LIGHTBOX_JS + "\n</body>", 1)
+        out = out.replace("</body>", LIGHTBOX_HTML + lightbox_js() + "\n</body>", 1)
     return out

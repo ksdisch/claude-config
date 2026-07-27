@@ -42,7 +42,11 @@ def plan_width(source_width, budget_bytes):
         projected = (w * w * 0.66) * 0.08  # assume ~2:3 aspect
         if projected <= budget_bytes:
             return w
-    return max(MIN_WIDTH, min(target, MIN_WIDTH))
+    # No step fits the budget. Fall back to the narrowest step, but never wider
+    # than the source: this is a downscaling tool, and enlarging a small figure
+    # spends its byte budget on interpolated pixels and ships it blurrier than
+    # the original already on disk.
+    return min(target, MIN_WIDTH)
 
 
 def sips_dimensions(path):
@@ -60,11 +64,21 @@ def sips_dimensions(path):
 
 
 def resample(src, dst, width, fmt, quality=None):
+    if os.path.abspath(src) == os.path.abspath(dst):
+        raise ValueError(f"refusing to resample {src} onto itself")
     cmd = ["sips", "--resampleWidth", str(width), "-s", "format", fmt]
     if fmt == "jpeg" and quality:
         cmd += ["-s", "formatOptions", str(quality)]
     cmd += [src, "--out", dst]
-    subprocess.run(cmd, capture_output=True, check=True)
+    proc = subprocess.run(cmd, capture_output=True, check=True)
+    # `sips` exits 0 when its input is missing ("not a valid file - skipping"),
+    # so check=True proves nothing. Verify an output actually appeared, or the
+    # emitted manifest will describe a file that does not exist.
+    if not os.path.exists(dst):
+        raise RuntimeError(
+            f"sips produced no output for {src}: "
+            f"{(proc.stderr or b'').decode(errors='replace').strip()}"
+        )
     return os.path.getsize(dst)
 
 
@@ -109,6 +123,18 @@ def main(argv=None):
     ap.add_argument("dst_dir")
     ap.add_argument("--count", type=int, default=0)
     args = ap.parse_args(argv)
+
+    # The full-resolution originals in src_dir are committed, are what the
+    # injected markdown references by path, and are never regenerated. Writing
+    # into the same directory resamples each one onto itself and then deletes
+    # the loser of the png/jpeg comparison — silent, total, unrecoverable loss.
+    if os.path.abspath(args.src_dir) == os.path.abspath(args.dst_dir):
+        print(
+            "error: dst_dir must differ from src_dir — normalizing in place would "
+            "destroy the full-resolution originals",
+            file=sys.stderr,
+        )
+        return 2
 
     srcs = sorted(
         os.path.join(args.src_dir, f)

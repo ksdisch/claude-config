@@ -142,9 +142,23 @@ document, **plus every figure Tier 1 flagged**. For each confirm: it is
 
 ## Phase 5 — Contact sheet gate (HARD STOP)
 
+Build the sheet's input with `entries.py` — **never hand-assemble it.** It joins
+the three sources the sheet needs (captions from the ledger, paths from the
+figures directory, verdicts from Tier 1) and emits **one entry per ledger slot**,
+so a figure that was never captured appears as `missing` instead of silently
+vanishing from the review. A hand-built list is assembled from the files that
+exist, which is exactly how the Phase 1 ledger-closure contract gets broken.
+
 ```bash
+python3 scripts/entries.py /tmp/ledger.json <figures-dir> \
+        --checks /tmp/checks.json -o /tmp/entries.json
 python3 scripts/contactsheet.py /tmp/entries.json /tmp/sheet.html --title "<paper>"
 ```
+
+To retain a slot deliberately without an image, add a `skip_reason` to that
+figure in the ledger JSON before running `entries.py`; it is carried onto the
+sheet as the stated reason. That is the only sanctioned way to close a slot
+without a capture.
 
 Thumbnails inlined, numbered, captions underneath, Tier 1 failures visibly
 marked. Not committed. Send it with SendUserFile, then stop and ask:

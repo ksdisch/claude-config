@@ -196,12 +196,29 @@ copies for base64 inlining.
 
 ### 7. Contact sheet
 
+Two steps — build the entries, then render the sheet. Do **not** hand-assemble
+`entries.json`:
+
 ```bash
+python3 entries.py /tmp/ledger.json "<paper-dir>/figures/<slug>" \
+        --checks /tmp/checks.json -o /tmp/entries.json
 python3 contactsheet.py /tmp/entries.json /tmp/sheet.html --title "<paper title>"
 ```
 
-`entries.json` is a JSON array of
+`entries.py` joins captions (ledger), paths (figures directory) and verdicts
+(Tier 1) into the shape `contactsheet.py` consumes:
 `{"num": N, "path": "...", "caption": "...", "verdict": "pass|review|fail|missing", "reason": "..."}`.
+
+It iterates the **ledger**, not the directory, so every slot produces an entry
+and an uncaptured figure shows up as `missing` rather than disappearing from the
+review — the ledger-closure contract in `SKILL.md` depends on this. Assembling
+the list from the captured files instead is how a dropped figure goes unnoticed.
+
+To keep a slot deliberately empty, set `skip_reason` on that figure in the
+ledger JSON before running `entries.py`; the sheet then shows the slot with your
+stated reason. Nothing else writes that field.
+
+`contactsheet.py` downscales to `--max-width` (default 320) before inlining.
 Send the result with SendUserFile and stop for approval.
 
 ### 8. Inject
