@@ -38,16 +38,18 @@ Do not write code, create files, run commands, or take any implementation action
 
 ## Model & effort recommendation
 
-**Model by task shape:**
+**Model by task shape** — defers to the Planner/Builder Protocol in `CLAUDE.md`
+(**Fable 5 plans, Opus 5 builds, Sonnet 5 grinds**); this table adds the
+cost/latency color:
 
 | Model | Pick when |
 |-------|-----------|
 | **Haiku 4.5** | Trivial, high-volume, or latency-critical. |
-| **Sonnet 4.6** | Routine coding/drafting where cost matters. |
-| **Opus 4.8** | Hard interactive/synchronous work — the default when the user is steering. ~Half Fable's cost. |
-| **Fable 5** | Long-horizon, autonomous, multi-step work + vision; its lead grows with task length. Caveats: ~2× cost; biology/cyber content reroutes to Opus; over-produces unless constrained. |
+| **Sonnet 5** | Mechanical, checklist-scoped work; routine coding/drafting where cost matters. |
+| **Opus 5** | Well-specified builds — a plan already says what to do; the session implements, tests, and lands it. ~Half Fable's cost. |
+| **Fable 5** | Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions — and long-horizon autonomous multi-step runs + vision; its lead grows with task length. Caveats: ~2× cost; biology/cyber content reroutes to Opus; over-produces unless constrained. |
 
-**Run-mode as tiebreaker:** sync → leans Opus + medium/high. Async + multi-step → leans Fable + high/max/ultracode.
+**Plan/build as tiebreaker:** still deciding/designing → leans Fable + high/max. Executing a settled plan → leans Opus + medium/high (Sonnet if mechanical). Async + multi-step autonomous → leans Fable + high/max/ultracode.
 
 **Effort ladder (Claude Code):** low / medium / high / xhigh / max, plus ultracode. Set with `/effort`; switch models with `/model`.
 
@@ -59,11 +61,11 @@ Do not write code, create files, run commands, or take any implementation action
 | xhigh / max | The hardest problems, or long autonomous runs where self-verification pays. max removes the token cap and burns fast. |
 | ultracode | Heaviest autonomous coding. |
 
-**Cost read** — one line, explicitly labeled an estimate, delivered in chat (never in the prompt block). Prices per M tokens as of June 2026 (update if changed): Fable 5 $10 in / $50 out; Opus 4.8 $5 in / $25 out; Sonnet/Haiku cheaper — look up if relevant. Fable is ~2× Opus per token but more token-efficient, so the real delta is usually <2×; long runs that reuse context get a 90% input prompt-caching discount. Size the task — quick ~10–50K tokens · medium ~50–300K · long-horizon 500K–several M+ — then give a relative + rough-absolute read, e.g. "~1.5× an Opus run, order-of-tens-of-$ on API rates." Caveat: literal $ applies on API/consumption billing; on a Max/Pro subscription it's usage-limit/credit burn instead (Fable ~2×; free through Jun 22, 2026, then credits).
+**Cost read** — one line, explicitly labeled an estimate, delivered in chat (never in the prompt block). Prices per M tokens as of June 2026 (update if changed): Fable 5 $10 in / $50 out; Opus $5 in / $25 out (verified for Opus 4.8 — re-check on Opus 5); Sonnet/Haiku cheaper — look up if relevant. Fable is ~2× Opus per token but more token-efficient, so the real delta is usually <2×; long runs that reuse context get a 90% input prompt-caching discount. Size the task — quick ~10–50K tokens · medium ~50–300K · long-horizon 500K–several M+ — then give a relative + rough-absolute read, e.g. "~1.5× an Opus run, order-of-tens-of-$ on API rates." Caveat: literal $ applies on API/consumption billing; on a Max/Pro subscription it's usage-limit/credit burn instead (Fable ~2×; free through Jun 22, 2026, then credits).
 
 **Fan-out fleets** (`/batch`, ultracode): put only the orchestrator/synthesis stage on the strong tier and let parallel units inherit a cheaper one (per-agent `model:` override) — a 2× price multiplied by fan-out width adds up fast.
 
-**Claude Code notes:** for bio-adjacent repos recommend Opus 4.8 directly — Fable reroutes nearly every request there. `ANTHROPIC_DEFAULT_FABLE_MODEL` + `ANTHROPIC_DEFAULT_OPUS_MODEL` enable smooth auto-fallback; the auto-switch toggle lives in Config > MODEL & OUTPUT.
+**Claude Code notes:** for bio-adjacent repos recommend Opus 5 directly — Fable reroutes nearly every request there. `ANTHROPIC_DEFAULT_FABLE_MODEL` + `ANTHROPIC_DEFAULT_OPUS_MODEL` enable smooth auto-fallback; the auto-switch toggle lives in Config > MODEL & OUTPUT.
 
 ---
 

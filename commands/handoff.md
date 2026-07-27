@@ -142,23 +142,34 @@ not on this session's work. Use this shape:
     (Opus/Sonnet); if the next session must still decide or design, recommend
     Fable. And split only when build ≫ plan — for plan-heavy/build-light work,
     say so and recommend finishing in one Fable session instead.
-- **Effort:** independent of the model pick. Name exactly ONE —
+- **Effort:** independent of the model pick. Name exactly ONE, using only the
+  CLI's real values (`--effort low|medium|high|xhigh|max`) or ultracode —
   - **ultracode** (multi-agent fan-out + adversarial verify; highest token cost):
     the next task is broad, parallelizable, or wants exhaustive coverage with
     independent verification — a multi-file audit/migration, a "find every X"
     sweep, a batch where each item is verified against HEAD, a comprehensive
-    review. Pick when completeness across many surfaces beats speed.
-  - **max** (`--effort max`; deep single-agent reasoning, no fan-out): the next
+    review. Pick when completeness across many surfaces beats speed. There is
+    no launch flag for it: the launch command carries `--model` only, and the
+    fresh session's first action is `/effort ultracode` (requires dynamic
+    workflows enabled in `/config` and an interactive terminal) — spell that
+    out in the note.
+  - **`max` / `xhigh`** (deep single-agent reasoning, no fan-out): the next
     task is ONE hard problem — subtle root-cause debugging, tricky
     merge/algorithm logic, untangling a confusing module, a design call with
-    real tradeoffs.
-  - **standard** (`--effort high`): mechanical or checklist-scoped work — a
-    known small edit, a doc update, wiring a module per a fixed checklist, a
-    straightforward test add. Don't pay for reasoning the task doesn't need.
+    real tradeoffs. `max` removes the cap and burns fast; `xhigh` when it's
+    hard but bounded.
+  - **`high`**: ordinary build work with some judgment in it — a normal
+    feature implemented inside a settled plan.
+  - **`medium` / `low`**: mechanical or checklist-scoped work — a known small
+    edit, a doc update, wiring a module per a fixed checklist, a
+    straightforward test add (`low` for purely templated/repetitive). Don't
+    pay for reasoning the task doesn't need.
 - **Launch command (required):** close the note with the literal command, e.g.
-  `claude --model claude-opus-5 --effort high`. Both flags are per-invocation
-  only — my saved defaults stay untouched. If the pick matches my saved
-  defaults, say "plain `claude` works."
+  `claude --model claude-opus-5 --effort high`. For the 1M-context variant the
+  model ID contains brackets, which zsh globs — always quote it:
+  `claude --model 'claude-opus-5[1m]' --effort high`. Both flags are
+  per-invocation only — my saved defaults stay untouched. If the pick matches
+  my saved defaults, say "plain `claude` works."
 - **Why (one clause):** tie the pick to the specific next action you named, so I
   can sanity-check it — e.g. "Opus 5 at max: 3 findings in 2 files, each just
   needs verify-against-HEAD + a minimal fix; too narrow to want fan-out."
