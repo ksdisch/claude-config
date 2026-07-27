@@ -28,9 +28,10 @@ qualitative.
 
 **Use multi-agent orchestration for the fan-out** — the **Workflow tool** (this command is your
 explicit ultracode opt-in; no further permission needed) or inline `general-purpose` subagents with
-the role rules embedded inline. The `agents/` files (`adversarial-reviewer`, `review-judge`) ARE
+the role rules embedded inline. User-level `~/.claude/agents/` files (`adversarial-reviewer`, `review-judge`) ARE
 resolvable subagent types, but they're explicit-dispatch review roles owned by the
-`adversarial-review` skill — don't repurpose them here; keep this command's critic roles inline.
+`adversarial-review` skill — don't repurpose them here, don't assume a *project's*
+`.claude/agents/` files resolve, and keep this command's critic roles inline.
 
 ---
 

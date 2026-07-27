@@ -32,7 +32,7 @@ For each disputed finding, append to its thread:
 Ruling (judge): <VERDICT> — <exactly one paragraph of reasoning, citing what you verified in the code>
 ```
 
-and update its `Status:` line (`UPHELD`, `CLOSED (overruled)`, or the new grade). One paragraph is a ruling; more is an essay — don't. Never rewrite or delete the reviewer's or author's words; you only append rulings and update `Status:` lines. Your rulings are final for this run — no re-litigating rounds.
+and update its `Status:` line (`UPHELD`, `CLOSED (overruled)`, `DOWNGRADED to <grade>`, or `UPGRADED to <grade>` — always the state, never a bare grade; the finding's header carries the grade). One paragraph is a ruling; more is an essay — don't. Never rewrite or delete the reviewer's or author's words; you only append rulings and update `Status:` lines. Your rulings are final for this run — no re-litigating rounds.
 
 ## Hard rules
 

@@ -62,8 +62,8 @@ drift between an agent file and a duplicate brief in `references/`.
 ## Round cap rationale
 
 Reviewers always find *something*; without a cap the loop can oscillate (fix →
-new nit → fix). Round 1 + at most 2 re-reviews ≈ worst case 3 reviewer + 2 judge
-dispatches. Anything still standing after the cap goes to Kyle as residue with
+new nit → fix). Round 1 + at most 2 re-reviews ≈ worst case 3 reviewer + 3 judge
+dispatches (each re-round's new findings get their own triage→judge pass). Anything still standing after the cap goes to Kyle as residue with
 explicit options — never a third silent lap.
 
 ## Out of scope (v1)
