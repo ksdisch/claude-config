@@ -27,7 +27,7 @@ description: Pre-merge adversarial review loop — a structured author↔reviewe
 
 ## Phase 1 — Review (round 1)
 
-Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1` (a continuation run dispatches at the next round number instead — Phase 0). It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: run the untouched check, then read the mailbox. Zero findings → Phase 6 with a clean verdict — a legitimate outcome, not a failed review.
+Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1` (a continuation run dispatches at the next round number instead — Phase 0). It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: run the untouched check, then read the mailbox. Zero findings → Phase 6 with a clean verdict **when coverage is complete** — a legitimate outcome, not a failed review. A bounded-coverage round with zero findings is not clean: its uncovered groups still gate the verdict.
 
 ## Phase 2 — Triage (present, then STOP)
 
@@ -52,7 +52,7 @@ Re-dispatch the reviewer with `ROUND=<N>`. It verifies each `FIXED-IN` finding (
 Render the PR comment from the template in `references/mailbox-format.md` (disposition table, waivers verbatim, follow-ups, standing items on NOT CLEAR) and post it — `gh pr comment` if available, else the GitHub MCP tools; if neither works, print the comment in full and say plainly that it wasn't posted. Then declare:
 
 - **CLEAR TO MERGE** — no finding remains in a blocking state (every critical and should-fix ends `VERIFIED`, `CLOSED (overruled)`, downgraded to nice-to-have (`FOLLOW-UP`), or `WAIVED-BY-KYLE`) **and no round's stated coverage bound is left unclosed** — every changed file was covered by some round.
-- **NOT CLEAR** — anything blocking still stands; name it. No merge.
+- **NOT CLEAR** — anything blocking still stands, **or any round's coverage bound is left unclosed**; name it. No merge.
 
 The merge itself follows the normal git workflow (brief with commit SHA, PR link, and this verdict).
 
@@ -64,4 +64,4 @@ Worst case ≤3 reviewer + ≤2 judge dispatches per run, all opus — verdict w
 
 - ✅ **Without asking:** all git reads, mailbox creation, reviewer/judge dispatches, writing triage, fixing accepted/upheld findings, committing on the branch, posting the PR comment, declaring the verdict.
 - ⛔ **Never without an explicit per-run go-ahead:** waiving a critical or should-fix (Kyle-only, by name), skipping the loop on a non-trivial diff, exceeding the round cap.
-- ⛔ **Never:** reviewer or judge modifying repo files; merging with a critical/should-fix still in a blocking state — neither fixed-and-verified, closed or downgraded by the judge, nor Kyle-waived; running the loop without a mailbox record; auto-fixing nice-to-haves.
+- ⛔ **Never:** reviewer or judge modifying repo files; merging with a critical/should-fix still in a blocking state — neither fixed-and-verified, closed or downgraded by the judge, nor Kyle-waived; merging while any round's stated coverage bound is unclosed; running the loop without a mailbox record; auto-fixing nice-to-haves.

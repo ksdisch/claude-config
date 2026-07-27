@@ -84,6 +84,7 @@ Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)
 
 **Waived by Kyle:** <F<n> — reason, verbatim>            (omit if none)
 **Follow-ups (nice-to-have):** <F<n> <title>; …>          (omit if none)
+**Coverage:** <complete | unclosed: <groups>>             (an unclosed bound alone forces NOT CLEAR)
 **Still standing:** <F<n> <title> — why>                  (only on NOT CLEAR)
 
 Zero-context reviewer + neutral judge on disputes; anchored at <final HEAD sha>.
