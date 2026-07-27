@@ -22,12 +22,12 @@ description: Pre-merge adversarial review loop — a structured author↔reviewe
 1. `git branch --show-current` — on the default branch, refuse: the loop reviews a branch diff, and nothing merges from `main` to `main`.
 2. Resolve the default branch and `git merge-base`. `git status` — uncommitted work gets committed first, or you state explicitly that only committed work is being reviewed.
 3. Escape-hatch check against `references/severity-and-scope.md`. Trivial diff → offer the skip; a skip taken under the pre-merge gate is stated in the merge brief, never silent. When in doubt, it isn't trivial.
-4. `mkdir -p ~/.claude/reviews/<repo-name>/`. Mailbox absent → create it with the header block from `references/mailbox-format.md`. Mailbox already present (same branch, same day — e.g. re-running after NOT CLEAR or a hit round cap) → **never overwrite it**: append a `## Run <n> — <date>` separator and carry finding numbering forward. Waivers and rulings are part of the record.
+4. `mkdir -p ~/.claude/reviews/<repo-name>/`. Mailbox absent → create it with the header block from `references/mailbox-format.md`. Mailbox already present (same branch, same day — e.g. re-running after NOT CLEAR or a hit round cap) → **never overwrite it**: append a `## Run <n> — <date>` separator and carry finding numbering forward. A continuation run resumes the loop, it doesn't restart it: prior findings still in blocking states (`OPEN`, `UPHELD`, `REOPENED`, `FIXED-IN`) are this run's first order of business, and its first reviewer dispatch continues the round numbering (`ROUND=<previous highest + 1>` — never `ROUND=1` into an existing mailbox), so carried `FIXED-IN` findings get verified and the diff since the last reviewed sha gets reviewed. Waivers and rulings are part of the record.
 5. One-line launch statement: scope (branch → default, files/lines), mailbox path, expected dispatch count.
 
 ## Phase 1 — Review (round 1)
 
-Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1`. It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: run the untouched check, then read the mailbox. Zero findings → Phase 6 with a clean verdict — a legitimate outcome, not a failed review.
+Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1` (a continuation run dispatches at the next round number instead — Phase 0). It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: run the untouched check, then read the mailbox. Zero findings → Phase 6 with a clean verdict — a legitimate outcome, not a failed review.
 
 ## Phase 2 — Triage (present, then STOP)
 
@@ -43,9 +43,9 @@ No disputes → skip to Phase 4. Otherwise dispatch the judge with: `REPO_PATH`,
 
 Fix every standing **critical** and **should-fix** (accepted, upheld, or upgraded). Nice-to-haves are **not** fixed now — scope discipline; they become `FOLLOW-UP` and land in the PR comment. Commit on the branch, then mark each fixed finding `FIXED-IN <sha>` in the mailbox.
 
-## Phase 5 — Re-review (hard cap: 2 re-rounds)
+## Phase 5 — Re-review (hard cap: 2 re-review dispatches per run — round numbers continue across runs, the cap does not)
 
-Re-dispatch the reviewer with `ROUND=<N>`. It verifies each `FIXED-IN` finding (`VERIFIED` / `REOPENED`) and may raise new findings only if the fixes introduced them; new findings get one triage→judge pass. Anything still standing after the cap → **STOP and present the residue** to Kyle with options: fix without re-verify, waive, or hold the merge. Never a third silent lap.
+Re-dispatch the reviewer with `ROUND=<N>`. It verifies each `FIXED-IN` finding (`VERIFIED` / `REOPENED`) and may raise new findings only if the fixes introduced them; new findings get one triage→judge pass. Anything still standing after the cap → **STOP and present the residue** to Kyle with options: fix without re-verify (recorded as `WAIVED-BY-KYLE (re-verify waived)` — a verification waiver, which terminates the finding), waive outright, or hold the merge. Never a third silent lap.
 
 ## Phase 6 — Publish + verdict
 

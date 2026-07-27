@@ -10,7 +10,7 @@ The mailbox is one Markdown file that all three roles co-author, so a finished r
 
 - `branch-slug`: the branch name with `/` replaced by `-` (`feat/foo` → `feat-foo`).
 - `mkdir -p ~/.claude/reviews/<repo-name>/` before creating the file.
-- Re-runs on the same branch and day **never recreate the file** — Phase 0 appends a `## Run <n> — <date>` separator instead, and finding numbers continue from the existing highest across runs. Waivers and rulings are part of the record; overwriting them is destruction, not tidiness.
+- Re-runs on the same branch and day **never recreate the file** — Phase 0 appends a `## Run <n> — <date>` separator instead, and finding numbers continue from the existing highest across runs. Round numbers continue too: a continuation run's first dispatch is a re-review — it verifies carried `FIXED-IN` findings and reviews the diff since the last reviewed sha — never a fresh `ROUND=1`. Waivers and rulings are part of the record; overwriting them is destruction, not tidiness.
 - The mailbox lives **outside the target repo** — no project pollution, no .gitignore surgery, and the reviewer's write access never points at the repository.
 - `reviews/` must **never become a tracked directory in claude-config**: install.sh symlinks every tracked top-level entry into `~/.claude`, which would wire runtime state into the config repo.
 - The mailbox is the working record. The PR comment (template below) is the durable one.

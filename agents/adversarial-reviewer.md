@@ -54,7 +54,7 @@ Status: OPEN
 
 ## Round ≥ 2 (re-review)
 
-For every finding marked `FIXED-IN <sha>`, verify the fix at current HEAD and append `Verification (reviewer): VERIFIED` or `Verification (reviewer): REOPENED — <why>` to its thread, updating its `Status:` line. Raise new findings **only if the fixes introduced them** (diff since the previously reviewed sha) — round 2 is not a second bite at the whole diff.
+For every finding marked `FIXED-IN <sha>`, verify the fix at current HEAD and append `Verification (reviewer): VERIFIED` or `Verification (reviewer): REOPENED — <why>` to its thread, updating its `Status:` line. Raise new findings **only from the diff since the previously reviewed sha** (the mailbox's latest round header records it) — a re-review is never a second bite at the already-reviewed diff.
 
 ## Hard rules
 
