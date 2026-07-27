@@ -93,7 +93,8 @@ specific content; artifact-design covers general artifact hygiene).
 | Equations | `<pre class="equation">` verbatim, inside `<div class="scroll-x">` (`overflow-x:auto`) — never re-typeset as math |
 | Tables | Real `<table><thead>…<tbody>` markup, one input row/column → one output row/column, values unaltered, wrapped in `<div class="scroll-x">` |
 | "In plain words: …" gloss lines | `<p class="plain-words"><em>In plain words:</em> …</p>`, distinct styling (italic + subtle left border/tint). **Included** in term-wrapping. |
-| `[Figure N]` placeholders | `<div class="figure-placeholder">[Figure N] — {rewritten caption}</div>`, dashed border / muted background so it visibly reads as a placeholder |
+| Bare `[Figure N]` placeholders | `<div class="figure-placeholder">[Figure N] — {rewritten caption}</div>`, dashed border / muted background so it visibly reads as a placeholder. Separator is a literal em dash. |
+| Markdown figure images (`![Figure N](url)`) | **Download the asset and inline it as base64**, never downgrade it to a placeholder: `<figure class="paper-figure" id="figure-N"><img src="data:image/…;base64,…" alt="{caption}" loading="lazy"><figcaption>{caption}</figcaption></figure>`. **Excluded from term-wrapping** — captions are never glossed. |
 | Inline citations (`[12]`, `(Smith et al., 2023)`) | Plain inline text, unchanged. **Never wrapped**, even if a term-like substring appears inside. |
 | References section | Carried verbatim as extracted. **Excluded from term-wrapping** — same bucket as equations/tables/citations. |
 
@@ -116,7 +117,7 @@ Give each approved term a stable kebab-case slug id (dedupe collisions with
 
 Every occurrence of an approved term **inside paragraphs, list items, and
 plain-words lines** (never headings, equations, tables, figure placeholders,
-citations, or references) is wrapped as:
+figure captions, citations, or references) is wrapped as:
 
 ```html
 <button type="button" class="gloss-term" data-term-id="stochastic-gradient-descent">stochastic gradient descent</button>
@@ -205,11 +206,36 @@ backdrop, the close button, and `Escape` all close it. Opening the panel closes
 any open term popover, and vice versa — only one interactive surface is ever
 open at a time.
 
+**Expose both close functions on `window`.** Assign the popover's and the
+panel's close functions to `window.closeGlossPopover` and
+`window.closeGlossPanel`. `/paper-figures` injects a figure lightbox into this
+same page and calls them to enforce the one-surface-at-a-time rule; without the
+assignments that coordination silently no-ops and a figure can open on top of a
+live popover.
+
+### Figures and the lightbox
+
+Figures inlined from markdown images (the `.paper-figure` row above) are
+click-to-zoom. Add one **singleton** `#figure-lightbox` overlay that reuses the
+figure's existing data URI — never a second copy of the bytes — wired with a
+single delegated listener, consistent with `.gloss-term`. It obeys the same
+one-surface rule: opening it closes the popover and the panel; close button,
+click-outside, and `Escape` all converge on one close function. Style
+`.paper-figure`, its `<figcaption>`, and the overlay through the existing CSS
+variables — no hardcoded colours, so both theme override layers keep working.
+
+When `/paper-figures` runs as a retrofit it injects this markup, CSS, and
+lightbox itself; a fresh `/paper-gloss` run that inlines a markdown image
+produces the same shapes directly.
+
 ### Self-containment & theming
 
 Everything — CSS and JS — inline in one `<style>` and one or two `<script>`
-blocks in the single HTML file. No `<link>` to fonts/CDNs, no external `src=`,
-no `@import`. Theme via CSS variables in `:root` (light defaults), overridden in
+blocks in the single HTML file. No `<link>` to fonts/CDNs, no **external**
+`src=`, no `@import`. **`data:` URIs are explicitly permitted** — that is how
+figures are embedded while keeping the file self-contained; a blanket ban on
+`https://` is what previously downgraded real figures to placeholders. Theme via
+CSS variables in `:root` (light defaults), overridden in
 `@media (prefers-color-scheme: dark)`, overridden again (must win) by
 `:root[data-theme="dark"]` / `:root[data-theme="light"]`. Every color/spacing
 value goes through a variable — never a hardcoded color — so both override
@@ -235,14 +261,24 @@ never scroll sideways.
   body **and** appears as a row in the glossary panel.
 - **Structure fidelity:** per-section `<p>` count == input paragraph count;
   heading text and order identical to the input.
-- **Non-prose passthrough:** equations, tables, figure placeholders, citations,
-  and the references section contain zero `class="gloss-term"` occurrences, even
-  where term text coincidentally appears inside.
+- **Non-prose passthrough:** equations, tables, figure placeholders, figure
+  captions, citations, and the references section contain zero
+  `class="gloss-term"` occurrences, even where term text coincidentally appears
+  inside.
+- **Figures:** every markdown image in the input is present as
+  `<figure class="paper-figure">` with a `data:` URI and a non-empty `alt` —
+  zero downgraded to placeholders. If a lightbox is present, there is exactly
+  one, and `window.closeGlossPopover` / `window.closeGlossPanel` are both
+  assigned.
 - **Well-formedness:** every tag closes; `<`/`>`/`&` in source prose are
   entity-escaped; exactly one `<html>`/`<head>`/`<body>`/`<title>`; doctype
   present.
-- **Self-containment:** grep the file for `http://`, `https://`, external
-  `href=`/`src=`, `@import` — zero hits.
+- **Self-containment:** zero **external** `src=` / `href=` / `@import` —
+  `grep -oE '(src|href)="https?://' file; grep -c '@import' file` must all be
+  zero. `data:` URIs are permitted and expected wherever figures are inlined.
+  Do **not** grep for a bare `https://` — captions, the source line, and
+  reference entries legitimately contain URLs as text, and the old blanket rule
+  is what caused real figures to be discarded.
 - **Theming completeness:** every variable referenced is defined in `:root`,
   the dark-media-query block, and both `data-theme` override blocks.
 - **Artifact prerequisites:** non-empty `<title>` present.

@@ -87,7 +87,10 @@ in memory.
 
 - Output headings == ledger headings, same order.
 - Per-section paragraph counts == ledger counts.
-- Per-section equation / table / figure-placeholder counts == ledger counts.
+- Per-section equation / table / **figure-slot** counts == ledger counts. A
+  figure slot is a placeholder **or** an image — `[Figure N]` and
+  `![Figure N](…)` both count, since `/paper-figures` rewrites the former into
+  the latter and the totals must still reconcile after a retrofit.
 - References section present, verbatim as extracted.
 
 Any mismatch → fix and re-verify. Do not claim done until this passes clean.
@@ -105,6 +108,10 @@ Any mismatch → fix and re-verify. Do not claim done until this passes clean.
 - **Final report:** output path; PR link if any; per-section paragraph tallies
   from Phase 3; every flagged spot (garbled regions, figures replaced by
   placeholders).
+- **Next step for figures:** if any `[Figure N]` placeholders remain, say so and
+  point at **`/paper-figures`** — it re-finds the original source, harvests the
+  real figure images, and fills the placeholders in place without re-running the
+  rewrite.
 
 ## Definition of done
 
