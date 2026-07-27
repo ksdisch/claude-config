@@ -199,9 +199,22 @@ Both injectors are idempotent; re-running will not duplicate CSS or the lightbox
   exists on disk; the diff touches only placeholder lines.
 - **HTML:** `<figure class="paper-figure">` count == ledger count; every
   `<img src>` is a `data:` URI; every `<img>` has a non-empty `alt`.
-- **Self-containment:** zero *external* `src=` / `href=` / `@import`. `data:`
-  URIs are permitted. Do not grep for a bare `https://` — that rule is what
-  downgraded real figures to placeholders in the first place.
+- **Self-containment:** zero external *resource loads* — no external `src=`, no
+  `<link … href=…>`, no `@import`, no CSS `url(http…)`:
+
+  ```bash
+  grep -oE 'src="https?://' f | wc -l          # expect 0
+  grep -oE '<link[^>]+href="https?://' f | wc -l  # expect 0
+  grep -c '@import' f                           # expect 0
+  grep -oE 'url\(\s*["'"'"']?https?://' f | wc -l # expect 0
+  ```
+
+  `data:` URIs are permitted. **Prose `<a href="https://…">` hyperlinks are also
+  permitted** — a link the reader can click is not a resource the page fetches,
+  and papers legitimately link to repos, demos, and sources. Do not grep for a
+  bare `https://`, and do not grep `href=` undifferentiated: the first rule is
+  what downgraded real figures to placeholders, and the second fails every paper
+  that cites a URL.
 - **No collateral damage:** re-run paper-gloss's Phase 3 checks that injection
   could disturb — per-section `<p>` counts, heading text and order, gloss-term
   coverage, dictionary symmetry.

@@ -93,10 +93,30 @@ LIGHTBOX_JS = """
     img.removeAttribute('src');
   }
 
+  function closeGlossSurfaces() {
+    // Preferred path: the exported hooks a post-amendment paper-gloss run provides.
+    var viaHooks = false;
+    if (typeof window.closeGlossPopover === 'function') { window.closeGlossPopover(); viaHooks = true; }
+    if (typeof window.closeGlossPanel === 'function') { window.closeGlossPanel(); viaHooks = true; }
+    if (viaHooks) return;
+    // Fallback for glossed pages generated before those hooks existed: their
+    // close functions are private to an IIFE, so drive the documented markup
+    // directly. Harmless when the elements are absent.
+    ['gloss-popover', 'gloss-panel', 'gloss-backdrop'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+    var toggle = document.getElementById('gloss-panel-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    document.querySelectorAll('.gloss-term--active').forEach(function (b) {
+      b.classList.remove('gloss-term--active');
+      b.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   function open(source) {
     // Only one interactive surface at a time: close the gloss popover and panel.
-    if (typeof window.closeGlossPopover === 'function') window.closeGlossPopover();
-    if (typeof window.closeGlossPanel === 'function') window.closeGlossPanel();
+    closeGlossSurfaces();
     img.src = source.src;
     img.alt = source.alt || '';
     box.hidden = false;

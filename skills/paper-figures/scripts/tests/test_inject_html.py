@@ -100,6 +100,20 @@ class TestInjectHTML(unittest.TestCase):
         self.assertIn("[Figure 4]", out)
         self.assertEqual(out.count('<figure class="paper-figure"'), 1)
 
+    def test_lightbox_closes_gloss_surfaces_without_the_window_hooks(self):
+        """Glossed pages generated before paper-gloss exported
+        window.closeGlossPopover / closeGlossPanel keep those functions private
+        to an IIFE. The lightbox must still close the popover AND the panel, or
+        two interactive surfaces end up open at once."""
+        self.assertIn("closeGlossSurfaces", self.out)
+        # the preferred exported-hook path is still tried first
+        self.assertIn("window.closeGlossPopover", self.out)
+        self.assertIn("window.closeGlossPanel", self.out)
+        # and the DOM fallback covers the panel, its backdrop, and the popover
+        for el in ("gloss-popover", "gloss-panel", "gloss-backdrop"):
+            self.assertIn(el, self.out, f"lightbox fallback must close #{el}")
+        self.assertIn("gloss-panel-toggle", self.out)
+
 
 if __name__ == "__main__":
     unittest.main()

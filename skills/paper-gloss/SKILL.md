@@ -273,12 +273,16 @@ never scroll sideways.
 - **Well-formedness:** every tag closes; `<`/`>`/`&` in source prose are
   entity-escaped; exactly one `<html>`/`<head>`/`<body>`/`<title>`; doctype
   present.
-- **Self-containment:** zero **external** `src=` / `href=` / `@import` —
-  `grep -oE '(src|href)="https?://' file; grep -c '@import' file` must all be
-  zero. `data:` URIs are permitted and expected wherever figures are inlined.
-  Do **not** grep for a bare `https://` — captions, the source line, and
-  reference entries legitimately contain URLs as text, and the old blanket rule
-  is what caused real figures to be discarded.
+- **Self-containment:** zero external *resource loads* —
+  `grep -oE 'src="https?://' file`, `grep -oE '<link[^>]+href="https?://' file`,
+  `grep -c '@import' file`, and `grep -oE 'url\(\s*["'"'"']?https?://' file` must
+  all be zero. `data:` URIs are permitted and expected wherever figures are
+  inlined. **Prose `<a href="https://…">` hyperlinks are permitted** — a link the
+  reader clicks is not a resource the page fetches. Do **not** grep for a bare
+  `https://`, and do **not** grep `href=` undifferentiated: captions, the source
+  line, and reference entries legitimately contain URLs as text; the blanket
+  `https://` rule is what caused real figures to be discarded, and an
+  undifferentiated `href=` rule fails every paper that links to anything.
 - **Theming completeness:** every variable referenced is defined in `:root`,
   the dark-media-query block, and both `data-theme` override blocks.
 - **Artifact prerequisites:** non-empty `<title>` present.
