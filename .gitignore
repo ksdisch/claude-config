@@ -20,3 +20,7 @@ shell-snapshots/
 statsig/
 telemetry/
 reviews/
+
+# Python bytecode from skill scripts
+__pycache__/
+*.pyc
