@@ -148,11 +148,11 @@ not on this session's work. Use this shape:
     the next task is broad, parallelizable, or wants exhaustive coverage with
     independent verification — a multi-file audit/migration, a "find every X"
     sweep, a batch where each item is verified against HEAD, a comprehensive
-    review. Pick when completeness across many surfaces beats speed. There is
-    no launch flag for it: the launch command carries `--model` only, and the
-    fresh session's first action is `/effort ultracode` (requires dynamic
-    workflows enabled in `/config` and an interactive terminal) — spell that
-    out in the note.
+    review. Pick when completeness across many surfaces beats speed. Launch
+    form: `--effort ultracode` — a real, accepted flag (runs on an xhigh
+    base; ultracode needs dynamic workflows enabled in `/config`).
+    In-session alternative: `/effort ultracode` from an interactive
+    terminal.
   - **`max` / `xhigh`** (deep single-agent reasoning, no fan-out): the next
     task is ONE hard problem — subtle root-cause debugging, tricky
     merge/algorithm logic, untangling a confusing module, a design call with

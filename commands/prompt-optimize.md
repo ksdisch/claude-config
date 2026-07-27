@@ -168,7 +168,7 @@ Below the block, in chat: the 2–3 sentence design explanation (and the cost re
 - Advisory only — optimize, don't execute.
 - Don't synthesize before the gate — surface, run-mode, and model/effort are settled and accepted first.
 - Match orchestration to scope: don't bolt a multi-agent fleet onto a one-file task, and don't cram an epic into a single linear thread.
-- ONE model + ONE effort recommendation, run-mode as tiebreaker — strongest ≠ default; reserve Fable 5 for long-horizon/autonomous work and keep fan-out drones on a cheaper tier.
+- ONE model + ONE effort recommendation, plan/build as tiebreaker — strongest ≠ default; Fable 5 for judgment-first and long-horizon/autonomous work, Opus 5 (or Sonnet 5) for executing settled plans, and keep fan-out drones on a cheaper tier.
 - Cost read in chat only — never inside the prompt block. Fable preamble only on Fable prompts; autonomy line only on async runs.
 - Recommend only real, installed components.
 - Ask 1–2 clarifying questions only when the answer changes the output; otherwise infer and state assumptions.
