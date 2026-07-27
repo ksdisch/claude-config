@@ -38,6 +38,29 @@ figure images, and replaces the placeholders in place. It never re-runs the rewr
    `sips` (macOS built-in, supports `--resampleWidth`), and Playwright MCP browser
    tools. Absent: PyMuPDF, Pillow, ImageMagick, `mutool`, `qpdf` — the design must
    not depend on them.
+4. **Figure counts can be very large, and the first draft of this spec underestimated
+   them by an order of magnitude.** The jacobian-lens paper has **94 figures**, not the
+   8 an initial truncated grep suggested. Of those, **10 are static `<img>`** (figures
+   4, 47, 52–54, 57–60, 73) and **84 are JS-rendered** into empty mount divs
+   (`<div class='intro-functional'></div>`). The eli5 output is faithful — it carries
+   all 94 slots. Any design that costs O(1) human or model attention *per figure* fails
+   at this scale.
+5. **The web DOM is machine-addressable.** Figures are marked up as
+   `<figure data-fignum="N" id="…"><…mount or img…><figcaption><span class="fig-num">Figure N: </span>…</figcaption></figure>`.
+   The `data-fignum` attribute makes figure↔caption association an exact selector
+   lookup, not fragile caption-text matching.
+
+### Verified mechanisms
+
+Both risky capture primitives were tested against real inputs before this spec was
+finalized:
+
+- `pdftoppm -png -r 150 -f 3 -l 3 -x 0 -y 0 -W 600 -H 500 attn.pdf croptest` on
+  arXiv 1706.03762 produced `croptest-03.png`. Crop offsets are **pixels at the chosen
+  render resolution**, so the conversion from PDF points is `px = pt / 72 * dpi`.
+- `pdftotext -bbox-layout` emits `<page width="612.000000" height="792.000000">` and
+  per-word `xMin/yMin/xMax/yMax` in points, giving the caption anchor needed to derive
+  that crop box.
 
 ## Decisions taken (approved 2026-07-27)
 
@@ -47,6 +70,8 @@ figure images, and replaces the placeholders in place. It never re-runs the rewr
 | HTML embedding | Base64 `data:` URIs + click-to-zoom lightbox | Preserves the single-file guarantee and the published Artifact link |
 | Human gating | One approval gate on a contact sheet | Mirrors paper-gloss's existing term-list gate; one stop, not N |
 | Capture strategy | Cheap deterministic path first, vision/browser fallback | Pure heuristics are brittle on multi-column PDFs; pure vision costs an image read per figure |
+| Size budget | Adaptive: fixed total, divided by figure count | One rule scales from an 8-figure paper to a 94-figure one without special-casing |
+| Verification at scale | Programmatic check on all, visual review on a sample + all flagged | Visual review of 94 captures is unaffordable; the real failure mode (blank/unrendered viz) is programmatically detectable |
 
 ## Input (`$ARGUMENTS`)
 
@@ -106,14 +131,22 @@ the strategy, the reference file states the commands.
 
 ### Web sources
 
-1. **Static asset first.** Fetch the page HTML, locate the `<figure>`/`<img>` whose
-   caption matches "Figure N", and download the asset directly. Highest fidelity and
-   near-free. This path alone resolves the Figure 4 case above.
-2. **Browser screenshot fallback.** For figures with no static asset (interactive JS
-   graphics), drive Playwright: navigate to the source URL, wait for network idle,
-   locate the element containing the caption, and element-screenshot its figure
-   container at device scale factor 2. Capture the graphic's default state, and flag
-   it in the final report as a *static snapshot of an interactive graphic*.
+Figures are addressed by the `data-fignum` attribute, never by caption-text matching.
+Enumerate `<figure data-fignum="N">` elements once, then classify each:
+
+1. **Static asset (contains `<img>`).** Resolve the `src` against the page URL and
+   download the asset directly. Highest fidelity and near-free. 10 of jacobian-lens's
+   94 figures take this path, including the Figure 4 case above.
+2. **Interactive (no `<img>` — a JS mount div).** Drive Playwright: navigate once,
+   scroll the target `figure[data-fignum="N"]` into view (mounts may be
+   scroll-triggered), wait for it to settle, and element-screenshot that figure
+   container at device scale factor 2. Reuse **one** browser session for all captures —
+   do not re-navigate per figure. Capture the graphic's default state, and flag it in
+   the final report as a *static snapshot of an interactive graphic*.
+
+Exclude the `<figcaption>` from the screenshot region where the DOM allows it — the
+caption is re-rendered as real text by the injection step, so capturing it would
+duplicate it.
 
 ### PDF sources
 
@@ -134,29 +167,70 @@ the strategy, the reference file states the commands.
 by number. Also used per-figure for anything the automated paths fail on, or that the
 Phase 5 gate rejects twice.
 
-## Phase 3 — Normalize
+## Phase 3 — Normalize (adaptive budget)
 
-- `sips` caps width at 1400px and strips the colour profile.
-- Encode as PNG for line art and plots, JPEG q80 for photographic or dense raster
-  content — whichever is smaller for that image.
-- Target ≤250KB per figure; if still over after resizing, step width and quality down.
-- Write full-resolution originals to `<paper-dir>/figures/<slug>/fig-NN.png`. These are
-  committed, are what the markdown references, and are reused by any later re-run.
+Full-resolution originals are always written to `<paper-dir>/figures/<slug>/fig-NN.png`.
+These are committed, are what the **markdown** references, and are reused by any later
+re-run. They are never downscaled — the budget applies only to the copies inlined into
+the HTML.
 
-## Phase 4 — Self-verify each capture (before the gate)
+The inline budget is computed, not fixed:
 
-For each captured image, view it and confirm:
+```
+TOTAL_IMAGE_BUDGET = 6 MB          # pre-base64; ~8MB once encoded
+per_figure = TOTAL_IMAGE_BUDGET / figure_count
+```
+
+- 94 figures → ~64KB each (≈900px wide, JPEG q70)
+- 8 figures → ~250KB+ each at near-full quality (cap width at 1400px regardless)
+
+`sips` does the resampling (`--resampleWidth`) and strips the colour profile. Encode as
+PNG for flat-colour line art and JPEG for photographic or dense raster content —
+whichever is smaller for that image. If a figure still exceeds its share after resizing,
+step width and quality down until it fits, and record the final dimensions in the report.
+
+Consequence to state plainly in the report: on a 94-figure paper the lightbox zoom is
+limited by the inlined resolution. The full-resolution copy lives in `figures/` for
+anyone who needs it.
+
+## Phase 4 — Self-verify (before the gate)
+
+Two tiers, because visual review does not scale to 94 figures.
+
+### Tier 1 — programmatic, on every figure
+
+The dominant failure mode is a JS visualization that never rendered, which produces a
+blank or near-uniform image. That is cheaply detectable:
+
+- **Not blank / not near-uniform.** Sample the decoded pixels; reject if the image is a
+  single flat colour or has near-zero variance.
+- **Plausible dimensions** — not 0-width, not a 1×1 tracking pixel, not absurdly tall
+  and thin (a sign the mount collapsed before rendering).
+- **Non-trivial encoded size** relative to its dimensions.
+- **Distinctness** — two different figure numbers producing byte-identical images means
+  the selector matched the wrong element.
+
+Any figure failing Tier 1 is re-captured (longer settle, re-scroll) before escalating.
+
+### Tier 2 — visual, on a sample
+
+View a sample of roughly 12 figures spread across the document, **plus every figure
+Tier 1 flagged**. For each, confirm:
 
 - the figure is **complete** — no clipped axis labels, no cut-off panel, no missing legend;
 - **nothing bled in** — no body text, no adjacent figure, no page furniture;
 - it **matches its caption** — if the caption describes three panels, three panels are visible.
 
-Failures are re-cropped or flagged. They are never shipped to the gate as if correct.
+Figures that fail are re-captured or flagged. The report must state plainly how many
+figures were visually reviewed versus programmatically checked only — never imply all 94
+were inspected.
 
 ## Phase 5 — Contact sheet gate (HARD STOP)
 
-Build a throwaway `figures-contact-sheet.html` — inlined thumbnails, numbered, with each
-caption underneath — and send it via SendUserFile. Then stop and ask:
+Build a throwaway `figures-contact-sheet.html` — inlined thumbnails (capped at ~320px
+wide so the sheet itself stays small even at 94 figures), numbered, with each caption
+underneath, and Tier-1 failures visually marked. It is not committed. Send it via
+SendUserFile, then stop and ask:
 
 > "Here are the N figures I captured. Reply 'all good', or list what to fix
 > (e.g. '3 bad crop, 5 drop')."
@@ -223,8 +297,9 @@ paper-gloss spec requires.
   dictionary symmetry.
 - **End-to-end proof:** open the finished HTML in Playwright and screenshot it,
   confirming the figures actually render — not merely that the tags are present.
-- **Size:** report the total HTML file size; warn above ~8MB as an artifact-publishing
-  risk.
+- **Size:** report the total HTML file size. The adaptive budget targets ~8MB encoded;
+  if the finished file exceeds 10MB, re-run normalization at a smaller per-figure share
+  rather than shipping a file that may fail to publish.
 
 Fix any discrepancy and re-verify before claiming done.
 
@@ -270,6 +345,20 @@ existing papers (`jacobian-lens`, `dim-stage`).
 
 `skills/paper-figures/SKILL.md` exists and is invocable as `/paper-figures`; the three
 amendments above are made in the same branch; the skill has been run end-to-end against
-`jacobian-lens/verbalizable-representations-…-eli5.md` and its glossed HTML, producing
-real figures verified by a Playwright screenshot of the rendered output; the reference
-doc row is added; the branch is committed, pushed, and merged via PR.
+`jacobian-lens/verbalizable-representations-…-eli5.md` and its glossed HTML, resolving
+all **94** figure slots (10 by direct download, 84 by browser capture) with every slot
+either carrying a real image or flagged with a stated reason; Tier-1 checks pass on all
+94 and Tier-2 visual review passes on the sample; the finished HTML renders its figures
+under a Playwright screenshot and is under 10MB; the reference doc row is added; the
+branch is committed, pushed, and merged via PR.
+
+## Staged rollout
+
+The 84-figure browser-capture run is long and can be flaky, so implementation proves the
+machinery on a slice before committing to the full run:
+
+1. **Slice A — static path.** The 10 `<img>` figures end-to-end, including injection into
+   both files. Proves ledger, normalize, inject, and verify without touching Playwright.
+2. **Slice B — interactive path, 10 figures.** Figures 1, 2, 3, 5, 6, 7, 8 plus three
+   later ones, to shake out scroll-triggered mounts and settle timing.
+3. **Slice C — full 94.** Only after A and B are clean.
