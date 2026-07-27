@@ -2,11 +2,34 @@ import base64
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from inject_html import caption_of, data_uri, inject_html, lightbox_js  # noqa: E402
+
+# Minimal DOM sufficient to run the emitted lightbox script under node.
+STUB_DOM = """
+const els = {};
+function mk(id) {
+  return {
+    id, hidden: true,
+    setAttribute() {}, removeAttribute() {},
+    classList: { remove() {}, add() {} },
+    querySelector() { return { src: '', alt: '', removeAttribute() {} }; },
+  };
+}
+['gloss-popover', 'gloss-panel', 'gloss-backdrop', 'gloss-panel-toggle',
+ 'figure-lightbox'].forEach(id => { els[id] = mk(id); });
+globalThis.document = {
+  getElementById: id => els[id] || null,
+  querySelectorAll: () => [],
+  addEventListener: () => {},
+};
+globalThis.window = globalThis;
+"""
 
 DOC = """\
 <html><head><style>:root { --fg: #111; }</style></head><body>
@@ -115,31 +138,42 @@ class TestInjectHTML(unittest.TestCase):
             self.assertTrue(s["ids"] or s.get("classes"),
                             f"{s['hook']} has no DOM fallback of its own")
 
-    def test_no_shared_flag_gates_the_per_surface_fallbacks(self):
-        """The original defect: one `viaHooks` boolean set by either hook
-        suppressed the fallback for BOTH surfaces."""
-        js = lightbox_js()
-        self.assertNotIn("viaHooks", js)
-        # the hook is looked up per surface, not as two hard-coded calls
-        self.assertIn("window[surface.hook]", js)
-
     def test_one_missing_hook_still_closes_the_other_surface(self):
-        """Simulate the emitted logic against a page that exports only the
-        popover hook: the panel must still be hidden via its own fallback."""
-        surfaces = json.loads(
-            re.search(r"var GLOSS_SURFACES = (\[.*?\]);", lightbox_js(), re.S).group(1)
+        """Executes the REAL emitted closeGlossSurfaces() against a stub DOM.
+
+        Asserting on a Python re-implementation of the loop, or grepping the
+        generated JS for the string `viaHooks`, both pass against a clean
+        reintroduction of the defect under any other variable name. The only
+        test that can actually fail is one that runs the shipped code."""
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node unavailable")
+
+        js = lightbox_js()
+        script = (
+            STUB_DOM
+            # the failure page: exports the popover hook, NOT the panel hook
+            + "window.closeGlossPopover = function () "
+              "{ document.getElementById('gloss-popover').hidden = true; };\n"
+            + js.replace("<script>", "").replace("</script>", "")
+            + "\n"
+            "document.getElementById('gloss-popover').hidden = false;\n"
+            "document.getElementById('gloss-panel').hidden = false;\n"
+            "document.getElementById('gloss-backdrop').hidden = false;\n"
+            "window.closeGlossSurfaces();\n"
+            "console.log(JSON.stringify({\n"
+            "  popover: document.getElementById('gloss-popover').hidden,\n"
+            "  panel: document.getElementById('gloss-panel').hidden,\n"
+            "  backdrop: document.getElementById('gloss-backdrop').hidden,\n"
+            "}));\n"
         )
-        exported = {"closeGlossPopover"}          # panel hook absent
-        hidden, called = set(), set()
-        for s in surfaces:                        # mirrors closeGlossSurfaces()
-            if s["hook"] in exported:
-                called.add(s["hook"])
-                continue
-            hidden.update(s["ids"])
-        self.assertIn("closeGlossPopover", called)
-        self.assertIn("gloss-panel", hidden,
-                      "panel must fall back to the DOM when its hook is missing")
-        self.assertIn("gloss-backdrop", hidden)
+        proc = subprocess.run([node, "-e", script], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        state = json.loads(proc.stdout.strip().splitlines()[-1])
+        self.assertTrue(state["popover"], "popover must close via its exported hook")
+        self.assertTrue(state["panel"],
+                        "panel must close via its own DOM fallback when its hook is absent")
+        self.assertTrue(state["backdrop"], "the panel's backdrop must close with it")
 
     def test_fallback_ids_match_the_markup_paper_gloss_specifies(self):
         """The fallback drives ids by name, so they must exist in the sibling

@@ -154,6 +154,9 @@ LIGHTBOX_JS = """
   });
 
   window.closeFigureLightbox = close;
+  // Exported so the one-surface-at-a-time rule is verifiable from outside the
+  // IIFE — a test that cannot call this cannot detect a regression in it.
+  window.closeGlossSurfaces = closeGlossSurfaces;
 })();
 </script>
 """

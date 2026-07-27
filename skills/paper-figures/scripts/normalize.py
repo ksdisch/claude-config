@@ -63,8 +63,24 @@ def sips_dimensions(path):
     return dims["w"], dims["h"]
 
 
+def same_path(a, b):
+    """True when two paths name the same file or directory on disk.
+
+    `os.path.abspath` comparison is not this test: it resolves neither symlinks
+    nor case, and this is macOS-only tooling whose default APFS volume is
+    case-INSENSITIVE — so `figs` and `Figs` are one directory that abspath calls
+    two. `samefile` compares device+inode. It raises when either side does not
+    exist yet, which is the ordinary "writing a new output" case and means they
+    cannot be the same file.
+    """
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        return os.path.abspath(a) == os.path.abspath(b)
+
+
 def resample(src, dst, width, fmt, quality=None):
-    if os.path.abspath(src) == os.path.abspath(dst):
+    if same_path(src, dst):
         raise ValueError(f"refusing to resample {src} onto itself")
     cmd = ["sips", "--resampleWidth", str(width), "-s", "format", fmt]
     if fmt == "jpeg" and quality:
@@ -124,18 +140,6 @@ def main(argv=None):
     ap.add_argument("--count", type=int, default=0)
     args = ap.parse_args(argv)
 
-    # The full-resolution originals in src_dir are committed, are what the
-    # injected markdown references by path, and are never regenerated. Writing
-    # into the same directory resamples each one onto itself and then deletes
-    # the loser of the png/jpeg comparison — silent, total, unrecoverable loss.
-    if os.path.abspath(args.src_dir) == os.path.abspath(args.dst_dir):
-        print(
-            "error: dst_dir must differ from src_dir — normalizing in place would "
-            "destroy the full-resolution originals",
-            file=sys.stderr,
-        )
-        return 2
-
     srcs = sorted(
         os.path.join(args.src_dir, f)
         for f in os.listdir(args.src_dir)
@@ -144,6 +148,20 @@ def main(argv=None):
     count = args.count or len(srcs)
     budget = per_figure_budget(count)
     os.makedirs(args.dst_dir, exist_ok=True)
+
+    # The full-resolution originals in src_dir are committed, are what the
+    # injected markdown references by path, and are never regenerated. Writing
+    # into the same directory resamples each one onto itself and then deletes
+    # the loser of the png/jpeg comparison — silent, total, unrecoverable loss.
+    # Checked after makedirs so both sides exist and `samefile` can see through
+    # a symlinked or case-variant dst that abspath would call a different path.
+    if same_path(args.src_dir, args.dst_dir):
+        print(
+            "error: dst_dir must differ from src_dir — normalizing in place would "
+            "destroy the full-resolution originals",
+            file=sys.stderr,
+        )
+        return 2
 
     records = [normalize_one(s, args.dst_dir, budget) for s in srcs]
     total = sum(r["bytes"] for r in records)

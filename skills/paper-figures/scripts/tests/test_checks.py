@@ -115,6 +115,31 @@ class TestBadCapturesFailRatherThanCrash(unittest.TestCase):
         r = check_capture(os.path.join(self.d, "fig-03.png"))
         self.assertEqual(r["verdict"], "fail")
 
+    def test_failed_downloads_keep_their_own_reason(self):
+        """Two failed downloads are both zero bytes, so a naive duplicate scan
+        groups them and relabels both 'byte-identical to another capture' —
+        which the recipes map to 'the selector matched the wrong element',
+        sending the operator after entirely the wrong remedy."""
+        open(os.path.join(self.d, "fig-04.png"), "wb").close()   # a second zero-byte file
+        out = os.path.join(self.d, "checks.json")
+        checks_main([self.d, "-o", out])
+        with open(out) as fh:
+            payload = json.load(fh)
+        for r in payload["results"]:
+            if os.path.basename(r["path"]) in ("fig-02.png", "fig-04.png"):
+                self.assertIn("not a PNG", r["reason"],
+                              "a failed download must not be relabelled a duplicate")
+
+    def test_a_dangling_symlink_does_not_abort_the_run(self):
+        """check_capture's docstring promises one bad file cannot abort the run;
+        os.path.getsize fails on a dangling symlink just as the PNG parse does."""
+        os.symlink(os.path.join(self.d, "nowhere.png"), os.path.join(self.d, "fig-05.png"))
+        out = os.path.join(self.d, "checks.json")
+        checks_main([self.d, "-o", out])          # must not raise
+        with open(out) as fh:
+            payload = json.load(fh)
+        self.assertEqual(payload["checked"], 4, "every figure must still get a verdict")
+
     def test_one_bad_file_does_not_lose_the_other_verdicts(self):
         out = os.path.join(self.d, "checks.json")
         rc = checks_main([self.d, "-o", out])

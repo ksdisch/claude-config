@@ -83,6 +83,41 @@ class TestOriginalsAreNeverDestroyed(unittest.TestCase):
         with self.assertRaises(ValueError):
             resample(self.src, self.src, 600, "jpeg", 70)
 
+    def test_case_variant_dst_dir_is_refused(self):
+        """abspath string comparison is not a same-directory test: this is
+        macOS-only tooling and the default APFS volume is case-INSENSITIVE, so
+        `Figs` and `figs` are one directory."""
+        upper = os.path.join(self.d, "Figs")
+        os.makedirs(upper)
+        src = os.path.join(upper, "fig-01.png")
+        with open(src, "wb") as fh:
+            fh.write(b"\x89PNG\r\n\x1a\n" + b"y" * 4096)
+        lower = os.path.join(self.d, "figs")
+        if not os.path.exists(lower):
+            self.skipTest("filesystem is case-sensitive; this bypass cannot arise here")
+        with open(src, "rb") as fh:
+            before = fh.read()
+        rc = normalize_main([upper, lower, "--count", "94"])
+        self.assertNotEqual(rc, 0)
+        with open(src, "rb") as fh:
+            self.assertEqual(fh.read(), before, "the original must survive a case-variant dst")
+
+    def test_symlinked_dst_dir_is_refused(self):
+        """abspath does not resolve symlinks either."""
+        real = os.path.join(self.d, "real")
+        os.makedirs(real)
+        src = os.path.join(real, "fig-01.png")
+        with open(src, "wb") as fh:
+            fh.write(b"\x89PNG\r\n\x1a\n" + b"z" * 4096)
+        link = os.path.join(self.d, "link")
+        os.symlink(real, link)
+        with open(src, "rb") as fh:
+            before = fh.read()
+        rc = normalize_main([real, link, "--count", "94"])
+        self.assertNotEqual(rc, 0)
+        with open(src, "rb") as fh:
+            self.assertEqual(fh.read(), before, "the original must survive a symlinked dst")
+
     def test_resample_raises_when_sips_produces_nothing(self):
         """`sips` exits 0 on a missing input, so check=True proves nothing;
         without an existence check the manifest describes a file that is not

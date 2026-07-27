@@ -48,13 +48,16 @@ def check_capture(path):
     raised: one bad file must not abort the run and discard every other
     figure's verdict.
     """
-    size = os.path.getsize(path)
+    # Every filesystem read here is inside the guard, not just the PNG parse: a
+    # dangling symlink fails os.path.getsize too, and aborting on it would break
+    # the same promise this docstring makes.
     try:
+        size = os.path.getsize(path)
         width, height = png_dimensions(path)
     except (ValueError, struct.error, OSError) as exc:
         return {
             "path": path,
-            "bytes": size,
+            "bytes": os.path.getsize(path) if os.path.exists(path) else 0,
             "width": 0,
             "height": 0,
             "bytes_per_px": 0.0,
@@ -98,11 +101,22 @@ def check_capture(path):
 
 
 def find_duplicates(paths):
-    """Return groups of paths whose bytes are identical (wrong-element capture)."""
+    """Return groups of paths whose bytes are identical (wrong-element capture).
+
+    Unreadable files are skipped rather than raised on — they are already a
+    failure by their own verdict, and one of them must not abort the run.
+    """
     by_hash = defaultdict(list)
     for p in paths:
-        with open(p, "rb") as fh:
-            by_hash[hashlib.sha256(fh.read()).hexdigest()].append(p)
+        try:
+            with open(p, "rb") as fh:
+                blob = fh.read()
+        except OSError:
+            continue
+        if not blob:
+            continue  # every failed download is zero bytes; that is not a
+            # wrong-element capture, and grouping them steals the real reason
+        by_hash[hashlib.sha256(blob).hexdigest()].append(p)
     return [group for group in by_hash.values() if len(group) > 1]
 
 
@@ -122,7 +136,11 @@ def main(argv=None):
     for group in dupes:
         for p in group:
             for r in results:
-                if r["path"] == p:
+                # Never overwrite a more specific reason. "byte-identical"
+                # tells the operator the selector matched the wrong element;
+                # saying that about a file that simply failed to download sends
+                # them after the wrong remedy.
+                if r["path"] == p and not r["reason"]:
                     r["verdict"] = "fail"
                     r["reason"] = "byte-identical to another capture"
 
