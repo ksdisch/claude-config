@@ -55,28 +55,118 @@ rendered in a browser.
 Navigation is the expensive part, and re-navigating 84 times is what turns a
 long run into a failed one.
 
-Per figure:
+Drive this through `browser_run_code_unsafe` in **one call that loops over every
+figure**, not one MCP call per figure — 84 round-trips is its own failure mode.
 
-1. Scroll it into view — mounts are often scroll-triggered:
-   ```js
-   document.querySelector('figure[data-fignum="N"]').scrollIntoView({block: 'center'})
-   ```
-   via `browser_evaluate`.
-2. Wait for the settle time (see below) with `browser_wait_for`.
-3. `browser_take_screenshot` with the element ref for `figure[data-fignum="N"]`,
-   at device scale factor 2.
+#### Set up the context explicitly
 
-Exclude the `<figcaption>` from the screenshot region where the DOM allows it —
-the caption is re-rendered as real text by the injection step, so capturing it
-duplicates it.
+`browser_take_screenshot`'s element mode cannot express a clip region, and
+`page.setViewportSize()` **permanently drops `deviceScaleFactor` to 1** on that
+page — captures silently halve in resolution. Make a fresh context instead:
+
+```js
+const ctx = await page.context().browser().newContext({
+  viewport: { width: 1440, height: 2600 },   // tall enough to clip most figures in one shot
+  deviceScaleFactor: 2,
+});
+const p = await ctx.newPage();
+await p.goto(url, { waitUntil: 'load' });
+await p.waitForTimeout(1500);
+```
+
+#### Hide page furniture first — it bleeds into element screenshots
+
+An element screenshot captures whatever is painted over that region, including
+`position: fixed` page chrome. On transformer-circuits.pub a floating
+table-of-contents chip (`div.toc-float`, `z-index: 100000`) landed on top of
+Figure 1 and replaced its first panel title. Neutralize every fixed/sticky node
+that is **not inside a figure** (in-figure sticky elements, e.g. `td.layer-label`
+row headers, are part of the graphic and must stay):
+
+```js
+await p.evaluate(() => {
+  document.querySelectorAll('body *').forEach(el => {
+    if (el.closest('figure[data-fignum]')) return;
+    const cs = getComputedStyle(el);
+    if ((cs.position === 'fixed' || cs.position === 'sticky') && el.offsetHeight > 0 && el.offsetWidth > 0)
+      el.style.setProperty('display', 'none', 'important');
+  });
+});
+```
+
+#### Per figure: scroll, settle, clip
+
+Screenshot a **computed clip region**, not the element box. The mount's border
+box is not always the figure's painted extent — axis labels and legends can sit
+tens of pixels outside it, and an element screenshot cuts them off.
+
+Compute the union of the mount and its visible descendants, but **skip any
+descendant inside a clipped or scrollable ancestor**. That subtree is bounded by
+its own container, and chasing it captures content the reader cannot see:
+naively, Figure 87 demanded a 21,949px-tall region and Figure 5 a 2,788px-wide
+one — both scrollable panes. With the rule below they need 0px and 13px.
+
+```js
+const rect = await p.evaluate(({ n, CAP, PAD }) => {
+  const fig = document.querySelector(`figure[data-fignum="${n}"]`);
+  const mount = [...fig.children].find(c => c.tagName !== 'FIGCAPTION');
+  fig.scrollIntoView({ block: 'center' });
+  const mr = mount.getBoundingClientRect();
+  let minX = mr.left, minY = mr.top, maxX = mr.right, maxY = mr.bottom;
+  mount.querySelectorAll('*').forEach(d => {
+    const cs = getComputedStyle(d);
+    if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') return;
+    let a = d.parentElement, clipped = false;
+    while (a && a !== mount) {
+      const acs = getComputedStyle(a);
+      if (acs.overflowX !== 'visible' || acs.overflowY !== 'visible') { clipped = true; break; }
+      a = a.parentElement;
+    }
+    if (clipped) return;                      // scrollable pane — already bounded
+    const r = d.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
+    minX = Math.min(minX, r.left); minY = Math.min(minY, r.top);
+    maxX = Math.max(maxX, r.right); maxY = Math.max(maxY, r.bottom);
+  });
+  const x  = mr.left   - Math.min(CAP, Math.max(0, mr.left - minX)) - PAD;
+  const y  = mr.top    - Math.min(CAP, Math.max(0, mr.top  - minY)) - PAD;
+  const x2 = mr.right  + Math.min(CAP, Math.max(0, maxX - mr.right)) + PAD;
+  const y2 = mr.bottom + Math.min(CAP, Math.max(0, maxY - mr.bottom)) + PAD;
+  return { x, y, w: x2 - x, h: y2 - y, vw: innerWidth, vh: innerHeight };
+}, { n, CAP: 120, PAD: 4 });
+
+await p.waitForTimeout(450);
+const fits = rect.x >= 0 && rect.y >= 0 && rect.x + rect.w <= rect.vw && rect.y + rect.h <= rect.vh;
+if (fits) await p.screenshot({ path: file, clip: { x: rect.x, y: rect.y, width: rect.w, height: rect.h } });
+else      await p.locator(`figure[data-fignum="${n}"] > div`).screenshot({ path: file });
+```
+
+`clip` is **viewport-relative** when `fullPage` is false — passing document
+coordinates fails with *"Clipped area is either empty or outside the resulting
+image"*. Hence scroll first, then clip; and fall back to an element screenshot
+for any region taller or wider than the viewport.
+
+Selecting `figure[data-fignum="N"] > div` (the single non-figcaption child)
+excludes the `<figcaption>` — injection re-renders the caption as real text, so
+capturing it would duplicate it. On this paper every figure had exactly one
+content child: 84 `div`, 10 `img`.
 
 Flag every figure captured this way in the final report as a **static snapshot
 of an interactive graphic**.
 
-**Settle time:** not yet measured against a real run. Slice B of the
-implementation plan exists to determine it; record the value that worked here
-before attempting a full-paper run. Start at ~500ms and increase if Tier 1
-reports `blank or unrendered`.
+**Settle time — measured on jacobian-lens (2026-07-27, 84 interactive figures):**
+these mounts are **not scroll-triggered**. Immediately after a cold
+`waitUntil: 'load'`, every mount was already fully populated — `innerHTML`
+length and box size were identical before and after `scrollIntoView`. Time from
+scroll to a stable box was **≤ 60ms**.
+
+Use **1500ms after load, then 450ms per figure**. That is generous for this page
+and cost only ~40s across all 84. Do not assume it generalizes: re-measure with
+the before/after `innerHTML`-length probe on a new paper, and increase it if
+Tier 1 reports `blank or unrendered`.
+
+Note that a page open for several minutes will report near-zero settle for every
+figure regardless — measure only immediately after a fresh navigation.
 
 ### 5. Tier 1 checks
 
