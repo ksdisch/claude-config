@@ -46,9 +46,9 @@ Any deterministic failure is an automatic **NO-GO** — fix or report; do not pr
 
 ### 1.3 Adversarial review gate (the "conduct the reviews properly" part)
 Scale the review to the change:
-- **Substantial change** (new subsystem, many files, anything touching data integrity / privacy / money / auth, or Kyle has opted into ultracode): run a **multi-agent release-gate Workflow** over the diff vs the default branch. Use independent adversarial lenses appropriate to the project (correctness/ship-blockers, security/privacy, plus any project-specific invariants — e.g. an "iron rule" or portability contract stated in `CLAUDE.md`), **verify each blocking/high finding independently**, then synthesize one **GO / NO-GO** with `decision`, `blockers[]`, `followUps[]`. This skill's instructions authorize the Workflow call.
+- **Substantial change** (new subsystem, many files, anything touching data integrity / privacy / money / auth, any diff `adversarial-review`'s escape hatch could not skip — behavioral/agent-instruction files above all — or Kyle has opted into ultracode): run a **multi-agent release-gate Workflow** over the diff vs the default branch. Use independent adversarial lenses appropriate to the project (correctness/ship-blockers, security/privacy, plus any project-specific invariants — e.g. an "iron rule" or portability contract stated in `CLAUDE.md`), **verify each blocking/high finding independently**, then synthesize one **GO / NO-GO** with `decision`, `blockers[]`, `followUps[]`. This skill's instructions authorize the Workflow call.
   - **Bounded-block on the workflow** (`TaskOutput` with `block: true`, generous timeout) — do **not** end the turn and defer the merge to a background notification. The merge depends on the verdict; wait for it in-turn.
-- **Small/trivial change**: a thorough inline adversarial read of the diff is enough — but still actively try to *refute* the change, don't just skim it.
+- **Small/trivial change**: a thorough inline adversarial read of the diff is enough — but still actively try to *refute* the change, don't just skim it. Never this branch for a diff `adversarial-review`'s escape hatch couldn't skip — those always take the substantial-change gate.
 
 ### 1.4 Resolve and re-gate
 - **GO (zero confirmed blockers):** proceed to land.

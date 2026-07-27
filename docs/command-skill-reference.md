@@ -88,7 +88,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | Skill | What it does |
 |---|---|
 | `bug-hunt` | Proactively hunts for bugs you don't know about — fans out specialized finder agents, adversarially verifies every finding, and presents a ranked triage list. Optionally hands bugs to systematic-debugging. |
-| `adversarial-review` | Pre-merge author↔reviewer↔judge loop — a zero-context reviewer files graded findings on the branch diff, the author triages (accept/dispute), a neutral judge rules on disputes, fixes get re-checked (max 2 rounds), and the adjudicated summary lands as a PR comment with a CLEAR / NOT-CLEAR merge verdict. |
+| `adversarial-review` | Pre-merge author↔reviewer↔judge loop — a zero-context reviewer files graded findings on the branch diff, the author triages (accept/dispute), a neutral judge rules on disputes, fixes get re-checked (capped review rounds), and the adjudicated summary lands as a PR comment with a CLEAR / NOT-CLEAR merge verdict. |
 | `artifacts-audit` | Audits a codebase against a canonical artifact taxonomy, then produces a concrete generation + maintenance plan. Plans only; does not write artifacts. |
 | `artifacts-generate` | Implements an artifact plan produced by `artifacts-audit`. Supports one-at-a-time (maximum oversight) or batch generation of READMEs, ADRs, design docs, diagrams, runbooks, etc. |
 | `seed-hunt` | Post-research-project workflow — verifies the repo is truly closed, harvests lessons into the selection bar, sweeps arXiv for candidate papers, scores a shortlist, and presents a decision brief. |
