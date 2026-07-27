@@ -42,7 +42,7 @@ HANDOFF.md       — always create (if missing)
 Create the others only when the project actually has the content to fill them:
 - `Sources.md` — if there are identifiable authoritative sources
 - `Decisions.md` — if any explicit decisions have already been made
-- `Wiki/_index.md` + first topic page — if there's substantial domain knowledge worth durable capture
+- `Wiki/` (`_index.md` **plus at least one real topic page**) — only if a topic page clears the bar in Step 3b. **Never create `Wiki/` to hold nothing but an index.** A directory whose index has one row pointing at a single auto-generated page is worse than no directory at all: it advertises a wiki and delivers a table of contents for an empty book.
 
 ### Step 3: Create the missing files
 
@@ -108,8 +108,42 @@ _Last updated: <date>_
 
 | Page | Covers | Last reviewed |
 |------|--------|---------------|
-| [[<topic>]] | <one-line summary> | <date> |
+| [<topic>](<topic>.md) | <one-line summary> | <date> |
 ```
+
+**Link syntax — always relative markdown, never wikilinks.** These files are read on GitHub as often as locally, and GitHub's markdown renderer has no wikilink support: `[[History]]` renders as literal bracketed text, so the index's navigation is dead in the browser. Relative markdown links work in GitHub *and* in Obsidian-style tools, so there is no case for `[[...]]` anywhere in a wiki file.
+
+- Page within `Wiki/` linking to a sibling → `[History](History.md)`
+- Root file (`PROJECT.md`, `HANDOFF.md`) linking into the wiki → `[History](Wiki/History.md)`
+- Wiki page linking back to root → `[Decisions](../Decisions.md)`
+
+If you encounter existing `[[...]]` links while editing a wiki file, convert them in passing — the target is the same name plus `.md`.
+
+### Step 3b: Author the topic pages
+
+`PROJECT.md` and `HANDOFF.md` are scaffolding. The topic pages are the wiki's actual content, and they are the step most likely to get skipped — skipping it produces a `Wiki/` that looks like an empty filing cabinet. Do this work, or consciously decide there is none to do and say so.
+
+**The bar — a page must synthesize across sources, or capture what only exists in code.** Restating a single existing `docs/` file is duplication, which this skill forbids everywhere else and forbids here too; link to that file instead. Synthesis across many sources is *new* content and does not violate link-don't-duplicate. Apply the bar honestly:
+
+| Situation | What clears the bar |
+|---|---|
+| Project has a dense `docs/` tree | Only cross-cutting pages: the invariants spread across all the ADRs, the failure chain that spans runbooks + postmortems, the results table that spans every milestone brief. Reject anything covered by one file. |
+| Project has thin or no docs but real code | The page **is** the primary capture — the data model, the wire contract, the control flow, the failure modes. Mine the code; that knowledge exists nowhere in prose. |
+| Project is small and its root docs already say everything true about it | **Zero pages.** Report that verdict with reasoning. Do not pad. |
+
+**Candidate menu** (a prompt, not a checklist — pick what the evidence supports, usually 2–4):
+
+- **Data model / contracts** — the shapes that move through the system, their guarantees, and what breaks downstream when one is violated
+- **Architecture / control flow** — the actual path a request or record takes, including where it can stop early and what is idempotent
+- **Guardrails & invariants** — rules the system must never violate, anchored across the ADRs/decision ledger by ID
+- **Failure modes & recovery** — how it fails in practice, what detects it, what the recovery chain is
+- **Results synthesis** (research/repro projects) — every milestone's headline numbers in one table, pre-registered prediction vs. observed outcome
+- **Methodology & guardrails** (research/repro projects) — pre-registration, seed handling, statistical method, what counted as a null, what would have falsified the claim
+- **What we learned** — the cross-cutting lessons from postmortems and session logs: what went wrong more than once, and what changed as a result
+
+Write each page with the template in [Wiki page format](#wiki-page-format). Every assertion carries a claim label — an unlabeled assertion is a bug. Anchor decisions and ADRs by ID plus a link; never restate their prose. Numbers must be traceable to a file; if you can't trace one, mark it **Unresolved** rather than asserting it.
+
+Then add one row per page to `Wiki/_index.md`, and report which candidates you **rejected and why** — the rejections are evidence the bar was applied, not a gap in the work.
 
 ### Step 4: Wire it to CLAUDE.md
 
@@ -132,12 +166,24 @@ Invoke the `project-wiki` skill when wiki updates are needed.
 
 If no `CLAUDE.md` exists, do not create one just for this — note that there's no CLAUDE.md to update.
 
+### Step 4b: Make the wiki discoverable from README.md
+
+GitHub renders `README.md` on the repo homepage and nothing else, so a wiki with no inbound link from the README is effectively invisible to anyone browsing the repo. If a root `README.md` exists and does not already reference `PROJECT.md`, append a one-line pointer at the bottom:
+
+```markdown
+---
+
+📚 **Project wiki:** [PROJECT.md](PROJECT.md) — status, scope, and next actions · [Wiki/_index.md](Wiki/_index.md) — topic pages and history
+```
+
+Drop the `Wiki/_index.md` half if this project has no `Wiki/`. This is the only README edit the skill ever makes: append a pointer, never restructure or rewrite existing README content. If there's no `README.md`, don't create one.
+
 ### Step 5: Commit
 
 Land the new files per the global git workflow — branch + PR, merged autonomously:
 
 1. Create a `docs/wiki-init` branch
-2. Commit **only** the wiki files and the CLAUDE.md edit — never sweep unrelated dirty files into the commit
+2. Commit **only** the wiki files, the CLAUDE.md edit, and the README.md pointer line — never sweep unrelated dirty files into the commit
 3. Push, open a PR, and merge it; include the PR link in the report
 
 Exceptions:
@@ -223,8 +269,10 @@ Rules: eras oldest → newest; milestones dated; PRs cited `#N`; rationale lines
 
 ### Step 4: Update Wiki/_index.md
 
-- If `Wiki/` doesn't exist, create `Wiki/_index.md` using the INIT template with a single `[[History]]` row. (History.md is new synthesized narrative — it exists nowhere else, so this doesn't violate link-don't-duplicate even in repos that skipped `Wiki/` at init.)
-- If it exists, append a `[[History]]` row — don't restructure.
+- If `Wiki/` doesn't exist, create `Wiki/_index.md` using the INIT template with a single `[History](History.md)` row. (History.md is new synthesized narrative — it exists nowhere else, so this doesn't violate link-don't-duplicate even in repos that skipped `Wiki/` at init.)
+- If it exists, append a `[History](History.md)` row — don't restructure. Relative markdown links only, per the INIT link-syntax rule.
+
+**If this run is what created `Wiki/`, run [INIT Step 3b](#step-3b-author-the-topic-pages) before landing.** A `Wiki/` containing only `_index.md` + `History.md` is the failure mode this rule exists to prevent: BACKFILL forced the directory into existence to house one page, and the index has a single row. Either the project has topic pages worth writing — write them in the same PR — or it doesn't, in which case say so in the report rather than leaving a hollow directory behind.
 
 ### Step 5: Land and report
 
@@ -282,7 +330,7 @@ Always label claims with one of:
 
 ### Wiki page format
 
-Each durable `Wiki/` topic page should contain:
+Each durable `Wiki/` topic page must clear the bar in [INIT Step 3b](#step-3b-author-the-topic-pages) and contain:
 
 ```markdown
 # <Topic>
@@ -300,7 +348,7 @@ Each durable `Wiki/` topic page should contain:
 - <What's unknown or disputed>
 
 ## Related pages
-- [[other-page]] — <why it's related>
+- [other-page](other-page.md) — <why it's related>
 
 ## Relevance to current work
 <How this affects current or upcoming decisions.>
@@ -345,3 +393,8 @@ Then wait for approval before moving anything outside this project.
 - Do not rewrite or delete Decisions.md rows — append and supersede
 - Do not regenerate or reorder Wiki/History.md — it is append-only; BACKFILL runs once, MAINTAIN appends
 - Do not restate decision-ledger or ADR content in History.md — anchor the ID and link the file
+- Do not write `[[wikilinks]]` in any wiki file — GitHub renders them as dead literal text; use relative markdown links
+- Do not rewrite or restructure a project's README.md — the only permitted edit is appending the wiki pointer line
+- Do not create a `Wiki/` that holds only an index (or only an index + `History.md`) — either write a topic page that clears the bar, or don't create the directory
+- Do not write a topic page that restates one existing `docs/` file — link to it; synthesis across sources is the only thing that earns a page
+- Do not pad a small project's wiki to look busy — "zero pages cleared the bar, here's why" is a valid, expected INIT outcome
