@@ -65,6 +65,16 @@ When I say "new feature mode" or "feature mode", before building anything:
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
 
+## Planner/Builder Protocol (added 2026-07-27)
+
+How model choice works across my sessions: **Fable 5 plans, Opus 5 builds, Sonnet 5 grinds.**
+
+- Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on Fable 5. Well-specified builds run on Opus 5. Mechanical, checklist-scoped work runs on Sonnet 5.
+- Every plan or handoff written for another session to execute ends with a **Run-config block**: recommended model + effort for that session, a one-clause why, and the literal launch command (e.g. `claude --model claude-opus-5 --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults.
+- Builder sessions start **fresh from the plan file**, never from the planning session's transcript. Never recommend switching models mid-session after heavyweight planning: `/model` keeps the conversation but invalidates the per-model prompt cache — the full transcript re-ingests at uncached rates, and the build inherits deliberation noise it doesn't need.
+- **Split planner from builder only when build ≫ plan.** When the work is plan-heavy and build-light, finish it in the Fable session — a handoff would cost more than it saves.
+- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter (see `agents/`).
+
 ---
 
 ## Reference Doc Maintenance
