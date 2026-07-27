@@ -49,9 +49,9 @@ Re-dispatch the reviewer with `ROUND=<N>` and `PREV_SHA=<the sha the previous ro
 
 ## Phase 6 — Publish + verdict
 
-Render the PR comment from the template in `references/mailbox-format.md` (disposition table, waivers verbatim, follow-ups, coverage, standing items on NOT CLEAR) and post it — `gh pr comment` if available, else the GitHub MCP tools; if neither works, print the comment in full and say plainly that it wasn't posted. No PR open yet → hold the rendered comment in the mailbox and post it when the PR is created. Then declare:
+Render the PR comment from the template in `references/mailbox-format.md` (disposition table, waivers verbatim, follow-ups, coverage, standing items on NOT CLEAR) and post it — `gh pr comment` if available, else the GitHub MCP tools; if neither works, print the comment in full and say plainly that it wasn't posted. No PR open yet → hold the rendered comment in the mailbox and post it when the PR is created. Before declaring: any coverage bound still unclosed → **STOP and present it** to Kyle with options: close it with another review round (counts against the dispatch cap), waive it (`COVERAGE-WAIVED-BY-KYLE (<his words>)`), or hold the merge — unattended: no prompt, it stays unclosed and the verdict is NOT CLEAR. Then declare:
 
-- **CLEAR TO MERGE** — no finding remains in a blocking state (every critical and should-fix ends `VERIFIED`, `CLOSED (overruled)`, downgraded to nice-to-have by the judge (`FOLLOW-UP`), or `WAIVED-BY-KYLE`) **and every changed file has been covered by some round** — no stated coverage bound left unclosed unless Kyle waived it (`COVERAGE-WAIVED-BY-KYLE`).
+- **CLEAR TO MERGE** — no finding remains in a blocking state (every critical and should-fix ends `VERIFIED`, `CLOSED (overruled)`, downgraded to nice-to-have by the judge (`FOLLOW-UP`), or `WAIVED-BY-KYLE`) **and every changed file has been covered by some round or had its bound waived by Kyle** (`COVERAGE-WAIVED-BY-KYLE`) — no coverage bound left both unclosed and unwaived.
 - **NOT CLEAR** — anything blocking still stands, **or any round's coverage bound is left unclosed and unwaived**; name it. No merge.
 
 The merge itself follows the normal git workflow (brief with commit SHA, PR link, and this verdict).
@@ -64,4 +64,4 @@ Worst case ≤3 reviewer + ≤3 judge dispatches per run, all opus — verdict w
 
 - ✅ **Without asking:** all git reads, mailbox creation, reviewer/judge dispatches, writing triage, fixing accepted/upheld findings, committing on the branch, posting the PR comment, declaring the verdict.
 - ⛔ **Never without an explicit per-run go-ahead:** waiving a critical or should-fix (Kyle-only, by name), skipping the loop on a non-trivial diff, exceeding the round cap.
-- ⛔ **Never:** reviewer or judge modifying repo files; merging with a critical/should-fix still in a blocking state — neither fixed-and-verified, closed or downgraded by the judge, nor Kyle-waived; merging while any round's stated coverage bound is unclosed; running the loop without a mailbox record; auto-fixing nice-to-haves.
+- ⛔ **Never:** reviewer or judge modifying repo files; merging with a critical/should-fix still in a blocking state — neither fixed-and-verified, closed or downgraded by the judge, nor Kyle-waived; merging while any round's stated coverage bound is unclosed and not `COVERAGE-WAIVED-BY-KYLE`; running the loop without a mailbox record; auto-fixing nice-to-haves.

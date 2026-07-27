@@ -70,7 +70,7 @@ OPEN ─▶ ACCEPTED ───────────────────�
                           FIXED-IN <sha> ─▶ VERIFIED | REOPENED
 ```
 
-Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)`, `FOLLOW-UP` (nice-to-have, listed in the PR comment). `REOPENED` goes back onto the author's plate within the round cap. An unclosed **coverage bound** has its own disposition, separate from findings: closed by a later round's review, or `COVERAGE-WAIVED-BY-KYLE (<his words>)` at the cap-residue prompt.
+Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)`, `FOLLOW-UP` (nice-to-have, listed in the PR comment). `REOPENED` goes back onto the author's plate within the round cap. An unclosed **coverage bound** has its own disposition, separate from findings: closed by a later round's review, or `COVERAGE-WAIVED-BY-KYLE (<his words>)` at the cap-residue prompt or Phase 6's pre-verdict coverage check.
 
 ## PR comment template (orchestrator, Phase 6)
 
@@ -85,7 +85,7 @@ Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)
 
 **Waived by Kyle:** <F<n> — reason, verbatim>            (omit if none)
 **Follow-ups (nice-to-have):** <F<n> <title>; …>          (omit if none)
-**Coverage:** <complete | unclosed: <groups>>             (an unclosed bound alone forces NOT CLEAR)
+**Coverage:** <complete | unclosed: <groups> | waived by Kyle>   (an unclosed, unwaived bound alone forces NOT CLEAR)
 **Still standing:** <F<n> <title> — why>                  (only on NOT CLEAR; omit when empty — a coverage-only NOT CLEAR is named by the Coverage line)
 
 Zero-context reviewer + neutral judge on disputes; anchored at <final HEAD sha>.
