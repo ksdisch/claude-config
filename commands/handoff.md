@@ -39,7 +39,7 @@ Print the handoff as a single fenced code block so I can copy it verbatim —
 and print it **LAST**, so it's the final thing in the response, right above my
 prompt box. Before the block, in this order: (1) the "For Kyle" briefing (see
 "'For Kyle' briefing" below), then (2) the short run-config recommendation
-described in "Run-config recommendation" below (2–4 lines), then (3) the audio
+described in "Run-config recommendation" below (3–5 lines), then (3) the audio
 note **only if `--audio` was passed** (see "Audio narration") — all OUTSIDE
 the block, notes to me, not part of the paste-able prompt; none of these
 pollute the block. Then the fenced block, with nothing after it. Once it's
@@ -120,30 +120,59 @@ of inventing a plan.
 
 ## Run-config recommendation (the second note, still before the code block)
 
-After the "For Kyle" briefing, print a 2–4 line note — OUTSIDE the block, addressed to
+After the "For Kyle" briefing, print a 3–5 line note — OUTSIDE the block, addressed to
 me — telling me how to RUN the fresh session. It is never part of the
 paste-able prompt (the fresh session can't set its own model/effort). Base the
 pick on the *nature of the next concrete action* from "Where the plan stands,"
 not on this session's work. Use this shape:
 
-- **Model:** default **Opus 4.8 (1M context)**. Keep "(1M context)" whenever the
-  fresh session must read a lot of source / long docs / a big plan to orient;
-  drop to plain Opus 4.8 only for a small, self-contained next task.
-- **Effort:** pick exactly ONE and name it —
+- **Model:** pick by the nature of the next session's work, per the
+  "Planner/Builder Protocol" in CLAUDE.md —
+  - **Fable 5** (`claude-fable-5`): judgment-first work — planning, design
+    calls with real tradeoffs, adoption/triage decisions, convention-setting.
+    The thinking dwarfs the typing.
+  - **Opus 5** (`claude-opus-5`): a well-specified build — a plan already says
+    what to do; the session mostly implements, tests, and lands it. Add
+    "(1M context)" whenever the fresh session must read a lot of source /
+    long docs / a big plan to orient.
+  - **Sonnet 5** (`claude-sonnet-5`): mechanical, checklist-scoped work a
+    careful junior could follow — template-driven file generation, rename
+    sweeps, doc-formatting passes.
+  - Split rule: if this handoff carries a settled plan, recommend a builder
+    (Opus/Sonnet); if the next session must still decide or design, recommend
+    Fable. And split only when build ≫ plan — for plan-heavy/build-light work,
+    say so and recommend finishing in one Fable session instead.
+- **Effort:** independent of the model pick. Name exactly ONE, using only the
+  CLI's real values (`--effort low|medium|high|xhigh|max`) or ultracode —
   - **ultracode** (multi-agent fan-out + adversarial verify; highest token cost):
     the next task is broad, parallelizable, or wants exhaustive coverage with
     independent verification — a multi-file audit/migration, a "find every X"
     sweep, a batch where each item is verified against HEAD, a comprehensive
-    review. Pick when completeness across many surfaces beats speed.
-  - **max effort** (deep single-agent reasoning, no fan-out): the next task is
-    ONE hard problem — subtle root-cause debugging, tricky merge/algorithm
-    logic, untangling a confusing module, a design call with real tradeoffs.
-  - **standard**: mechanical or checklist-scoped work — a known small edit, a
-    doc update, wiring a module per a fixed checklist, a straightforward test
-    add. Don't pay for reasoning the task doesn't need.
+    review. Pick when completeness across many surfaces beats speed. Launch
+    form: `--effort ultracode` — a real, accepted flag (runs on an xhigh
+    base; ultracode needs dynamic workflows enabled in `/config`).
+    In-session alternative: `/effort ultracode` from an interactive
+    terminal.
+  - **`max` / `xhigh`** (deep single-agent reasoning, no fan-out): the next
+    task is ONE hard problem — subtle root-cause debugging, tricky
+    merge/algorithm logic, untangling a confusing module, a design call with
+    real tradeoffs. `max` removes the cap and burns fast; `xhigh` when it's
+    hard but bounded.
+  - **`high`**: ordinary build work with some judgment in it — a normal
+    feature implemented inside a settled plan.
+  - **`medium` / `low`**: mechanical or checklist-scoped work — a known small
+    edit, a doc update, wiring a module per a fixed checklist, a
+    straightforward test add (`low` for purely templated/repetitive). Don't
+    pay for reasoning the task doesn't need.
+- **Launch command (required):** close the note with the literal command, e.g.
+  `claude --model claude-opus-5 --effort high`. For the 1M-context variant the
+  model ID contains brackets, which zsh globs — always quote it:
+  `claude --model 'claude-opus-5[1m]' --effort high`. Both flags are
+  per-invocation only — my saved defaults stay untouched. If the pick matches
+  my saved defaults, say "plain `claude` works."
 - **Why (one clause):** tie the pick to the specific next action you named, so I
-  can sanity-check it — e.g. "max effort: 3 findings in 2 files, each just needs
-  verify-against-HEAD + a minimal fix; too narrow to want fan-out."
+  can sanity-check it — e.g. "Opus 5 at max: 3 findings in 2 files, each just
+  needs verify-against-HEAD + a minimal fix; too narrow to want fan-out."
 
 Keep it terse, like the rest of the handoff. If the next action is genuinely
 ambiguous between two modes, name both and say what tips it.

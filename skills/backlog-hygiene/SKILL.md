@@ -50,7 +50,7 @@ Present in one sitting: the hygiene findings table (verdict + evidence + propose
 - **Mirror the plan/kanban doc** if the repo keeps one, per that doc's conventions.
 - **Save the decision brief** to `docs/backlog-hygiene/<YYYY-MM-DD>.md` (findings, arcs, the pick, the coverage note).
 - Land it all as **one docs-only change** under the house git rules (worktree if the working copy is dirty or shared). Verify: diff touches only backlog/plan/docs files; nothing deleted, only moved with reasons.
-- **Close with the handoff, not with work:** a copy-paste starter prompt for the picked arc, routed to the right executor — `[Bug]` → a `systematic-debugging` session · build/feature item → `/autonomous-milestone <target>` · needs-design-first → `/explore-plan` · test-shaped improvement → `/tdd`. State why that route fits. Then stop.
+- **Close with the handoff, not with work:** a copy-paste starter prompt for the picked arc, routed to the right executor — `[Bug]` → a `systematic-debugging` session · build/feature item → `/autonomous-milestone <target>` · needs-design-first → `/explore-plan` · test-shaped improvement → `/tdd`. State why that route fits, and attach the Run-config block required by `CLAUDE.md`'s Planner/Builder Protocol (recommended model + effort, one-clause why, literal launch command). Then stop.
 
 ## Red flags — every one observed in baseline runs
 
