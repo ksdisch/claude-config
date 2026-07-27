@@ -1,6 +1,6 @@
 # Severity grades and the escape hatch
 
-Orchestrator-side calibration: how findings gate the merge, and which diffs may skip the loop. (What the reviewer *hunts for* lives in the reviewer's own brief, `~/.claude/agents/adversarial-reviewer.md`, so the brief stays self-contained for the fallback launch path. Consistent in spirit with `bug-hunt`'s severity reference, but this file is the authority for merge-gate decisions.)
+Orchestrator-side calibration: how findings gate the merge, and which diffs may skip the loop. (What the reviewer *hunts for* lives in the reviewer's own brief — `agents/adversarial-reviewer.md` in the claude-config checkout, installed at `~/.claude/agents/` — so the brief stays self-contained for the fallback launch path. Consistent in spirit with `bug-hunt`'s severity reference, but this file is the authority for merge-gate decisions.)
 
 ## The three grades
 
@@ -16,10 +16,10 @@ Orchestrator-side calibration: how findings gate the merge, and which diffs may 
 
 A diff qualifies for skipping the loop only if **all** of its changes are:
 
-- docs-only (README, comments, prose files), or
+- docs-only **and non-behavioral** (README, code comments, prose no agent executes), or
 - pure formatting with no semantic change, or
 - config-typo scale (fixing a label, a string, a version bump with no code path implications).
 
-**Disqualifiers — always run the loop** if the diff touches: executable code paths, dependencies or lockfiles, CI/workflow files, auth or permissions, data handling (schemas, migrations, serialization), or install-class scripts (anything that runs on someone's machine at setup).
+**Disqualifiers — always run the loop** if the diff touches: executable code paths, dependencies or lockfiles, CI/workflow files, auth or permissions, data handling (schemas, migrations, serialization), install-class scripts (anything that runs on someone's machine at setup), or **behavioral/agent-instruction files** — any `CLAUDE.md`, `skills/**`, `agents/**`, `commands/**`, hooks, or `settings*.json`: prose by file type, executable by effect.
 
 A skip taken under the pre-merge gate must be **stated in the merge brief** ("skipped adversarial review: docs-only") — never silent. When in doubt, it isn't trivial.

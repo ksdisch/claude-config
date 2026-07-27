@@ -13,19 +13,21 @@ description: Pre-merge adversarial review loop — a structured author↔reviewe
 | Reviewer | `adversarial-reviewer` (opus, zero context) | files graded findings in the mailbox; edits nothing |
 | Judge | `review-judge` (opus, zero context) | rules on disputed findings only; rulings final for the run |
 
-**Launching them.** Dispatch by subagent type (`adversarial-reviewer`, `review-judge`). If the named type doesn't resolve in this environment, fall back: launch a `general-purpose` subagent with the body of `~/.claude/agents/<name>.md` (frontmatter stripped) pasted verbatim as the prompt preamble, followed by the same input block. Either path, hand the agent **only the input block** — no task context, no design rationale, no "this is fine because…". Contaminating the reviewer with your context defeats the entire mechanism.
+**Launching them.** Dispatch by subagent type (`adversarial-reviewer`, `review-judge`). If the named type doesn't resolve in this environment, fall back: launch a `general-purpose` subagent with the agent's brief (frontmatter stripped) pasted verbatim as the prompt preamble, followed by the same input block. Read the brief from `~/.claude/agents/<name>.md` when installed; when it isn't (the usual case when the type doesn't resolve), read `agents/<name>.md` from the claude-config checkout (`readlink ~/.claude/agents` resolves it when symlinked). **No readable brief → no dispatch** — stop and say so; an improvised reviewer defeats the mechanism. Either path, hand the agent **only the input block** — no task context, no design rationale, no "this is fine because…". Contaminating the reviewer with your context defeats the entire mechanism.
+
+**The untouched check — around every dispatch.** Immediately before dispatching either agent, capture `git rev-parse HEAD`, `git branch --show-current`, and `git stash list | wc -l`. When the agent returns, assert all three unchanged **and** `git status --porcelain` empty. A clean tree alone proves nothing — it's the expected post-state of a stray commit, checkout, stash, push, or hard reset.
 
 ## Phase 0 — Preflight
 
 1. `git branch --show-current` — on the default branch, refuse: the loop reviews a branch diff, and nothing merges from `main` to `main`.
 2. Resolve the default branch and `git merge-base`. `git status` — uncommitted work gets committed first, or you state explicitly that only committed work is being reviewed.
 3. Escape-hatch check against `references/severity-and-scope.md`. Trivial diff → offer the skip; a skip taken under the pre-merge gate is stated in the merge brief, never silent. When in doubt, it isn't trivial.
-4. `mkdir -p ~/.claude/reviews/<repo-name>/` and create the mailbox with the header block from `references/mailbox-format.md`.
+4. `mkdir -p ~/.claude/reviews/<repo-name>/`. Mailbox absent → create it with the header block from `references/mailbox-format.md`. Mailbox already present (same branch, same day — e.g. re-running after NOT CLEAR or a hit round cap) → **never overwrite it**: append a `## Run <n> — <date>` separator and carry finding numbering forward. Waivers and rulings are part of the record.
 5. One-line launch statement: scope (branch → default, files/lines), mailbox path, expected dispatch count.
 
 ## Phase 1 — Review (round 1)
 
-Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1`. It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: confirm `git status` in the repo is clean (it touched nothing), then read the mailbox. Zero findings → Phase 6 with a clean verdict — a legitimate outcome, not a failed review.
+Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUND=1`. It anchors to HEAD, reviews the diff vs merge-base, writes findings to the mailbox, returns one counts line. When it returns: run the untouched check, then read the mailbox. Zero findings → Phase 6 with a clean verdict — a legitimate outcome, not a failed review.
 
 ## Phase 2 — Triage (present, then STOP)
 
@@ -35,7 +37,7 @@ Present the triage table (# · grade · verdict · one-line reason), then **STOP
 
 ## Phase 3 — Judge (only if disputes exist)
 
-No disputes → skip to Phase 4. Otherwise dispatch the judge with: `REPO_PATH`, `MAILBOX_PATH`. It verifies both sides against the code and appends one-paragraph rulings. Confirm `git status` clean again, read the rulings: overruled findings close; upheld or re-graded-blocking findings go back on your plate. Rulings are final for this run — you don't re-litigate, you fix or Kyle waives.
+No disputes → skip to Phase 4. Otherwise dispatch the judge with: `REPO_PATH`, `MAILBOX_PATH`. It verifies both sides against the code and appends one-paragraph rulings. Run the untouched check again, read the rulings: overruled findings close; upheld or re-graded-blocking findings go back on your plate. Rulings are final for this run — you don't re-litigate, you fix or Kyle waives.
 
 ## Phase 4 — Fix
 
@@ -49,7 +51,7 @@ Re-dispatch the reviewer with `ROUND=<N>`. It verifies each `FIXED-IN` finding (
 
 Render the PR comment from the template in `references/mailbox-format.md` (disposition table, waivers verbatim, follow-ups, standing items on NOT CLEAR) and post it — `gh pr comment` if available, else the GitHub MCP tools; if neither works, print the comment in full and say plainly that it wasn't posted. Then declare:
 
-- **CLEAR TO MERGE** — every critical and should-fix is `VERIFIED` or `WAIVED-BY-KYLE`.
+- **CLEAR TO MERGE** — no finding remains in a blocking state: every critical and should-fix ends `VERIFIED`, `CLOSED (overruled)`, downgraded to nice-to-have (`FOLLOW-UP`), or `WAIVED-BY-KYLE`.
 - **NOT CLEAR** — anything blocking still stands; name it. No merge.
 
 The merge itself follows the normal git workflow (brief with commit SHA, PR link, and this verdict).
@@ -62,4 +64,4 @@ Worst case ≤3 reviewer + ≤2 judge dispatches per run, all opus — verdict w
 
 - ✅ **Without asking:** all git reads, mailbox creation, reviewer/judge dispatches, writing triage, fixing accepted/upheld findings, committing on the branch, posting the PR comment, declaring the verdict.
 - ⛔ **Never without an explicit per-run go-ahead:** waiving a critical or should-fix (Kyle-only, by name), skipping the loop on a non-trivial diff, exceeding the round cap.
-- ⛔ **Never:** reviewer or judge modifying repo files; merging with a standing critical/should-fix that is neither fixed nor Kyle-waived; running the loop without a mailbox record; auto-fixing nice-to-haves.
+- ⛔ **Never:** reviewer or judge modifying repo files; merging with a critical/should-fix still in a blocking state — neither fixed-and-verified, closed or downgraded by the judge, nor Kyle-waived; running the loop without a mailbox record; auto-fixing nice-to-haves.
