@@ -3,15 +3,26 @@
 
 Usage:
     python3 contactsheet.py <entries.json> <out.html> [--title "Paper title"]
+                            [--max-width 320]
 
 Thumbnails are inlined so the sheet is one portable file. It is never
 committed — it exists only for the approval gate.
+
+Captures are downscaled to --max-width before inlining. Inlining the originals
+instead makes the sheet unusable at scale: on a 94-figure paper that produced a
+26MB file, when the whole point of the sheet is to be small enough to send.
+Resampling uses macOS `sips`; where it is unavailable the original is inlined
+and the resulting size is reported so the caller is not surprised.
 """
 import argparse
 import base64
 import html as htmllib
 import json
 import os
+import shutil
+import subprocess
+import sys
+import tempfile
 
 MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 
@@ -44,20 +55,37 @@ PAGE = """<!doctype html>
 """
 
 
-def thumb_uri(path):
+def _inline(path):
     ext = os.path.splitext(path)[1].lower()
     with open(path, "rb") as fh:
         blob = base64.b64encode(fh.read()).decode("ascii")
     return f"data:{MIME.get(ext, 'image/png')};base64,{blob}"
 
 
-def build_sheet(entries, title):
+def thumb_uri(path, max_width=320, tmp_dir=None):
+    """Inline a downscaled copy. Falls back to the original without sips."""
+    if not max_width or tmp_dir is None or not shutil.which("sips"):
+        return _inline(path)
+    dst = os.path.join(tmp_dir, f"{abs(hash(path))}.jpg")
+    try:
+        subprocess.run(
+            ["sips", "--resampleWidth", str(max_width), "-s", "format", "jpeg",
+             "-s", "formatOptions", "60", path, "--out", dst],
+            capture_output=True, check=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return _inline(path)
+    return _inline(dst) if os.path.exists(dst) else _inline(path)
+
+
+def build_sheet(entries, title, max_width=320, tmp_dir=None):
     blocks = []
     for e in entries:
         verdict = e.get("verdict", "pass")
         cap = htmllib.escape(e.get("caption", ""))
         if e.get("path") and os.path.exists(e["path"]):
-            body = f'<img src="{thumb_uri(e["path"])}" alt="Figure {e["num"]}">'
+            body = (f'<img src="{thumb_uri(e["path"], max_width, tmp_dir)}" '
+                    f'alt="Figure {e["num"]}">')
         else:
             body = '<div class="none">not captured</div>'
         flag = ""
@@ -87,11 +115,18 @@ def main(argv=None):
     ap.add_argument("entries")
     ap.add_argument("out")
     ap.add_argument("--title", default="paper")
+    ap.add_argument("--max-width", type=int, default=320,
+                    help="thumbnail width before inlining; 0 inlines originals")
     args = ap.parse_args(argv)
     with open(args.entries, encoding="utf-8") as fh:
         entries = json.load(fh)
+    if args.max_width and not shutil.which("sips"):
+        print("warning: sips unavailable — inlining originals, sheet may be large",
+              file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        sheet = build_sheet(entries, args.title, args.max_width, tmp)
     with open(args.out, "w", encoding="utf-8") as fh:
-        fh.write(build_sheet(entries, args.title))
+        fh.write(sheet)
     print(f"wrote {args.out} ({os.path.getsize(args.out):,} B)")
     return 0
 
