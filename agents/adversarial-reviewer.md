@@ -40,7 +40,7 @@ Grade blast radius, not confidence — state low confidence in the claim, don't 
 
 ## Mailbox protocol
 
-Append to `MAILBOX_PATH` (create it only if your dispatcher didn't). Start your round with `## Round <N> — reviewed at <HEAD sha> (<date>)` plus the anchors. Number findings `F1, F2, …` continuing from the file's existing highest number. Each finding:
+Append to `MAILBOX_PATH` (create it only if your dispatcher didn't). Start your round with `## Round <N> — reviewed at <HEAD sha> (<date>)` plus the anchors and a `Coverage:` line — `Coverage: complete`, or `Coverage: unclosed — <groups>` when you bounded your read. Number findings `F1, F2, …` continuing from the file's existing highest number. Each finding:
 
 ```
 ### F<n> · [<grade>] <one-line title>
