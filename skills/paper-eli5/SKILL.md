@@ -168,9 +168,14 @@ Rules for the named form:
 ## Phase 3 — Verify (mechanical, before claiming done)
 
 - Output headings == ledger headings, same order.
-- Per-section paragraph counts == ledger counts, **counting prose paragraphs
-  only** — the `*Named form:*` and `*where:*` marker lines this rewrite authors
-  are not paragraphs the paper had, and the ledger was built from the source.
+- Per-section paragraph counts == ledger counts, **counting only paragraphs
+  carried from the paper**. Three kinds are authored by this rewrite and are
+  therefore absent from a ledger built from the source: the `*Named form:*` and
+  `*where:*` marker lines, and every *"In plain words: …"* line — one per display
+  equation **and** one per table. The rule names what the rewrite adds rather
+  than what it isn't on purpose: a plain-words line is unmistakably prose, so a
+  "count the prose only" test admits it and the section overshoots by one for
+  every equation and every table it contains.
 - Per-section equation / table / **figure-slot** counts == ledger counts,
   **counting source equations only** — a named form is an equation this rewrite
   authored, not one carried from the paper, and counting it makes every section
