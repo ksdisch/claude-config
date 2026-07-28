@@ -49,17 +49,17 @@ cost/latency color:
 | **Opus 5** | Well-specified builds — a plan already says what to do; the session implements, tests, and lands it. ~Half Fable's cost. |
 | **Fable 5** | Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions — and long-horizon autonomous multi-step runs + vision; its lead grows with task length. Caveats: ~2× cost; biology/cyber content reroutes to Opus; over-produces unless constrained. |
 
-**Plan/build as tiebreaker:** still deciding/designing → leans Fable + high/max. Executing a settled plan → leans Opus + medium/high (Sonnet if mechanical). Async + multi-step autonomous → leans Fable + high/max/ultracode.
+**Plan/build as tiebreaker:** still deciding/designing → leans Fable + xhigh/max. Executing a settled plan → leans Opus + medium/high (Sonnet if mechanical). Async + multi-step autonomous → leans Fable + max/ultracode.
 
-**Effort ladder (Claude Code):** low / medium / high / xhigh / max, plus ultracode. Set with `/effort`; switch models with `/model`.
+**Effort ladder (Claude Code):** low / medium / high / xhigh / max, plus ultracode. Set with `/effort`; switch models with `/model`. The rungs below are the Planner/Builder Protocol's ladder in `CLAUDE.md` — that's the owner; this table only adds the color.
 
 | Effort | Use for |
 |--------|---------|
 | low | Templated, repetitive work. |
-| medium | Routine agentic/tool work; tight iteration loops. |
-| high | Design-heavy work (Fable's default). |
-| xhigh / max | The hardest problems, or long autonomous runs where self-verification pays. max removes the token cap and burns fast. |
-| ultracode | Heaviest autonomous coding. |
+| medium | Routine agentic/tool work; tight iteration loops; mechanical checklist-scoped edits. |
+| high | Ordinary build work with judgment in it — a feature implemented inside a settled plan. (Also Fable's default.) |
+| xhigh / max | ONE hard problem — subtle root-cause debugging, tricky logic, a design call with real tradeoffs — or a long autonomous run where self-verification pays. `xhigh` when it's hard but bounded; `max` removes the token cap and burns fast. |
+| ultracode | Broad, parallelizable, or want-exhaustive-coverage work: multi-agent fan-out + adversarial verify. Heaviest autonomous coding. |
 
 **Cost read** — one line, explicitly labeled an estimate, delivered in chat (never in the prompt block). Prices per M tokens as of June 2026 (update if changed): Fable 5 $10 in / $50 out; Opus $5 in / $25 out (verified for Opus 4.8 — re-check on Opus 5); Sonnet/Haiku cheaper — look up if relevant. Fable is ~2× Opus per token but more token-efficient, so the real delta is usually <2×; long runs that reuse context get a 90% input prompt-caching discount. Size the task — quick ~10–50K tokens · medium ~50–300K · long-horizon 500K–several M+ — then give a relative + rough-absolute read, e.g. "~1.5× an Opus run, order-of-tens-of-$ on API rates." Caveat: literal $ applies on API/consumption billing; on a Max/Pro subscription it's usage-limit/credit burn instead (Fable ~2×; free through Jun 22, 2026, then credits).
 

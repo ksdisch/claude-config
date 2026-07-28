@@ -33,9 +33,11 @@ Pick **what** to hunt over and **how hard** to look. Propose a sensible default 
 
 **Solo / max-effort solo:** read the target directly. Trace real execution paths, read the tests to learn *intended* behavior, then hunt the cases the tests *don't* cover — uncovered edges are where bugs live. Report concrete bugs with `file:line`, severity, and a why-it's-real. Not style nits.
 
+*Exception:* when the hunt is specifically about error handling — "is anything failing silently in here?" — dispatch the **`silent-failure-hunter`** agent over the scope instead of reading it yourself. It grades on the same rubric, so its findings slot into phase 3 unchanged.
+
 **Ultracode fan-out:** this is where the leverage is. Adapt the bundled template at `references/hunt-engine.template.js` and launch it via the **Workflow** tool. The template encodes the proven pattern — *finders → adversarial verify → synthesize*. Your job:
 
-1. **Derive the dimensions.** Slice the target into finder assignments along *subsystem × lens*: each finder gets one slice and one focus, so coverage doesn't overlap and blind spots differ. See `references/lenses-and-severity.md` for the lens catalog and how to map it onto a given codebase.
+1. **Derive the dimensions.** Slice the target into finder assignments along *subsystem × lens*: each finder gets one slice and one focus, so coverage doesn't overlap and blind spots differ. See `references/lenses-and-severity.md` for the lens catalog and how to map it onto a given codebase. One lens has a **dedicated agent** rather than a generic finder prompt: the *silent-failure* lens routes to **`silent-failure-hunter`** via the dimension's `agentType` (the template's second example dimension shows the shape). Include that dimension on any codebase with real error paths.
 2. **Set `ROOT`** to the target path and fill the `DIMENSIONS` array.
 3. **Keep the structure intact.** `pipeline(DIMENSIONS, find, verify-each)` then a synthesis agent. The adversarial verify step is *non-negotiable* — it's what turns "an LLM listed 30 plausible bugs" into a calibrated, reproduced list. Each verifier opens the real code and is told to **default to refuted** unless it can confirm from the source.
 

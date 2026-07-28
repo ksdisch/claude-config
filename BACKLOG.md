@@ -5,16 +5,10 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
-### [Improvement] ECC-adoption follow-ups: wire, tighten, and confirm the new agents
-- **Why:** PR #45's adversarial review deferred five nice-to-haves: wire a silent-failure dimension into `bug-hunt` so `silent-failure-hunter` has a real dispatcher (and settle the severity-scale question when doing so); make `spec-miner`'s `id` mandatory with a declaration-site fallback before any delta tooling exists; retitle its "Integration with the house setup" to "Intended integration (not yet wired)"; confirm `effort:` frontmatter takes effect on a first real dispatch; reword the `Write` "may only create" guardrail to a path restriction now that `OVERWRITE=yes` exists. Full record in PR #45's review comment.
-- **Acceptance:** Each item shipped or explicitly declined with a reason; the bug-hunt wiring counts only if the agent is actually named in the skill or dispatched by an engine dimension.
+### [Improvement] paper-figures scripts: close the four silent failures found in the first audit
+- **Why:** The first real dispatch of `silent-failure-hunter` (over `skills/paper-figures/scripts/`, 2026-07-27) returned four genuine findings, none fixed yet: **(1)** `inject.py:60` prints `injected {len(images)}` — the *manifest* count, not the count actually replaced, so skipped placeholders (unmatched lead-in, missing file) report as success; both injectors already track the real number and discard it. **(2)** `contactsheet.py:65-78` silently falls back to inlining a full-resolution original when a per-image `sips` resample fails, with no log — the exact 26MB regression the script exists to prevent. **(3)** `checks.py:110-115` `except OSError: continue` drops which file couldn't be hashed. **(4)** `contactsheet.py:71-74` and `normalize.py:53-56, 85-89` run `sips` with no `timeout=`, so a hung child blocks forever indistinguishably from slow.
+- **Acceptance:** (1) and (2) fixed — injection reports `n/total` and enumerates skips; the resample fallback logs per-file and summarizes. (3) and (4) fixed or declined with a reason. The scripts have a real test suite (`scripts/tests/`), so each fix lands with a test.
 - **Size:** M
-- **Added:** 2026-07-27
-
-### [Improvement] Planner/Builder protocol follow-ups from PR #44's review
-- **Why:** Six nice-to-haves deferred: give the effort ladder one owner (CLAUDE.md) and align `prompt-optimize`'s `high` row; move `ship-and-route`'s Run-config note to §3.2's close and un-overload "block"; route the ultracode `/config` prerequisite into the note Kyle reads plus the silent-degradation caveat into `ship-and-route`; the `agents/` `effort:` worked example (shipped by PR #45 — verify and close); evaluate handoff.md's unevaluable saved-defaults branch; reconcile the reference-doc rule's broad sentence with its narrow When-to-update table. Full record in PR #44's review comment.
-- **Acceptance:** Each item shipped or explicitly declined with a reason.
-- **Size:** S
 - **Added:** 2026-07-27
 
 ### [Exploration] Fleet manifest + `/reconcile`: make single-source true on demand

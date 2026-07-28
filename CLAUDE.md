@@ -71,15 +71,16 @@ How model choice works across my sessions: **Fable 5 plans, Opus 5 builds, Sonne
 
 - Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on Fable 5. Well-specified builds run on Opus 5. Mechanical, checklist-scoped work runs on Sonnet 5.
 - Every plan or handoff written for another session to execute ends with a **Run-config block**: recommended model + effort for that session, a one-clause why, and the literal launch command (e.g. `claude --model claude-opus-5 --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults.
+- **Effort ladder (this protocol owns it — `/handoff` and `/prompt-optimize` both cite here, never each other):** `ultracode` for broad, parallelizable, want-exhaustive-coverage work (multi-agent fan-out + adversarial verify) · `max` / `xhigh` for ONE hard problem, design calls with real tradeoffs included (`max` uncapped and fast-burning, `xhigh` hard-but-bounded) · `high` for ordinary build work with judgment in it · `medium` / `low` for mechanical, checklist-scoped work. Effort is independent of the model pick.
 - Builder sessions start **fresh from the plan file**, never from the planning session's transcript. Never recommend switching models mid-session after heavyweight planning: `/model` keeps the conversation but invalidates the per-model prompt cache — the full transcript re-ingests at uncached rates, and the build inherits deliberation noise it doesn't need.
 - **Split planner from builder only when build ≫ plan.** When the work is plan-heavy and build-light, finish it in the Fable session — a handoff would cost more than it saves.
-- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter (see `agents/`).
+- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter (see `agents/silent-failure-hunter.md` and `agents/spec-miner.md` for the worked shape). Both keys are real, consumed agent-file fields — but a *misspelled* `effort:` only logs a warning and falls back to the default; it never fails the dispatch, so proofread the value.
 
 ---
 
 ## Reference Doc Maintenance
 
-`~/Projects/claude-config/docs/command-skill-reference.md` is the living index of every custom slash command, skill, and agent. **Keep it in sync as part of any commit that touches a skill, command, or agent — never batch updates later.**
+`~/Projects/claude-config/docs/command-skill-reference.md` is the living index of every custom slash command, skill, and agent. **Keep it in sync in the same commit that changes what the index records — an item's existence, name, or description. Never batch those updates later.** The "When to update" table below is the complete trigger list: a commit that changes an item's internals without touching its name or description needs no reference-doc edit. This includes mid-review fix commits — a fix that reworks a `description:` triggers the sync just like the original add did.
 
 This rule fires everywhere (this file is the global CLAUDE.md), so it covers global items in this repo AND project-specific items in any project.
 
