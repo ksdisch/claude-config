@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Block a push that would land the reference index and the usage playbook out of
+# sync. Tracked in the repo and activated by install.sh (`core.hooksPath`), so a
+# fresh clone gets the enforcement, not just the rule — and it fires for terminal
+# pushes and agent pushes alike, since git runs it either way.
+#
+# Bypass with `git push --no-verify` when you genuinely mean to.
+set -euo pipefail
+
+REPO="$(git rev-parse --show-toplevel)"
+CHECK="$REPO/scripts/check-doc-sync.py"
+
+[ -f "$CHECK" ] || exit 0
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-push: python3 not found — cannot run the doc sync check." >&2
+  echo "          Install python3, or push with --no-verify if you accept the risk." >&2
+  exit 1
+fi
+
+python3 "$CHECK"
