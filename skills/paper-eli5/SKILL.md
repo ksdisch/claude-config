@@ -56,7 +56,10 @@ running unattended, the global unattended rules apply.
    GitHub renders it, and it is the stable grammar `/paper-gloss` consumes to
    typeset the HTML, exactly as `[Figure N]` is the grammar `/paper-figures`
    consumes. A variable is never left as bare prose characters, and notation the
-   source didn't have is never invented. Figure images can't be carried from a
+   source didn't have is never invented — with exactly one exception, the named
+   form defined in Phase 2, which is derived from the source equation by
+   substitution and adds no meaning to it. Nothing else in this rewrite may
+   author notation. Figure images can't be carried from a
    PDF: a `[Figure N]` placeholder holds the spot and the caption is rewritten
    (markdown/HTML inputs keep their image references). Inline citation markers
    (`[12]`, `(Smith et al., 2023)`) stay exactly where they are; the references
@@ -166,14 +169,23 @@ Rules for the named form:
 
 - Output headings == ledger headings, same order.
 - Per-section paragraph counts == ledger counts.
-- Per-section equation / table / **figure-slot** counts == ledger counts. A
+- Per-section equation / table / **figure-slot** counts == ledger counts,
+  **counting source equations only** — a named form is an equation this rewrite
+  authored, not one carried from the paper, and counting it makes every section
+  overshoot by its named-form count. A
   figure slot is a placeholder **or** an image — `[Figure N]` and
   `![Figure N](…)` both count, since `/paper-figures` rewrites the former into
   the latter and the totals must still reconcile after a retrofit.
 - Named forms reconcile: per section, **named-form blocks + exempt-list entries
-  == display-equation count**. Every display equation either carries a named form
-  or is on the exempt list with a reason; neither an equation that quietly lost
-  its named form nor a named form with no equation above it survives this check.
+  == the ledger's display-equation count** — the *source's* count, which is the
+  only one that makes this identity mean anything. A named form is itself a
+  `$$…$$` block, so measured against the output the left and right sides both
+  grow with it and the identity collapses to "exempt entries == source
+  equations", which passes only when every equation was exempted — the exact
+  inverse of what it checks. Every source display equation either carries a
+  named form or is on the exempt list with a reason; neither an equation that
+  quietly lost its named form nor a named form with no equation above it
+  survives this check.
 - Every named form is followed by a `*where:*` legend whose entries cover every
   symbol in its equation, and every `— not defined in the paper` entry appears in
   the Phase 4 flag list.

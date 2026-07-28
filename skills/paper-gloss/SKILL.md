@@ -352,8 +352,14 @@ every paragraph containing a subscript develops uneven leading.
 - **Dictionary symmetry:** every `data-term-id` in the body resolves to a
   `GLOSS_TERMS` key, and every dictionary entry is used at least once in the
   body **and** appears as a row in the glossary panel.
-- **Structure fidelity:** per-section `<p>` count == input paragraph count;
-  heading text and order identical to the input.
+- **Structure fidelity:** per-section `<p>` count == input paragraph count,
+  **excluding markdown paragraphs that map to something other than a `<p>`** —
+  the `*Named form:*` and `*where:*` marker lines (they become a
+  `.named-form-label` and a `<dl>`) and bare `[Figure N]` placeholders (they
+  become a `.figure-placeholder` div). Counting them makes a paper with N
+  display equations miss by 2N, every time. Equivalently, count `<p>` +
+  `.named-form-label` + `.figure-placeholder`. Heading text and order identical
+  to the input.
 - **Non-prose passthrough:** equations, `.math` spans, `<math>` elements,
   named-form equations and their legend `<dt>` symbols, tables, figure
   placeholders, figure captions, citations, and the references section contain
@@ -570,8 +576,14 @@ one would be inventing meanings, which `paper-eli5` constraint 5 forbids and
 which no downstream check could catch — a plausible wrong definition reads
 exactly like a right one. A page that predates this construct stays without it;
 say so in the report. Named forms already on the page are typeset like any other
-math, and `.named-form` joins the never-wrap containers for step 3's *Non-prose
-passthrough*. Adding named forms to an existing page means re-running
+math, and for step 3's *Non-prose passthrough* the never-wrap containers are the
+named-form **equation and its legend `<dt>` symbols** — not `.named-form` as a
+whole. A page built under this contract legitimately carries `.gloss-term`
+buttons inside `.named-form > dl > dd`; treating the block as one never-wrap
+container either false-fails the check or strips real buttons, and stripping
+them then trips the per-`data-term-id` tally rule, which permits a decrease only
+for terms deliberately freed while hand-authoring a math span. Adding named
+forms to an existing page means re-running
 `/paper-eli5` against the paper, not retrofitting.
 
 ---
