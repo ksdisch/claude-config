@@ -12,9 +12,12 @@ Every row below links to its card with `config →`.
 - **Skills** → Claude invokes them automatically, or you type `/skill-name`
 - **Project-specific** items → same syntax, only available inside that project
 
-**Keep in sync:** adding, renaming, or deleting a row here means adding, renaming, or
-deleting its playbook card in the **same commit**. A row with no card is a bug, and so is a
-card with no row.
+**Keep in sync:** the two docs are meant to stay 1:1 — a row added, renamed, or deleted here
+should carry its playbook card in the **same commit**. Note for future edits: the enforced
+rule in [`../CLAUDE.md`](../CLAUDE.md) (Reference Doc Maintenance, whose trigger table is
+authoritative) covers *this* index only, so the card half currently rides on this note — a
+`/learn` run that follows its own spec will add a row and no card. Extending that rule is a
+[proposed follow-up](usage-playbook.md#keeping-the-two-docs-in-sync).
 
 ---
 

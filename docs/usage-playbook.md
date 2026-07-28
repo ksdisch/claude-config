@@ -33,9 +33,23 @@ restatement for convenience, not a second authority:
 Names in `Pairs well with` link to their card. A few unlinked names (`superpowers:*`,
 plugin-provided items) have no card here because they aren't in this repo.
 
-**Keep in sync:** when a row is added, renamed, or deleted in
-[`command-skill-reference.md`](command-skill-reference.md), the matching card changes in the
-**same commit**. A card whose item no longer exists is a bug, and so is a row with no card.
+### Keeping the two docs in sync
+
+When a row is added, renamed, or deleted in
+[`command-skill-reference.md`](command-skill-reference.md), the matching card should change in
+the **same commit** — the two docs are meant to stay 1:1.
+
+Be aware of what that currently rests on. The enforced rule lives in
+[`../CLAUDE.md`](../CLAUDE.md) under *Reference Doc Maintenance*, and its trigger table —
+which the rule calls authoritative — names the index only; the playbook appears nowhere in
+it. So the card half of the pairing is carried by this note and its twin in the index, not by
+an enforced trigger, and an item added the normal way (`/learn` does this on spec) lands a row
+with no card. Extending that rule to name the card, or better, adding the mechanical
+row⇄card check as a hook so the invariant is *verified* rather than asserted, is a proposed
+follow-up awaiting Kyle's approval.
+
+Until then, the manual check when editing either doc: every row's `config →` anchor resolves
+to a real heading, and every card has a row.
 
 ---
 
