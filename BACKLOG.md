@@ -22,6 +22,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Acceptance:** Prototype the credible first step (`fleet.yml` + `commands/reconcile.md` + the `claudify-repo` append-line) and judge whether the bet holds.
 - **Size:** L
 - **Added:** 2026-06-18
+- **Live instance (2026-07-28):** deleting `commands/mock-sql-interview.md` (PR #53) removed it globally, but `/claudify-repo` copies without pruning — 18 repos under `~/Projects/` still ship a working `.claude/commands/mock-sql-interview.md` and 17 of their `CLAUDE.md` files still advertise it. Their vendored `mock-sql-demo.md` / `mock-sql-audio.md` also still cross-reference the deleted command. The smallest real first step is a PORT-mode prune: on re-vendor, drop repo-local copies whose global source no longer exists, and remove their CLAUDE.md rows.
 
 ### [Exploration] The Coliseum: commands earn their keep on lived-invocation evidence
 - **Why:** Lived-invocation data (which of the ~29 specs actually fire, overlap, or get hand-corrected) is a sharper curation signal than memory — a usage trace + `/retro` gives the repo its first subtraction pressure (A3 + A4). See [`docs/ideas/coliseum-commands-earn-their-keep.md`](docs/ideas/coliseum-commands-earn-their-keep.md) for the full write-up.
