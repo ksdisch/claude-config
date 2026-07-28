@@ -52,13 +52,6 @@ Available in every Claude Code session. Live in `commands/`.
 | [`/wiki-init`](../commands/wiki-init.md) | Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and minimum structure for the current project (no args), a specific path, or all top-level projects under ~/Projects/ (`--all`). Idempotent (never overwrites an existing wiki); lands changes via branch + PR. |
 | [`/wiki-backfill`](../commands/wiki-backfill.md) | Backfills a retroactive `Wiki/History.md` evolution narrative — mines merged PRs, git history, tags, wrap logs, and ADRs into a milestone-by-milestone, append-only history page for one project or all wiki-bearing projects (`--all`). Refuses to overwrite an existing History.md; lands changes via branch + PR. |
 
-### Learning & Interviews
-
-| Command | What it does |
-|---|---|
-| [`/mock-sql-demo`](../commands/mock-sql-demo.md) | Text self-play mock SQL interview — Claude plays both interviewer and ideal candidate, then debriefs you. |
-| [`/mock-sql-audio`](../commands/mock-sql-audio.md) | Generates a fully-simulated two-voice SQL mock interview as an MP3 (local Kokoro TTS) you listen to as an observer. |
-
 ---
 
 ## Global Skills

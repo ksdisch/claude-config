@@ -74,7 +74,7 @@ A short, decision-dense history (solo, ~24 commits). The load-bearing calls:
 **Reads as a weakness / "junior smell" / risk (own these):**
 - **Zero tests, zero CI.** Defensible for a prose repo — but a reviewer *will* ask. Strong answer: it's intentional (a "docs-as-validator" `CONVENTIONS.md` + frontmatter contract is backlogged), and the credible first lint is cheap (shellcheck the 3 Bash scripts; validate command frontmatter; assert `install.sh` DENY covers new top-level files). Saying that turns a gap into evidence of judgment.
 - **Bash without linting; one unverified assumption.** `render-narration.sh` hardcodes the Kokoro endpoint (`:8880`) — documented and overridable, but unproven, and not shellcheck'd in CI.
-- **Heavy machine coupling.** Several skills assume specific paths (`~/Cowork/second-brain/…`, `~/steame-sql-practice/…`, `~/Projects/…`). Someone cloning this can't run much. Frame it honestly: *personal tooling, not a library* — generalizing it is explicitly out of scope.
+- **Heavy machine coupling.** Several skills assume specific paths (`~/Cowork/second-brain/…`, `~/Projects/…`). Someone cloning this can't run much. Frame it honestly: *personal tooling, not a library* — generalizing it is explicitly out of scope.
 - **Surface-area vs. measured usage.** 18 commands + 14 skills authored fast; some specs are very long. Could read as over-engineering for a solo user. The backlog ("commands earn their keep", telemetry-forged) names this — cite it as the planned correction.
 
 **Before showing this repo to anyone:** nothing dangerous (no committed secrets; `.gitignore` is thorough). The only tidy-up worth doing first is a one-paragraph README note on the machine-coupling/personal-tooling scope, so a cloner isn't surprised.
