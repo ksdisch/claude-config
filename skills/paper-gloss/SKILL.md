@@ -371,25 +371,80 @@ paper, re-propose terms, or re-run Phase 1 — it edits math and nothing else.
 **Trigger:** `--retrofit <glossed.html> [artifact-url]`, or Kyle asking to fix
 the math in an existing paper page.
 
-1. **Enumerate.** `python3 scripts/check_math.py <file.html> -o /tmp/math.json`.
+1. **Enumerate, and capture the baseline before touching anything.**
+   `python3 scripts/check_math.py <file.html> -o /tmp/math.json`.
    Read **both** counters in the payload: `found` is untypeset TeX, and
    `verbatim_blocks` is deliberate Tier 3. The gate blanks every
    `data-math-verbatim="1"` region before scanning, so a page whose math is
    entirely correct Tier 3 reports `found: 0` — the hit list alone cannot see
    the second population this mode exists for. Stop only when **both** are
-   zero; that is the one case where there is nothing to do. With
-   `found: 0, verbatim_blocks: n > 0`, work the verbatim blocks instead of the
-   hit list: re-examine each against the ladder and promote the ones Tier 1 or
-   Tier 2 can now express faithfully, leaving the rest marked and reported.
-2. **Convert.** Work the hit list, replacing **only** the math span itself and
-   never the surrounding prose. Same discipline as `paper-figures`' `inject.py`,
-   which rewrites the placeholder line and leaves every other byte alone so the
-   structural verify still holds afterwards.
+   zero; that is the one case where there is nothing to do.
+
+   Whenever `verbatim_blocks > 0`, re-examine every marked block against the
+   ladder and promote the ones Tier 1 or Tier 2 can now express faithfully,
+   leaving the rest marked and reported. This is **independent of the hit
+   count** — a mixed page has both populations, and gating the promotion on
+   `found: 0` would silently skip the Tier 3 half.
+
+   Then, still before the first edit, record three numbers. Step 3 compares
+   against them, and once step 2 has rewritten the file they are gone:
+   - the count of `<p>` elements;
+   - the `.gloss-term` tally **per `data-term-id`**, not just the total;
+   - the `.gloss-term` buttons that sit inside a `$…$` run or an existing
+     `.math` / `<math>` element, also per `data-term-id`. On a pre-contract
+     page this is usually zero or one, but it is the number that makes a
+     legitimate drop in step 3 distinguishable from damage.
+2. **Convert.** Run the mechanical pass first, then hand-author what it
+   refuses:
+
+   ```bash
+   python3 scripts/convert_math.py <file.html>            # dry run: see the worklist
+   python3 scripts/convert_math.py <file.html> --apply
+   ```
+
+   It reports **three** outcomes, and only the first two are symmetric:
+
+   - **converted** — unambiguous Tier 1, done for you;
+   - **refused** — your hand-authoring worklist. The tool exits non-zero while
+     any remain, so a partial pass cannot be mistaken for a finished one. Work
+     it by the ladder: Tier 1 for anything linear, Tier 2 native MathML inside
+     the existing `<div class="scroll-x">` for genuine 2-D layout, Tier 3 only
+     where faithful typesetting is impossible.
+
+     **One sub-list is printed apart and the ladder does not apply to it
+     unqualified: `ambiguous` bare amounts** like `$100$`. A tool cannot tell a
+     price from a lone constant, so it refuses rather than guessing. If the
+     span is notation, typeset it by the ladder as usual. If it is money,
+     **escape both delimiters as `&#36;`** — the page still reads `$100$`, and
+     that is what clears the entry. Typesetting a price by the ladder deletes
+     both `$` and invents math; leaving it raw makes it recur on every run.
+   - **skipped** — spans read as money rather than notation (`$5-$10`). These
+     are *not* work, and are deliberately **not** in the exit code, because
+     filing a price under "typeset this by the ladder" invites you to mangle
+     it by hand. **Read the list anyway.** It is the one bucket with no
+     downstream detector: `check_math.py` cannot see these either, so anything
+     here that really is notation will never be mentioned by either tool
+     again. It is short by design — if it is long, something is miscalibrated.
+
+   Three things the converter deliberately leaves to the *refused* pile rather
+   than deciding alone, because each changes the page in a way a tool should
+   not choose: a span containing a `.gloss-term` button (removing that button
+   is the accounted decrease in step 3), every `$$…$$` display block, and every
+   bare amount, per the escape rule above.
+
+   Replace **only** the math span itself and never the surrounding prose —
+   same discipline as `paper-figures`' `inject.py`, which rewrites the
+   placeholder line and leaves every other byte alone so the structural verify
+   still holds afterwards.
 3. **Re-verify.** Run the Phase 3 bullets that are defined against the output
    alone: *No bare occurrences* (the approved term list is the page's own
    embedded `GLOSS_TERMS`), *No overlap/nesting*, *Dictionary symmetry*,
    *Non-prose passthrough*, *Math rendered*, *Well-formedness*,
-   *Self-containment*, and the lightbox half of *Figures*.
+   *Self-containment*, *Theming completeness*, *Artifact prerequisites*, and
+   the lightbox half of *Figures*. *Theming completeness* earns its place here:
+   injecting the math CSS is the retrofit's own edit, so this run is the one
+   most likely to reference a variable defined in `:root` but missing from the
+   dark block or a `data-theme` override.
 
    The input-comparative bullets are **out of scope and must not be claimed** —
    *Occurrence coverage*, *Structure fidelity*, and the "every markdown image in
@@ -397,36 +452,50 @@ the math in an existing paper page.
    retrofit never loads. Say so in the report rather than reporting a full
    Phase 3 pass.
 
-   In their place, check two counts against before the edit. Capture both
-   *before* touching the file. They are the retrofit's substitute for structure
-   fidelity and occurrence coverage: a conversion that moves them has touched
-   prose it had no business touching — the failure mode is a term swallowed into
-   a subscript, which reads as a clean run because the page still parses.
+   In their place, check step 1's baseline. These are the retrofit's substitute
+   for structure fidelity and occurrence coverage: a conversion that moves them
+   has touched prose it had no business touching — the failure mode is a term
+   swallowed into a subscript, which reads as a clean run because the page
+   still parses.
 
-   - **`<p>` elements: exactly unchanged.** No math conversion adds or removes a
-     paragraph.
-   - **Per-`data-term-id` `.gloss-term` tally: may only *decrease*, and only by
-     a number you report.** It cannot be pinned equal, because a pre-contract
-     page — this mode's first population — was built when *No bare occurrences*
-     had no math carve-out, so the wrapper was **required** to wrap terms it
-     found inside `$…$`. Those buttons are the `<button>`-inside-`<sub>` artifact
-     this contract exists to kill, and *Non-prose passthrough* requires removing
-     them. So before editing, also count the `.gloss-term` buttons sitting inside
-     math spans; the tally must fall by exactly that number and no other. An
-     increase, or a decrease that number doesn't account for, is the real defect
-     signal — and both the removed count and the affected term IDs go in the
-     step 6 report, because a term losing occurrences is a change to what the
-     reader can click.
+   - **`<p>` elements: exactly unchanged.** No math conversion adds or removes
+     a paragraph.
+   - **`.gloss-term` tally, compared per `data-term-id`: may only *decrease*,
+     and only for the terms you deliberately freed.** Compare term by term —
+     an aggregate total hides the case that matters, where one term wrongly
+     loses an occurrence while another wrongly gains one and the sum still
+     balances. It cannot be pinned equal either, because a pre-contract page
+     was built when *No bare occurrences* had no math carve-out, so the wrapper
+     was **required** to wrap terms it found inside `$…$`. Those buttons are
+     the `<button>`-inside-`<sub>` artifact this contract exists to kill, and
+     *Non-prose passthrough* requires removing them.
+
+     The legitimate drop for a term is the number of its buttons **you removed
+     while hand-authoring a span in step 2** — a number you know exactly,
+     because the converter refuses those spans rather than touching them.
+     Cross-check it against step 1's third count, and expect a difference only
+     where a math region was left unconverted (its button survives, correctly).
+     Any other movement — an increase, a decrease on a term you did not touch,
+     or a drop larger than what you removed — is the real defect signal.
+   - **A term that loses *every* occurrence keeps its glossary row.** If all of
+     a term's occurrences sat inside math, freeing them takes its body count to
+     zero, and *Dictionary symmetry*'s "used at least once in the body" half
+     does **not** apply to it in a retrofit — re-wrapping is forbidden by the
+     never-wrap rule and deleting the `GLOSS_TERMS` entry is prose surgery this
+     mode forbids. Leave the row, and name the term in the step 6 report so the
+     now-unreachable entry is a stated outcome rather than a silent one.
 4. **Republish in place:** `Artifact(url=<existing-url>, file_path=…)` with the
    same title and favicon. This is the stated carve-out from "every run
    publishes a brand-new artifact" — the whole point is that Kyle's existing
    link keeps working. Without a URL, ask for it rather than minting a new one
    and orphaning the old.
 5. **Git:** normal workflow — branch, commit, push, PR, merge, brief Kyle.
-6. **Report:** hits found, spans typeset per tier, remaining Tier 3 fallbacks,
-   the unchanged `<p>` count, the term tally with any drop named — how many
-   `.gloss-term` buttons were removed from inside math spans and which term IDs
-   lost occurrences — and the Artifact URL you redeployed to.
+6. **Report:** hits found; spans typeset per tier, split into what the
+   converter did mechanically and what you hand-authored; remaining Tier 3
+   fallbacks; the unchanged `<p>` count; the per-term tally with every drop
+   named — which `data-term-id`s lost occurrences, how many, and any term now
+   at zero body occurrences but still in the glossary; and the Artifact URL you
+   redeployed to.
 
 The eli5 markdown is **not** rewritten by a retrofit. Its `$…$` is already the
 canonical form and is correct where it lives.
