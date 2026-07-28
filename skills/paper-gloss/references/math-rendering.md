@@ -156,6 +156,26 @@ develops visibly uneven line spacing.
 
 ---
 
+## The mechanical pass
+
+```bash
+python3 scripts/convert_math.py <file.html>            # dry run: print the worklist
+python3 scripts/convert_math.py <file.html> --apply
+```
+
+Implements Tier 1 only, and only where it is certain. Everything else — every
+`$$…$$` display block, anything needing 2-D layout, and any span containing a
+`.gloss-term` button — it **refuses** and prints, so a human works that list by
+the ladder above. It exits non-zero while refusals remain, so a partial pass
+cannot be mistaken for a finished one.
+
+It never scans a tag interior. Math inside an attribute (`<img alt="… $x$">`)
+is reader-facing only as plain text, and injecting a `<span>` there breaks the
+tag — a failure the gate below cannot see, because it blanks tags before
+scanning. That also means **attribute TeX is out of scope for both tools**: if
+a page carries math in `alt` text, say so rather than assuming a clean gate
+means a clean page.
+
 ## The gate
 
 ```bash
