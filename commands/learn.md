@@ -1,7 +1,7 @@
 ---
 description: Mine the current session for reusable patterns and save each as a proper skill — house layout, reference-doc row, landed via branch + PR. Confirmation-gated; nothing is written until I approve the drafts.
 argument-hint: "[optional: what to focus the extraction on]"
-allowed-tools: Bash, Read, Write, Glob, Grep
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task, Skill
 ---
 
 # /learn — extract reusable patterns from this session

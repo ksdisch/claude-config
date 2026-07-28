@@ -1,6 +1,6 @@
 ---
 name: silent-failure-hunter
-description: Read-only auditor that hunts silent failures — swallowed errors, empty catch blocks, dangerous fallbacks, broken error propagation, and missing boundary handling — over a given scope (path, module, or diff range) and returns severity-graded findings. Never edits code, never fixes what it finds. Do NOT auto-delegate or launch proactively for general review requests (pre-merge review is adversarial-review's job); use when Kyle, bug-hunt, or another skill explicitly asks for a silent-failure audit.
+description: Read-only auditor that hunts silent failures — swallowed errors, empty catch blocks, dangerous fallbacks, broken error propagation, and missing boundary handling — over a given scope (path, module, or diff range) and returns severity-graded findings. Never edits code, never fixes what it finds. Do NOT auto-delegate or launch proactively for general review requests (pre-merge review is adversarial-review's job); use when Kyle — or a skill that names this agent explicitly — asks for a silent-failure audit.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 effort: high
