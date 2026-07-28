@@ -1,6 +1,6 @@
 ---
 name: paper-gloss
-description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Equations and inline math are typeset as real notation (unicode + HTML, native MathML where 2D layout is needed) rather than shipped as raw LaTeX, gated by a residual-TeX check. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. A `--retrofit` mode typesets math in an already-published page and redeploys it to the same Artifact URL.
+description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Equations and inline math are typeset as real notation (unicode + HTML, native MathML where 2D layout is needed) rather than shipped as raw LaTeX, gated by a residual-TeX check; each display equation's "named form" — the same equation with variables replaced by what they are, plus a `where:` legend — renders as a grouped block between the equation and its plain-words gloss. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. A `--retrofit` mode typesets math in an already-published page and redeploys it to the same Artifact URL.
 ---
 
 # Paper Gloss — click-to-reveal jargon glosses
@@ -102,11 +102,64 @@ same file rather than carrying its own.
 | Inline math (`$…$` in a sentence) | Typeset per the ladder in `references/math-rendering.md` — Tier 1 unicode + `<i>`/`<sub>`/`<sup>` inside `<span class="math">`. **Never left as literal TeX**, which is what put `$n_{\text{vocab}}$` in front of a reader. **Excluded from term-wrapping.** |
 | Display equations (`$$…$$`, or an equation line) | Same ladder: Tier 1 if the expression is linear, Tier 2 `<math display="block">` when it needs 2D layout (fractions, sums with limits, matrices), Tier 3 `<pre class="equation" data-math-verbatim="1">` verbatim only when faithful typesetting isn't possible — and then counted in the final report. Any tier stays inside `<div class="scroll-x">` (`overflow-x:auto`). **Excluded from term-wrapping.** |
 | Tables | Real `<table><thead>…<tbody>` markup, one input row/column → one output row/column, values unaltered, wrapped in `<div class="scroll-x">` |
+| Named-form block (`*Named form:*` + `$$…$$` + a `*where:*` list) | One `<div class="named-form">` holding all three parts — see "The named-form block" below. The equation typesets by the same ladder as any display equation; the legend becomes a `<dl>`. **Split bucket** for term-wrapping: the equation and the legend's symbols are math (never wrapped), the legend's descriptions are prose (**included**). |
 | "In plain words: …" gloss lines | `<p class="plain-words"><em>In plain words:</em> …</p>`, distinct styling (italic + subtle left border/tint). **Included** in term-wrapping. |
 | Bare `[Figure N]` placeholders | `<div class="figure-placeholder">[Figure N] — {rewritten caption}</div>`, dashed border / muted background so it visibly reads as a placeholder. Separator is a literal em dash. |
 | Markdown figure images (`![Figure N](url)`) | **Download the asset and inline it as base64**, never downgrade it to a placeholder: `<figure class="paper-figure" id="figure-N"><img src="data:image/…;base64,…" alt="{caption}" loading="lazy"><figcaption>{caption}</figcaption></figure>`. **Excluded from term-wrapping** — captions are never glossed. |
 | Inline citations (`[12]`, `(Smith et al., 2023)`) | Plain inline text, unchanged. **Never wrapped**, even if a term-like substring appears inside. |
 | References section | Carried verbatim as extracted. **Excluded from term-wrapping** — same bucket as equations/tables/citations. |
+
+### The named-form block
+
+`/paper-eli5` emits every display equation as three parts — the equation, a
+**named form** (the same equation with each variable replaced by what it is, plus
+a `where:` legend), then the plain-words line. The named form's job is to let a
+reader who can't remember what *d*<sub>k</sub> stands for read the meaning
+straight off the notation, so it must sit visually *between* the equation and the
+prose, grouped with the equation rather than floating as loose paragraphs:
+
+```html
+<div class="named-form">
+  <div class="named-form-label">Named form</div>
+  <div class="scroll-x">
+    <math display="block"> … </math>
+  </div>
+  <dl class="named-form-legend">
+    <dt><span class="math"><i>Q</i></span></dt>
+    <dd>the queries: what each token is looking for</dd>
+    <dt><span class="math"><i>d</i><sub>k</sub></span></dt>
+    <dd>the size of each key vector</dd>
+  </dl>
+</div>
+```
+
+- **The named-form equation typesets by the normal ladder** in
+  `references/math-rendering.md` — Tier 1 if linear, Tier 2 MathML when it needs
+  2-D layout, Tier 3 only as an honest fallback. It is ordinary `$$…$$` in the
+  markdown, so no new math machinery exists for it and `check_math.py` guards it
+  automatically. Words inside `\text{…}` are **upright** (`<mtext>` in MathML, no
+  `<i>` in Tier 1) — that upright/italic contrast is what tells a reader at a
+  glance which line is symbols and which is names.
+- **It always keeps its own `.scroll-x` wrapper.** A named form is wider than the
+  equation it mirrors — words are longer than letters — so it is the single most
+  likely element on the page to overflow. Without the wrapper it is what makes
+  the body scroll sideways.
+- **Styling** groups the three parts as one unit: a shared subtle background or
+  left border spanning the equation and the named form, a small uppercase
+  `.named-form-label`, and a `<dl>` laid out with `<dt>` and `<dd>` on one line
+  each (grid or `float`-free flex; never rely on default `<dd>` indentation
+  alone). Every value through an existing CSS variable, like everything else.
+- **Term-wrapping is split across this block**, and the split is not cosmetic:
+  - The named-form **equation** is math — `.math` spans and `<math>` elements are
+    in the never-wrap bucket, and that applies here in full. Its words live
+    inside `<mtext>`/upright spans; injecting a `<button class="gloss-term">`
+    there breaks the notation and inflates the term's occurrence tally exactly
+    the way wrapping `<sub>model</sub>` does. It is tempting to make an exception
+    *because* this line is made of words — don't; the words are notation here.
+  - Legend `<dt>` contents are math too, and are never wrapped.
+  - Legend `<dd>` descriptions are ordinary prose and **are** wrapped, on the
+    same footing as a plain-words line. This is where a reader gets the clickable
+    expansion, and it is the reason the split is worth the complexity.
 
 ### Term-wrapping mechanism
 
@@ -125,10 +178,11 @@ Give each approved term a stable kebab-case slug id (dedupe collisions with
 </script>
 ```
 
-Every occurrence of an approved term **inside paragraphs, list items, and
-plain-words lines** (never headings, equations, `.math` spans, `<math>`
-elements, tables, figure placeholders, figure captions, citations, or
-references) is wrapped as:
+Every occurrence of an approved term **inside paragraphs, list items,
+plain-words lines, and named-form legend descriptions (`<dd>`)** (never
+headings, equations, `.math` spans, `<math>` elements, named-form equations or
+their legend `<dt>` symbols, tables, figure placeholders, figure captions,
+citations, or references) is wrapped as:
 
 ```html
 <button type="button" class="gloss-term" data-term-id="stochastic-gradient-descent">stochastic gradient descent</button>
@@ -281,8 +335,9 @@ every paragraph containing a subscript develops uneven leading.
 ## Phase 3 — Verify
 
 - **Occurrence coverage:** for each approved term, the count of exact-string
-  occurrences in the source prose (paragraphs, list items, plain-words lines —
-  excluding equations/tables/figure-placeholders/citations/references **and any
+  occurrences in the source prose (paragraphs, list items, plain-words lines,
+  named-form legend descriptions — excluding
+  equations/tables/figure-placeholders/citations/references **and any
   `$…$` math span, which typesets to `.math`/`<math>` and is never wrapped**)
   equals the count of `.gloss-term` buttons with that `data-term-id` in the
   output.
@@ -297,12 +352,30 @@ every paragraph containing a subscript develops uneven leading.
 - **Dictionary symmetry:** every `data-term-id` in the body resolves to a
   `GLOSS_TERMS` key, and every dictionary entry is used at least once in the
   body **and** appears as a row in the glossary panel.
-- **Structure fidelity:** per-section `<p>` count == input paragraph count;
-  heading text and order identical to the input.
+- **Structure fidelity:** per-section `<p>` count == input paragraph count
+  **minus the input paragraphs that map to something other than a `<p>`** — the
+  `*Named form:*` and `*where:*` marker lines (two per named form) and bare
+  `[Figure N]` placeholders. Counting them makes a paper with N display
+  equations miss by 2N, every time. **Subtract on the input side; there is no
+  sum over output elements that works.** `*Named form:*` becomes the
+  `.named-form-label` and `[Figure N]` becomes a `.figure-placeholder`, but
+  `*where:*` leaves **no** output element at all — the `<dl>` renders the
+  legend's markdown *list items*, not the marker line — so any additive
+  restatement silently under-counts by one per named form, which is the same
+  false failure this exclusion exists to prevent. Heading text and order
+  identical to the input.
 - **Non-prose passthrough:** equations, `.math` spans, `<math>` elements,
-  tables, figure placeholders, figure captions, citations, and the references
-  section contain zero `class="gloss-term"` occurrences, even where term text
-  coincidentally appears inside.
+  named-form equations and their legend `<dt>` symbols, tables, figure
+  placeholders, figure captions, citations, and the references section contain
+  zero `class="gloss-term"` occurrences, even where term text coincidentally
+  appears inside. The named-form equation is the new trap here: it reads as
+  words, so a wrapper that decides by appearance rather than by container will
+  wrap it.
+- **Named forms carried 1:1:** the count of `.named-form` blocks equals the
+  count of `*Named form:*` markers in the input markdown, each sits between its
+  equation and that equation's plain-words line, and each `<dl>` has one `<dd>`
+  per `<dt>` matching its `*where:*` list item-for-item. A named form that lost
+  its legend, or a legend row that lost its symbol, fails here.
 - **Math rendered:** `python3 scripts/check_math.py <file.html>` exits clean.
   Every hit it prints is TeX a reader would have seen. A `<pre class="equation">`
   with no `data-math-verbatim="1"` is an equation nobody triaged, and the gate
@@ -356,7 +429,8 @@ Fix any discrepancy and re-verify before claiming done.
 - **Final report:** output path; PR link + merge confirmation; Artifact URL;
   number of approved terms + per-term occurrence tally; **math counts — spans
   typeset at Tier 1, blocks at Tier 2, and every Tier 3 verbatim fallback named
-  with the reason it couldn't be typeset**; any flags (bare occurrences fixed,
+  with the reason it couldn't be typeset**; named-form block count and how it
+  reconciles against the input's display equations; any flags (bare occurrences fixed,
   overlap conflicts resolved via longest-match, garbled or ambiguous regions);
   confirmation Phase 3 passed clean.
 
@@ -500,6 +574,22 @@ the math in an existing paper page.
 The eli5 markdown is **not** rewritten by a retrofit. Its `$…$` is already the
 canonical form and is correct where it lives.
 
+**A retrofit never generates named forms.** It works on published HTML without
+the source paper, so it has no way to learn what a symbol stands for; producing
+one would be inventing meanings, which `paper-eli5` constraint 5 forbids and
+which no downstream check could catch — a plausible wrong definition reads
+exactly like a right one. A page that predates this construct stays without it;
+say so in the report. Named forms already on the page are typeset like any other
+math, and for step 3's *Non-prose passthrough* the never-wrap containers are the
+named-form **equation and its legend `<dt>` symbols** — not `.named-form` as a
+whole. A page built under this contract legitimately carries `.gloss-term`
+buttons inside `.named-form > dl > dd`; treating the block as one never-wrap
+container either false-fails the check or strips real buttons, and stripping
+them then trips the per-`data-term-id` tally rule, which permits a decrease only
+for terms deliberately freed while hand-authoring a math span. Adding named
+forms to an existing page means re-running
+`/paper-eli5` against the paper, not retrofitting.
+
 ---
 
 ## Definition of done
@@ -508,6 +598,7 @@ The glossed HTML file exists at its output path with the header block, working
 click-to-reveal tooltips on every occurrence of every approved term, and a
 working full-glossary panel; Phase 3 passed clean (no bare or overlapping
 terms, structure matches input, self-contained, themed for light and dark,
+named forms carried 1:1 with their legends intact,
 `check_math.py` clean with every Tier 3 fallback named in the report); the
 git branch was committed, pushed, and merged via PR; the Artifact was published;
 the file was sent via SendUserFile; the final report lists path, PR link,
