@@ -36,20 +36,26 @@ plugin-provided items) have no card here because they aren't in this repo.
 ### Keeping the two docs in sync
 
 When a row is added, renamed, or deleted in
-[`command-skill-reference.md`](command-skill-reference.md), the matching card should change in
-the **same commit** — the two docs are meant to stay 1:1.
+[`command-skill-reference.md`](command-skill-reference.md), the matching card changes in the
+**same commit** — the two docs stay 1:1. The rule lives in [`../CLAUDE.md`](../CLAUDE.md)
+under *Reference Doc Maintenance*, which covers both docs and treats every trigger in its
+table as applying to the card as well as the row.
 
-Be aware of what that currently rests on. The enforced rule lives in
-[`../CLAUDE.md`](../CLAUDE.md) under *Reference Doc Maintenance*, and its trigger table —
-which the rule calls authoritative — names the index only; the playbook appears nowhere in
-it. So the card half of the pairing is carried by this note and its twin in the index, not by
-an enforced trigger, and an item added the normal way (`/learn` does this on spec) lands a row
-with no card. Extending that rule to name the card, or better, adding the mechanical
-row⇄card check as a hook so the invariant is *verified* rather than asserted, is a proposed
-follow-up awaiting Kyle's approval.
+It's checked mechanically, so drift can't ride along unnoticed:
+[`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) verifies that every index row
+carries a `config →` link, that each link resolves to a real card, that no card is an orphan,
+and that no two headings collide into one anchor (GitHub would silently suffix the second and
+re-point an existing link at the wrong card). It runs as a `git push` hook — a mismatch blocks
+the push rather than landing — and by hand any time:
 
-Until then, the manual check when editing either doc: every row's `config →` anchor resolves
-to a real heading, and every card has a row.
+```bash
+python3 scripts/check-doc-sync.py    # silent = in sync
+```
+
+One consequence worth knowing: a duplicate item name across projects is a hard error, not a
+warning. If a second project ever gains an item that already has a card, both cards take a
+project-suffixed heading — a `/verify` (DogHood) card becomes `#verify-doghood` — and both
+rows get re-pointed to match.
 
 ---
 
@@ -124,7 +130,8 @@ to a real heading, and every card has a row.
   escape hatch).
 - **Notes:** hard STOP after presenting candidates — nothing is written before you pick. It
   lands skills in `claude-config` via branch + PR, which may not be the repo you're working
-  in.
+  in, and each new skill ships with its index row *and* its card here in the same commit —
+  the sync check blocks the push otherwise.
 
 ### Planning & Exploration
 

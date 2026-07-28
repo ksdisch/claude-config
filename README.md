@@ -99,6 +99,7 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
+| [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 (wired as a `git push` hook) | ❌ `DENY` |
 | [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [usage playbook](docs/usage-playbook.md), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
 | [`BACKLOG.md`](BACKLOG.md) | Open improvements and explorations | ❌ `DENY` |
 
@@ -141,10 +142,12 @@ model: opus
 
 **Three rules when adding, renaming, or deleting anything:**
 
-1. **Update [`docs/command-skill-reference.md`](docs/command-skill-reference.md) in the same
-   commit.** That doc is the living index, and the rule is enforced in
-   [`CLAUDE.md`](CLAUDE.md). It fires only when an item's *existence, name, or description*
-   changes — reworking a file's internals needs no reference-doc edit.
+1. **Update [`docs/command-skill-reference.md`](docs/command-skill-reference.md) *and* its
+   [`docs/usage-playbook.md`](docs/usage-playbook.md) card in the same commit.** The index
+   records that an item exists; the playbook says how to run it. The rule lives in
+   [`CLAUDE.md`](CLAUDE.md) and [`scripts/check-doc-sync.py`](scripts/check-doc-sync.py)
+   verifies row⇄card 1:1 as a `git push` hook. It fires only when an item's *existence, name,
+   or description* changes — reworking a file's internals needs no doc edit.
 2. **A new top-level file or directory gets symlinked into `~/.claude/` unless you add it to
    `DENY` in [`install.sh`](install.sh).** Repo-meta and docs belong in `DENY`; content
    Claude should load does not. New files *inside* `commands/`, `skills/`, or `agents/` need

@@ -12,12 +12,11 @@ Every row below links to its card with `config →`.
 - **Skills** → Claude invokes them automatically, or you type `/skill-name`
 - **Project-specific** items → same syntax, only available inside that project
 
-**Keep in sync:** the two docs are meant to stay 1:1 — a row added, renamed, or deleted here
-should carry its playbook card in the **same commit**. Note for future edits: the enforced
-rule in [`../CLAUDE.md`](../CLAUDE.md) (Reference Doc Maintenance, whose trigger table is
-authoritative) covers *this* index only, so the card half currently rides on this note — a
-`/learn` run that follows its own spec will add a row and no card. Extending that rule is a
-[proposed follow-up](usage-playbook.md#keeping-the-two-docs-in-sync).
+**Keep in sync:** the two docs stay 1:1 — a row added, renamed, or deleted here carries its
+playbook card in the **same commit**. That's enforced rather than asked: the rule lives in
+[`../CLAUDE.md`](../CLAUDE.md) under *Reference Doc Maintenance*, and
+[`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) verifies row⇄card 1:1 as a
+`git push` hook. See [Keeping the two docs in sync](usage-playbook.md#keeping-the-two-docs-in-sync).
 
 ---
 
@@ -33,7 +32,7 @@ Available in every Claude Code session. Live in `commands/`.
 | [`/wrap`](../commands/wrap.md) | End-of-session close-out — recaps the work, explains the why, builds vocabulary, quizzes via active recall, and suggests next moves. Saves a dated log to `.claude/`. · [config →](usage-playbook.md#wrap) |
 | [`/catchup`](../commands/catchup.md) | Mid-session audio catch-up — narrates the session so far (or just the most recent output) as an MP3, then keeps working. Does not end the session. · [config →](usage-playbook.md#catchup) |
 | [`/handoff`](../commands/handoff.md) | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context. Also prints a plain-English "what's next & why" briefing. · [config →](usage-playbook.md#handoff) |
-| [`/learn`](../commands/learn.md) | Mines the current session for reusable patterns and — after a confirmation gate — saves each as a proper skill (house layout + reference-doc row), landed via branch + PR. · [config →](usage-playbook.md#learn) |
+| [`/learn`](../commands/learn.md) | Mines the current session for reusable patterns and — after a confirmation gate — saves each as a proper skill (house layout + reference-doc row + playbook card), landed via branch + PR. · [config →](usage-playbook.md#learn) |
 
 ### Planning & Exploration
 

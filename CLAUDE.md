@@ -80,7 +80,7 @@ How model choice works across my sessions: **Fable 5 plans, Opus 5 builds, Sonne
 
 ## Reference Doc Maintenance
 
-`~/Projects/claude-config/docs/command-skill-reference.md` is the living index of every custom slash command, skill, and agent. **Keep it in sync in the same commit that changes what the index records — an item's existence, name, or description. Never batch those updates later.** The "When to update" table below is the complete trigger list: a commit that changes an item's internals without touching its name or description needs no reference-doc edit. This includes mid-review fix commits — a fix that reworks a `description:` triggers the sync just like the original add did.
+`~/Projects/claude-config/docs/command-skill-reference.md` is the living index of every custom slash command, skill, and agent; `docs/usage-playbook.md` is its paired companion, holding one run-config card per indexed item. **Keep both in sync in the same commit that changes what the index records — an item's existence, name, or description. Never batch those updates later.** The "When to update" table below is the complete trigger list: a commit that changes an item's internals without touching its name or description needs no edit to either doc. This includes mid-review fix commits — a fix that reworks a `description:` triggers the sync just like the original add did.
 
 This rule fires everywhere (this file is the global CLAUDE.md), so it covers global items in this repo AND project-specific items in any project.
 
@@ -96,11 +96,13 @@ This rule fires everywhere (this file is the global CLAUDE.md), so it covers glo
 | Add a custom subagent (`agents/<name>/`) | Add it to the "Custom Subagents" section at the bottom |
 | A new project gets a `.claude/` with skills or commands | Add a new `### Project Name` subsection under "Project-Specific Items" with a one-line description of what the project is |
 
+**Every action in that table applies to the playbook too.** An added item gets a card (Run config · Reach for it when · Pairs well with, per the conventions already in `docs/usage-playbook.md`); a renamed or re-described item gets its card edited; a deleted item loses its card — and the row's `config →` link and the card's anchor stay in agreement. This is verified, not remembered: `scripts/check-doc-sync.py` checks row⇄card 1:1 and runs as a `git push` hook, so drift blocks the push instead of landing. Run it any time with `python3 scripts/check-doc-sync.py`.
+
 ### Format rules
 - One-line description per entry: what it does, not how it works
 - For global items: assign to the most fitting existing category; only create a new category if nothing fits
 - For project-specific sections: include a one-sentence description of the project above the table(s)
-- Commit the reference doc update in the **same commit** as the skill/command change (or as an immediately following commit on the same branch)
+- Commit the reference-doc row **and its playbook card** in the **same commit** as the skill/command change (or as an immediately following commit on the same branch — the check runs at `git push`, so the branch has to be consistent before it leaves the machine)
 
 ---
 
