@@ -16,8 +16,10 @@ Two calibration decisions, both learned from how the original bug shipped:
   * A bare `$` is never a hit. Papers say "$5M in compute", and an inline pair
     is only credited when nothing follows the opening `$` or precedes the
     closing `$` but non-space — which is what rules out "we spent $5M and $8M".
-    A gate that cries wolf gets ignored, and an ignored gate is why raw
-    `$n_{\\text{vocab}}$` reached a reader in the first place.
+    Tight ranges ("$5M–$8M") carry no such whitespace, so a digit-initial body
+    ending on a separator is rejected as currency too. A gate that cries wolf
+    gets ignored, and an ignored gate is why raw `$n_{\\text{vocab}}$` reached
+    a reader in the first place.
 
   * A `<pre class="equation">` carrying no `data-math-verbatim="1"` IS scanned.
     The verbatim attribute is a deliberate, reported Tier-3 fallback; its
@@ -67,8 +69,15 @@ DETECTORS = [
 ]
 
 # A closed pair on one line, with no whitespace immediately inside either
-# delimiter. The whitespace rule is what makes currency prose safe.
+# delimiter. The whitespace rule is what makes spaced currency prose safe.
 INLINE_DOLLAR = re.compile(r"\$(?!\s)([^$\n]{1,200}?)(?<!\s)\$")
+
+# ...but a range written tight — "$5M–$8M", "$1M-$2M", "$100k/$1M" — has no
+# whitespace inside either delimiter, so the rule above happily reads "5M–" as
+# a math body. A money amount is digit-initial with an optional magnitude
+# suffix, and no real expression *ends* on a separator; that pairing is the
+# signature of two prices, not one expression.
+CURRENCY_RANGE = re.compile(r"^\d[\d.,]*[a-zA-Z]{0,2}[-–—/,;]$")
 
 
 def _blank(match):
@@ -92,13 +101,16 @@ def scannable(html):
 def looks_like_math(body):
     """Is the inside of a `$…$` pair plausibly math rather than prose?
 
-    A backslash, subscript, or superscript settles it. Failing that, only a
-    short body containing a letter counts — that admits `$k$` and `$W$` while
-    rejecting `$100$`, which in running prose is far more likely money than a
-    lone numeric constant.
+    A backslash, subscript, or superscript settles it — a TeX signal always
+    wins, so this never suppresses a real hit. Failing that, a tight currency
+    range is rejected outright, and otherwise only a short body containing a
+    letter counts — that admits `$k$` and `$W$` while rejecting `$100$`, which
+    in running prose is far more likely money than a lone numeric constant.
     """
     if any(c in body for c in "\\_^"):
         return True
+    if CURRENCY_RANGE.match(body):
+        return False
     return len(body) <= 6 and any(c.isalpha() for c in body)
 
 

@@ -103,6 +103,33 @@ class TestFalsePositiveDiscipline(unittest.TestCase):
     def test_a_price_range(self):
         self.assertEqual(find_hits(page("<p>between $100 and $200 per run</p>")), [])
 
+    def test_a_tight_price_range_with_an_en_dash(self):
+        """The spaced forms above are rescued by the whitespace rule; a tight
+        range is not — `$5M–$` is a closed pair with no space inside either
+        delimiter. This is the idiomatic way papers write a cost range, and the
+        operator has no legal fix, because the prose is the paper's."""
+        self.assertEqual(find_hits(page("<p>costs $5M–$8M per run</p>")), [])
+
+    def test_a_tight_price_range_with_a_hyphen(self):
+        self.assertEqual(find_hits(page("<p>a budget of $1M-$2M</p>")), [])
+
+    def test_a_tight_price_range_with_a_magnitude_suffix(self):
+        self.assertEqual(find_hits(page("<p>somewhere in $100k–$1M territory</p>")), [])
+
+    def test_a_tight_price_range_with_a_slash(self):
+        self.assertEqual(find_hits(page("<p>priced at $5M/$8M depending on tier</p>")), [])
+
+    def test_a_tight_price_range_with_a_decimal(self):
+        self.assertEqual(find_hits(page("<p>between $2.5M–$4M all in</p>")), [])
+
+    def test_the_currency_guard_does_not_suppress_real_math(self):
+        """The guard must not buy quiet at the cost of a miss. A TeX signal
+        always wins, and a digit-initial body that does not end on a separator
+        is still math."""
+        self.assertEqual(len(find_hits(page(r"<p>set $2x$ aside</p>"))), 1)
+        self.assertEqual(len(find_hits(page(r"<p>we use $2^k$ buckets</p>"))), 1)
+        self.assertEqual(len(find_hits(page(r"<p>let $5M_{i}$ denote it</p>"))), 1)
+
     def test_tex_inside_a_code_element(self):
         html = page(r"<p>write <code>\frac{a}{b}</code> to get a fraction</p>")
         self.assertEqual(find_hits(html), [])

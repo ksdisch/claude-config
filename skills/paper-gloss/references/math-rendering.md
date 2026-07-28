@@ -172,5 +172,6 @@ this gate is for.
 Not scanned, by design: `<code>` elements, `<script>`/`<style>` bodies, anything
 marked `data-math-verbatim="1"`, and everything from the References heading to the
 end of the document. A bare `$` is never a hit on its own — papers say "$5M in
-compute", and a gate that cries wolf gets ignored, which is the same failure mode
-that let the original bug ship.
+compute", and a tight range like "$5M–$8M" is rejected too (a digit-initial body
+ending on a separator is currency, not an expression). A gate that cries wolf
+gets ignored, which is the same failure mode that let the original bug ship.

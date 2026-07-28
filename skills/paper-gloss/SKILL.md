@@ -282,10 +282,16 @@ every paragraph containing a subscript develops uneven leading.
 
 - **Occurrence coverage:** for each approved term, the count of exact-string
   occurrences in the source prose (paragraphs, list items, plain-words lines —
-  excluding equations/tables/figure-placeholders/citations/references) equals
-  the count of `.gloss-term` buttons with that `data-term-id` in the output.
+  excluding equations/tables/figure-placeholders/citations/references **and any
+  `$…$` math span, which typesets to `.math`/`<math>` and is never wrapped**)
+  equals the count of `.gloss-term` buttons with that `data-term-id` in the
+  output.
 - **No bare occurrences:** scan the output's text nodes for each approved term's
-  exact string outside a `.gloss-term` wrapper — any hit must be fixed.
+  exact string outside a `.gloss-term` wrapper — any hit must be fixed, **except
+  inside a `.math` span or a `<math>` element, where a bare occurrence is the
+  required outcome**: `$d_{\text{model}}$` puts the literal text `model` in a
+  `<sub>`, and wrapping it is what the never-wrap rule forbids. Exclude those
+  subtrees before scanning; do not "fix" them.
 - **No overlap/nesting:** confirm longest-match precedence was applied; zero
   overlapping or nested `.gloss-term` spans.
 - **Dictionary symmetry:** every `data-term-id` in the body resolves to a
@@ -366,18 +372,38 @@ paper, re-propose terms, or re-run Phase 1 — it edits math and nothing else.
 the math in an existing paper page.
 
 1. **Enumerate.** `python3 scripts/check_math.py <file.html> -o /tmp/math.json`.
-   Zero hits means there is nothing to do — say so and stop rather than
-   rewriting a page that is already correct.
+   Read **both** counters in the payload: `found` is untypeset TeX, and
+   `verbatim_blocks` is deliberate Tier 3. The gate blanks every
+   `data-math-verbatim="1"` region before scanning, so a page whose math is
+   entirely correct Tier 3 reports `found: 0` — the hit list alone cannot see
+   the second population this mode exists for. Stop only when **both** are
+   zero; that is the one case where there is nothing to do. With
+   `found: 0, verbatim_blocks: n > 0`, work the verbatim blocks instead of the
+   hit list: re-examine each against the ladder and promote the ones Tier 1 or
+   Tier 2 can now express faithfully, leaving the rest marked and reported.
 2. **Convert.** Work the hit list, replacing **only** the math span itself and
    never the surrounding prose. Same discipline as `paper-figures`' `inject.py`,
    which rewrites the placeholder line and leaves every other byte alone so the
    structural verify still holds afterwards.
-3. **Re-verify.** Re-run Phase 3 in full, and additionally confirm two counts
-   are **unchanged** from before the edit: the number of `<p>` elements, and the
-   per-`data-term-id` `.gloss-term` tally. A math conversion that moves either
-   has touched prose it had no business touching — the failure mode is a term
-   swallowed into a subscript, which reads as a clean run because the page still
-   parses.
+3. **Re-verify.** Run the Phase 3 bullets that are defined against the output
+   alone: *No bare occurrences* (the approved term list is the page's own
+   embedded `GLOSS_TERMS`), *No overlap/nesting*, *Dictionary symmetry*,
+   *Non-prose passthrough*, *Math rendered*, *Well-formedness*,
+   *Self-containment*, and the lightbox half of *Figures*.
+
+   The input-comparative bullets are **out of scope and must not be claimed** —
+   *Occurrence coverage*, *Structure fidelity*, and the "every markdown image in
+   the input" half of *Figures* all compare against an `-eli5.md` that a
+   retrofit never loads. Say so in the report rather than reporting a full
+   Phase 3 pass.
+
+   In their place, confirm two counts are **unchanged** from before the edit:
+   the number of `<p>` elements, and the per-`data-term-id` `.gloss-term` tally.
+   Capture both *before* touching the file. These are the retrofit's substitute
+   for structure fidelity and occurrence coverage: a math conversion that moves
+   either has touched prose it had no business touching — the failure mode is a
+   term swallowed into a subscript, which reads as a clean run because the page
+   still parses.
 4. **Republish in place:** `Artifact(url=<existing-url>, file_path=…)` with the
    same title and favicon. This is the stated carve-out from "every run
    publishes a brand-new artifact" — the whole point is that Kyle's existing
@@ -402,3 +428,9 @@ terms, structure matches input, self-contained, themed for light and dark,
 git branch was committed, pushed, and merged via PR; the Artifact was published;
 the file was sent via SendUserFile; the final report lists path, PR link,
 Artifact URL, per-term tallies, and every flag.
+
+For a **RETROFIT** run, substitute its own step 3: the output-only Phase 3
+bullets passed, the input-comparative ones were declared out of scope rather
+than claimed, and the `<p>` and per-term counts came back unchanged. Everything
+else on this list still holds, and the Artifact was redeployed to the existing
+URL rather than published fresh.
