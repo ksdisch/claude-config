@@ -397,13 +397,26 @@ the math in an existing paper page.
    retrofit never loads. Say so in the report rather than reporting a full
    Phase 3 pass.
 
-   In their place, confirm two counts are **unchanged** from before the edit:
-   the number of `<p>` elements, and the per-`data-term-id` `.gloss-term` tally.
-   Capture both *before* touching the file. These are the retrofit's substitute
-   for structure fidelity and occurrence coverage: a math conversion that moves
-   either has touched prose it had no business touching — the failure mode is a
-   term swallowed into a subscript, which reads as a clean run because the page
-   still parses.
+   In their place, check two counts against before the edit. Capture both
+   *before* touching the file. They are the retrofit's substitute for structure
+   fidelity and occurrence coverage: a conversion that moves them has touched
+   prose it had no business touching — the failure mode is a term swallowed into
+   a subscript, which reads as a clean run because the page still parses.
+
+   - **`<p>` elements: exactly unchanged.** No math conversion adds or removes a
+     paragraph.
+   - **Per-`data-term-id` `.gloss-term` tally: may only *decrease*, and only by
+     a number you report.** It cannot be pinned equal, because a pre-contract
+     page — this mode's first population — was built when *No bare occurrences*
+     had no math carve-out, so the wrapper was **required** to wrap terms it
+     found inside `$…$`. Those buttons are the `<button>`-inside-`<sub>` artifact
+     this contract exists to kill, and *Non-prose passthrough* requires removing
+     them. So before editing, also count the `.gloss-term` buttons sitting inside
+     math spans; the tally must fall by exactly that number and no other. An
+     increase, or a decrease that number doesn't account for, is the real defect
+     signal — and both the removed count and the affected term IDs go in the
+     step 6 report, because a term losing occurrences is a change to what the
+     reader can click.
 4. **Republish in place:** `Artifact(url=<existing-url>, file_path=…)` with the
    same title and favicon. This is the stated carve-out from "every run
    publishes a brand-new artifact" — the whole point is that Kyle's existing
@@ -411,7 +424,9 @@ the math in an existing paper page.
    and orphaning the old.
 5. **Git:** normal workflow — branch, commit, push, PR, merge, brief Kyle.
 6. **Report:** hits found, spans typeset per tier, remaining Tier 3 fallbacks,
-   the unchanged `<p>` and term tallies, and the Artifact URL you redeployed to.
+   the unchanged `<p>` count, the term tally with any drop named — how many
+   `.gloss-term` buttons were removed from inside math spans and which term IDs
+   lost occurrences — and the Artifact URL you redeployed to.
 
 The eli5 markdown is **not** rewritten by a retrofit. Its `$…$` is already the
 canonical form and is correct where it lives.
@@ -431,6 +446,7 @@ Artifact URL, per-term tallies, and every flag.
 
 For a **RETROFIT** run, substitute its own step 3: the output-only Phase 3
 bullets passed, the input-comparative ones were declared out of scope rather
-than claimed, and the `<p>` and per-term counts came back unchanged. Everything
+than claimed, the `<p>` count came back unchanged, and the per-term tally either
+held or fell by exactly the reported count of buttons freed from math. Everything
 else on this list still holds, and the Artifact was redeployed to the existing
 URL rather than published fresh.
