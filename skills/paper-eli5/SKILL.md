@@ -1,6 +1,6 @@
 ---
 name: paper-eli5
-description: Rewrite someone else's research paper into plain English — section by section, paragraph by paragraph, 1:1. Same headings, same paragraph order; nothing summarized, merged, dropped, or reordered; only the language changes (smart-newcomer register, jargon translated on first use). Accepts a local PDF/markdown/text path, an arXiv URL or bare ID, or any other web URL. Equations and tables stay verbatim with an "in plain words" gloss; figures become placeholders with rewritten captions; the references section passes through untouched. Output lands in the current repo at docs/papers/<slug>-eli5.md (papers/ if no docs/; beside the input outside a repo) and is sent to Kyle. Use whenever Kyle types /paper-eli5, or says "eli5 this paper", "simplify this paper", "plain-English this paper", "make this paper readable", "translate this paper for a layman" — even if he doesn't name the skill. NOT for writing up Kyle's own finished projects (research-paper) and NOT for choosing the next project (seed-hunt). Works interactively or unattended; after the input paper is known it runs end-to-end.
+description: Rewrite someone else's research paper into plain English — section by section, paragraph by paragraph, 1:1. Same headings, same paragraph order; nothing summarized, merged, dropped, or reordered; only the language changes (smart-newcomer register, jargon translated on first use). Accepts a local PDF/markdown/text path, an arXiv URL or bare ID, or any other web URL. Equations, tables, and inline math stay verbatim with an "in plain words" gloss, math normalized to canonical `$…$` / `$$…$$` so `/paper-gloss` can typeset it; figures become placeholders with rewritten captions; the references section passes through untouched. Output lands in the current repo at docs/papers/<slug>-eli5.md (papers/ if no docs/; beside the input outside a repo) and is sent to Kyle. Use whenever Kyle types /paper-eli5, or says "eli5 this paper", "simplify this paper", "plain-English this paper", "make this paper readable", "translate this paper for a layman" — even if he doesn't name the skill. NOT for writing up Kyle's own finished projects (research-paper) and NOT for choosing the next project (seed-hunt). Works interactively or unattended; after the input paper is known it runs end-to-end.
 ---
 
 # Paper ELI5 — a plain-English rewrite that mirrors the paper 1:1
@@ -47,11 +47,18 @@ running unattended, the global unattended rules apply.
    wording, not less content. Sentence count may change; paragraph count may not.
 4. **NON-PROSE PASSES THROUGH.** Equations and tables verbatim in place, each
    immediately followed by an italic *"In plain words: …"* line; table values are
-   never altered. Figure images can't be carried from a PDF: a `[Figure N]`
-   placeholder holds the spot and the caption is rewritten (markdown/HTML inputs
-   keep their image references). Inline citation markers (`[12]`, `(Smith et al.,
-   2023)`) stay exactly where they are; the references section is carried verbatim
-   as extracted — never rewritten, never pruned.
+   never altered. **Math is non-prose too — including inline math inside a
+   sentence.** Every expression is normalized to one canonical grammar, `$…$`
+   inline and `$$…$$` display, whatever the source used (`\(…\)`, `\[…\]`, a
+   KaTeX annotation, a PDF's extracted glyphs). TeX is correct in this markdown —
+   GitHub renders it, and it is the stable grammar `/paper-gloss` consumes to
+   typeset the HTML, exactly as `[Figure N]` is the grammar `/paper-figures`
+   consumes. A variable is never left as bare prose characters, and notation the
+   source didn't have is never invented. Figure images can't be carried from a
+   PDF: a `[Figure N]` placeholder holds the spot and the caption is rewritten
+   (markdown/HTML inputs keep their image references). Inline citation markers
+   (`[12]`, `(Smith et al., 2023)`) stay exactly where they are; the references
+   section is carried verbatim as extracted — never rewritten, never pruned.
 5. **NEVER INVENT.** Garbled or unreadable regions are flagged in the final
    report, not filled in.
 
@@ -60,7 +67,9 @@ running unattended, the global unattended rules apply.
 Ingest the whole paper first. Build two internal working artifacts (never shipped):
 
 1. **Skeleton ledger** — every heading verbatim, in order; per section: paragraph
-   count plus counts of equations, tables, and figures.
+   count plus counts of equations, tables, figures, and math spans (inline and
+   display tallied separately — inline math is the one that silently evaporates,
+   because unlike an equation it has no line of its own to go missing).
 2. **Glossary** — every field-jargon term and acronym mapped to ONE chosen
    plain-English rendering, decided here and used consistently in every section.
 
@@ -91,6 +100,9 @@ in memory.
   figure slot is a placeholder **or** an image — `[Figure N]` and
   `![Figure N](…)` both count, since `/paper-figures` rewrites the former into
   the latter and the totals must still reconcile after a retrofit.
+- Per-section inline-math and display-math counts == ledger counts, and every
+  span uses the canonical `$…$` / `$$…$$` delimiters — a stray `\(…\)` that
+  survives here becomes unrendered TeX on the published page.
 - References section present, verbatim as extracted.
 
 Any mismatch → fix and re-verify. Do not claim done until this passes clean.

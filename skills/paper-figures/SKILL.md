@@ -232,6 +232,14 @@ Both injectors are idempotent; re-running will not duplicate CSS or the lightbox
 - **No collateral damage:** re-run paper-gloss's Phase 3 checks that injection
   could disturb — per-section `<p>` counts, heading text and order, gloss-term
   coverage, dictionary symmetry.
+- **Math still rendered:** `python3 ../paper-gloss/scripts/check_math.py f` exits
+  clean. `inject_html.py` only swaps `.figure-placeholder` divs and appends at
+  the `</style>` / `</body>` seams, so it has no path to math — but this pass
+  re-publishes the page, and a re-publish that ships unrendered TeX is a defect
+  no matter which stage introduced it. On an older page predating the math
+  contract the check will fail honestly; hand it to `/paper-gloss --retrofit`
+  rather than suppressing it. The contract itself lives in
+  `../paper-gloss/references/math-rendering.md` — one copy, cited, never forked.
 - **End-to-end proof:** open the finished HTML in Playwright and screenshot it.
   Confirm the figures actually *render* — not merely that the tags are present —
   and that clicking one opens the lightbox with no console errors.
