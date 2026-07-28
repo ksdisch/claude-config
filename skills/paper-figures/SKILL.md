@@ -232,6 +232,14 @@ Both injectors are idempotent; re-running will not duplicate CSS or the lightbox
 - **No collateral damage:** re-run paper-gloss's Phase 3 checks that injection
   could disturb — per-section `<p>` counts, heading text and order, gloss-term
   coverage, dictionary symmetry.
+- **Math still rendered:** `python3 ../paper-gloss/scripts/check_math.py f` exits
+  clean. `inject_html.py` only swaps `.figure-placeholder` divs and appends at
+  the `</style>` / `</body>` seams, so it has no path to math — but this pass
+  re-publishes the page, and a re-publish that ships unrendered TeX is a defect
+  no matter which stage introduced it. On an older page predating the math
+  contract the check will fail honestly; hand it to `/paper-gloss --retrofit`
+  rather than suppressing it. The contract itself lives in
+  `../paper-gloss/references/math-rendering.md` — one copy, cited, never forked.
 - **End-to-end proof:** open the finished HTML in Playwright and screenshot it.
   Confirm the figures actually *render* — not merely that the tags are present —
   and that clicking one opens the lightbox with no console errors.
@@ -245,8 +253,13 @@ Fix any discrepancy and re-verify before claiming done.
 - **Git:** feature branch **in the paper's own repo**, commit the images and the
   updated files, push, PR, merge autonomously, brief Kyle — unless that project's
   CLAUDE.md tightens it. Outside a repo: just write the files.
-- **Re-publish the Artifact** if the glossed HTML changed. Per paper-gloss's
-  existing rule this is a brand-new artifact, never a redeploy of a previous URL.
+- **Re-publish the Artifact** if the glossed HTML changed. A figure retrofit
+  publishes a **brand-new artifact**, not a redeploy — that remains this skill's
+  rule. Do not read it as a claim that redeploying is impossible: `paper-gloss`'s
+  RETROFIT mode deliberately republishes in place with `Artifact(url=…)`, the one
+  named carve-out, because repairing math on a page Kyle already shared must not
+  orphan his link. Whether a figure retrofit should take the same carve-out is an
+  open question, not settled here — if Kyle gives you the existing URL, use it.
 - **SendUserFile** the updated HTML.
 - **Final report:** a per-figure table — number, capture method
   (direct-download / browser-shot / manual), final dimensions, file size — plus

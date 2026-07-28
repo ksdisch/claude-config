@@ -1,6 +1,6 @@
 ---
 name: paper-gloss
-description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite.
+description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Equations and inline math are typeset as real notation (unicode + HTML, native MathML where 2D layout is needed) rather than shipped as raw LaTeX, gated by a residual-TeX check. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. A `--retrofit` mode typesets math in an already-published page and redeploys it to the same Artifact URL.
 ---
 
 # Paper Gloss — click-to-reveal jargon glosses
@@ -27,6 +27,9 @@ claude.ai Artifact.
 ## Parse `$ARGUMENTS`
 
 - **Local path** to a `-eli5.md` file → the target document.
+- **`--retrofit <glossed.html> [artifact-url]`** → skip Phases 1–2 and run
+  RETROFIT mode (below): typeset math in an already-published page and redeploy
+  it to the same Artifact URL.
 - **No argument** → ask which file. Scan the current directory / `docs/papers/` for
   `*-eli5.md` files and show the list.
 - **Unattended with no argument** → report the ambiguity; don't guess.
@@ -82,6 +85,12 @@ writing any markup, **load the `artifact-design` skill** and follow its general
 conventions for anything not spelled out below (this spec covers paper-gloss's
 specific content; artifact-design covers general artifact hygiene).
 
+If the document contains any math — inline or display — **also load
+`references/math-rendering.md`**. It holds the conversion ladder, the symbol
+table, and the two rules where math collides with the escaping and term-wrapping
+rules below. It is the single copy of that contract; `/paper-figures` cites the
+same file rather than carrying its own.
+
 ### Document skeleton — construct-by-construct mapping
 
 | eli5.md construct | HTML shape |
@@ -90,7 +99,8 @@ specific content; artifact-design covers general artifact hygiene).
 | Section headings (any level) | Mapped 1:1 by depth to `<h1>`–`<h6>`, verbatim text, same order. **Excluded from term-wrapping.** |
 | Paragraphs | One input paragraph → exactly one `<p>` — never merged or split |
 | Lists | `<ul>`/`<ol>` + `<li>`, item-for-item |
-| Equations | `<pre class="equation">` verbatim, inside `<div class="scroll-x">` (`overflow-x:auto`) — never re-typeset as math |
+| Inline math (`$…$` in a sentence) | Typeset per the ladder in `references/math-rendering.md` — Tier 1 unicode + `<i>`/`<sub>`/`<sup>` inside `<span class="math">`. **Never left as literal TeX**, which is what put `$n_{\text{vocab}}$` in front of a reader. **Excluded from term-wrapping.** |
+| Display equations (`$$…$$`, or an equation line) | Same ladder: Tier 1 if the expression is linear, Tier 2 `<math display="block">` when it needs 2D layout (fractions, sums with limits, matrices), Tier 3 `<pre class="equation" data-math-verbatim="1">` verbatim only when faithful typesetting isn't possible — and then counted in the final report. Any tier stays inside `<div class="scroll-x">` (`overflow-x:auto`). **Excluded from term-wrapping.** |
 | Tables | Real `<table><thead>…<tbody>` markup, one input row/column → one output row/column, values unaltered, wrapped in `<div class="scroll-x">` |
 | "In plain words: …" gloss lines | `<p class="plain-words"><em>In plain words:</em> …</p>`, distinct styling (italic + subtle left border/tint). **Included** in term-wrapping. |
 | Bare `[Figure N]` placeholders | `<div class="figure-placeholder">[Figure N] — {rewritten caption}</div>`, dashed border / muted background so it visibly reads as a placeholder. Separator is a literal em dash. |
@@ -116,8 +126,9 @@ Give each approved term a stable kebab-case slug id (dedupe collisions with
 ```
 
 Every occurrence of an approved term **inside paragraphs, list items, and
-plain-words lines** (never headings, equations, tables, figure placeholders,
-figure captions, citations, or references) is wrapped as:
+plain-words lines** (never headings, equations, `.math` spans, `<math>`
+elements, tables, figure placeholders, figure captions, citations, or
+references) is wrapped as:
 
 ```html
 <button type="button" class="gloss-term" data-term-id="stochastic-gradient-descent">stochastic gradient descent</button>
@@ -141,7 +152,14 @@ breaks the paragraph's text flow.
   about the sentence changes, so that risk doesn't exist.
 - **Escape literal `<`, `>`, `&`** in source prose as HTML entities before
   wrapping (papers can contain things like "a < b" or generic-type angle
-  brackets) so the output stays well-formed.
+  brackets) so the output stays well-formed. This is a rule about **prose
+  text**: math spans are authored markup, so `<span class="math">`, `<i>`,
+  `<sub>`, `<sup>`, `<math>` and its children are emitted as live tags, while
+  any `<`/`>`/`&` *inside* math content is escaped.
+- **Never wrap a term inside math.** `$d_{\text{model}}$` typesets to
+  `<sub>model</sub>`; if "model" is an approved term, a naive wrapper puts a
+  `<button>` inside a subscript — breaking the notation and inflating that
+  term's occurrence tally past its prose count.
 
 ### Visual cue
 
@@ -251,16 +269,29 @@ column (~760–880px); equations and tables are the only elements allowed to
 scroll horizontally, in their own `.scroll-x` containers — the page itself must
 never scroll sideways.
 
+Math costs nothing here: Tier 1 is plain `<i>`/`<sub>`/`<sup>` and Tier 2 MathML
+is native to the browser, so neither needs a script, a webfont, or a `data:`
+URI, and both inherit `currentColor` and theme for free. Add the small
+`.math` / `sub` / `sup` / `math` rules from `references/math-rendering.md` to the
+same inline `<style>` — the `line-height: 0` on `sub`/`sup` is load-bearing, or
+every paragraph containing a subscript develops uneven leading.
+
 ---
 
 ## Phase 3 — Verify
 
 - **Occurrence coverage:** for each approved term, the count of exact-string
   occurrences in the source prose (paragraphs, list items, plain-words lines —
-  excluding equations/tables/figure-placeholders/citations/references) equals
-  the count of `.gloss-term` buttons with that `data-term-id` in the output.
+  excluding equations/tables/figure-placeholders/citations/references **and any
+  `$…$` math span, which typesets to `.math`/`<math>` and is never wrapped**)
+  equals the count of `.gloss-term` buttons with that `data-term-id` in the
+  output.
 - **No bare occurrences:** scan the output's text nodes for each approved term's
-  exact string outside a `.gloss-term` wrapper — any hit must be fixed.
+  exact string outside a `.gloss-term` wrapper — any hit must be fixed, **except
+  inside a `.math` span or a `<math>` element, where a bare occurrence is the
+  required outcome**: `$d_{\text{model}}$` puts the literal text `model` in a
+  `<sub>`, and wrapping it is what the never-wrap rule forbids. Exclude those
+  subtrees before scanning; do not "fix" them.
 - **No overlap/nesting:** confirm longest-match precedence was applied; zero
   overlapping or nested `.gloss-term` spans.
 - **Dictionary symmetry:** every `data-term-id` in the body resolves to a
@@ -268,10 +299,15 @@ never scroll sideways.
   body **and** appears as a row in the glossary panel.
 - **Structure fidelity:** per-section `<p>` count == input paragraph count;
   heading text and order identical to the input.
-- **Non-prose passthrough:** equations, tables, figure placeholders, figure
-  captions, citations, and the references section contain zero
-  `class="gloss-term"` occurrences, even where term text coincidentally appears
-  inside.
+- **Non-prose passthrough:** equations, `.math` spans, `<math>` elements,
+  tables, figure placeholders, figure captions, citations, and the references
+  section contain zero `class="gloss-term"` occurrences, even where term text
+  coincidentally appears inside.
+- **Math rendered:** `python3 scripts/check_math.py <file.html>` exits clean.
+  Every hit it prints is TeX a reader would have seen. A `<pre class="equation">`
+  with no `data-math-verbatim="1"` is an equation nobody triaged, and the gate
+  fails on it deliberately — mark it Tier 3 or typeset it, but don't leave it
+  undecided.
 - **Figures:** every markdown image in the input is present as
   `<figure class="paper-figure">` with a `data:` URI and a non-empty `alt` —
   zero downgraded to placeholders. If a lightbox is present, there is exactly
@@ -314,12 +350,86 @@ Fix any discrepancy and re-verify before claiming done.
     clickable glossary terms and a full glossary panel."
   - `file_path`: the finished HTML.
   - **Every run publishes a brand-new artifact** — a new paper each time, never
-    a redeploy of a previous run's URL.
+    a redeploy of a previous run's URL. The single exception is RETROFIT mode
+    below, which exists precisely to update a page in place.
 - **Send the file** to Kyle via SendUserFile.
 - **Final report:** output path; PR link + merge confirmation; Artifact URL;
-  number of approved terms + per-term occurrence tally; any flags (bare
-  occurrences fixed, overlap conflicts resolved via longest-match, garbled or
-  ambiguous regions); confirmation Phase 3 passed clean.
+  number of approved terms + per-term occurrence tally; **math counts — spans
+  typeset at Tier 1, blocks at Tier 2, and every Tier 3 verbatim fallback named
+  with the reason it couldn't be typeset**; any flags (bare occurrences fixed,
+  overlap conflicts resolved via longest-match, garbled or ambiguous regions);
+  confirmation Phase 3 passed clean.
+
+---
+
+## RETROFIT mode — repair math in an already-published page
+
+For a glossed page that shipped before this contract existed, or one whose math
+was left at Tier 3 and can now be typeset. It does **not** re-read the source
+paper, re-propose terms, or re-run Phase 1 — it edits math and nothing else.
+
+**Trigger:** `--retrofit <glossed.html> [artifact-url]`, or Kyle asking to fix
+the math in an existing paper page.
+
+1. **Enumerate.** `python3 scripts/check_math.py <file.html> -o /tmp/math.json`.
+   Read **both** counters in the payload: `found` is untypeset TeX, and
+   `verbatim_blocks` is deliberate Tier 3. The gate blanks every
+   `data-math-verbatim="1"` region before scanning, so a page whose math is
+   entirely correct Tier 3 reports `found: 0` — the hit list alone cannot see
+   the second population this mode exists for. Stop only when **both** are
+   zero; that is the one case where there is nothing to do. With
+   `found: 0, verbatim_blocks: n > 0`, work the verbatim blocks instead of the
+   hit list: re-examine each against the ladder and promote the ones Tier 1 or
+   Tier 2 can now express faithfully, leaving the rest marked and reported.
+2. **Convert.** Work the hit list, replacing **only** the math span itself and
+   never the surrounding prose. Same discipline as `paper-figures`' `inject.py`,
+   which rewrites the placeholder line and leaves every other byte alone so the
+   structural verify still holds afterwards.
+3. **Re-verify.** Run the Phase 3 bullets that are defined against the output
+   alone: *No bare occurrences* (the approved term list is the page's own
+   embedded `GLOSS_TERMS`), *No overlap/nesting*, *Dictionary symmetry*,
+   *Non-prose passthrough*, *Math rendered*, *Well-formedness*,
+   *Self-containment*, and the lightbox half of *Figures*.
+
+   The input-comparative bullets are **out of scope and must not be claimed** —
+   *Occurrence coverage*, *Structure fidelity*, and the "every markdown image in
+   the input" half of *Figures* all compare against an `-eli5.md` that a
+   retrofit never loads. Say so in the report rather than reporting a full
+   Phase 3 pass.
+
+   In their place, check two counts against before the edit. Capture both
+   *before* touching the file. They are the retrofit's substitute for structure
+   fidelity and occurrence coverage: a conversion that moves them has touched
+   prose it had no business touching — the failure mode is a term swallowed into
+   a subscript, which reads as a clean run because the page still parses.
+
+   - **`<p>` elements: exactly unchanged.** No math conversion adds or removes a
+     paragraph.
+   - **Per-`data-term-id` `.gloss-term` tally: may only *decrease*, and only by
+     a number you report.** It cannot be pinned equal, because a pre-contract
+     page — this mode's first population — was built when *No bare occurrences*
+     had no math carve-out, so the wrapper was **required** to wrap terms it
+     found inside `$…$`. Those buttons are the `<button>`-inside-`<sub>` artifact
+     this contract exists to kill, and *Non-prose passthrough* requires removing
+     them. So before editing, also count the `.gloss-term` buttons sitting inside
+     math spans; the tally must fall by exactly that number and no other. An
+     increase, or a decrease that number doesn't account for, is the real defect
+     signal — and both the removed count and the affected term IDs go in the
+     step 6 report, because a term losing occurrences is a change to what the
+     reader can click.
+4. **Republish in place:** `Artifact(url=<existing-url>, file_path=…)` with the
+   same title and favicon. This is the stated carve-out from "every run
+   publishes a brand-new artifact" — the whole point is that Kyle's existing
+   link keeps working. Without a URL, ask for it rather than minting a new one
+   and orphaning the old.
+5. **Git:** normal workflow — branch, commit, push, PR, merge, brief Kyle.
+6. **Report:** hits found, spans typeset per tier, remaining Tier 3 fallbacks,
+   the unchanged `<p>` count, the term tally with any drop named — how many
+   `.gloss-term` buttons were removed from inside math spans and which term IDs
+   lost occurrences — and the Artifact URL you redeployed to.
+
+The eli5 markdown is **not** rewritten by a retrofit. Its `$…$` is already the
+canonical form and is correct where it lives.
 
 ---
 
@@ -328,7 +438,15 @@ Fix any discrepancy and re-verify before claiming done.
 The glossed HTML file exists at its output path with the header block, working
 click-to-reveal tooltips on every occurrence of every approved term, and a
 working full-glossary panel; Phase 3 passed clean (no bare or overlapping
-terms, structure matches input, self-contained, themed for light and dark); the
+terms, structure matches input, self-contained, themed for light and dark,
+`check_math.py` clean with every Tier 3 fallback named in the report); the
 git branch was committed, pushed, and merged via PR; the Artifact was published;
 the file was sent via SendUserFile; the final report lists path, PR link,
 Artifact URL, per-term tallies, and every flag.
+
+For a **RETROFIT** run, substitute its own step 3: the output-only Phase 3
+bullets passed, the input-comparative ones were declared out of scope rather
+than claimed, the `<p>` count came back unchanged, and the per-term tally either
+held or fell by exactly the reported count of buttons freed from math. Everything
+else on this list still holds, and the Artifact was redeployed to the existing
+URL rather than published fresh.

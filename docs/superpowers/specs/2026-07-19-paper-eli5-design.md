@@ -131,8 +131,16 @@ Any mismatch → fix and re-verify. This is the guard against silent summarizati
 ## Out of scope (YAGNI)
 
 No TL;DR or summary section, no Q&A/quizzing (future `paper-companion` territory),
-no audio, no shipped glossary section, no re-deriving or reformatting of math, no
-figure regeneration. It rewrites language; everything else passes through.
+no audio, no shipped glossary section, ~~no re-deriving or reformatting of math~~,
+no figure regeneration. It rewrites language; everything else passes through.
+
+> **Superseded 2026-07-28 — the math clause only.** Letting math pass through as
+> literal characters meant `$n_{\text{vocab}}$` reached readers of the published
+> HTML. `/paper-eli5` now normalizes math to a canonical `$…$` / `$$…$$` grammar
+> and `/paper-gloss` typesets it. Still no *re-deriving*: the notation is
+> reformatted, never recomputed, and anything that can't be typeset faithfully
+> stays verbatim under a Tier 3 fallback. See
+> [`2026-07-28-paper-math-design.md`](2026-07-28-paper-math-design.md).
 
 ## Definition of done (for the skill itself)
 
