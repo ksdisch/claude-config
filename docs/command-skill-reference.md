@@ -13,10 +13,11 @@ Every row below links to its card with `config →`.
 - **Project-specific** items → same syntax, only available inside that project
 
 **Keep in sync:** the two docs stay 1:1 — a row added, renamed, or deleted here carries its
-playbook card in the **same commit**. That's enforced rather than asked: the rule lives in
+playbook card in the **same commit**. That's checked rather than asked: the rule lives in
 [`../CLAUDE.md`](../CLAUDE.md) under *Reference Doc Maintenance*, and
-[`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) verifies row⇄card 1:1 as a
-`git push` hook. See [Keeping the two docs in sync](usage-playbook.md#keeping-the-two-docs-in-sync).
+[`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) runs as the repo's `pre-push` hook,
+so drift blocks the push. See
+[Keeping the two docs in sync](usage-playbook.md#keeping-the-two-docs-in-sync).
 
 ---
 

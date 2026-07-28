@@ -96,7 +96,9 @@ This rule fires everywhere (this file is the global CLAUDE.md), so it covers glo
 | Add a custom subagent (`agents/<name>/`) | Add it to the "Custom Subagents" section at the bottom |
 | A new project gets a `.claude/` with skills or commands | Add a new `### Project Name` subsection under "Project-Specific Items" with a one-line description of what the project is |
 
-**Every action in that table applies to the playbook too.** An added item gets a card (Run config · Reach for it when · Pairs well with, per the conventions already in `docs/usage-playbook.md`); a renamed or re-described item gets its card edited; a deleted item loses its card — and the row's `config →` link and the card's anchor stay in agreement. This is verified, not remembered: `scripts/check-doc-sync.py` checks row⇄card 1:1 and runs as a `git push` hook, so drift blocks the push instead of landing. Run it any time with `python3 scripts/check-doc-sync.py`.
+**Every action in that table applies to the playbook too.** An added item gets a card (Run config · Reach for it when · Pairs well with, per the conventions already in `docs/usage-playbook.md`); a renamed or re-described item gets its card edited; a deleted item loses its card — and the row's `config →` link and the card's anchor stay in agreement.
+
+The row⇄card half is checked, not remembered: `scripts/check-doc-sync.py` runs as the repo's tracked `pre-push` hook (`.githooks/pre-push`, activated by `install.sh` via `core.hooksPath`), so a row without its card blocks the push instead of landing. It fires for terminal and agent pushes alike; `git push --no-verify` bypasses it deliberately. Run it any time with `python3 scripts/check-doc-sync.py`. **What it does not check** is whether an item file has a row at all — the two docs are compared to each other, not to `commands/`, `skills/`, and `agents/`. That part is still on you.
 
 ### Format rules
 - One-line description per entry: what it does, not how it works

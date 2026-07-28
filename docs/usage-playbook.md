@@ -41,16 +41,28 @@ When a row is added, renamed, or deleted in
 under *Reference Doc Maintenance*, which covers both docs and treats every trigger in its
 table as applying to the card as well as the row.
 
-It's checked mechanically, so drift can't ride along unnoticed:
+It's checked mechanically, so drift can't ride along unnoticed.
 [`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) verifies that every index row
-carries a `config →` link, that each link resolves to a real card, that no card is an orphan,
-and that no two headings collide into one anchor (GitHub would silently suffix the second and
-re-point an existing link at the wrong card). It runs as a `git push` hook — a mismatch blocks
-the push rather than landing — and by hand any time:
+carries a `config →` link; that each link resolves to a real card rather than to a section
+heading or to nothing; that the card a row links **is that row's item** (existence isn't
+enough — a copy-pasted anchor or a rename propagated to only one doc leaves a row pointing at
+some other item's card); that no two rows claim one card; that no card is an orphan; and that
+no two headings collide into one anchor, which GitHub resolves by silently suffixing the second
+and re-pointing an existing link at the wrong card.
+
+It runs as the repo's tracked `pre-push` hook (`.githooks/pre-push`, activated by `install.sh`
+via `core.hooksPath`), so a mismatch blocks the push instead of landing — for terminal and
+agent pushes alike, with `git push --no-verify` as the deliberate bypass. By hand, from
+anywhere:
 
 ```bash
-python3 scripts/check-doc-sync.py    # silent = in sync
+python3 scripts/check-doc-sync.py
+# doc sync check: in sync — 79 index rows, 79 cards.
 ```
+
+Two things it does **not** do. It never checks that an item file has a row at all — the two
+docs are compared to each other, not to `commands/`, `skills/`, and `agents/`. And it can't
+tell you what a card should *say*.
 
 One consequence worth knowing: a duplicate item name across projects is a hard error, not a
 warning. If a second project ever gains an item that already has a card, both cards take a

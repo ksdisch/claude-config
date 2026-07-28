@@ -87,6 +87,9 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
   reflect unmerged work.
 - Run it before [`/claudify-repo`](commands/claudify-repo.md) — that command vendors *out
   of* `~/.claude/`, so it finds nothing until the symlinks exist.
+- It also points this clone's `core.hooksPath` at [`.githooks/`](.githooks/), which activates
+  the [`pre-push`](.githooks/pre-push) sync check. Until you run it, the check exists in the
+  clone but nothing calls it.
 
 ## Repo layout
 
@@ -99,7 +102,8 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
-| [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 (wired as a `git push` hook) | ❌ `DENY` |
+| [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 | ❌ `DENY` |
+| [`.githooks/`](.githooks/) | Tracked git hooks — [`pre-push`](.githooks/pre-push) runs the sync check; activated by `install.sh` via `core.hooksPath` | ❌ `DENY` |
 | [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [usage playbook](docs/usage-playbook.md), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
 | [`BACKLOG.md`](BACKLOG.md) | Open improvements and explorations | ❌ `DENY` |
 
@@ -145,9 +149,10 @@ model: opus
 1. **Update [`docs/command-skill-reference.md`](docs/command-skill-reference.md) *and* its
    [`docs/usage-playbook.md`](docs/usage-playbook.md) card in the same commit.** The index
    records that an item exists; the playbook says how to run it. The rule lives in
-   [`CLAUDE.md`](CLAUDE.md) and [`scripts/check-doc-sync.py`](scripts/check-doc-sync.py)
-   verifies row⇄card 1:1 as a `git push` hook. It fires only when an item's *existence, name,
-   or description* changes — reworking a file's internals needs no doc edit.
+   [`CLAUDE.md`](CLAUDE.md), and [`scripts/check-doc-sync.py`](scripts/check-doc-sync.py) —
+   run by the tracked [`pre-push` hook](.githooks/pre-push) — blocks a push whose rows and
+   cards don't line up. It fires only when an item's *existence, name, or description*
+   changes; reworking a file's internals needs no doc edit.
 2. **A new top-level file or directory gets symlinked into `~/.claude/` unless you add it to
    `DENY` in [`install.sh`](install.sh).** Repo-meta and docs belong in `DENY`; content
    Claude should load does not. New files *inside* `commands/`, `skills/`, or `agents/` need

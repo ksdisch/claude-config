@@ -24,7 +24,7 @@ fi
 # the set from `git ls-tree` (not a raw `ls`) means anything untracked or
 # gitignored — secrets, *.bak backups, machine-local files — can NEVER be linked
 # into ~/.claude. Add new top-level docs/meta files to DENY so they aren't linked.
-DENY=(.gitignore README.md install.sh BACKLOG.md docs scripts)
+DENY=(.gitignore README.md install.sh BACKLOG.md docs scripts .githooks)
 LINKS=()
 while IFS= read -r name; do
   for d in "${DENY[@]}"; do [ "$name" = "$d" ] && continue 2; done
@@ -54,6 +54,20 @@ for item in "${LINKS[@]}"; do
   ln -s "$src" "$dst"
   echo "✓ linked $item -> $src"
 done
+
+# Activate this repo's tracked git hooks (.githooks/pre-push runs the index ⇄
+# playbook sync check). Repo-local config, so it affects only this clone; it
+# replaces .git/hooks for this repo, which holds nothing but git's own samples.
+if [ -d "$REPO/.githooks" ]; then
+  current_hooks_path="$(git -C "$REPO" config --get core.hooksPath || true)"
+  if [ "$current_hooks_path" = ".githooks" ]; then
+    echo "✓ git hooks already active (core.hooksPath=.githooks)"
+  else
+    git -C "$REPO" config core.hooksPath .githooks
+    chmod +x "$REPO"/.githooks/* 2>/dev/null || true
+    echo "✓ activated tracked git hooks (core.hooksPath=.githooks)"
+  fi
+fi
 
 echo
 echo "Done. ~/.claude now points at $REPO"
