@@ -48,19 +48,16 @@ into other repos.
 
 ```mermaid
 flowchart TD
-    subgraph SRC["claude-config — the canonical source"]
-        CMD["commands/ — slash commands"]
-        SKL["skills/ — skills"]
-        AGT["agents/ — subagents"]
-        CFG["CLAUDE.md<br/>operating-constraints.md<br/>statusline-command.sh"]
-    end
+    SRC["claude-config<br/>commands/ · skills/<br/>agents/ · CLAUDE.md"]
+    HOME["~/.claude/<br/>symlinks, same inode"]
+    SESSION["Every session<br/>on this machine"]
+    PROJ["A project repo<br/>.claude/ folder"]
+    ELSE["Cloud sessions<br/>collaborators"]
 
-    SRC -->|"install.sh symlinks every git-tracked top-level entry"| HOME["~/.claude/ — symlinks, same inode as this repo"]
-    HOME --> SESSION["Every Claude Code session on this machine"]
-
-    HOME -->|"/claudify-repo"| VENDOR["Selected commands and skills — copied, not linked"]
-    VENDOR --> PROJ["Project repos — .claude/commands/ and .claude/skills/"]
-    PROJ --> ELSEWHERE["Cloud sessions, web sessions, collaborators"]
+    SRC -->|"install.sh"| HOME
+    HOME --> SESSION
+    HOME -->|"/claudify-repo"| PROJ
+    PROJ --> ELSE
 ```
 
 - **Symlinked, not copied.** `~/.claude/commands/tdd.md` and `commands/tdd.md` are the same
