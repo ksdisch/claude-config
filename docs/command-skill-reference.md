@@ -21,6 +21,7 @@ Available in every Claude Code session. Live in `commands/`.
 | `/wrap` | End-of-session close-out — recaps the work, explains the why, builds vocabulary, quizzes via active recall, and suggests next moves. Saves a dated log to `.claude/`. |
 | `/catchup` | Mid-session audio catch-up — narrates the session so far (or just the most recent output) as an MP3, then keeps working. Does not end the session. |
 | `/handoff` | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context. Also prints a plain-English "what's next & why" briefing. |
+| `/learn` | Mines the current session for reusable patterns and — after a confirmation gate — saves each as a proper skill (house layout + reference-doc row), landed via branch + PR. |
 
 ### Planning & Exploration
 
@@ -303,9 +304,11 @@ A research / learning project following a structured learning spine.
 
 ## Custom Subagents
 
-Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by the `adversarial-review` skill (or by request), never auto-delegated. Global subagent types (e.g., `Explore`, `Plan`, `code-reviewer`) are provided by the Superpowers plugin and live outside this repo.
+Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Global subagent types (e.g., `Explore`, `Plan`, `code-reviewer`) are provided by the Superpowers plugin and live outside this repo.
 
 | Agent | What it does |
 |---|---|
 | `adversarial-reviewer` | Zero-context, repo-read-only diff reviewer — anchors to HEAD, reviews the branch diff vs merge-base, writes numbered findings graded critical / should-fix / nice-to-have to the review mailbox. Never edits code. |
 | `review-judge` | Neutral zero-context judge — rules only on author-disputed findings (upheld / overruled / downgraded / upgraded), may re-grade severity, owes deference to neither side. Appends one-paragraph rulings to the mailbox. |
+| `silent-failure-hunter` | Read-only auditor that hunts silent failures — swallowed errors, empty catches, dangerous fallbacks, broken error propagation, missing boundary handling — over a given scope and returns severity-graded findings. Never edits code. |
+| `spec-miner` | Opus-pinned brownfield spec extractor — without a capability input it maps the repo into capabilities; with one it mines that capability into a flat Requirement/Invariant spec file with machine-parseable metadata. Writes only `openspec/specs/<capability>/spec.md`, and never overwrites an existing spec unless dispatched with `OVERWRITE=yes`. |
