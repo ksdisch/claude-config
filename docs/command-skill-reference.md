@@ -56,7 +56,6 @@ Available in every Claude Code session. Live in `commands/`.
 
 | Command | What it does |
 |---|---|
-| [`/mock-sql-interview`](../commands/mock-sql-interview.md) | Live voice mock SQL interview — Claude is the interviewer, you write and run real SQL out loud. Defaults to the STEAMe Data Analytics Engineer 30-minute PostgreSQL format. |
 | [`/mock-sql-demo`](../commands/mock-sql-demo.md) | Text self-play mock SQL interview — Claude plays both interviewer and ideal candidate, then debriefs you. |
 | [`/mock-sql-audio`](../commands/mock-sql-audio.md) | Generates a fully-simulated two-voice SQL mock interview as an MP3 (local Kokoro TTS) you listen to as an observer. |
 
