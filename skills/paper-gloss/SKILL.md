@@ -352,14 +352,18 @@ every paragraph containing a subscript develops uneven leading.
 - **Dictionary symmetry:** every `data-term-id` in the body resolves to a
   `GLOSS_TERMS` key, and every dictionary entry is used at least once in the
   body **and** appears as a row in the glossary panel.
-- **Structure fidelity:** per-section `<p>` count == input paragraph count,
-  **excluding markdown paragraphs that map to something other than a `<p>`** —
-  the `*Named form:*` and `*where:*` marker lines (they become a
-  `.named-form-label` and a `<dl>`) and bare `[Figure N]` placeholders (they
-  become a `.figure-placeholder` div). Counting them makes a paper with N
-  display equations miss by 2N, every time. Equivalently, count `<p>` +
-  `.named-form-label` + `.figure-placeholder`. Heading text and order identical
-  to the input.
+- **Structure fidelity:** per-section `<p>` count == input paragraph count
+  **minus the input paragraphs that map to something other than a `<p>`** — the
+  `*Named form:*` and `*where:*` marker lines (two per named form) and bare
+  `[Figure N]` placeholders. Counting them makes a paper with N display
+  equations miss by 2N, every time. **Subtract on the input side; there is no
+  sum over output elements that works.** `*Named form:*` becomes the
+  `.named-form-label` and `[Figure N]` becomes a `.figure-placeholder`, but
+  `*where:*` leaves **no** output element at all — the `<dl>` renders the
+  legend's markdown *list items*, not the marker line — so any additive
+  restatement silently under-counts by one per named form, which is the same
+  false failure this exclusion exists to prevent. Heading text and order
+  identical to the input.
 - **Non-prose passthrough:** equations, `.math` spans, `<math>` elements,
   named-form equations and their legend `<dt>` symbols, tables, figure
   placeholders, figure captions, citations, and the references section contain

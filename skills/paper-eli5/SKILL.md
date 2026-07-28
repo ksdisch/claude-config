@@ -168,7 +168,9 @@ Rules for the named form:
 ## Phase 3 — Verify (mechanical, before claiming done)
 
 - Output headings == ledger headings, same order.
-- Per-section paragraph counts == ledger counts.
+- Per-section paragraph counts == ledger counts, **counting prose paragraphs
+  only** — the `*Named form:*` and `*where:*` marker lines this rewrite authors
+  are not paragraphs the paper had, and the ledger was built from the source.
 - Per-section equation / table / **figure-slot** counts == ledger counts,
   **counting source equations only** — a named form is an equation this rewrite
   authored, not one carried from the paper, and counting it makes every section
