@@ -136,11 +136,15 @@ def main(argv=None):
     for group in dupes:
         for p in group:
             for r in results:
-                # Never overwrite a more specific reason. "byte-identical"
-                # tells the operator the selector matched the wrong element;
-                # saying that about a file that simply failed to download sends
-                # them after the wrong remedy.
-                if r["path"] == p and not r["reason"]:
+                # Key on the verdict, not on whether a reason string is empty.
+                # Only the `pass` branch leaves reason empty, so testing the
+                # reason silently exempted the whole `review` band — a duplicate
+                # pair that happened to be sparse stayed `review` and the run
+                # exited 0. Duplicates must fail from any non-fail verdict;
+                # an existing `fail` keeps its own, more specific reason, since
+                # "byte-identical" means "the selector matched the wrong
+                # element" and would send the operator after the wrong remedy.
+                if r["path"] == p and r["verdict"] != "fail":
                     r["verdict"] = "fail"
                     r["reason"] = "byte-identical to another capture"
 

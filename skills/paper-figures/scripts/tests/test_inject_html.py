@@ -138,16 +138,37 @@ class TestInjectHTML(unittest.TestCase):
             self.assertTrue(s["ids"] or s.get("classes"),
                             f"{s['hook']} has no DOM fallback of its own")
 
+    def test_close_logic_never_aggregates_across_surfaces(self):
+        """Node-independent guard, so the real check below cannot silently skip
+        a machine into a green run.
+
+        Every form of the F5 defect works the same way: compute something over
+        ALL surfaces, then let it suppress an individual surface's fallback.
+        The per-surface loop therefore must not aggregate — no `.some(`,
+        `.every(`, or `.filter(` over the table inside closeGlossSurfaces."""
+        js = lightbox_js()
+        body = re.search(r"function closeGlossSurfaces\(\) \{(.*?)\n  \}", js, re.S)
+        self.assertIsNotNone(body, "closeGlossSurfaces must be present and parseable")
+        for agg in (".some(", ".every(", ".filter(", ".reduce("):
+            self.assertNotIn(
+                agg, body.group(1),
+                f"aggregating with {agg} across GLOSS_SURFACES is how F5 recurs: "
+                "one surface's state must never gate another's fallback")
+
     def test_one_missing_hook_still_closes_the_other_surface(self):
         """Executes the REAL emitted closeGlossSurfaces() against a stub DOM.
 
         Asserting on a Python re-implementation of the loop, or grepping the
         generated JS for the string `viaHooks`, both pass against a clean
         reintroduction of the defect under any other variable name. The only
-        test that can actually fail is one that runs the shipped code."""
+        test that can actually fail is one that runs the shipped code.
+
+        node is a test-only dependency and is not required to use the skill;
+        when it is absent this skips and the structural guard above still
+        stands."""
         node = shutil.which("node")
         if not node:
-            self.skipTest("node unavailable")
+            self.skipTest("node unavailable — structural guard still applies")
 
         js = lightbox_js()
         script = (
@@ -167,7 +188,7 @@ class TestInjectHTML(unittest.TestCase):
             "  backdrop: document.getElementById('gloss-backdrop').hidden,\n"
             "}));\n"
         )
-        proc = subprocess.run([node, "-e", script], capture_output=True, text=True)
+        proc = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=30)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         state = json.loads(proc.stdout.strip().splitlines()[-1])
         self.assertTrue(state["popover"], "popover must close via its exported hook")

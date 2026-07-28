@@ -130,6 +130,31 @@ class TestBadCapturesFailRatherThanCrash(unittest.TestCase):
                 self.assertIn("not a PNG", r["reason"],
                               "a failed download must not be relabelled a duplicate")
 
+    def test_duplicates_in_the_review_band_are_still_failed(self):
+        """Keying the duplicate override on an empty reason string exempted the
+        whole `review` band: only `pass` leaves reason empty, so a sparse
+        byte-identical pair stayed `review` and the run exited 0. Nothing
+        downstream reads duplicate_groups, and unattended runs are told to
+        proceed on Phase 4 alone, so that pair would ship unnoticed."""
+        d = tempfile.mkdtemp()
+        try:
+            # two identical PNGs sparse enough to land in the review band
+            blob = (b"\x89PNG\r\n\x1a\n" + b"\x00" * 8
+                    + struct.pack(">II", 900, 900) + b"\x00" * 9000)
+            for name in ("fig-01.png", "fig-02.png"):
+                with open(os.path.join(d, name), "wb") as fh:
+                    fh.write(blob)
+            out = os.path.join(d, "checks.json")
+            rc = checks_main([d, "-o", out])
+            with open(out) as fh:
+                payload = json.load(fh)
+            verdicts = {os.path.basename(r["path"]): r["verdict"] for r in payload["results"]}
+            self.assertEqual(set(verdicts.values()), {"fail"},
+                             f"byte-identical captures must fail from any verdict, got {verdicts}")
+            self.assertNotEqual(rc, 0, "a run containing duplicates must not exit 0")
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
     def test_a_dangling_symlink_does_not_abort_the_run(self):
         """check_capture's docstring promises one bad file cannot abort the run;
         os.path.getsize fails on a dangling symlink just as the PNG parse does."""
