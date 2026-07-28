@@ -88,11 +88,20 @@ def resample(src, dst, width, fmt, quality=None):
     cmd += [src, "--out", dst]
     proc = subprocess.run(cmd, capture_output=True, check=True)
     # `sips` exits 0 when its input is missing ("not a valid file - skipping"),
-    # so check=True proves nothing. Verify an output actually appeared, or the
-    # emitted manifest will describe a file that does not exist.
+    # so check=True proves nothing. An existence check alone is not enough
+    # either: in the step-down loop `dst` already exists from the first pass, so
+    # a silent no-op there would leave the old file in place and the manifest
+    # would report a width and size describing output that was never written.
+    # Assert the result actually has the width we asked for.
     if not os.path.exists(dst):
         raise RuntimeError(
             f"sips produced no output for {src}: "
+            f"{(proc.stderr or b'').decode(errors='replace').strip()}"
+        )
+    actual, _ = sips_dimensions(dst)
+    if actual != width:
+        raise RuntimeError(
+            f"sips did not resample {src} -> {dst}: asked for {width}px, got {actual}px: "
             f"{(proc.stderr or b'').decode(errors='replace').strip()}"
         )
     return os.path.getsize(dst)
