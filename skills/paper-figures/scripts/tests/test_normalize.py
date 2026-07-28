@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -117,6 +118,29 @@ class TestOriginalsAreNeverDestroyed(unittest.TestCase):
         self.assertNotEqual(rc, 0)
         with open(src, "rb") as fh:
             self.assertEqual(fh.read(), before, "the original must survive a symlinked dst")
+
+    def test_resample_raises_when_the_output_is_stale_rather_than_absent(self):
+        """The step-down branch. `dst` always exists there — it was written by
+        the first pass — so the existence check can never fire on that path. A
+        silent sips no-op therefore leaves the previous file in place while the
+        manifest reports the width and size of output that was never written.
+        This is the branch the width assertion exists for, and the one the
+        existence test does not reach."""
+        if not shutil.which("sips"):
+            self.skipTest("sips unavailable")
+        src = os.path.join(self.d, "big.png")
+        subprocess.run(["sips", "-s", "format", "png", "-z", "1300", "2000",
+                        "/System/Library/CoreServices/DefaultDesktop.heic", "--out", src],
+                       capture_output=True)
+        if not os.path.exists(src):
+            self.skipTest("could not synthesise a resamplable source image")
+        dst = os.path.join(self.d, "out.jpg")
+        resample(src, dst, 1400, "jpeg", 70)          # first pass writes dst at 1400px
+        self.assertTrue(os.path.exists(dst))
+        os.rename(src, src + ".moved")                # now make sips a silent no-op
+        with self.assertRaises(RuntimeError) as ctx:
+            resample(src, dst, 900, "jpeg", 70)       # step-down against a missing source
+        self.assertIn("did not resample", str(ctx.exception))
 
     def test_resample_raises_when_sips_produces_nothing(self):
         """`sips` exits 0 on a missing input, so check=True proves nothing;

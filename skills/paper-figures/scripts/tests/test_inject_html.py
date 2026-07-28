@@ -138,22 +138,44 @@ class TestInjectHTML(unittest.TestCase):
             self.assertTrue(s["ids"] or s.get("classes"),
                             f"{s['hook']} has no DOM fallback of its own")
 
-    def test_close_logic_never_aggregates_across_surfaces(self):
+    def test_per_surface_callback_has_exactly_one_early_return(self):
         """Node-independent guard, so the real check below cannot silently skip
         a machine into a green run.
 
-        Every form of the F5 defect works the same way: compute something over
-        ALL surfaces, then let it suppress an individual surface's fallback.
-        The per-surface loop therefore must not aggregate — no `.some(`,
-        `.every(`, or `.filter(` over the table inside closeGlossSurfaces."""
-        js = lightbox_js()
-        body = re.search(r"function closeGlossSurfaces\(\) \{(.*?)\n  \}", js, re.S)
-        self.assertIsNotNone(body, "closeGlossSurfaces must be present and parseable")
-        for agg in (".some(", ".every(", ".filter(", ".reduce("):
-            self.assertNotIn(
-                agg, body.group(1),
-                f"aggregating with {agg} across GLOSS_SURFACES is how F5 recurs: "
-                "one surface's state must never gate another's fallback")
+        Banning aggregate helpers (.some/.every/…) was too narrow — the original
+        defect used a plain boolean and no helper at all, so it sailed through.
+        The invariant that actually holds for every form of F5: the defect must
+        add a SECOND early return to the per-surface callback, one not gated on
+        that surface's own hook. The correct body has exactly one `return`, on
+        the line that invokes the hook.
+        """
+        body = self._per_surface_callback_body(lightbox_js())
+        returns = re.findall(r"\breturn\b[^;]*;", body)
+        self.assertEqual(
+            len(returns), 1,
+            f"expected exactly one early return in the per-surface callback, found "
+            f"{len(returns)}: {returns}. A second one means something outside this "
+            "surface is suppressing its fallback — that is F5.")
+        hook_line = [ln for ln in body.splitlines() if "return" in ln]
+        self.assertTrue(
+            any("surface.hook" in ln for ln in hook_line),
+            "the sole early return must be gated on this surface's own hook")
+
+    @staticmethod
+    def _per_surface_callback_body(js):
+        """Extract the GLOSS_SURFACES.forEach(function (surface) { … }) body."""
+        start = js.index("GLOSS_SURFACES.forEach(function (surface) {")
+        open_brace = js.index("{", start)
+        depth, i = 0, open_brace
+        while i < len(js):
+            if js[i] == "{":
+                depth += 1
+            elif js[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    return js[open_brace + 1:i]
+            i += 1
+        raise AssertionError("could not match braces on the per-surface callback")
 
     def test_one_missing_hook_still_closes_the_other_surface(self):
         """Executes the REAL emitted closeGlossSurfaces() against a stub DOM.
