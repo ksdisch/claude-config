@@ -53,7 +53,7 @@ Extract every behavioral assertion you can find, in any order. The only structur
 
 ## Phase 3: Spec generation
 
-**Overwrite guard first:** if `openspec/specs/<capability>/spec.md` already exists and you were NOT dispatched with `OVERWRITE=yes`, do not write. Read the existing spec, report what a re-mine would change (new / changed / removed behaviors), and stop — the dispatcher decides. Existing specs may carry hand curation you cannot re-derive.
+**Overwrite guard first:** if `openspec/specs/<capability>/spec.md` already exists and you were NOT dispatched with `OVERWRITE=yes`, do not write. Read the existing spec, report what a re-mine would change (new / changed / removed behaviors), and stop — the dispatcher decides. Existing specs may carry hand curation you cannot re-derive. **When you *are* replacing it under `OVERWRITE=yes`, read the existing spec first too** — and carry forward the `id` and any `id_source` of every behavior still present, per the never-re-derive rule; only genuinely new behaviors get freshly derived ids.
 
 One file: `openspec/specs/<capability>/spec.md`, containing only `### Requirement:` and `### Invariant:` blocks.
 
