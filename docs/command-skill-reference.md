@@ -146,6 +146,7 @@ Prospecting and outreach automation for auction consignor leads.
 |---|---|
 | `replenish-a2c` | Use when the prospecting pipeline has run thin — refills `prospects.md` by running audit and prospecting lanes in parallel, generating ranked leads and auto-drafted first-touch outreach. |
 | `stage-a2c` | Stages unsent first-touch outreach into Gmail drafts and LinkedIn compose windows. Reconciles which prospects still need messages before writing or reusing drafts. Never auto-sends. |
+| `rebrief-a2c` | Re-entry after time away — sweeps Gmail for replies, bounces, and unsent drafts, sweeps the Todoist A2C project for done/overdue, reconciles both against the prospect files, then briefs and primes the day's or week's work. |
 
 ---
 
