@@ -49,9 +49,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # or the operator gets a failing publish gate and an empty worklist (or worse,
 # a silent edit in a region the gate cannot see). Import, never re-derive.
 from check_math import (  # noqa: E402
+    CURRENCY_RANGE,
     REFERENCES,
     VERBATIM,
-    looks_like_math,
 )
 
 GREEK = {
@@ -269,12 +269,6 @@ def convert_body(body):
                    .replace("&amp;", "&"))
     if "&" in decoded:
         return None                          # some other entity: refuse
-    # Is this math at all? The gate's judgement, not a second opinion. Without
-    # it a prose price converts: "$5-$10" parses cleanly as 5 minus 10, both
-    # `$` are deleted, and the gate, the <p> count and the term tally all still
-    # pass — so it reaches the reader looking like a successful conversion.
-    if not looks_like_math(decoded):
-        return None
     if any(t in decoded for t in REFUSE_ALWAYS):
         return None                          # Tier 2 / Tier 3
     try:
@@ -290,34 +284,75 @@ def convert_body(body):
     return out or None
 
 
-def plan(html):
-    """Return (edits, refusals) without touching anything.
+def is_not_math(body):
+    """Is this a sum of money rather than notation?
 
-    `edits` is a list of (start, end, replacement) against the ORIGINAL string.
-    `refusals` is a Counter of source text left for a human — inline spans this
-    tool declined, plus every `$$…$$` display block.
+    Deliberately narrower than `check_math.looks_like_math`. That predicate is
+    a *gate* heuristic tuned not to cry wolf, and its `len <= 6` acceptance
+    ceiling — right for "should I flag this?" — is wrong for "may I convert
+    this?": it rejects ordinary Tier 1 like `$d = 768$` and `$a + b = c$`,
+    which the gate then also cannot see, so the TeX would ship past a clean
+    gate. So only the *rejection* half of the shared judgement is borrowed
+    (`CURRENCY_RANGE`), plus the bare-amount case; everything else is left for
+    `render()` to accept or refuse on its own merits.
+    """
+    if CURRENCY_RANGE.match(body):
+        return True
+    if any(c in body for c in "\\_^"):
+        return False                         # a TeX signal always wins
+    # digit-initial with no letter at all: "$100$", "$1,000$" — money, not a
+    # lone numeric constant, per check_math's own reasoning.
+    return body[:1].isdigit() and not any(c.isalpha() for c in body)
+
+
+def masked_except_display(html):
+    """Every mask but the display one, so `$$` runs can be located in text."""
+    out = html
+    for pattern in MASK:
+        if pattern is not DISPLAY:
+            out = pattern.sub(_blank, out)
+    return out
+
+
+def plan(html):
+    """Return (edits, refused, skipped) without touching anything.
+
+    * `edits`   — (start, end, replacement) against the ORIGINAL string.
+    * `refused` — math this tool declined: the hand-authoring worklist, and the
+      only bucket that drives the exit code.
+    * `skipped` — spans judged to be money rather than notation. Reported for
+      visibility but deliberately NOT work: filing a price under "hand-author
+      this by the ladder" invites the operator to typeset it manually, which is
+      exactly the corruption the currency guard exists to prevent.
 
     Display blocks are masked so their interiors are never chewed, but they are
-    still counted here. Masking alone would drop them out of the worklist and
-    out of the exit code, so a page of untypeset display equations would report
-    `refused: 0` and exit 0 — which is the opposite of what the docstring, the
-    contract, and the SKILL all promise.
+    counted here, because masking alone would drop them out of the worklist and
+    out of the exit code. They are counted over the *masked* document, not the
+    raw one — a `$$` inside a verbatim, `<code>`, `<script>` or References
+    region is out of scope for both tools, and counting it would pin exit 1 on
+    a worklist entry that can never be cleared.
     """
     scan = masked(html)
-    edits, refused = [], Counter()
-    for m in DISPLAY.finditer(html):
-        refused[m.group(0)] += 1
+    display_scan = masked_except_display(html)
+    edits, refused, skipped = [], Counter(), Counter()
+
+    for m in DISPLAY.finditer(display_scan):
+        refused[html[m.start():m.end()]] += 1
+
     for m in MATH_RUN.finditer(scan):
         original = html[m.start():m.end()]
         if "<" in original:
             refused[original] += 1
+            continue
+        if is_not_math(m.group(1)):
+            skipped[original] += 1
             continue
         rendered = convert_body(m.group(1))
         if rendered is None:
             refused[original] += 1
             continue
         edits.append((m.start(), m.end(), f'<span class="math">{rendered}</span>'))
-    return edits, refused
+    return edits, refused, skipped
 
 
 def apply_edits(html, edits):
@@ -338,7 +373,7 @@ def main(argv=None):
     with open(args.html, encoding="utf-8") as fh:
         html = fh.read()
 
-    edits, refused = plan(html)
+    edits, refused, skipped = plan(html)
 
     print(f"convertible : {len(edits)} spans", file=sys.stderr)
     print(f"refused     : {sum(refused.values())} spans "
@@ -347,13 +382,27 @@ def main(argv=None):
     for text, count in refused.most_common():
         print(f"  {count:3d}  {text[:110]}", file=sys.stderr)
 
+    if skipped:
+        print(f"skipped     : {sum(skipped.values())} spans read as money, "
+              f"not notation — NOT work, and not counted in the exit code.",
+              file=sys.stderr)
+        print("              Scan them anyway: anything here that really is "
+              "notation needs typesetting by hand,", file=sys.stderr)
+        print("              and neither this tool nor check_math.py will "
+              "mention it again.", file=sys.stderr)
+        for text, count in skipped.most_common():
+            print(f"  {count:3d}  {text[:110]}", file=sys.stderr)
+
     if args.json_out:
         with open(args.json_out, "w", encoding="utf-8") as fh:
             json.dump({"file": args.html,
                        "converted": len(edits),
                        "refused": sum(refused.values()),
+                       "skipped": sum(skipped.values()),
                        "worklist": [{"tex": t, "count": c}
-                                    for t, c in refused.most_common()]},
+                                    for t, c in refused.most_common()],
+                       "skipped_as_money": [{"tex": t, "count": c}
+                                            for t, c in skipped.most_common()]},
                       fh, indent=2)
             fh.write("\n")
 

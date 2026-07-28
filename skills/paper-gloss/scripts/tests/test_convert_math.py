@@ -10,6 +10,7 @@ Three groups matter most:
 import os
 import sys
 import unittest
+from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -113,7 +114,7 @@ class TestCurrencyGuard(unittest.TestCase):
 
     def _unchanged(self, body):
         html = page(f"<p>{body}</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [], f"should not have converted: {body}")
         self.assertEqual(apply_edits(html, edits), html)
 
@@ -133,10 +134,29 @@ class TestCurrencyGuard(unittest.TestCase):
         self._unchanged("we spent $5M and $8M on training")
 
     def test_real_math_still_converts(self):
-        """The guard must not buy safety with a miss."""
+        """The guard must not buy safety with a miss — including for bodies
+        past the gate's six-character acceptance ceiling, which is a detection
+        heuristic and not a statement about what is convertible."""
         self.assertEqual(convert_body("k"), "<i>k</i>")
         self.assertEqual(convert_body("2x"), "2<i>x</i>")
         self.assertEqual(convert_body("x_i"), "<i>x</i><sub>i</sub>")
+        self.assertEqual(convert_body("d = 768"), "<i>d</i> = 768")
+        self.assertEqual(convert_body("N = 512"), "<i>N</i> = 512")
+        self.assertEqual(convert_body("a + b = c"),
+                         "<i>a</i> + <i>b</i> = <i>c</i>")
+        self.assertEqual(convert_body("y = mx + b"),
+                         "<i>y</i> = <i>m</i><i>x</i> + <i>b</i>")
+
+    def test_money_is_skipped_not_filed_as_work(self):
+        """A price is not math, so it is not the operator's worklist either.
+        Filing it under "hand-author this by the ladder" invites exactly the
+        manual corruption the guard exists to prevent — and pins the exit code
+        at 1 forever on any page that quotes a cost."""
+        html = page("<p>Inference runs $5-$10, training $1M-$2M.</p>")
+        edits, refused, skipped = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(refused, Counter(), "money must not enter the worklist")
+        self.assertEqual(sum(skipped.values()), 2)
 
 
 class TestUprightWordsKeepTheirHyphen(unittest.TestCase):
@@ -159,7 +179,7 @@ class TestSharedScopeWithTheGate(unittest.TestCase):
     def test_verbatim_tier_three_blocks_are_left_byte_identical(self):
         html = page('<pre class="equation" data-math-verbatim="1">'
                     r"$\mathcal{L}$ = stuff</pre>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertEqual(apply_edits(html, edits), html)
 
@@ -169,7 +189,7 @@ class TestSharedScopeWithTheGate(unittest.TestCase):
         nothing convertible, so it cannot detect a divergence."""
         from check_math import find_hits
         html = page("<h2>7. References</h2>\n<p>Smith. On $L_p$ norms.</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertEqual(find_hits(html), [])
 
@@ -187,15 +207,49 @@ class TestDisplayBlocksReachTheWorklist(unittest.TestCase):
     def test_a_display_block_is_counted_as_refused(self):
         html = page('<div class="scroll-x"><pre class="equation">$$\n'
                     r"a = \frac{b}{c}" "\n$$</pre></div>")
-        edits, refused = plan(html)
+        edits, refused, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertEqual(sum(refused.values()), 1)
         self.assertIn("$$", next(iter(refused)))
 
     def test_display_block_counted_even_alongside_a_convertible_span(self):
         html = page("<p>$k$</p>\n<pre>$$\na = b\n$$</pre>")
-        edits, refused = plan(html)
+        edits, refused, _ = plan(html)
         self.assertEqual(len(edits), 1)
+        self.assertEqual(sum(refused.values()), 1)
+
+
+class TestDisplayCountingRespectsTheMasks(unittest.TestCase):
+    """Counting `$$` over the raw string is F4's divergence with the sides
+    swapped: the converter would pin exit 1 on a region the gate reports
+    clean, and on a Tier 3 fallback the entry could never be cleared."""
+
+    def _no_work(self, body):
+        html = page(body)
+        edits, refused, _ = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(refused, Counter(),
+                         f"out-of-scope $$ must not become work: {body[:60]}")
+
+    def test_dollars_inside_a_verbatim_block(self):
+        self._no_work('<pre class="equation" data-math-verbatim="1">'
+                      "$$\na = b\n$$</pre>")
+
+    def test_dollars_inside_a_code_element(self):
+        self._no_work("<p>write <code>$$a = b$$</code> for display</p>")
+
+    def test_dollars_inside_a_script(self):
+        self._no_work('<script>const s = "$$a = b$$";</script>')
+
+    def test_dollars_after_the_references_heading(self):
+        self._no_work("<h2>References</h2>\n<p>Smith. $$a = b$$</p>")
+
+    def test_a_real_display_block_is_still_counted(self):
+        """The intended population must survive the narrowing."""
+        html = page('<div class="scroll-x"><pre class="equation">'
+                    "$$\na = b\n$$</pre></div>")
+        edits, refused, _ = plan(html)
+        self.assertEqual(edits, [])
         self.assertEqual(sum(refused.values()), 1)
 
 
@@ -207,22 +261,22 @@ class TestMasking(unittest.TestCase):
 
     def test_script_bodies_are_not_converted(self):
         html = page('<script>const T = {"a": "$k$"};</script>')
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
 
     def test_code_elements_are_not_converted(self):
         html = page(r"<p>write <code>$x_i$</code> for that</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
 
     def test_references_section_is_not_converted(self):
         html = page("<h2>References</h2>\n<p>Smith. On $L_p$ norms.</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
 
     def test_a_numbered_references_heading_also_cuts(self):
         html = page("<h2>7. References</h2>\n<p>Smith. On $L_p$ norms.</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
 
 
@@ -235,7 +289,7 @@ class TestRegressions(unittest.TestCase):
         cannot catch it: check_math.py blanks tags before scanning, so
         attributes are outside its reach entirely."""
         html = page(r'<figure><img src="x.png" alt="The lens $W_U J_\ell$."></figure>')
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertEqual(apply_edits(html, edits), html)
 
@@ -247,7 +301,7 @@ class TestRegressions(unittest.TestCase):
                 r'<button type="button" class="gloss-term" data-term-id="softmax">'
                 r"softmax</button>}(x)$</p>")
         html = page(body)
-        edits, refused = plan(html)
+        edits, refused, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertEqual(sum(refused.values()), 1)
         self.assertIn("gloss-term", next(iter(refused)))
@@ -256,13 +310,13 @@ class TestRegressions(unittest.TestCase):
         """Without masking `$$…$$` first, a match starting at the second `$`
         eats the block's interior and leaves stray delimiters behind."""
         html = page('<pre class="equation">$$\na = b_k\n$$</pre>')
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(edits, [])
         self.assertIn("$$", apply_edits(html, edits))
 
     def test_conversion_does_not_disturb_surrounding_prose(self):
         html = page("<p>the value $k$ and the word model</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         out = apply_edits(html, edits)
         self.assertIn("the value ", out)
         self.assertIn(" and the word model", out)
@@ -278,7 +332,7 @@ class TestRegressions(unittest.TestCase):
 class TestPlanAndApply(unittest.TestCase):
     def test_plan_writes_nothing_and_apply_is_offset_safe(self):
         html = page("<p>$a$ then $b$ then $c$</p>")
-        edits, _ = plan(html)
+        edits, _, _ = plan(html)
         self.assertEqual(len(edits), 3)
         out = apply_edits(html, edits)
         for letter in "abc":
