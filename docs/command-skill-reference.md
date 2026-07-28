@@ -116,12 +116,6 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`project-guide`](../skills/project-guide/SKILL.md) | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. |
 | [`narrate`](../skills/narrate/SKILL.md) | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. |
 
-### Interview Prep
-
-| Skill | What it does |
-|---|---|
-| [`interview-prep`](../skills/interview-prep/SKILL.md) | Initializes and maintains a NotebookLM notebook for job interview prep — auto-bundles your job-search dossier, generates baseline artifacts (anticipated questions, STAR stories, company facts, critique audio) and a "Screen Ready" podcast season. |
-
 ### Personal Coaching
 
 | Skill | What it does |
@@ -231,46 +225,6 @@ A personal learning hub — NotebookLM-backed course catalog with audio/video ep
 | Command | What it does |
 |---|---|
 | `/build-course` | Thin entry point to `course-builder` — interviews for topic and level, proposes a syllabus, gets approval, then autonomously authors all materials. |
-
----
-
-### job-search-mas
-
-Multi-agent job-search pipeline — daily scanning, scoring, tailored application generation.
-
-**Skills**
-
-| Skill | What it does |
-|---|---|
-| `job-scanner` | Daily job scanner — searches for new healthcare data/analytics listings, scores them against your profile, selects the top 2–3, and writes results to the vault. |
-| `job-fit-check` | Pre-application gate — scores a job listing 1–10, identifies top 3 strengths and top 2 gaps, classifies tier, checks for duplicates, and flags a Corewell-departure signal. |
-| `tailor-materials` | Generates a tailored application kit — one JD-matched resume + matching cover letter in Modern Executive aesthetic saved as `.docx` files. |
-
-**Commands**
-
-| Command | What it does |
-|---|---|
-| `/run-pipeline` | Runs the full pipeline interactively: hunt → validate → format-JD → score → route → brief. |
-| `/process-queue` | Morning manual workflow — walks through the Tier 2 queue and lets you decide skip / archive / tailor for each candidate. |
-| `/confirm-submitted` | Promotes one or more application stubs from materials-ready to applied with a `submitted_at` timestamp. |
-| `/check-bake-stats` | Aggregates nightly logs, briefing sidecars, manifests, and vault stubs into `pipeline/bake-stats.json` and prints the headline. Surfaces Phase 3 trigger signals. |
-| `/check-format` | Runs the format guard against a tailored `.docx` file (resume or cover letter). Validates ATS-safe fonts, margins, and structure. |
-| `/check-voice` | Runs the voice/tone guard against a resume or cover letter. Validates consistency with your personal brand. |
-| `/check-profile` | Reads `00-canonical-inputs/search-spec.json` and pretty-prints a human-readable summary of priority roles, bench capabilities, and source files. |
-| `/check-slack` | Inspects the last Slack delivery result from the pipeline briefing sidecar. Prints a setup checklist if `SLACK_WEBHOOK_URL` isn't configured. |
-| `/check-sms` | Inspects the last SMS delivery result from the pipeline briefing sidecar. Prints a setup checklist if Twilio env vars aren't configured. |
-
----
-
-### personal-health-elt
-
-Apple Health data ingestion pipeline into a local Postgres data warehouse.
-
-**Skills**
-
-| Skill | What it does |
-|---|---|
-| `new-loader` | Scaffolds a new idempotent Apple Health ingest loader under `ingest/loaders/` — pre-wires the two-level idempotency contract and multi-source dedup rule, plus raw DDL, staging model, and pytest. |
 
 ---
 
