@@ -402,17 +402,26 @@ the math in an existing paper page.
    python3 scripts/convert_math.py <file.html> --apply
    ```
 
-   It converts only unambiguous Tier 1 spans and **refuses everything else**,
-   printing the refusals as your hand-authoring worklist — it exits non-zero
-   while any remain, so a partial pass cannot be mistaken for a finished one.
-   Work that list by the ladder: Tier 1 for anything linear, Tier 2 native
-   MathML inside the existing `<div class="scroll-x">` for genuine 2-D layout,
-   Tier 3 only where faithful typesetting is impossible.
+   It reports **three** outcomes, and only the first two are symmetric:
 
-   Two things the converter deliberately leaves to you, both of which change
-   the page in ways it must not decide alone: a span containing a
-   `.gloss-term` button (removing that button is the accounted decrease in
-   step 3), and every `$$…$$` display block.
+   - **converted** — unambiguous Tier 1, done for you;
+   - **refused** — your hand-authoring worklist. The tool exits non-zero while
+     any remain, so a partial pass cannot be mistaken for a finished one. Work
+     it by the ladder: Tier 1 for anything linear, Tier 2 native MathML inside
+     the existing `<div class="scroll-x">` for genuine 2-D layout, Tier 3 only
+     where faithful typesetting is impossible.
+   - **skipped** — spans read as money rather than notation (`$5-$10`). These
+     are *not* work, and are deliberately **not** in the exit code, because
+     filing a price under "typeset this by the ladder" invites you to mangle
+     it by hand. **Read the list anyway.** It is the one bucket with no
+     downstream detector: `check_math.py` cannot see these either, so anything
+     here that really is notation will never be mentioned by either tool
+     again. It is short by design — if it is long, something is miscalibrated.
+
+   Two things the converter deliberately leaves to the *refused* pile rather
+   than deciding alone, because both change the page in ways a tool should not
+   choose: a span containing a `.gloss-term` button (removing that button is
+   the accounted decrease in step 3), and every `$$…$$` display block.
 
    Replace **only** the math span itself and never the surrounding prose —
    same discipline as `paper-figures`' `inject.py`, which rewrites the

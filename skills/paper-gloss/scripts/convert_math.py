@@ -113,6 +113,15 @@ MATH_RUN = re.compile(r"\$(?!\s)([^$\n]{1,300}?)(?<!\s)\$")
 BINARY = set("=≤≥≠≈∼≃∝≡≪≫±∓×·∈∉⊂⊆⊃∪∩→←↦⟹⟺⊕⊗⊙∘⊥≅")
 BINARY_ENTITY = re.compile(r"\s*(&lt;|&gt;)\s*")
 
+# A lone number with no operator and no letter: "$100$", "$1,000$", "$0.5$".
+# Genuinely ambiguous — a price in prose, or a constant in notation — so it is
+# REFUSED to the worklist rather than skipped. Skipping would drop it from the
+# exit code, and `check_math` cannot see it either (no letter, so its
+# `len <= 6 and any alpha` arm fails), which is how a literal `$0.5$` would
+# reach a reader with both tools reporting clean. Anything with an operator in
+# it (`$1/8$`, `$1 + 2 = 3$`) is notation and converts normally.
+BARE_AMOUNT = re.compile(r"^\d[\d.,]*$")
+
 
 class Refuse(Exception):
     """Raised anywhere in the walk to abandon a span to hand-authoring."""
@@ -271,6 +280,8 @@ def convert_body(body):
         return None                          # some other entity: refuse
     if any(t in decoded for t in REFUSE_ALWAYS):
         return None                          # Tier 2 / Tier 3
+    if BARE_AMOUNT.match(decoded):
+        return None                          # ambiguous amount: a human decides
     try:
         out = render(decoded)
     except Refuse:
@@ -285,24 +296,22 @@ def convert_body(body):
 
 
 def is_not_math(body):
-    """Is this a sum of money rather than notation?
+    """Is this definitely a sum of money rather than notation?
 
     Deliberately narrower than `check_math.looks_like_math`. That predicate is
     a *gate* heuristic tuned not to cry wolf, and its `len <= 6` acceptance
     ceiling — right for "should I flag this?" — is wrong for "may I convert
     this?": it rejects ordinary Tier 1 like `$d = 768$` and `$a + b = c$`,
     which the gate then also cannot see, so the TeX would ship past a clean
-    gate. So only the *rejection* half of the shared judgement is borrowed
-    (`CURRENCY_RANGE`), plus the bare-amount case; everything else is left for
-    `render()` to accept or refuse on its own merits.
+    gate. Only the *rejection* half of the shared judgement is borrowed.
+
+    "Definitely" is load-bearing. Everything this returns True for is dropped
+    from the worklist AND from the exit code, so a wrong True is a silent ship
+    — the one outcome this whole skill exists to prevent. A tight range like
+    `$5-$10` is unambiguous. A bare `$100$` is not, and it goes to the worklist
+    instead (see BARE_AMOUNT) so a human adjudicates it.
     """
-    if CURRENCY_RANGE.match(body):
-        return True
-    if any(c in body for c in "\\_^"):
-        return False                         # a TeX signal always wins
-    # digit-initial with no letter at all: "$100$", "$1,000$" — money, not a
-    # lone numeric constant, per check_math's own reasoning.
-    return body[:1].isdigit() and not any(c.isalpha() for c in body)
+    return bool(CURRENCY_RANGE.match(body))
 
 
 def masked_except_display(html):

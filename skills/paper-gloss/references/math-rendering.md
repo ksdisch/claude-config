@@ -163,11 +163,25 @@ python3 scripts/convert_math.py <file.html>            # dry run: print the work
 python3 scripts/convert_math.py <file.html> --apply
 ```
 
-Implements Tier 1 only, and only where it is certain. Everything else — every
-`$$…$$` display block, anything needing 2-D layout, and any span containing a
-`.gloss-term` button — it **refuses** and prints, so a human works that list by
-the ladder above. It exits non-zero while refusals remain, so a partial pass
-cannot be mistaken for a finished one.
+Implements Tier 1 only, and only where it is certain. It reports three
+outcomes:
+
+- **converted** — unambiguous Tier 1.
+- **refused** — the hand-authoring worklist: every `$$…$$` display block,
+  anything needing 2-D layout, any span containing a `.gloss-term` button, and
+  any bare amount (`$100$`, `$0.5$`) whose reading as money or as a constant a
+  tool cannot settle. It exits non-zero while refusals remain, so a partial
+  pass cannot be mistaken for a finished one.
+- **skipped** — spans that are definitely money, like the tight range
+  `$5-$10`. Printed, but deliberately outside the worklist and the exit code:
+  filing a price as "typeset this by the ladder" invites the operator to
+  mangle it by hand. **This is the only bucket with no downstream detector** —
+  the gate cannot see these either — so read it, and treat a long one as a
+  sign the calibration is off.
+
+The dividing line is *certainty*, not category. Anything ambiguous is refused
+into the worklist, where a human sees it; only an unmistakable price is
+dropped from the exit code.
 
 It never scans a tag interior. Math inside an attribute (`<img alt="… $x$">`)
 is reader-facing only as plain text, and injecting a `<span>` there breaks the

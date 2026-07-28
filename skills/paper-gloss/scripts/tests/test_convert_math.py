@@ -147,6 +147,26 @@ class TestCurrencyGuard(unittest.TestCase):
         self.assertEqual(convert_body("y = mx + b"),
                          "<i>y</i> = <i>m</i><i>x</i> + <i>b</i>")
 
+    def test_letter_free_notation_is_never_silently_skipped(self):
+        """The skipped bucket is outside the exit code AND invisible to the
+        gate, so a wrong classification there is a silent ship — the one
+        outcome this skill exists to prevent. Bodies with an operator are
+        notation and must convert; a bare amount is ambiguous and must reach
+        the worklist, never the skip pile."""
+        for body, expect in [("1/8", "convert"), ("1 + 2 = 3", "convert"),
+                             ("0.5", "worklist"), ("3.14", "worklist"),
+                             ("100", "worklist"), ("1,000", "worklist")]:
+            html = page(f"<p>value ${body}$ here</p>")
+            edits, refused, skipped = plan(html)
+            self.assertEqual(skipped, Counter(),
+                             f"${body}$ must not be dropped from the exit code")
+            if expect == "convert":
+                self.assertEqual(len(edits), 1, f"${body}$ should convert")
+            else:
+                self.assertEqual(edits, [], f"${body}$ should not convert")
+                self.assertEqual(sum(refused.values()), 1,
+                                 f"${body}$ should reach the worklist")
+
     def test_money_is_skipped_not_filed_as_work(self):
         """A price is not math, so it is not the operator's worklist either.
         Filing it under "hand-author this by the ladder" invites exactly the
