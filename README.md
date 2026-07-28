@@ -25,6 +25,9 @@ project repos.
 **[→ Full catalog: every command, skill, and subagent](docs/command-skill-reference.md)** —
 each entry links straight to its source file.
 
+**[→ Usage playbook: how to run each one](docs/usage-playbook.md)** — the judgment companion
+to the catalog: suggested model + effort, when to reach for it, and what it pairs with.
+
 ## Start here
 
 Eight files that show what this setup actually *does*. Rows 3 and 4 are a matched pair — a
@@ -96,7 +99,7 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
-| [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
+| [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [usage playbook](docs/usage-playbook.md), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
 | [`BACKLOG.md`](BACKLOG.md) | Open improvements and explorations | ❌ `DENY` |
 
 ## Conventions
