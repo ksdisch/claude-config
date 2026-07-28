@@ -8,6 +8,8 @@
 //   1. Set ROOT to the absolute path of the target (a repo, or a subsystem dir).
 //   2. Replace DIMENSIONS with one entry per finder. Slice the target by subsystem x lens so
 //      finders don't overlap and their blind spots differ. See lenses-and-severity.md.
+//      A dimension may also name a dedicated agent via `agentType` — the silent-failure lens
+//      dispatches `silent-failure-hunter` that way (second example below).
 //   3. Scale the finder count to scope: a few for a subsystem, 6+ for a whole repo.
 //   4. Leave the schemas, the pipeline, the verify step, and the synthesis as-is unless you
 //      have a specific reason — the verify step in particular is what makes the output trustworthy.
@@ -100,6 +102,19 @@ Skim the relevant tests to learn intended behavior, then hunt the cases the test
 Focus: <lens-specific failure modes — see lenses-and-severity.md for the catalog>.
 Report ONLY genuine bugs with concrete reasoning, not style nits. For each: file path relative to repo root, line/range, severity, suggested fix. Return an empty findings array if you find nothing real.`,
   },
+  {
+    // The silent-failure lens has a dedicated agent; `agentType` routes the dimension to it.
+    // Keep the prompt to the inputs that agent expects (SCOPE) — its hunt targets are its own.
+    key: 'silent-failure',
+    agentType: 'silent-failure-hunter',
+    prompt: `SCOPE: ${ROOT}
+Audit this scope for silent failures. Report file paths relative to the repo root.
+Emit findings through the schema, not your usual bullets — it asks for fields your own output format doesn't name:
+  title = a one-line name for the finding · file / line = your "Where" · category = 'error-handling'
+  description = your "Issue" · why_real = your "Impact" · suggested_fix = your "Fix recommendation"
+  severity = the same critical/high/medium/low rubric you already grade on.
+Return an empty findings array if you find nothing real.`,
+  },
   // ... add one entry per finder ...
 ]
 
@@ -108,7 +123,14 @@ log(`Hunting ${ROOT} across ${DIMENSIONS.length} subsystems: read -> adversarial
 
 const perDimension = await pipeline(
   DIMENSIONS,
-  (d) => agent(d.prompt, { label: `hunt:${d.key}`, phase: 'Hunt', schema: FINDINGS_SCHEMA }),
+  (d) =>
+    agent(d.prompt, {
+      label: `hunt:${d.key}`,
+      phase: 'Hunt',
+      schema: FINDINGS_SCHEMA,
+      // Dedicated-agent dimensions route to their own subagent; the schema still applies.
+      ...(d.agentType ? { agentType: d.agentType } : {}),
+    }),
   (result, d) => {
     const findings = (result && result.findings) || []
     if (!findings.length) return []

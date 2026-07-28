@@ -142,17 +142,23 @@ not on this session's work. Use this shape:
     (Opus/Sonnet); if the next session must still decide or design, recommend
     Fable. And split only when build ≫ plan — for plan-heavy/build-light work,
     say so and recommend finishing in one Fable session instead.
-- **Effort:** independent of the model pick. Name exactly ONE, using only the
+- **Effort:** independent of the model pick, and drawn from the **effort ladder in
+  CLAUDE.md's "Planner/Builder Protocol"** — that's the ladder's owner; the rungs
+  below are its expansion, not a second ladder. Name exactly ONE, using only the
   CLI's real values (`--effort low|medium|high|xhigh|max`) or ultracode —
   - **ultracode** (multi-agent fan-out + adversarial verify; highest token cost):
     the next task is broad, parallelizable, or wants exhaustive coverage with
     independent verification — a multi-file audit/migration, a "find every X"
     sweep, a batch where each item is verified against HEAD, a comprehensive
     review. Pick when completeness across many surfaces beats speed. Launch
-    form: `--effort ultracode` — a real, accepted flag (runs on an xhigh
-    base; ultracode needs dynamic workflows enabled in `/config`).
-    In-session alternative: `/effort ultracode` from an interactive
-    terminal.
+    form: `--effort ultracode` — a real, accepted flag (runs on an xhigh base).
+    It needs **dynamic workflows enabled in `/config`**, and the flag path fails
+    *silently*: with the setting off, `claude --effort ultracode` parses clean,
+    prints no warning, and runs a plain xhigh single-agent session. So whenever
+    you recommend ultracode, **spell that out in the note** — tell me to confirm
+    dynamic workflows are on, or I won't get the fan-out the handoff promises.
+    In-session alternative: `/effort ultracode` from an interactive terminal
+    (that path refuses loudly instead of degrading).
   - **`max` / `xhigh`** (deep single-agent reasoning, no fan-out): the next
     task is ONE hard problem — subtle root-cause debugging, tricky
     merge/algorithm logic, untangling a confusing module, a design call with
@@ -168,8 +174,10 @@ not on this session's work. Use this shape:
   `claude --model claude-opus-5 --effort high`. For the 1M-context variant the
   model ID contains brackets, which zsh globs — always quote it:
   `claude --model 'claude-opus-5[1m]' --effort high`. Both flags are
-  per-invocation only — my saved defaults stay untouched. If the pick matches
-  my saved defaults, say "plain `claude` works."
+  per-invocation only — my saved defaults stay untouched. Always print both
+  flags explicitly, even if you suspect they match my current defaults: the
+  explicit command is correct whatever the defaults are, and I may paste it
+  into a machine or profile whose defaults differ.
 - **Why (one clause):** tie the pick to the specific next action you named, so I
   can sanity-check it — e.g. "Opus 5 at max: 3 findings in 2 files, each just
   needs verify-against-HEAD + a minimal fix; too narrow to want fan-out."
