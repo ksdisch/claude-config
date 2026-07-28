@@ -127,8 +127,30 @@ class TestCurrencyGuard(unittest.TestCase):
     def test_a_tight_price_range_with_a_slash(self):
         self._unchanged("Pricing is $100k/$1M for the tier.")
 
-    def test_a_bare_number_in_dollars_is_money_not_math(self):
+    def test_a_bare_number_in_dollars_is_left_for_a_human_to_settle(self):
+        """Not asserted as "money": the code explicitly declines to settle it,
+        so a test claiming either reading would contradict the thing it
+        guards. What IS asserted is that the tool does not decide — the span
+        is untouched and reaches the operator rather than the skip pile."""
         self._unchanged("We paid $100$ for it.")
+        html = page("<p>We paid $100$ for it.</p>")
+        _, refused, skipped = plan(html)
+        self.assertEqual(sum(refused.values()), 1)
+        self.assertEqual(skipped, Counter(),
+                         "an ambiguous amount must not be dropped silently")
+
+    def test_escaping_the_delimiters_clears_an_ambiguous_amount(self):
+        """The documented escape for a real price. Without it the entry is
+        unclearable: the operator who correctly declines to typeset a price
+        would see it refused on every subsequent run, with exit 1 telling
+        them work remains forever."""
+        from check_math import find_hits
+        html = page("<p>We paid &#36;100&#36; for it.</p>")
+        edits, refused, skipped = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(refused, Counter(), "escaped price must clear the worklist")
+        self.assertEqual(skipped, Counter())
+        self.assertEqual(find_hits(html), [], "and must clear the gate too")
 
     def test_a_spaced_pair_of_amounts(self):
         self._unchanged("we spent $5M and $8M on training")

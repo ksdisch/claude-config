@@ -168,10 +168,15 @@ outcomes:
 
 - **converted** — unambiguous Tier 1.
 - **refused** — the hand-authoring worklist: every `$$…$$` display block,
-  anything needing 2-D layout, any span containing a `.gloss-term` button, and
-  any bare amount (`$100$`, `$0.5$`) whose reading as money or as a constant a
-  tool cannot settle. It exits non-zero while refusals remain, so a partial
-  pass cannot be mistaken for a finished one.
+  anything needing 2-D layout, and any span containing a `.gloss-term` button.
+  It exits non-zero while refusals remain, so a partial pass cannot be
+  mistaken for a finished one.
+- **ambiguous** — bare amounts (`$100$`, `$0.5$`), printed as their own
+  sub-list because the ladder does not apply to them unqualified. Notation:
+  typeset it. Money: **escape both delimiters as `&#36;`** — the page still
+  reads `$100$`, and that is what clears the entry. Typesetting a price by the
+  ladder deletes both `$` and invents math, which is the damage the currency
+  guard exists to prevent; leaving it raw makes it recur on every run.
 - **skipped** — spans that are definitely money, like the tight range
   `$5-$10`. Printed, but deliberately outside the worklist and the exit code:
   filing a price as "typeset this by the ladder" invites the operator to

@@ -384,12 +384,33 @@ def main(argv=None):
 
     edits, refused, skipped = plan(html)
 
+    # Refusals hold two populations with opposite correct dispositions, so
+    # they are printed apart. Typesetting an ambiguous amount "by the ladder"
+    # — the only instruction attached to the worklist — would delete both `$`
+    # and turn a price into fake math, which is the very damage the currency
+    # guard exists to prevent.
+    ambiguous = Counter({t: c for t, c in refused.items()
+                         if BARE_AMOUNT.match(t[1:-1])})
+    worklist = Counter({t: c for t, c in refused.items() if t not in ambiguous})
+
     print(f"convertible : {len(edits)} spans", file=sys.stderr)
-    print(f"refused     : {sum(refused.values())} spans "
-          f"({len(refused)} unique) -> hand-author", file=sys.stderr)
+    print(f"refused     : {sum(worklist.values())} spans "
+          f"({len(worklist)} unique) -> hand-author", file=sys.stderr)
     # Never silent: the refusal list IS the remaining work.
-    for text, count in refused.most_common():
+    for text, count in worklist.most_common():
         print(f"  {count:3d}  {text[:110]}", file=sys.stderr)
+
+    if ambiguous:
+        print(f"ambiguous   : {sum(ambiguous.values())} bare amounts — could be "
+              f"a price or a constant; this tool will not guess.", file=sys.stderr)
+        print("              If it is NOTATION, typeset it by the ladder.",
+              file=sys.stderr)
+        print("              If it is MONEY, escape both delimiters as &#36; — "
+              "the page still reads", file=sys.stderr)
+        print("              '$100$', and that is what clears this entry. "
+              "Left raw it recurs every run.", file=sys.stderr)
+        for text, count in ambiguous.most_common():
+            print(f"  {count:3d}  {text[:110]}", file=sys.stderr)
 
     if skipped:
         print(f"skipped     : {sum(skipped.values())} spans read as money, "
@@ -409,7 +430,9 @@ def main(argv=None):
                        "refused": sum(refused.values()),
                        "skipped": sum(skipped.values()),
                        "worklist": [{"tex": t, "count": c}
-                                    for t, c in refused.most_common()],
+                                    for t, c in worklist.most_common()],
+                       "ambiguous_amounts": [{"tex": t, "count": c}
+                                             for t, c in ambiguous.most_common()],
                        "skipped_as_money": [{"tex": t, "count": c}
                                             for t, c in skipped.most_common()]},
                       fh, indent=2)

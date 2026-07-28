@@ -410,6 +410,14 @@ the math in an existing paper page.
      it by the ladder: Tier 1 for anything linear, Tier 2 native MathML inside
      the existing `<div class="scroll-x">` for genuine 2-D layout, Tier 3 only
      where faithful typesetting is impossible.
+
+     **One sub-list is printed apart and the ladder does not apply to it
+     unqualified: `ambiguous` bare amounts** like `$100$`. A tool cannot tell a
+     price from a lone constant, so it refuses rather than guessing. If the
+     span is notation, typeset it by the ladder as usual. If it is money,
+     **escape both delimiters as `&#36;`** — the page still reads `$100$`, and
+     that is what clears the entry. Typesetting a price by the ladder deletes
+     both `$` and invents math; leaving it raw makes it recur on every run.
    - **skipped** — spans read as money rather than notation (`$5-$10`). These
      are *not* work, and are deliberately **not** in the exit code, because
      filing a price under "typeset this by the ladder" invites you to mangle
@@ -418,10 +426,11 @@ the math in an existing paper page.
      here that really is notation will never be mentioned by either tool
      again. It is short by design — if it is long, something is miscalibrated.
 
-   Two things the converter deliberately leaves to the *refused* pile rather
-   than deciding alone, because both change the page in ways a tool should not
-   choose: a span containing a `.gloss-term` button (removing that button is
-   the accounted decrease in step 3), and every `$$…$$` display block.
+   Three things the converter deliberately leaves to the *refused* pile rather
+   than deciding alone, because each changes the page in a way a tool should
+   not choose: a span containing a `.gloss-term` button (removing that button
+   is the accounted decrease in step 3), every `$$…$$` display block, and every
+   bare amount, per the escape rule above.
 
    Replace **only** the math span itself and never the surrounding prose —
    same discipline as `paper-figures`' `inject.py`, which rewrites the
