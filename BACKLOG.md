@@ -5,6 +5,18 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Improvement] ECC-adoption follow-ups: wire, tighten, and confirm the new agents
+- **Why:** PR #45's adversarial review deferred five nice-to-haves: wire a silent-failure dimension into `bug-hunt` so `silent-failure-hunter` has a real dispatcher (and settle the severity-scale question when doing so); make `spec-miner`'s `id` mandatory with a declaration-site fallback before any delta tooling exists; retitle its "Integration with the house setup" to "Intended integration (not yet wired)"; confirm `effort:` frontmatter takes effect on a first real dispatch; reword the `Write` "may only create" guardrail to a path restriction now that `OVERWRITE=yes` exists. Full record in PR #45's review comment.
+- **Acceptance:** Each item shipped or explicitly declined with a reason; the bug-hunt wiring counts only if the agent is actually named in the skill or dispatched by an engine dimension.
+- **Size:** M
+- **Added:** 2026-07-27
+
+### [Improvement] Planner/Builder protocol follow-ups from PR #44's review
+- **Why:** Six nice-to-haves deferred: give the effort ladder one owner (CLAUDE.md) and align `prompt-optimize`'s `high` row; move `ship-and-route`'s Run-config note to §3.2's close and un-overload "block"; route the ultracode `/config` prerequisite into the note Kyle reads plus the silent-degradation caveat into `ship-and-route`; the `agents/` `effort:` worked example (shipped by PR #45 — verify and close); evaluate handoff.md's unevaluable saved-defaults branch; reconcile the reference-doc rule's broad sentence with its narrow When-to-update table. Full record in PR #44's review comment.
+- **Acceptance:** Each item shipped or explicitly declined with a reason.
+- **Size:** S
+- **Added:** 2026-07-27
+
 ### [Exploration] Fleet manifest + `/reconcile`: make single-source true on demand
 - **Why:** Drift between canonical and vendored copies is dangerous only because it's invisible — a declared `fleet.yml` + an on-demand `/reconcile` verb makes single-source (A1) and propagation (A2) checkable by running one command. See [`docs/ideas/fleet-manifest-reconcile.md`](docs/ideas/fleet-manifest-reconcile.md) for the full write-up.
 - **Acceptance:** Prototype the credible first step (`fleet.yml` + `commands/reconcile.md` + the `claudify-repo` append-line) and judge whether the bet holds.
