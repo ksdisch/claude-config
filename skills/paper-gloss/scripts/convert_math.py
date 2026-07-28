@@ -37,9 +37,22 @@ Four safety rules, each learned from a way this went wrong on a real page:
 """
 import argparse
 import json
+import os
 import re
 import sys
 from collections import Counter
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Shared with the gate on purpose. These four decide *what counts as math* and
+# *what is out of bounds*; the converter and the gate must answer identically,
+# or the operator gets a failing publish gate and an empty worklist (or worse,
+# a silent edit in a region the gate cannot see). Import, never re-derive.
+from check_math import (  # noqa: E402
+    REFERENCES,
+    VERBATIM,
+    looks_like_math,
+)
 
 GREEK = {
     "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε",
@@ -81,12 +94,14 @@ REFUSE_ALWAYS = (
     "\\substack", "\\limits", "\\\\",
 )
 
+DISPLAY = re.compile(r"\$\$.*?\$\$", re.S)
+
 MASK = [
-    re.compile(r"\$\$.*?\$\$", re.S),                                   # display first
+    DISPLAY,                                                            # display first
     re.compile(r"<(script|style)\b[^>]*>.*?</\1\s*>", re.S | re.I),
+    VERBATIM,        # a deliberate Tier 3 fallback is never rewritten
     re.compile(r"<code\b[^>]*>.*?</code\s*>", re.S | re.I),
-    re.compile(r"<h[1-6][^>]*>\s*(?:[\dIVXivx]+[.)]?\s*)?"
-               r"(?:references|bibliography|works cited)\s*</h[1-6]\s*>.*", re.S | re.I),
+    REFERENCES,      # same cut as the gate, so the two agree on scope
     re.compile(r"<[^>]*>"),                                             # tag interiors LAST
 ]
 MATH_RUN = re.compile(r"\$(?!\s)([^$\n]{1,300}?)(?<!\s)\$")
@@ -163,7 +178,10 @@ def render(s, upright=False):
                     inner, i = read_group(s, i)
                     if not UPRIGHT_WORD.fullmatch(inner):
                         raise Refuse("complex text argument")
-                    out.append(esc(inner).replace("-", "−"))
+                    # No minus substitution here. The U+2212 rule is a *math*
+                    # rule (`h_{l-1}` → `l−1`); `\text{}` holds ordinary upright
+                    # words, and "cross-entropy" or "top-k" must keep its hyphen.
+                    out.append(esc(inner))
                 elif name == "mathcal":
                     inner, i = read_group(s, i)
                     if inner not in CAL:
@@ -251,6 +269,12 @@ def convert_body(body):
                    .replace("&amp;", "&"))
     if "&" in decoded:
         return None                          # some other entity: refuse
+    # Is this math at all? The gate's judgement, not a second opinion. Without
+    # it a prose price converts: "$5-$10" parses cleanly as 5 minus 10, both
+    # `$` are deleted, and the gate, the <p> count and the term tally all still
+    # pass — so it reaches the reader looking like a successful conversion.
+    if not looks_like_math(decoded):
+        return None
     if any(t in decoded for t in REFUSE_ALWAYS):
         return None                          # Tier 2 / Tier 3
     try:
@@ -270,10 +294,19 @@ def plan(html):
     """Return (edits, refusals) without touching anything.
 
     `edits` is a list of (start, end, replacement) against the ORIGINAL string.
-    `refusals` is a Counter of the original `$…$` text left for a human.
+    `refusals` is a Counter of source text left for a human — inline spans this
+    tool declined, plus every `$$…$$` display block.
+
+    Display blocks are masked so their interiors are never chewed, but they are
+    still counted here. Masking alone would drop them out of the worklist and
+    out of the exit code, so a page of untypeset display equations would report
+    `refused: 0` and exit 0 — which is the opposite of what the docstring, the
+    contract, and the SKILL all promise.
     """
     scan = masked(html)
     edits, refused = [], Counter()
+    for m in DISPLAY.finditer(html):
+        refused[m.group(0)] += 1
     for m in MATH_RUN.finditer(scan):
         original = html[m.start():m.end()]
         if "<" in original:

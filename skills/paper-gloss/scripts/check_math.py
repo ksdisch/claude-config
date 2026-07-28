@@ -39,8 +39,15 @@ VERBATIM = re.compile(
     r"<(\w+)\b[^>]*\bdata-math-verbatim\s*=\s*[\"']?1[\"']?[^>]*>.*?</\1\s*>", re.S | re.I
 )
 CODE = re.compile(r"<code\b[^>]*>.*?</code\s*>", re.S | re.I)
+# A leading number is allowed because `paper-eli5` carries headings verbatim
+# from the source, and papers routinely write "## 7. References". Without it
+# the cut misses, the whole bibliography is scanned, and a citation title
+# containing TeX ("On $L_p$ norms") fails a gate the operator cannot satisfy —
+# constraint 4 forbids rewriting the references section. `convert_math.py`
+# imports this pattern so both tools cut at exactly the same place.
 REFERENCES = re.compile(
-    r"<h[1-6][^>]*>\s*(?:references|bibliography|works cited)\s*</h[1-6]\s*>.*",
+    r"<h[1-6][^>]*>\s*(?:[\dIVXivx]+[.)]?\s*)?"
+    r"(?:references|bibliography|works cited)\s*</h[1-6]\s*>.*",
     re.S | re.I,
 )
 TAG = re.compile(r"<[^>]*>", re.S)

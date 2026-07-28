@@ -102,6 +102,103 @@ class TestRefusals(unittest.TestCase):
         self.assertIsNone(convert_body(r"x_{i"))
 
 
+class TestCurrencyGuard(unittest.TestCase):
+    """The converter must share the gate's judgement about what is money.
+
+    Without it a prose price parses as arithmetic: `$5-$10` becomes
+    `<span class="math">5−</span>10`, both `$` deleted and a number invented —
+    and check_math, the <p> count and the term tally all still pass, so it
+    reaches the reader looking like a clean conversion.
+    """
+
+    def _unchanged(self, body):
+        html = page(f"<p>{body}</p>")
+        edits, _ = plan(html)
+        self.assertEqual(edits, [], f"should not have converted: {body}")
+        self.assertEqual(apply_edits(html, edits), html)
+
+    def test_a_tight_price_range_with_a_hyphen(self):
+        self._unchanged("Inference runs $5-$10 per million tokens.")
+
+    def test_a_tight_price_range_with_magnitudes(self):
+        self._unchanged("Training cost $1M-$2M in compute.")
+
+    def test_a_tight_price_range_with_a_slash(self):
+        self._unchanged("Pricing is $100k/$1M for the tier.")
+
+    def test_a_bare_number_in_dollars_is_money_not_math(self):
+        self._unchanged("We paid $100$ for it.")
+
+    def test_a_spaced_pair_of_amounts(self):
+        self._unchanged("we spent $5M and $8M on training")
+
+    def test_real_math_still_converts(self):
+        """The guard must not buy safety with a miss."""
+        self.assertEqual(convert_body("k"), "<i>k</i>")
+        self.assertEqual(convert_body("2x"), "2<i>x</i>")
+        self.assertEqual(convert_body("x_i"), "<i>x</i><sub>i</sub>")
+
+
+class TestUprightWordsKeepTheirHyphen(unittest.TestCase):
+    """U+2212 is a math rule. `\\text{}` holds ordinary words."""
+
+    def test_cross_entropy(self):
+        self.assertEqual(convert_body(r"\text{cross-entropy}"), "cross-entropy")
+
+    def test_top_k(self):
+        self.assertEqual(convert_body(r"\text{top-k}"), "top-k")
+
+    def test_minus_is_still_a_minus_in_math(self):
+        self.assertEqual(convert_body("h_{l-1}"), "<i>h</i><sub>l−1</sub>")
+
+
+class TestSharedScopeWithTheGate(unittest.TestCase):
+    """Two tools that disagree on scope hand the operator a failing gate and
+    an empty worklist. These assert they agree."""
+
+    def test_verbatim_tier_three_blocks_are_left_byte_identical(self):
+        html = page('<pre class="equation" data-math-verbatim="1">'
+                    r"$\mathcal{L}$ = stuff</pre>")
+        edits, _ = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(apply_edits(html, edits), html)
+
+    def test_numbered_references_cut_matches_the_gate(self):
+        """Asserting no-hits on BOTH sides, not just no-edits: an edits==[]
+        assertion alone passes whether the region was cut or merely had
+        nothing convertible, so it cannot detect a divergence."""
+        from check_math import find_hits
+        html = page("<h2>7. References</h2>\n<p>Smith. On $L_p$ norms.</p>")
+        edits, _ = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(find_hits(html), [])
+
+    def test_unnumbered_references_cut_matches_the_gate(self):
+        from check_math import find_hits
+        html = page("<h2>References</h2>\n<p>Smith. On $L_p$ norms.</p>")
+        self.assertEqual(plan(html)[0], [])
+        self.assertEqual(find_hits(html), [])
+
+
+class TestDisplayBlocksReachTheWorklist(unittest.TestCase):
+    """Masked so their interiors are safe, but still reported — otherwise a
+    page of untypeset display equations prints `refused: 0` and exits 0."""
+
+    def test_a_display_block_is_counted_as_refused(self):
+        html = page('<div class="scroll-x"><pre class="equation">$$\n'
+                    r"a = \frac{b}{c}" "\n$$</pre></div>")
+        edits, refused = plan(html)
+        self.assertEqual(edits, [])
+        self.assertEqual(sum(refused.values()), 1)
+        self.assertIn("$$", next(iter(refused)))
+
+    def test_display_block_counted_even_alongside_a_convertible_span(self):
+        html = page("<p>$k$</p>\n<pre>$$\na = b\n$$</pre>")
+        edits, refused = plan(html)
+        self.assertEqual(len(edits), 1)
+        self.assertEqual(sum(refused.values()), 1)
+
+
 class TestMasking(unittest.TestCase):
     def test_masking_preserves_length_and_line_numbers(self):
         html = page("<p>one</p>\n<script>var a = 1;</script>\n<p>two</p>")
