@@ -176,8 +176,8 @@ not on this session's work. Use this shape:
   `claude --model 'claude-opus-5[1m]' --effort high`. Both flags are
   per-invocation only — my saved defaults stay untouched. Always print both
   flags explicitly, even if you suspect they match my current defaults: the
-  explicit command is correct whatever the defaults are, and you have no
-  reliable read on them from inside the session.
+  explicit command is correct whatever the defaults are, and I may paste it
+  into a machine or profile whose defaults differ.
 - **Why (one clause):** tie the pick to the specific next action you named, so I
   can sanity-check it — e.g. "Opus 5 at max: 3 findings in 2 files, each just
   needs verify-against-HEAD + a minimal fix; too narrow to want fan-out."

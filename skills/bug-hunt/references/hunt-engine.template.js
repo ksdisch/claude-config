@@ -108,7 +108,12 @@ Report ONLY genuine bugs with concrete reasoning, not style nits. For each: file
     key: 'silent-failure',
     agentType: 'silent-failure-hunter',
     prompt: `SCOPE: ${ROOT}
-Audit this scope for silent failures. Report file paths relative to the repo root.`,
+Audit this scope for silent failures. Report file paths relative to the repo root.
+Emit findings through the schema, not your usual bullets — it asks for fields your own output format doesn't name:
+  title = a one-line name for the finding · file / line = your "Where" · category = 'error-handling'
+  description = your "Issue" · why_real = your "Impact" · suggested_fix = your "Fix recommendation"
+  severity = the same critical/high/medium/low rubric you already grade on.
+Return an empty findings array if you find nothing real.`,
   },
   // ... add one entry per finder ...
 ]

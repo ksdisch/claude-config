@@ -45,7 +45,7 @@ Extract every behavioral assertion you can find, in any order. The only structur
 
 **Metadata per behavior** (omit a field rather than guess — except `id`, which is never omitted):
 
-- **id**: MANDATORY on every Requirement and Invariant — it is the only anchor future deltas match on, so an id-less block drops out of delta tracking permanently (Guardrail 6 forbids name-matching). Format `FileName.methodName`, derived from the most upstream enforcement point; when the enforcement point is unknown, fall back to the **declaration site** — the file and symbol where the behavior is declared — in the same format. Independent of `enforced`: an unknown `enforced` never suppresses the id. MUST NOT change when the human-readable name changes.
+- **id**: MANDATORY on every Requirement and Invariant — it is the only anchor future deltas match on, so an id-less block drops out of delta tracking permanently (Guardrail 6 forbids name-matching). Format `FileName.methodName`, derived from the most upstream enforcement point; when the enforcement point is unknown, fall back to the **declaration site** — the file and symbol where the behavior is declared — in the same format, and mark it `<!-- id_source: declaration -->` so a later pass can migrate it deliberately instead of silently emitting `REMOVED` + `ADDED`. Independent of `enforced`: an unknown `enforced` never suppresses the id. **Write an id once and never re-derive it** — on a re-mine, a behavior you can still identify keeps the id already in the existing spec, even if you now see a better derivation. MUST NOT change when the human-readable name changes.
 - **entities**: domain objects involved, as named in code.
 - **enforced**: where the behavior is checked — `FileName.methodName()`.
 - **test**: existing test, if any — `TestClass.testMethodName()`.
@@ -115,7 +115,7 @@ One file: `openspec/specs/<capability>/spec.md`, containing only `### Requiremen
 3. **One capability, one spec file.** Past ~500 lines the capability is too broad — say so in your report rather than splitting on your own.
 4. **Metadata is mandatory when known — `id` unconditionally.** Every Requirement and Invariant carries an `id` (declaration-site fallback when the enforcement point is unknown). A Requirement without `enforced` is a promise with no accountability.
 5. **Flag, don't fix.** You're a miner, not a refactorer — code inconsistencies go in `uncertainty` comments, never in edits.
-6. **Delta-ready.** Future deltas write `## ADDED / MODIFIED / REMOVED Requirements` above your blocks and match MODIFIED by `<!-- id: -->`, not by name — keep ids stable and the structure flat.
+6. **Delta-ready.** Future deltas write `## ADDED / MODIFIED / REMOVED Requirements` above your blocks and match MODIFIED by `<!-- id: -->`, not by name — keep ids stable and the structure flat. Stable means *never re-derived*: preserve an existing block's id on re-mine, and leave `id_source: declaration` markers in place until a pass migrates them on purpose.
 7. **Never overwrite silently.** An existing spec.md is replaced only when the dispatch says `OVERWRITE=yes` — otherwise report differences and write nothing (Phase 3 guard).
 
 ## Intended integration (not yet wired)
