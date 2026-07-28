@@ -90,3 +90,117 @@ always-on agent, a daemon, or autonomous fleet management. It stays files-Kyle-e
 a command-Kyle-invokes; reconcile is on-demand and proposes PRs for Kyle to merge. The
 soul ("dotfiles for Claude Code") is intact; the repo just stops being amnesiac about
 where it ships.
+
+---
+
+## Status update — 2026-07-28
+
+Still not built. The bet's premise stopped being hypothetical: this seam published third-party
+PII across 13 public repos, and removing it took three widening manual passes. Full incident
+record, remediation scope, and process lessons live in [`BACKLOG.md`](../../BACKLOG.md) under
+this item.
+
+**Two assumptions above are now known wrong** — fix them before designing:
+- **"7 consumer repos"** (§ Why now, § Credible first step): it is **18 repos with vendored
+  `.claude/commands/`, 13 of them public**. Re-derive the list; don't seed from the memory note.
+- **"Start coarse"** (§ Decisions, granularity): a *prune* has to know what should no longer be
+  there, which coarse tiers can't express. Revisit.
+
+Also newly relevant: § Decisions asks where `fleet.yml` lives and flags "confirm no private repo
+paths leak into a shareable file." `claude-config` is now **public**, and 5 of the 18 fleet repos
+are private — that is a live constraint, not a footnote.
+
+## Handoff prompt (ready to paste)
+
+Paste the block below into a fresh session to start this work. It carries the landmines from the
+2026-07-28 purge that a cold session would otherwise re-hit.
+
+**Run it as:** `claude --model claude-fable-5 --effort xhigh` — the open design questions need
+deciding before code, and the sizing assumption is already stale.
+
+````markdown
+# Context handoff — claude-config: fleet manifest + /reconcile (vendoring prune)
+
+## Overview
+
+`claude-config` (`~/Projects/claude-config`, PUBLIC) is "dotfiles for Claude Code" — the
+canonical source for global slash commands, skills, and subagents, symlinked into `~/.claude/`.
+It is also an upstream: `commands/claudify-repo.md` vendors *copies* into project repos.
+
+You are building the fix for a root cause proven expensively on 2026-07-28: **`/claudify-repo`
+copies and never prunes**, so deleting something upstream leaves it live downstream with no
+signal. Read first, in order:
+1. `docs/ideas/fleet-manifest-reconcile.md` — the full design write-up (this file).
+2. `BACKLOG.md` — the `[Exploration] Fleet manifest + /reconcile` item, whose bullets carry a
+   worked example and three process lessons from the incident.
+
+## What's done
+
+Nothing on this feature. The 2026-07-28 work was the incident that motivates it (all on `main`):
+- PRs #53, #54 — deleted `/mock-sql-interview`, `/mock-sql-demo`, `/mock-sql-audio` (they named
+  two real interviewers; the repo is public).
+- Fleet remediation, by hand, in three widening passes: 17 repos' default branches → 78 fleet
+  branches (55 deleted / 23 stripped) → `claude-config`'s own 17 branches (10 deleted / 7 stripped).
+
+## Hard-won lessons (apply these)
+
+- **The design doc is stale on sizing.** It says 7 consumer repos. Reality: **18 repos with
+  vendored `.claude/commands/`, 13 of them public**. Re-derive the list; do not trust the doc's
+  count or the memory note.
+- **`~/Projects/new-game-project-idea` has `origin = constellation.git`** — a duplicate clone, not
+  its own repo. Any fleet walk must dedupe by remote URL or it double-pushes.
+- **Naive line deletion destroys data.** `~/Projects/DogHood/CLAUDE.md` lists *every* command on
+  one line. Deleting lines matching a command name would have wiped 21 unrelated entries. A prune
+  needs surgical excision plus a **refuse-if-unsure guard**: parse the other `` `/command` ``
+  tokens on the line, excise only the target fragments, then assert every other token survived —
+  and hard-fail rather than write if it can't excise cleanly.
+- **zsh mangles git refspecs.** `$ref:commands/foo.md` and `$sha:refs/heads/$b` hit zsh parameter
+  modifiers (`:c`, `:r`) even inside double quotes. Always brace: `"${sha}:refs/heads/${b}"`.
+  Running the same script via `bash script.sh` also avoids it.
+- **`git cat-file -e "$ref:path"` gave false negatives** (reported 0 of 19 branches; `git ls-tree`
+  found 17). **Use `git ls-tree --name-only <ref> <dir>` for ref content checks.**
+- **A GitHub API branch sweep silently rate-limited and returned a clean `0`.** Any `/reconcile`
+  implementation must detect API errors and truncated trees explicitly, and must never report
+  "clean" when calls failed. Two false cleans that session; both caught only by contradicting
+  evidence, never by the check itself.
+- **Deleting a file on `main` does nothing to branch tips cut earlier.** Any drift check must
+  sweep every ref, not just the default branch — including `claude-config`'s own.
+- **Hooks that will block you:** `~/.claude/hooks/block-rm-rf.sh` rejects `rm` outside `/tmp/`
+  (use unique filenames instead of cleanup); the safety-net blocks `git checkout --` and
+  `git reset --hard`. To rewrite a branch tip without a working tree, use plumbing:
+  `GIT_INDEX_FILE=… git read-tree <ref>` → `git rm --cached` → `git write-tree` →
+  `git commit-tree -p <ref>` → push. This preserves the old tip as parent (no force-push, no lost
+  work).
+- **Branch protection:** `constellation`, `home-base`, `stopwatch` require up-to-date branches +
+  passing checks. Use `gh pr update-branch` and wait for checks. **Kyle's convention: do not use
+  `gh pr merge --admin`.**
+- **Any change to `commands/` requires the `adversarial-review` loop before merge** (per
+  CLAUDE.md). The docs-only escape hatch does not apply. Budget for it.
+- **Reference-doc sync rule:** adding `commands/reconcile.md` requires a row in
+  `docs/command-skill-reference.md` **in the same commit**.
+
+## Where the plan stands
+
+**In progress:** nothing. This is a fresh start.
+
+**Next concrete action:** re-derive the actual fleet (18 repos, deduped by remote URL) and put the
+five open design questions in this file's "Decisions / open questions" section to Kyle before
+writing code.
+
+**Decisions pending Kyle — ask, do not assume.** The doc proposes v1 answers; the incident may
+change them:
+- `fleet.yml` granularity: per-item list vs coarse tiers. A *prune* needs per-item to know what
+  should no longer be there — this may override the doc's "start coarse."
+- Report vs act: doc says v1 reports only. The incident argues for a `--prune` that opens PRs.
+- Whether `fleet.yml` lives in this now-**public** repo. The doc flagged "confirm no private repo
+  paths leak" — with 5 private repos in the fleet, that is now a live problem.
+
+**Known follow-ups this feature should cover:** ~95 *local* branches across 14 clones still carry
+the deleted command files (75 with no live remote), so a plain `git push origin <branch>` would
+republish them to a public repo. Separately, `.claude/skills/interview-prep/SKILL.md` is still
+vendored and public in 18 repos while being deliberately gitignored here — the same prune gap,
+unfixed.
+
+**Open first:** `docs/ideas/fleet-manifest-reconcile.md`, `BACKLOG.md`,
+`commands/claudify-repo.md` (the seam — its PORT mode copies with no delete/prune step).
+````
