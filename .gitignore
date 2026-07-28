@@ -21,6 +21,13 @@ statsig/
 telemetry/
 reviews/
 
+# Deliberately local-only: this skill and the reference-doc sections that named
+# them describe private job-search / health projects, and this repo is public.
+# skills/ is symlinked into ~/.claude as a whole directory, so an untracked skill
+# here still loads normally — it just isn't published. Trade-off: a fresh clone on
+# a new machine won't have it.
+skills/interview-prep/
+
 # Python bytecode from skill scripts
 __pycache__/
 *.pyc
