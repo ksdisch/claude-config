@@ -1,0 +1,219 @@
+:root {
+  --pg-hl-bg: rgba(255, 213, 79, 0.45);
+  --pg-hl-noted: rgba(217, 119, 6, 0.9);
+  --pg-annot-bg: #ffffff;
+  --pg-annot-fg: #1f1f1f;
+  --pg-annot-border: #cfcfcf;
+  --pg-annot-accent: #b45309;
+  --pg-annot-muted: #6b6b6b;
+  --pg-annot-backdrop: rgba(0, 0, 0, 0.35);
+  --pg-annot-flash: rgba(255, 167, 38, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pg-hl-bg: rgba(202, 138, 4, 0.38);
+    --pg-hl-noted: rgba(245, 158, 11, 0.9);
+    --pg-annot-bg: #232323;
+    --pg-annot-fg: #e8e8e8;
+    --pg-annot-border: #484848;
+    --pg-annot-accent: #f59e0b;
+    --pg-annot-muted: #9a9a9a;
+    --pg-annot-backdrop: rgba(0, 0, 0, 0.55);
+    --pg-annot-flash: rgba(245, 158, 11, 0.45);
+  }
+}
+:root[data-theme="dark"] {
+  --pg-hl-bg: rgba(202, 138, 4, 0.38);
+  --pg-hl-noted: rgba(245, 158, 11, 0.9);
+  --pg-annot-bg: #232323;
+  --pg-annot-fg: #e8e8e8;
+  --pg-annot-border: #484848;
+  --pg-annot-accent: #f59e0b;
+  --pg-annot-muted: #9a9a9a;
+  --pg-annot-backdrop: rgba(0, 0, 0, 0.55);
+  --pg-annot-flash: rgba(245, 158, 11, 0.45);
+}
+:root[data-theme="light"] {
+  --pg-hl-bg: rgba(255, 213, 79, 0.45);
+  --pg-hl-noted: rgba(217, 119, 6, 0.9);
+  --pg-annot-bg: #ffffff;
+  --pg-annot-fg: #1f1f1f;
+  --pg-annot-border: #cfcfcf;
+  --pg-annot-accent: #b45309;
+  --pg-annot-muted: #6b6b6b;
+  --pg-annot-backdrop: rgba(0, 0, 0, 0.35);
+  --pg-annot-flash: rgba(255, 167, 38, 0.55);
+}
+
+mark.pg-hl {
+  background: var(--pg-hl-bg);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+mark.pg-hl--noted { border-bottom: 2px solid var(--pg-hl-noted); }
+mark.pg-hl--flash { animation: pg-annot-flash 1.2s ease-out; }
+@keyframes pg-annot-flash {
+  0% { background: var(--pg-annot-flash); }
+  100% { background: var(--pg-hl-bg); }
+}
+
+.pg-annot-ui, .pg-annot-ui * { box-sizing: border-box; }
+.pg-annot-ui button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.pg-annot-toolbar {
+  position: absolute;
+  z-index: 1200;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--pg-annot-bg);
+  color: var(--pg-annot-fg);
+  border: 1px solid var(--pg-annot-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.pg-annot-toolbar button {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.pg-annot-toolbar button:hover { background: var(--pg-hl-bg); }
+
+.pg-annot-editor,
+.pg-annot-fallback {
+  position: absolute;
+  z-index: 1200;
+  width: min(360px, 92vw);
+  padding: 0.75rem;
+  background: var(--pg-annot-bg);
+  color: var(--pg-annot-fg);
+  border: 1px solid var(--pg-annot-border);
+  border-radius: 10px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+}
+.pg-annot-fallback { position: fixed; top: 15vh; left: 50%; transform: translateX(-50%); }
+.pg-annot-editor-quote {
+  font-size: 0.82rem;
+  color: var(--pg-annot-muted);
+  border-left: 3px solid var(--pg-hl-noted);
+  padding-left: 0.5rem;
+  margin-bottom: 0.5rem;
+  max-height: 4.6em;
+  overflow: hidden;
+}
+.pg-annot-editor textarea,
+.pg-annot-fallback textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--pg-annot-fg);
+  background: var(--pg-annot-bg);
+  border: 1px solid var(--pg-annot-border);
+  border-radius: 6px;
+  padding: 0.4rem;
+  resize: vertical;
+}
+.pg-annot-fallback textarea { height: 10rem; }
+.pg-annot-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+.pg-annot-actions button {
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid var(--pg-annot-border);
+}
+.pg-annot-actions button[data-act="save"] {
+  background: var(--pg-annot-accent);
+  color: #fff;
+  border-color: var(--pg-annot-accent);
+}
+
+.pg-annot-toggle {
+  position: fixed;
+  top: 3.4rem;
+  right: 1rem;
+  /* below the figure lightbox (1000) so an open figure covers the pill; the
+     runtime hides the toggle entirely while the annotation panel is open */
+  z-index: 900;
+  padding: 0.35rem 0.7rem;
+  background: var(--pg-annot-bg);
+  color: var(--pg-annot-fg);
+  border: 1px solid var(--pg-annot-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.pg-annot-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  background: var(--pg-annot-backdrop);
+}
+.pg-annot-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1195;
+  width: min(420px, 90vw);
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--pg-annot-bg);
+  color: var(--pg-annot-fg);
+  border-left: 1px solid var(--pg-annot-border);
+}
+.pg-annot-panel h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+.pg-annot-panel-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.pg-annot-hint {
+  font-size: 0.78rem;
+  color: var(--pg-annot-muted);
+  margin: 0.25rem 0 0.75rem;
+}
+.pg-annot-status { font-size: 0.8rem; color: var(--pg-annot-accent); min-height: 1.2em; }
+.pg-annot-list, .pg-annot-orphans ol {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.pg-annot-list li, .pg-annot-orphans li {
+  border-top: 1px solid var(--pg-annot-border);
+  padding: 0.6rem 0;
+}
+.pg-annot-item-section {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pg-annot-muted);
+}
+.pg-annot-item-quote {
+  font-size: 0.85rem;
+  border-left: 3px solid var(--pg-hl-noted);
+  padding-left: 0.5rem;
+  margin: 0.25rem 0;
+}
+.pg-annot-item-note { font-size: 0.85rem; white-space: pre-wrap; }
+.pg-annot-item-actions { display: flex; gap: 0.6rem; margin-top: 0.3rem; }
+.pg-annot-item-actions button {
+  font-size: 0.78rem;
+  color: var(--pg-annot-accent);
+  padding: 0;
+}
+.pg-annot-orphans h3 { font-size: 0.9rem; margin: 1rem 0 0; }
