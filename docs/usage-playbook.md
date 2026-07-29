@@ -52,11 +52,14 @@ some other item's card); that no two rows claim one card; that no card is an orp
 no two headings collide into one anchor, which GitHub resolves by silently suffixing the second
 and re-pointing an existing link at the wrong card.
 
-It checks the *other* direction too: every tracked file in `commands/`, `skills/`, and
-`agents/` has a row, no row links to a file that's been deleted or renamed, and a row's name
-matches the file it links. That list comes from `git ls-files`, so a skill deliberately kept
-out of this public repo (`skills/interview-prep/` is gitignored) is excluded because git
-doesn't list it — not because of an exemption list that would quietly drift.
+It checks the *other* direction too: every tracked file matching the standard layout —
+`commands/<name>.md`, `agents/<name>.md`, `skills/<name>/SKILL.md` — has a row, no row links
+to a file that's been deleted or renamed, and a row's name matches the file it links. That
+list comes from `git ls-files`, so a skill deliberately kept out of this public repo
+(`skills/interview-prep/` is gitignored) is excluded because git doesn't list it — not
+because of an exemption list that would quietly drift. A path that looks like an item but
+sits outside that layout (a command nested in a subdirectory, a skill folder with no
+`SKILL.md`) can't be named, so it's reported as a warning instead of quietly exempted.
 
 It runs as the repo's tracked `pre-push` hook (`.githooks/pre-push`, activated by `install.sh`
 via `core.hooksPath`), so a mismatch blocks the push instead of landing — for terminal and
@@ -258,7 +261,7 @@ rows get re-pointed to match.
   - A layout is "almost right" and the remaining diffs are only visible on screen.
 - **Pairs well with:** [`match-the-mock`](#match-the-mock) (the auto-triggering sibling —
   same loop), [`/boot_server`](#boot_server) (gets the app reachable first),
-  `frontend-design` (styling judgment).
+  `frontend-design` plugin skill (styling judgment).
 - **Notes:** needs a working browser tool (Playwright/Kapture) to navigate and capture —
   confirm that before starting, or the loop has no eyes.
 
@@ -329,7 +332,7 @@ rows get re-pointed to match.
   - You want new repo-specific commands or skills designed around how this project actually
     works.
 - **Pairs well with:** [`kickoff`](#kickoff) / [`mini`](#mini) (post-scaffold step),
-  `claude-automation-recommender` (what BRAINSTORM mode dispatches),
+  `claude-automation-recommender` plugin skill (what BRAINSTORM mode dispatches),
   [`/trim-context`](#trim-context) (vendoring adds always-loaded weight).
 - **Notes:** stages only the files it touched — never `git add -A` — and won't push unless
   you say so. Vendored copies don't track upstream.
@@ -794,7 +797,7 @@ rows get re-pointed to match.
   - You'd otherwise describe the diff in words and hope — this one actually looks.
 - **Pairs well with:** [`/screenshot-iterate`](#screenshot-iterate) (the manual sibling —
   same loop, invoked explicitly), [`/boot_server`](#boot_server) (get the app reachable),
-  `frontend-design` (styling judgment).
+  `frontend-design` plugin skill (styling judgment).
 - **Notes:** auto-triggers when you share a visual target, so you rarely type it. Needs a
   browser tool available to navigate and capture.
 

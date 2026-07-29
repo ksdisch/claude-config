@@ -28,9 +28,11 @@ Checks, in report order:
   5. No card is an orphan.
   6. No two headings collide into one anchor — GitHub silently suffixes the
      second, which re-points an existing link at the wrong card.
-  7. Every tracked command, skill, and subagent file has an index row, no row
-     links to an item file that no longer exists, and each row's name matches
-     the file it links.
+  7. Every tracked command, skill, and subagent file **that matches the standard
+     layout** (`commands/<name>.md`, `agents/<name>.md`, `skills/<name>/SKILL.md`)
+     has an index row, no row links to an item file that no longer exists, and
+     each row's name matches the file it links. Item-shaped paths outside that
+     layout can't be named, so they're warned about rather than exempted.
 
 A card heading may carry a project suffix to disambiguate a duplicate item name
 (`### \\`/verify\\` (DogHood)` → `#verify-doghood`); the item name inside the
@@ -138,6 +140,34 @@ def item_file_name(path: str) -> str | None:
     return None
 
 
+def unclassified_items(paths: list[str]) -> list[str]:
+    """Paths that look like an item but that `item_file_name` can't name.
+
+    Same reasoning as the unrecognized-row warning: a file the classifier drops
+    is a file exempt from the row check, and that exemption is invisible unless
+    it's reported. Deliberately narrow — a skill's support files
+    (`skills/<name>/references/…`) are a normal part of an item, not a missing
+    one, and warning about those would bury the signal.
+    """
+    odd = []
+    skill_dirs, skills_with_manifest = set(), set()
+
+    for path in paths:
+        parts = path.split("/")
+        # A .md nested deeper than the layout allows: a namespaced command, or
+        # an agent tucked in a subdirectory. Neither has a row and neither is
+        # obviously support material.
+        if parts[0] in ("commands", "agents") and len(parts) > 2 and path.endswith(".md"):
+            odd.append(path)
+        elif parts[0] == "skills" and len(parts) > 1:
+            skill_dirs.add(parts[1])
+            if len(parts) == 3 and parts[2] == "SKILL.md":
+                skills_with_manifest.add(parts[1])
+
+    odd.extend(f"skills/{d}/" for d in sorted(skill_dirs - skills_with_manifest))
+    return sorted(odd)
+
+
 def git(args: list[str]) -> str | None:
     """Run a git command in this repo; None if git or the object is unavailable."""
     try:
@@ -160,14 +190,15 @@ def read_doc(path: Path, rev: str | None) -> str | None:
     return git(["show", f"{rev}:{path.as_posix()}"])
 
 
-def tracked_items(rev: str | None) -> dict[str, str] | None:
-    """Every item file → the row name it must appear under.
+def tracked_items(rev: str | None) -> tuple[dict[str, str], list[str]] | None:
+    """`(item file → the row name it must appear under, every path considered)`.
 
     Sourced from git, so a skill kept out of this public repo on purpose
     (`skills/interview-prep/` is gitignored) is excluded because git doesn't
     list it — not because of an exemption list that would silently drift.
     Returns None when git can't answer, which the caller reports rather than
-    treating as "nothing to check".
+    treating as "nothing to check". The second element lets the caller warn
+    about item-shaped paths this couldn't classify.
     """
     if rev is None:
         out = git(["ls-files", "-z", *ITEM_DIRS])
@@ -177,11 +208,12 @@ def tracked_items(rev: str | None) -> dict[str, str] | None:
         return None
 
     found = {}
-    for path in out.split("\0"):
-        name = item_file_name(path) if path else None
+    paths = [p for p in out.split("\0") if p]
+    for path in paths:
+        name = item_file_name(path)
         if name:
             found[path] = name
-    return found
+    return found, paths
 
 
 def linked_items(reference: str) -> dict[str, tuple[int, str]]:
@@ -225,17 +257,38 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
 
-        # At a revision it usually means the commit simply predates the docs —
-        # true of every branch cut before they landed, and not something to block
-        # a push over. Say which doc was absent, so a deliberate deletion is
-        # visible rather than mistaken for a clean pass.
         absent = ", ".join(
             str(p) for p, text in ((REFERENCE, reference), (PLAYBOOK, playbook))
             if text is None
         )
+
+        # A doc missing at a revision is one of two very different things, and
+        # the index says which. Before the playbook existed the index had no
+        # `config →` links at all; deleting the playbook leaves every one of
+        # them behind, pointing at nothing. So links-without-a-playbook is the
+        # worst drift there is — all 79 at once — and must not pass, while a
+        # commit that predates the pairing has nothing to check and must not
+        # block a push of any branch cut back then.
+        orphaned_links = len(CONFIG_LINK.findall(reference)) if reference else 0
+        if playbook is None and orphaned_links:
+            print(
+                f"doc sync check FAILED{where} — {PLAYBOOK} does not exist there, but\n"
+                f"{REFERENCE} still carries {orphaned_links} `config →` links, every one of\n"
+                f"them now pointing at nothing.",
+                file=sys.stderr,
+            )
+            return 1
+        if reference is None:
+            print(
+                f"doc sync check FAILED{where} — {REFERENCE} does not exist there while\n"
+                f"{PLAYBOOK} does. Cards with no index to pair with is drift.",
+                file=sys.stderr,
+            )
+            return 1
+
         print(
-            f"doc sync check: not verified{where} — {absent} does not exist there, "
-            f"so there is no pairing to check.",
+            f"doc sync check: not verified{where} — {absent} does not exist there, and "
+            f"{REFERENCE} has no `config →` links, so this revision predates the pairing.",
             file=sys.stderr,
         )
         return 0
@@ -308,14 +361,24 @@ def main(argv: list[str] | None = None) -> int:
             + "\n".join(f"    {PLAYBOOK}  #{a}" for a in dupes)
         )
 
-    tracked = tracked_items(rev)
-    if tracked is None:
+    listed = tracked_items(rev)
+    tracked = None if listed is None else listed[0]
+    if listed is None:
         warnings.append(
             "could not list this repo's item files (git unavailable), so the two docs\n"
             "  were checked against each other only — nothing verified that every\n"
             "  command, skill, and subagent file has an index row."
         )
     else:
+        odd = unclassified_items(listed[1])
+        if odd:
+            warnings.append(
+                "paths that look like an item but don't match the layout, so the row\n"
+                "  check can't cover them (a command or agent nested in a subdirectory,\n"
+                "  or a skill directory with no SKILL.md):\n"
+                + "\n".join(f"    {p}" for p in odd)
+            )
+
         linked = linked_items(reference)
 
         missing = sorted(p for p in tracked if p not in linked)

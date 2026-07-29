@@ -151,7 +151,8 @@ model: opus
    records that an item exists; the playbook says how to run it. The rule lives in
    [`CLAUDE.md`](CLAUDE.md), and [`scripts/check-doc-sync.py`](scripts/check-doc-sync.py) —
    run by the tracked [`pre-push` hook](.githooks/pre-push) — blocks a push whose commits
-   carry rows and cards that don't line up, or a global item file with no row at all. It
+   carry rows and cards that don't line up, or a standard-layout global item file with no
+   row at all. It
    fires only when an item's *existence, name, or description* changes; reworking a file's
    internals needs no doc edit.
 2. **A new top-level file or directory gets symlinked into `~/.claude/` unless you add it to
