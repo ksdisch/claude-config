@@ -4,7 +4,7 @@
 
 **Goal:** Add a highlight-and-note annotation layer to every paper-gloss HTML page — select text, highlight it, attach a note, persist in `localStorage`, and export to both Obsidian-ready Markdown and re-importable JSON — built into `/paper-gloss` for new pages and retrofittable onto the 6 already-published pages via a new `--annotate` mode.
 
-**Architecture:** The annotation runtime is a fixed asset pair (`assets/annotations.css` + `assets/annotations.js`) with zero per-paper content — both new-page generation and the retrofit embed the same bytes via one deterministic, idempotent injector script (`scripts/inject_annotations.py`), which also stamps stable ids on block elements and a paper slug on `<body>`. Anchoring is W3C TextQuoteSelector-style (exact quote + prefix/suffix context) with a paragraph-id hint, so annotations survive the math/figure retrofits, which never rewrite prose. Deterministic work lives in the Python script with unit tests; the skill prose only orchestrates.
+**Architecture:** The annotation runtime is a fixed asset pair (`assets/annotations.css` + `assets/annotations.js`) with zero per-paper content — both new-page generation and the retrofit embed the same bytes via one deterministic, idempotent injector script (`scripts/inject_annotations.py`), which also stamps stable `data-pg-block` markers on block elements and a paper slug on `<body>`. Anchoring is W3C TextQuoteSelector-style (exact quote + prefix/suffix context) with a block-marker hint, so annotations survive the math/figure retrofits, which never rewrite prose. Deterministic work lives in the Python script with unit tests; the skill prose only orchestrates.
 
 **Tech Stack:** Vanilla JS + CSS (no libraries — artifact CSP forbids external loads anyway), Python 3 stdlib (`re`, `json`, `argparse`, `unittest`) for the injector, Playwright MCP for functional validation, the Artifact `downloads` capability (`window.claude.downloads.save`) for export.
 
@@ -33,10 +33,14 @@ Each annotation stores `{exact, prefix, suffix, pid, offset}`:
 
 - `exact` — the highlighted text, verbatim.
 - `prefix`/`suffix` — up to 32 characters of surrounding text **within the same block**.
-- `pid` — the id of the enclosing block element (`pg-p-NNNN`), stamped by the injector on
-  every `<p>`, `<li>`, `<dd>`, and `<h1>`–`<h6>`. No page has these today (measured: 0 of
-  592 `<p>` in the jacobian-lens page carry an id), so stamping is both a generation-side
-  addition and part of the retrofit injection.
+- `pid` — the block marker of the enclosing element (`data-pg-block="pg-p-NNNN"`), stamped
+  by the injector on every `<p>`, `<li>`, `<dd>`, and `<h1>`–`<h6>` **regardless of any
+  existing `id`, which is left untouched**. A dedicated attribute, not the `id`, because
+  ids are already taken: 0 of 592 `<p>` carry one on the jacobian-lens page, but **77 of
+  its 79 headings and all 9 footnote `<p>`s do** — keying the anchor set off `id` would
+  exclude every heading from annotation and collapse `sectionOf()` (and with it the
+  Markdown export's section grouping) to the paper title. Stamping is both a
+  generation-side addition and part of the retrofit injection.
 - `offset` — character offset of the quote within the block's `textContent`, used only as a
   tiebreaker score, never as the primary key.
 
@@ -90,7 +94,10 @@ probe): a `--retrofit`/`--annotate` redeploy keeps the URL → keeps the origin 
 annotations**; a fresh publish mints a new origin → starts empty; the local `file://` copy
 is a third origin — annotations never transfer between local file and artifact except by
 export/import. The panel carries a permanent one-line hint: *"Notes live in this browser
-only — export to keep them safe."*
+only — export to keep them safe."* — and the hint flips to an explicit ⚠️ not-saved
+warning the moment a storage write fails: partitioned/blocked iframe storage on
+`claudeusercontent.com` is a live path, not a theoretical one, and a badge that counts up
+while nothing persists would be the dishonest UI this section forbids.
 
 **Cross-device sync and shared annotations are off the table, not deferred.** The only
 artifact capabilities available are `downloads` and `mcp` — there is no storage/state
@@ -124,9 +131,17 @@ Annotations add a 4th surface family (selection toolbar, note editor, annotation
 the existing three (gloss popover, glossary panel, figure lightbox). The one-surface-at-a-time
 contract extends **without editing any existing page's scripts**:
 
-- **Opening any annotation surface closes the others:** the module calls
-  `window.closeGlossPopover`, `window.closeGlossPanel`, and `window.closeFigureLightbox`,
-  each guarded with `typeof === 'function'` — these are the already-public contract points.
+- **Opening any annotation surface closes the others:** the module prefers the exported
+  hooks — `window.closeGlossSurfaces` (which paper-figures retrofits export),
+  `window.closeGlossPopover`, `window.closeGlossPanel`, `window.closeFigureLightbox`, each
+  guarded with `typeof === 'function'` — and **falls back to driving the surfaces' own
+  markup by id** (`#gloss-popover`, `#gloss-panel`, `#gloss-backdrop`, `#figure-lightbox`
+  hidden; `aria-expanded` reset on `#gloss-panel-toggle`). The fallback is load-bearing,
+  not belt-and-suspenders: measured against the six retrofit targets, **five export no
+  hooks at all** and jacobian-lens exports only `closeGlossSurfaces` +
+  `closeFigureLightbox` — the per-surface hooks exist only on pages generated after this
+  plan's SKILL.md amendment. (Same layered pattern as `paper-figures`' `inject_html.py`,
+  which hit this exact problem first.)
 - **Other surfaces opening close the annotation UI:** the module's own delegated document
   listener watches for clicks on `.gloss-term`, `#gloss-panel-toggle`, and
   `.paper-figure img` and closes itself first. This is what makes retrofitted pages —
@@ -178,7 +193,7 @@ The eli5 **markdown is untouched** by all of this — annotations are an HTML-pa
 |---|---|
 | `skills/paper-gloss/assets/annotations.css` | Runtime styles: marks, toolbar, editor, panel, fallback dialog — self-sufficient `--pg-annot-*` variables with light defaults, dark media query, and both `data-theme` overrides |
 | `skills/paper-gloss/assets/annotations.js` | Runtime: storage, anchor capture/re-anchor, mark rendering, selection toolbar, note editor, panel, export (downloads + fallback), import, surface coordination |
-| `skills/paper-gloss/scripts/inject_annotations.py` | Stamp block ids + body slug, embed both assets at sentinel-guarded seams (replace-on-rerun), `--check` mode asserting page invariants |
+| `skills/paper-gloss/scripts/inject_annotations.py` | Stamp `data-pg-block` markers + body slug, embed both assets at sentinel-guarded seams (replace-on-rerun), `--check` mode asserting page invariants, self-check before any write |
 | `skills/paper-gloss/scripts/tests/test_inject_annotations.py` | Unit tests for the injector |
 | Modify: `skills/paper-gloss/SKILL.md` | `--annotate` arg, Phase 2 injection step, Phase 3 bullets, Phase 4 capabilities, new ANNOTATE mode section, description update |
 | Modify: `docs/command-skill-reference.md` (paper-gloss row) | Same commit as the description change — `scripts/check-doc-sync.py` runs at pre-push |
@@ -257,19 +272,24 @@ class TestStampIds(unittest.TestCase):
     def setUp(self):
         self.out, self.added = stamp_ids(FIXTURE)
 
-    def test_stamps_every_unidentified_block(self):
-        # h2, first p, li, dd get ids; the p with an id keeps its own
-        self.assertEqual(self.added, 4)
-        for frag in ('<h2 id="pg-p-0001">', '<p id="pg-p-0002">',
-                     '<li id="pg-p-0003">', '<dd id="pg-p-0004">'):
+    def test_stamps_every_block(self):
+        # h2, BOTH p (including the one carrying its own id), li, dd
+        self.assertEqual(self.added, 5)
+        for frag in ('<h2 data-pg-block="pg-p-0001">',
+                     '<p data-pg-block="pg-p-0002">',
+                     '<p data-pg-block="pg-p-0003" id="keep-me">',
+                     '<li data-pg-block="pg-p-0004">',
+                     '<dd data-pg-block="pg-p-0005">'):
             self.assertIn(frag, self.out)
 
-    def test_existing_id_untouched(self):
-        self.assertIn('<p id="keep-me">', self.out)
+    def test_existing_id_preserved(self):
+        # ids are never the marker: real pages have 77/79 headings and all
+        # footnotes already carrying ids, and those must stay annotatable
+        self.assertIn('id="keep-me"', self.out)
 
     def test_pre_is_not_stamped(self):
         self.assertIn('<pre class="equation" data-math-verbatim="1">', self.out)
-        self.assertNotIn('<pre id=', self.out)
+        self.assertNotIn('<pre data-pg-block=', self.out)
 
     def test_dt_is_not_stamped(self):
         self.assertIn("<dt>", self.out)
@@ -279,11 +299,11 @@ class TestStampIds(unittest.TestCase):
         self.assertEqual(added, 0)
         self.assertEqual(again, self.out)
 
-    def test_numbering_continues_past_existing_pg_ids(self):
-        doc = '<body><p id="pg-p-0007">a</p><p>b</p></body>'
+    def test_numbering_continues_past_existing_markers(self):
+        doc = '<body><p data-pg-block="pg-p-0007">a</p><p>b</p></body>'
         out, added = stamp_ids(doc)
         self.assertEqual(added, 1)
-        self.assertIn('<p id="pg-p-0008">b</p>', out)
+        self.assertIn('<p data-pg-block="pg-p-0008">b</p>', out)
 
     def test_ignores_block_lookalikes_inside_scripts(self):
         # The runtime JS (and GLOSS_TERMS) contain strings like '<h2>…</h2>';
@@ -294,12 +314,7 @@ class TestStampIds(unittest.TestCase):
         out, added = stamp_ids(doc)
         self.assertEqual(added, 1)
         self.assertIn('<script>var s = "<p>fake</p><h2>x</h2>";</script>', out)
-        self.assertIn('<p id="pg-p-0001">real</p>', out)
-
-    def test_data_id_attribute_is_not_mistaken_for_id(self):
-        out, added = stamp_ids('<body><p data-id="x">a</p></body>')
-        self.assertEqual(added, 1)
-        self.assertIn('<p id="pg-p-0001" data-id="x">a</p>', out)
+        self.assertIn('<p data-pg-block="pg-p-0001">real</p>', out)
 
 
 class TestSlug(unittest.TestCase):
@@ -384,9 +399,11 @@ Usage:
     python3 inject_annotations.py --check <glossed.html>
 
 What it does (all idempotent — a second run is a byte-identical no-op):
-  1. Stamps id="pg-p-NNNN" on every <p>, <li>, <dd>, <h1>-<h6> that has no id.
-     Ids are opaque anchors — uniqueness and stability matter, order does not
-     (the runtime sorts by DOM position, never by id number).
+  1. Stamps data-pg-block="pg-p-NNNN" on every <p>, <li>, <dd>, <h1>-<h6> that
+     lacks the marker. A dedicated attribute, never the id: most headings and
+     all footnotes on real pages already carry ids, which stay untouched.
+     Markers are opaque anchors — uniqueness and stability matter, order does
+     not (the runtime sorts by DOM position, never by marker number).
   2. Sets data-pg-slug="<slug>" on <body> (slug defaults to the filename minus
      its -eli5-glossed.html suffix).
   3. Embeds assets/annotations.css and assets/annotations.js as
@@ -405,10 +422,11 @@ import sys
 ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
 
 BLOCK_OPEN = re.compile(r"<(?P<tag>p|li|dd|h[1-6])(?P<attrs>(?:\s[^>]*)?)>", re.I)
-# \s prefix, not \b: attrs always lead with whitespace, and \b would false-match
-# attributes like data-id=.
-HAS_ID = re.compile(r"\sid\s*=", re.I)
-PG_ID = re.compile(r'id="pg-p-(\d+)"')
+# The marker is its own attribute — existing ids stay untouched (77 of 79
+# headings and all 9 footnote <p>s on the flagship page already carry ids).
+# \s prefix, not \b, so substrings of other attribute names never match.
+HAS_MARKER = re.compile(r"\sdata-pg-block\s*=", re.I)
+PG_BLOCK = re.compile(r'data-pg-block="pg-p-(\d+)"')
 BODY_OPEN = re.compile(r"<body(?P<attrs>(?:\s[^>]*)?)>", re.I)
 SLUG_ATTR = re.compile(r'\s*data-pg-slug="[^"]*"')
 # Block-lookalikes inside <script> spans (the runtime JS builds '<h2>…' strings,
@@ -431,18 +449,18 @@ def _outside_scripts(doc, transform):
 
 
 def stamp_ids(doc):
-    """Add pg-p ids to unidentified block elements. Returns (doc, added)."""
-    counter = max((int(n) for n in PG_ID.findall(doc)), default=0)
+    """Add data-pg-block markers to unmarked block elements. Returns (doc, added)."""
+    counter = max((int(n) for n in PG_BLOCK.findall(doc)), default=0)
     added = 0
 
     def repl(m):
         nonlocal counter, added
         attrs = m.group("attrs") or ""
-        if HAS_ID.search(attrs):
+        if HAS_MARKER.search(attrs):
             return m.group(0)
         counter += 1
         added += 1
-        return f'<{m.group("tag")} id="pg-p-{counter:04d}"{attrs}>'
+        return f'<{m.group("tag")} data-pg-block="pg-p-{counter:04d}"{attrs}>'
 
     return _outside_scripts(doc, lambda seg: BLOCK_OPEN.sub(repl, seg)), added
 
@@ -485,7 +503,7 @@ def check_page(doc):
     unstamped = sum(
         1
         for m in BLOCK_OPEN.finditer(prose_only)
-        if not HAS_ID.search(m.group("attrs") or "")
+        if not HAS_MARKER.search(m.group("attrs") or "")
     )
     if unstamped:
         problems.append(f"{unstamped} block element(s) left unstamped")
@@ -526,10 +544,20 @@ def main(argv=None):
     doc = set_slug(doc, args.slug or derive_slug(args.page))
     doc = embed_assets(doc, css, js)
 
+    # Never write a half-injected page: a missing </head> or </body> anchor
+    # makes embed_assets a silent no-op, and the default write is in-place.
+    problems = check_page(doc)
+    if problems:
+        for p in problems:
+            print(f"FAIL: {p}", file=sys.stderr)
+        print("aborting: injection did not produce a valid page; nothing written",
+              file=sys.stderr)
+        return 1
+
     out_path = args.out or args.page
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(doc)
-    print(f"stamped {added} new id(s); wrote {out_path}", file=sys.stderr)
+    print(f"stamped {added} new block marker(s); wrote {out_path}", file=sys.stderr)
     return 0
 
 
@@ -540,12 +568,12 @@ if __name__ == "__main__":
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd /Users/kyledisch/Projects/claude-config/skills/paper-gloss/scripts && python3 -m unittest tests.test_inject_annotations -v`
-Expected: `Ran 16 tests` … `OK`
+Expected: `Ran 15 tests` … `OK`
 
 - [ ] **Step 5: Run the whole paper-gloss suite (no collateral damage)**
 
 Run: `cd /Users/kyledisch/Projects/claude-config/skills/paper-gloss/scripts && python3 -m unittest discover -s tests -v`
-Expected: all tests (existing + 13 new) end `OK`.
+Expected: all tests (existing + 15 new) end `OK`.
 
 - [ ] **Step 6: Commit**
 
@@ -720,7 +748,9 @@ mark.pg-hl--flash { animation: pg-annot-flash 1.2s ease-out; }
   position: fixed;
   top: 3.4rem;
   right: 1rem;
-  z-index: 1150;
+  /* below the figure lightbox (1000) so an open figure covers the pill; the
+     runtime hides the toggle entirely while the annotation panel is open */
+  z-index: 900;
   padding: 0.35rem 0.7rem;
   background: var(--pg-annot-bg);
   color: var(--pg-annot-fg);
@@ -858,9 +888,24 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
     } catch (e) { /* private mode or corrupt payload: start empty */ }
     return { v: 1, slug: SLUG, title: document.title, annotations: [] };
   }
+  var storageOk = true;
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(store)); }
-    catch (e) { /* quota/private mode: session stays in-memory */ }
+    // Never silent: partitioned iframe storage is a live path, and a badge
+    // that counts up while nothing persists is the lie D3 forbids.
+    try {
+      localStorage.setItem(KEY, JSON.stringify(store));
+      storageOk = true;
+    } catch (e) {
+      storageOk = false;
+    }
+    updateHint();
+  }
+  function updateHint() {
+    var h = panel && panel.querySelector('.pg-annot-hint');
+    if (!h) return;
+    h.textContent = storageOk
+      ? 'Notes live in this browser only — export to keep them safe.'
+      : '⚠️ Not saved in this browser (storage unavailable) — export before you close this tab.';
   }
   var store = load();
   var posCache = {};   // id -> {bi, start} for document-order sorting
@@ -880,12 +925,11 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
   /* ---------- anchoring ---------- */
   function allBlocks() {
     return Array.prototype.slice.call(
-      document.querySelectorAll('[id^="pg-p-"]'));
+      document.querySelectorAll('[data-pg-block]'));
   }
   function blockOf(node) {
     var el = node.nodeType === 1 ? node : node.parentElement;
-    while (el && !(el.id && el.id.indexOf('pg-p-') === 0)) el = el.parentElement;
-    return el;
+    return el ? el.closest('[data-pg-block]') : null;
   }
   function sectionOf(block) {
     var bs = allBlocks(), i = bs.indexOf(block);
@@ -909,7 +953,7 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
     var exact = range.toString();
     if (!exact.trim()) return null;
     return {
-      pid: b1.id,
+      pid: b1.getAttribute('data-pg-block'),
       exact: exact,
       prefix: text.slice(Math.max(0, start - CTX), start),
       suffix: text.slice(start + exact.length, start + exact.length + CTX),
@@ -936,7 +980,8 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
   }
   function locate(a) {
     var candidates = [];
-    var own = a.pid && document.getElementById(a.pid);
+    var own = a.pid &&
+      document.querySelector('[data-pg-block="' + a.pid + '"]');
     if (own) candidates.push(own);
     allBlocks().forEach(function (b) { if (b !== own) candidates.push(b); });
     for (var k = 0; k < candidates.length; k++) {
@@ -979,6 +1024,7 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
       target.parentNode.insertBefore(m, target);
       m.appendChild(target);
     });
+    return jobs.length;
   }
   function unmark(id) {
     var marks = document.querySelectorAll(
@@ -993,9 +1039,17 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
   function renderAnnotation(a, blockIndex) {
     var loc = locate(a);
     if (!loc) { orphans.push(a.id); return; }
-    if (a.pid !== loc.block.id) a.pid = loc.block.id;  // heal drift
+    var made = markRange(loc.block, loc.start, loc.end, a.id, !!a.note);
+    if (!made) {
+      // quote matched, but every segment sits in excluded content (math,
+      // chrome): no mark exists to jump to, so file it as unanchored rather
+      // than letting a ghost row with a dead Jump button count as anchored
+      orphans.push(a.id);
+      return;
+    }
+    var marker = loc.block.getAttribute('data-pg-block');
+    if (a.pid !== marker) a.pid = marker;  // heal drift
     posCache[a.id] = { bi: blockIndex.get(loc.block), start: loc.start };
-    markRange(loc.block, loc.start, loc.end, a.id, !!a.note);
   }
   function renderAll() {
     Array.prototype.forEach.call(
@@ -1024,10 +1078,21 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
 
   /* ---------- surface coordination ---------- */
   function closeOtherSurfaces() {
-    ['closeGlossPopover', 'closeGlossPanel', 'closeFigureLightbox']
-      .forEach(function (fn) {
-        if (typeof window[fn] === 'function') window[fn]();
+    // Prefer the hooks a post-amendment page exports; the six retrofit
+    // targets mostly predate them (five export nothing, jacobian-lens only
+    // closeGlossSurfaces + closeFigureLightbox), so also drive the surfaces'
+    // own markup by id — same layered pattern as paper-figures' lightbox.
+    ['closeGlossSurfaces', 'closeGlossPopover', 'closeGlossPanel',
+     'closeFigureLightbox'].forEach(function (fn) {
+      if (typeof window[fn] === 'function') window[fn]();
+    });
+    ['gloss-popover', 'gloss-panel', 'gloss-backdrop', 'figure-lightbox']
+      .forEach(function (id) {
+        var n = document.getElementById(id);
+        if (n && !n.hidden) n.hidden = true;
       });
+    var gt = document.getElementById('gloss-panel-toggle');
+    if (gt) gt.setAttribute('aria-expanded', 'false');
   }
   function closeAnnotationUI() {
     hideToolbar();
@@ -1122,6 +1187,13 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
   document.addEventListener('mouseup', function () {
     setTimeout(maybeShowToolbar, 0);
   });
+  // Touch selection (long-press handles) and keyboard selection (Shift+arrows)
+  // don't reliably emit mouseup — selectionchange is the path that covers them.
+  var selTimer = null;
+  document.addEventListener('selectionchange', function () {
+    clearTimeout(selTimer);
+    selTimer = setTimeout(maybeShowToolbar, 250);
+  });
   toolbar.addEventListener('mousedown', function (e) { e.preventDefault(); });
   toolbar.addEventListener('click', function (e) {
     var btn = e.target.closest('button');
@@ -1171,17 +1243,16 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
     updateBadge();
   }
   function closeEditor(commit) {
+    // Closing without commit DISMISSES — it never deletes. "Highlight →
+    // start a note → click a jargon term to check it" is the page's most
+    // natural gesture and must not destroy the highlight; only the explicit
+    // Cancel button discards a fresh one (below).
     if (editor.hidden) return;
     var a = byId(editorState.id);
-    if (a) {
-      if (commit) {
-        a.note = editor.querySelector('textarea').value.trim();
-        persist();
-        renderAll();
-      } else if (editorState.fresh && !a.note) {
-        // "Note" flow cancelled before a note existed: undo the highlight too
-        removeAnnotation(editorState.id);
-      }
+    if (a && commit) {
+      a.note = editor.querySelector('textarea').value.trim();
+      persist();
+      renderAll();
     }
     editor.hidden = true;
     editorState = { id: null, fresh: false };
@@ -1191,7 +1262,12 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
     if (!btn) return;
     var act = btn.getAttribute('data-act');
     if (act === 'save') closeEditor(true);
-    else if (act === 'cancel') closeEditor(false);
+    else if (act === 'cancel') {
+      var wasFresh = editorState.fresh, freshId = editorState.id;
+      closeEditor(false);
+      var fa = byId(freshId);
+      if (wasFresh && fa && !fa.note) removeAnnotation(freshId);
+    }
     else if (act === 'delete') {
       var id = editorState.id;
       editorState = { id: null, fresh: false };
@@ -1209,11 +1285,15 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
     refreshPanelList();
     panel.hidden = false;
     backdrop.hidden = false;
+    // hide the toggle while the panel is open: its z-index sits below the
+    // lightbox and the backdrop by design, so it must not be the close control
+    toggle.hidden = true;
     toggle.setAttribute('aria-expanded', 'true');
   }
   function closePanel() {
     panel.hidden = true;
     backdrop.hidden = true;
+    toggle.hidden = false;
     toggle.setAttribute('aria-expanded', 'false');
   }
   function itemFor(a, anchored) {
@@ -1466,17 +1546,21 @@ After authoring the page, run the injector — never hand-copy the runtime:
 python3 scripts/inject_annotations.py <file.html> --slug <slug>
 ```
 
-It stamps `id="pg-p-NNNN"` on every `<p>`, `<li>`, `<dd>`, and heading, sets
-`data-pg-slug` on `<body>`, and embeds `assets/annotations.css` +
-`assets/annotations.js` as sentinel-guarded blocks. The layer gives the reader
-select-to-highlight, per-highlight notes, a fixed **✏️ Notes (N)** panel
-(below the Glossary toggle), export to Markdown/JSON, and JSON import.
-Everything persists in `localStorage` under `pg-annotations:<slug>`.
+It stamps `data-pg-block="pg-p-NNNN"` on every `<p>`, `<li>`, `<dd>`, and
+heading (existing `id`s are never touched or reused), sets `data-pg-slug` on
+`<body>`, and embeds `assets/annotations.css` + `assets/annotations.js` as
+sentinel-guarded blocks. The layer gives the reader select-to-highlight,
+per-highlight notes, a fixed **✏️ Notes (N)** panel (below the Glossary
+toggle), export to Markdown/JSON, and JSON import. Everything persists in
+`localStorage` under `pg-annotations:<slug>`.
 
 **Contract points** (extends the one-surface-at-a-time rule):
 - The module assigns `window.closeAnnotationUI` and, when any of its surfaces
-  open, calls `window.closeGlossPopover` / `window.closeGlossPanel` /
-  `window.closeFigureLightbox` (each guarded).
+  open, closes the others: it calls whichever hooks the page exports
+  (`window.closeGlossSurfaces` / `window.closeGlossPopover` /
+  `window.closeGlossPanel` / `window.closeFigureLightbox`, each guarded) and
+  falls back to hiding `#gloss-popover` / `#gloss-panel` / `#gloss-backdrop` /
+  `#figure-lightbox` by id on pages that predate the hooks.
 - It closes itself via its own delegated listener when a `.gloss-term`,
   `#gloss-panel-toggle`, or `.paper-figure img` click opens another surface —
   so pages whose gloss/lightbox code predates annotations still obey the rule
@@ -1494,13 +1578,13 @@ Add to the Phase 3 checklist:
 - **Annotation layer present and idempotent:**
   `python3 scripts/inject_annotations.py --check <file.html>` exits clean, and
   a second injector run leaves the file byte-identical (`md5` before == after).
-- **Annotation layer is inert to every check above:** id-stamping and the two
-  sentinel blocks add zero `<p>` elements, zero `.gloss-term` buttons, and no
-  external loads — if any earlier bullet moved after injection, the injector
-  touched something it must not.
+- **Annotation layer is inert to every check above:** block-marker stamping
+  and the two sentinel blocks add zero `<p>` elements, zero `.gloss-term`
+  buttons, and no external loads — if any earlier bullet moved after
+  injection, the injector touched something it must not.
 ```
 
-- [ ] **Step 4: Phase 4 — capabilities on the publish call**
+- [ ] **Step 4: Phase 4 — capabilities on the publish call, and the exception sentence**
 
 In the "Publish via the `Artifact` tool" list, add after `file_path`:
 
@@ -1509,6 +1593,19 @@ In the "Publish via the `Artifact` tool" list, add after `file_path`:
     call `window.claude.downloads.save()`; without the declaration they fall
     back to copy-to-clipboard even on claude.ai.
 ```
+
+**In the same list, rewrite the brand-new-artifact bullet** — as written it
+denies ANNOTATE mode's existence and would instruct an `--annotate` run to
+mint a fresh artifact and orphan the published link. Change its closing
+sentence from:
+
+> The single exception is RETROFIT mode below, which exists precisely to
+> update a page in place.
+
+to:
+
+> The exceptions are RETROFIT and ANNOTATE modes below, both of which exist
+> precisely to update a page in place.
 
 - [ ] **Step 5: Add the ANNOTATE mode section**
 
@@ -1547,7 +1644,7 @@ highlights/notes to an existing paper page.
    URL, ask rather than minting a new artifact and orphaning the old link.
 5. **Git:** normal workflow in the page's own repo — branch, commit, push, PR,
    merge, brief Kyle.
-6. **Report:** ids stamped; baseline counters unchanged (state both numbers);
+6. **Report:** block markers stamped; baseline counters unchanged (state both numbers);
    Artifact URL redeployed to; storage key (`pg-annotations:<slug>`); and the
    reminder that local-file and artifact annotations are separate origins,
    bridged only by export/import.
@@ -1649,9 +1746,11 @@ Expected: `--check` prints `clean`; `IDEMPOTENT` prints (localStorage needs http
 
 Playwright MCP: `browser_navigate` to `http://localhost:8931/index.html`, then
 `browser_console_messages`.
-Expected: zero errors; `document.querySelectorAll('[id^="pg-p-"]').length` (via
-`browser_evaluate`) ≥ 700 (592 p + 87 li + 43 dd + headings); the ✏️ Notes (0) toggle
-visible top-right without overlapping the 📖 Glossary toggle (screenshot).
+Expected: zero errors; `document.querySelectorAll('[data-pg-block]').length` (via
+`browser_evaluate`) = **801** (592 p + 87 li + 43 dd + 79 headings — measured on the real
+page; a lower number means blocks were skipped, which is exactly the F2 defect class);
+the ✏️ Notes (0) toggle visible top-right without overlapping the 📖 Glossary toggle
+(screenshot).
 
 - [ ] **Step 3: Highlight → persist across reload**
 
@@ -1659,7 +1758,7 @@ visible top-right without overlapping the 📖 Glossary toggle (screenshot).
 
 ```js
 () => {
-  const p = document.querySelector('p[id^="pg-p-"]');
+  const p = document.querySelector('p[data-pg-block]');
   const textNode = [...p.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim().length > 20);
   const r = document.createRange();
   r.setStart(textNode, 1); r.setEnd(textNode, 15);
@@ -1688,11 +1787,14 @@ note, and Jump/Edit/Delete.
 - [ ] **Step 5: Export fallback + import round-trip**
 
 No `window.claude` exists on localhost, so **Export Markdown** must open the fallback
-dialog; assert its textarea starts with `---` and contains `tags: [paper-annotations]`
-and `> ` followed by the highlighted text. **Export JSON** likewise; save that JSON text
-to `/tmp/annot-test/export.json` (via evaluate return). Then Delete the annotation
-(panel), assert marks = 0 and badge (0); Import via `browser_file_upload` with
-`/tmp/annot-test/export.json` → marks = 1 again, status line says `Imported 1`.
+dialog; assert its textarea starts with `---`, contains `tags: [paper-annotations]`,
+contains `> ` followed by the highlighted text, **and contains a `## <section>` line
+naming the actual section heading the highlight sits under — not the paper title** (this
+is the assertion that catches the heading-exclusion / section-collapse defect class).
+**Export JSON** likewise; save that JSON text to `/tmp/annot-test/export.json` (via
+evaluate return). Then Delete the annotation (panel), assert marks = 0 and badge (0);
+Import via `browser_file_upload` with `/tmp/annot-test/export.json` → marks = 1 again,
+status line says `Imported 1`.
 
 - [ ] **Step 6: Surface coordination matrix**
 
@@ -1704,8 +1806,8 @@ overlay hit-testing, which is the point: rows test the coordination logic, not z
 | Action | Expected |
 |---|---|
 | Open annotation panel, then click a `.gloss-term` | annotation panel hidden, `#gloss-popover` not hidden |
-| Open gloss glossary panel (`#gloss-panel-toggle`), then open the annotation panel via its toggle | `#gloss-panel` hidden (our `closeGlossPanel` call), annotation panel visible |
-| Open the note editor (click a mark), while `#gloss-popover` is open | popover hidden (our `closeGlossPopover` call), editor visible |
+| Open gloss glossary panel (`#gloss-panel-toggle`), then open the annotation panel via its toggle | `#gloss-panel` hidden — via `closeGlossSurfaces` on this page; the DOM fallback covers the five pages exporting no hooks — annotation panel visible |
+| Open the note editor (click a mark), while `#gloss-popover` is open | popover hidden (hook or DOM fallback), editor visible |
 | Open the note editor, then click a `.paper-figure img` | editor hidden, `#figure-lightbox` not hidden |
 | With editor open, press Escape | editor hidden |
 | Highlight text crossing a `.gloss-term` boundary | button still present in DOM, `mark.pg-hl` count ≥ 2 (segments), clicking the button still opens the popover |
@@ -1770,7 +1872,7 @@ decay-pin:
 - [ ] **Step 3:** Republish in place with `capabilities: {downloads: true}`.
 - [ ] **Step 4:** Spot-check the live page (badge renders, one highlight persists a reload).
 - [ ] **Step 5:** Branch/commit/PR/merge in that page's own repo; one-line brief per page.
-- [ ] **Step 6:** Final report: 6-row table — page, ids stamped, artifact URL, verified-live
+- [ ] **Step 6:** Final report: 6-row table — page, block markers stamped, artifact URL, verified-live
   yes/no, flags.
 
 ---
@@ -1785,6 +1887,11 @@ decay-pin:
   viewer-consent story; export/import is the v1 bridge.
 - **Cross-paragraph highlights**, **multi-color highlights**: cut from v1 by scope
   discipline; both are additive later.
+- **Best-score `locate()` across blocks** (adversarial-review F9): today `locate()`
+  returns the first block containing the quote; scoring across all candidate blocks (and
+  orphaning on a zero context score) would make re-anchoring of short common phrases
+  robust to pid drift. No live path today — pids only drift on regeneration, which mints
+  a new origin and empty storage anyway.
 - **Annotating the eli5 markdown**: different medium, different feature.
 
 ---
