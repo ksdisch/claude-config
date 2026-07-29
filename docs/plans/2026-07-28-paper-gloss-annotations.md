@@ -136,7 +136,8 @@ contract extends **without editing any existing page's scripts**:
   `window.closeGlossPopover`, `window.closeGlossPanel`, `window.closeFigureLightbox`, each
   guarded with `typeof === 'function'` — and **falls back to driving the surfaces' own
   markup by id** (`#gloss-popover`, `#gloss-panel`, `#gloss-backdrop`, `#figure-lightbox`
-  hidden; `aria-expanded` reset on `#gloss-panel-toggle`). The fallback is load-bearing,
+  hidden; `aria-expanded` reset on `#gloss-panel-toggle`; `.gloss-term--active` state
+  swept, matching `inject_html.py`'s fallback). The fallback is load-bearing,
   not belt-and-suspenders: measured against the six retrofit targets, **five export no
   hooks at all** and jacobian-lens exports only `closeGlossSurfaces` +
   `closeFigureLightbox` — the per-surface hooks exist only on pages generated after this
@@ -1093,6 +1094,14 @@ delegated click listener and `closeOtherSurfaces`, export contract in `saveFile`
       });
     var gt = document.getElementById('gloss-panel-toggle');
     if (gt) gt.setAttribute('aria-expanded', 'false');
+    // sweep the active-term state too (same as paper-figures' fallback) —
+    // hiding the popover alone leaves .gloss-term--active desynced
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.gloss-term--active'),
+      function (b) {
+        b.classList.remove('gloss-term--active');
+        b.setAttribute('aria-expanded', 'false');
+      });
   }
   function closeAnnotationUI() {
     hideToolbar();
@@ -1756,9 +1765,19 @@ the ✏️ Notes (0) toggle visible top-right without overlapping the 📖 Gloss
 
 `browser_evaluate`:
 
+The paragraph must be picked with care: the page's first `p[data-pg-block]` is the
+header meta-line (whose only child is a `<strong>` — no direct text node, and its
+section is the paper title), and the first `h2[data-pg-block]` is the Glossary panel's
+own heading. Pick the first *content* section heading, then the first prose paragraph
+after it:
+
 ```js
 () => {
-  const p = document.querySelector('p[data-pg-block]');
+  const h2 = [...document.querySelectorAll('h2[data-pg-block]')]
+    .find(h => !h.closest('#gloss-panel'));
+  const p = [...document.querySelectorAll('p[data-pg-block]')].find(b =>
+    (h2.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+    [...b.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 20));
   const textNode = [...p.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim().length > 20);
   const r = document.createRange();
   r.setStart(textNode, 1); r.setEnd(textNode, 15);
@@ -1775,7 +1794,8 @@ the ✏️ Notes (0) toggle visible top-right without overlapping the 📖 Gloss
 ```
 Expected: `{toolbarVisible: true, marks: 1, stored: true}`. Then `browser_navigate` (reload)
 and evaluate `document.querySelectorAll('mark.pg-hl').length` → `1` (re-anchored from
-storage), badge reads `✏️ Notes (1)`.
+storage), badge reads `✏️ Notes (1)`. The stored annotation's `section` equals that
+content `<h2>`'s text — Step 5's export assertion depends on this fixture choice.
 
 - [ ] **Step 4: Note flow + panel**
 
