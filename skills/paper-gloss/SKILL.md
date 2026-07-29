@@ -1,6 +1,6 @@
 ---
 name: paper-gloss
-description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Equations and inline math are typeset as real notation (unicode + HTML, native MathML where 2D layout is needed) rather than shipped as raw LaTeX, gated by a residual-TeX check; each display equation's "named form" — the same equation with variables replaced by what they are, plus a `where:` legend — renders as a grouped block between the equation and its plain-words gloss. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. A `--retrofit` mode typesets math in an already-published page and redeploys it to the same Artifact URL.
+description: Post-process a paper-eli5 output into a self-contained, interactive HTML page where every occurrence of selected jargon terms is clickable — clicking reveals a plain-English expansion in a popup — plus a toggle-able glossary panel listing every approved term at once. AI proposes the candidate term list with expansions; you trim it; the skill hand-authors a themed, responsive HTML artifact mirroring the eli5 document 1:1. Equations and inline math are typeset as real notation (unicode + HTML, native MathML where 2D layout is needed) rather than shipped as raw LaTeX, gated by a residual-TeX check; each display equation's "named form" — the same equation with variables replaced by what they are, plus a `where:` legend — renders as a grouped block between the equation and its plain-words gloss. Delivers a `-glossed.html` file (via the repo's git workflow) and a published claude.ai Artifact link. Every page carries an annotation layer — select text to highlight it, attach notes, and export to Obsidian-ready Markdown or re-importable JSON (localStorage-persistent per browser; export is the durability guarantee). An `--annotate` mode injects the layer into an already-published page and redeploys it to the same Artifact URL. Run after /paper-eli5 when specific terms are still opaque after the first rewrite. A `--retrofit` mode typesets math in an already-published page and redeploys it to the same Artifact URL.
 ---
 
 # Paper Gloss — click-to-reveal jargon glosses
@@ -30,6 +30,9 @@ claude.ai Artifact.
 - **`--retrofit <glossed.html> [artifact-url]`** → skip Phases 1–2 and run
   RETROFIT mode (below): typeset math in an already-published page and redeploy
   it to the same Artifact URL.
+- **`--annotate <glossed.html> [artifact-url]`** → skip Phases 1–2 and run
+  ANNOTATE mode (below): inject the annotation layer into an already-published
+  page and redeploy it to the same Artifact URL.
 - **No argument** → ask which file. Scan the current directory / `docs/papers/` for
   `*-eli5.md` files and show the list.
 - **Unattended with no argument** → report the ambiguity; don't guess.
@@ -330,6 +333,37 @@ URI, and both inherit `currentColor` and theme for free. Add the small
 same inline `<style>` — the `line-height: 0` on `sub`/`sup` is load-bearing, or
 every paragraph containing a subscript develops uneven leading.
 
+### Annotation layer
+
+After authoring the page, run the injector — never hand-copy the runtime:
+
+```bash
+python3 scripts/inject_annotations.py <file.html> --slug <slug>
+```
+
+It stamps `data-pg-block="pg-p-NNNN"` on every `<p>`, `<li>`, `<dd>`, and
+heading (existing `id`s are never touched or reused), sets `data-pg-slug` on
+`<body>`, and embeds `assets/annotations.css` + `assets/annotations.js` as
+sentinel-guarded blocks. The layer gives the reader select-to-highlight,
+per-highlight notes, a fixed **✏️ Notes (N)** panel (below the Glossary
+toggle), export to Markdown/JSON, and JSON import. Everything persists in
+`localStorage` under `pg-annotations:<slug>`.
+
+**Contract points** (extends the one-surface-at-a-time rule):
+- The module assigns `window.closeAnnotationUI` and, when any of its surfaces
+  open, closes the others: it calls whichever hooks the page exports
+  (`window.closeGlossSurfaces` / `window.closeGlossPopover` /
+  `window.closeGlossPanel` / `window.closeFigureLightbox`, each guarded) and
+  falls back to hiding `#gloss-popover` / `#gloss-panel` / `#gloss-backdrop` /
+  `#figure-lightbox` by id on pages that predate the hooks.
+- It closes itself via its own delegated listener when a `.gloss-term`,
+  `#gloss-panel-toggle`, or `.paper-figure img` click opens another surface —
+  so pages whose gloss/lightbox code predates annotations still obey the rule
+  with no edits to that code.
+- Marks (`mark.pg-hl`) wrap text-node segments only, never element tags, and
+  are never injected inside `.math`, `<math>`, or `pre.equation` — the same
+  never-wrap discipline as term-wrapping.
+
 ---
 
 ## Phase 3 — Verify
@@ -402,6 +436,13 @@ every paragraph containing a subscript develops uneven leading.
 - **Theming completeness:** every variable referenced is defined in `:root`,
   the dark-media-query block, and both `data-theme` override blocks.
 - **Artifact prerequisites:** non-empty `<title>` present.
+- **Annotation layer present and idempotent:**
+  `python3 scripts/inject_annotations.py --check <file.html>` exits clean, and
+  a second injector run leaves the file byte-identical (`md5` before == after).
+- **Annotation layer is inert to every check above:** block-marker stamping
+  and the two sentinel blocks add zero `<p>` elements, zero `.gloss-term`
+  buttons, and no external loads — if any earlier bullet moved after
+  injection, the injector touched something it must not.
 
 Fix any discrepancy and re-verify before claiming done.
 
@@ -422,9 +463,12 @@ Fix any discrepancy and re-verify before claiming done.
   - `description`: 1–2 sentences, e.g. "Plain-English rewrite of {title} with N
     clickable glossary terms and a full glossary panel."
   - `file_path`: the finished HTML.
+  - `capabilities: {downloads: true}` — the annotation layer's export buttons
+    call `window.claude.downloads.save()`; without the declaration they fall
+    back to copy-to-clipboard even on claude.ai.
   - **Every run publishes a brand-new artifact** — a new paper each time, never
-    a redeploy of a previous run's URL. The single exception is RETROFIT mode
-    below, which exists precisely to update a page in place.
+    a redeploy of a previous run's URL. The exceptions are RETROFIT and ANNOTATE
+    modes below, both of which exist precisely to update a page in place.
 - **Send the file** to Kyle via SendUserFile.
 - **Final report:** output path; PR link + merge confirmation; Artifact URL;
   number of approved terms + per-term occurrence tally; **math counts — spans
@@ -589,6 +633,43 @@ them then trips the per-`data-term-id` tally rule, which permits a decrease only
 for terms deliberately freed while hand-authoring a math span. Adding named
 forms to an existing page means re-running
 `/paper-eli5` against the paper, not retrofitting.
+
+---
+
+## ANNOTATE mode — add the annotation layer to an already-published page
+
+For a glossed page that shipped before the annotation layer existed. Like
+RETROFIT, it never re-reads the source paper and never re-runs Phase 1 — it
+injects the layer and nothing else.
+
+**Trigger:** `--annotate <glossed.html> [artifact-url]`, or Kyle asking to add
+highlights/notes to an existing paper page.
+
+1. **Baseline before touching anything:** record the `<p>` count and the
+   `.gloss-term` tally per `data-term-id` (same counters as RETROFIT step 1).
+2. **Inject:** `python3 scripts/inject_annotations.py <file.html>` (slug
+   derives from the filename; pass `--slug` only to override). Re-running is
+   safe — the sentinel blocks are replaced, not duplicated.
+3. **Verify:** `--check` exits clean; second run byte-identical; `<p>` count
+   **exactly unchanged**; `.gloss-term` per-id tally **exactly unchanged**
+   (annotate touches no prose and no math — unlike RETROFIT there is no
+   legitimate decrease); then the output-only Phase 3 bullets: *Well-formedness*,
+   *Self-containment*, *Theming completeness* (the layer defines its own
+   `--pg-annot-*` variables in all four theme blocks), *Math rendered*,
+   *Artifact prerequisites*. The input-comparative bullets stay out of scope,
+   same as RETROFIT.
+4. **Republish in place:** `Artifact(url=<existing-url>, file_path=…,
+   capabilities: {downloads: true})`. The capabilities argument is **not
+   optional here**: these artifacts have no stored declaration, and omitting
+   the field keeps none. Keeping the URL keeps the origin, which is what makes
+   any annotations a reader has already stored survive the redeploy. Without a
+   URL, ask rather than minting a new artifact and orphaning the old link.
+5. **Git:** normal workflow in the page's own repo — branch, commit, push, PR,
+   merge, brief Kyle.
+6. **Report:** block markers stamped; baseline counters unchanged (state both numbers);
+   Artifact URL redeployed to; storage key (`pg-annotations:<slug>`); and the
+   reminder that local-file and artifact annotations are separate origins,
+   bridged only by export/import.
 
 ---
 

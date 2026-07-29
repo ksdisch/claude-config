@@ -199,7 +199,11 @@ CSS and a **singleton** lightbox are added once. The lightbox reuses the same
 inlined bytes, is wired with one delegated listener, and obeys paper-gloss's
 one-interactive-surface-at-a-time rule — opening it closes the gloss popover and
 panel via `window.closeGlossPopover` / `window.closeGlossPanel`. Close button,
-click-outside, and `Escape` all converge on one close function.
+click-outside, and `Escape` all converge on one close function. Pages carrying
+the paper-gloss annotation layer coordinate themselves: the annotation module
+closes its own surfaces when a figure is clicked (via its delegated listener)
+and exposes `window.closeAnnotationUI` for any future surface that wants to
+close it explicitly — the lightbox needs no change.
 
 Figure captions stay **excluded from gloss-term wrapping**.
 
