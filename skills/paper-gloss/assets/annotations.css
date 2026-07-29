@@ -154,6 +154,11 @@ mark.pg-hl--flash { animation: pg-annot-flash 1.2s ease-out; }
   font-size: 0.85rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
+.pg-annot-toggle--warn {
+  border-color: var(--pg-annot-accent);
+  color: var(--pg-annot-accent);
+  font-weight: 600;
+}
 
 .pg-annot-backdrop {
   position: fixed;
@@ -174,7 +179,7 @@ mark.pg-hl--flash { animation: pg-annot-flash 1.2s ease-out; }
   color: var(--pg-annot-fg);
   border-left: 1px solid var(--pg-annot-border);
 }
-.pg-annot-panel h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+.pg-annot-panel-title { margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 700; }
 .pg-annot-panel-close {
   position: absolute;
   top: 0.6rem;
@@ -216,4 +221,5 @@ mark.pg-hl--flash { animation: pg-annot-flash 1.2s ease-out; }
   color: var(--pg-annot-accent);
   padding: 0;
 }
-.pg-annot-orphans h3 { font-size: 0.9rem; margin: 1rem 0 0; }
+.pg-annot-orphans-title { font-size: 0.9rem; font-weight: 700; margin: 1rem 0 0; }
+.pg-annot-fallback-msg { margin: 0 0 0.5rem; font-size: 0.85rem; }

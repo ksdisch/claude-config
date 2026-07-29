@@ -1,9 +1,11 @@
 import os
+import re
 import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from inject_annotations import (  # noqa: E402
+    ASSETS,
     check_page,
     derive_slug,
     embed_assets,
@@ -131,6 +133,32 @@ class TestCheck(unittest.TestCase):
         self.assertIn("pg-annot-js", joined)
         self.assertIn("data-pg-slug", joined)
         self.assertIn("unstamped", joined)
+
+
+class TestAssetsCarryNoBlockLiterals(unittest.TestCase):
+    """Phase 3 asserts injection leaves the page's <p>/<li>/<dd>/heading counts
+    exactly unchanged. Both assets are embedded verbatim, so a block tag
+    literal anywhere in either file — markup OR comment — makes any text-based
+    count rise and false-fails the gate on a clean run."""
+
+    BLOCK_LITERAL = re.compile(r"<(p|li|dd|h[1-6])[ >]", re.I)
+
+    def test_no_block_tag_literal_in_either_asset(self):
+        for name in ("annotations.js", "annotations.css"):
+            path = os.path.join(ASSETS, name)
+            with open(path, encoding="utf-8") as fh:
+                body = fh.read()
+            hits = self.BLOCK_LITERAL.findall(body)
+            self.assertEqual(
+                hits, [],
+                f"{name} contains block tag literal(s) {hits}; use a div with "
+                "role/aria-level, and phrase comments without the tag syntax",
+            )
+
+    def test_js_carries_no_script_close(self):
+        # embedded inside a <script> block, where this byte sequence truncates it
+        with open(os.path.join(ASSETS, "annotations.js"), encoding="utf-8") as fh:
+            self.assertNotIn("</script", fh.read().lower())
 
 
 if __name__ == "__main__":

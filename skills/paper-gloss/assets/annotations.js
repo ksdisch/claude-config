@@ -11,12 +11,21 @@
     '#gloss-popover,#gloss-panel,#gloss-backdrop,#figure-lightbox,.pg-annot-ui';
 
   /* ---------- storage ---------- */
+  function isUsable(a) {
+    return !!a && typeof a.id === 'string' && a.id !== '' &&
+      typeof a.exact === 'string' && a.exact.trim() !== '';
+  }
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        if (p && p.v === 1 && Array.isArray(p.annotations)) return p;
+        if (p && p.v === 1 && Array.isArray(p.annotations)) {
+          // Drop records that can't anchor — a payload written by an older
+          // build (or hand-edited) must never be able to wedge the runtime.
+          p.annotations = p.annotations.filter(isUsable);
+          return p;
+        }
       }
     } catch (e) { /* private mode or corrupt payload: start empty */ }
     return { v: 1, slug: SLUG, title: document.title, annotations: [] };
@@ -32,6 +41,7 @@
       storageOk = false;
     }
     updateHint();
+    updateBadge();   // the warning has to reach the always-visible surface too
   }
   function updateHint() {
     var h = panel && panel.querySelector('.pg-annot-hint');
@@ -95,7 +105,13 @@
     };
   }
   function indexesOf(hay, needle) {
-    var out = [], i = hay.indexOf(needle);
+    var out = [];
+    // An empty needle never terminates: String.indexOf clamps the start index,
+    // so "abc".indexOf("", 4) is 3, not -1, and the loop below runs forever.
+    // Capture can't produce one (captureTarget rejects blank), but import is a
+    // trust boundary and a hang here bricks every later load of the page.
+    if (!needle) return out;
+    var i = hay.indexOf(needle);
     while (i !== -1) { out.push(i); i = hay.indexOf(needle, i + 1); }
     return out;
   }
@@ -111,24 +127,54 @@
     }
     return s;
   }
-  function locate(a) {
-    var candidates = [];
+  // scoreAt awards +2 per corroborating side, minus up to 1 for offset
+  // distance, so >= 1 means at least one of prefix/suffix matched exactly.
+  var CONTEXT_MIN = 1;
+  var textCache = null;   // block -> textContent, valid for one renderAll pass
+  function blockText(b) {
+    if (!textCache) return b.textContent;
+    var t = textCache.get(b);
+    if (t === undefined) { t = b.textContent; textCache.set(b, t); }
+    return t;
+  }
+  function bestHitIn(b, a, requireContext) {
+    var text = blockText(b);
+    var hits = indexesOf(text, a.exact);
+    if (!hits.length) return null;
+    var best = hits[0], bestScore = -Infinity;
+    for (var h = 0; h < hits.length; h++) {
+      var s = scoreAt(text, hits[h], a);
+      if (s > bestScore) { bestScore = s; best = hits[h]; }
+    }
+    // A match OUTSIDE the stored block must be corroborated by the stored
+    // context. Without that bar a short or repeated quote ("the model")
+    // re-anchors to the earliest paragraph that happens to contain it, and
+    // renderAnnotation then overwrites a.pid and persists — destroying the
+    // real anchor and attaching the note to text the reader never highlighted.
+    // An uncorroborated quote belongs in the orphan list, which is the
+    // designed landing place for a quote whose block no longer contains it.
+    // Exception: a highlight covering a whole block stores no context at all,
+    // and an exact whole-block match is itself the corroboration.
+    if (requireContext) {
+      var wholeBlock = !a.prefix && !a.suffix && a.exact === text;
+      if (!wholeBlock && bestScore < CONTEXT_MIN) return null;
+    }
+    return { block: b, start: best, end: best + a.exact.length };
+  }
+  function locateAll(a, blocks) {
+    var out = [];
     var own = a.pid &&
       document.querySelector('[data-pg-block="' + a.pid + '"]');
-    if (own) candidates.push(own);
-    allBlocks().forEach(function (b) { if (b !== own) candidates.push(b); });
-    for (var k = 0; k < candidates.length; k++) {
-      var b = candidates[k], text = b.textContent;
-      var hits = indexesOf(text, a.exact);
-      if (!hits.length) continue;
-      var best = hits[0], bestScore = -Infinity;
-      for (var h = 0; h < hits.length; h++) {
-        var s = scoreAt(text, hits[h], a);
-        if (s > bestScore) { bestScore = s; best = hits[h]; }
-      }
-      return { block: b, start: best, end: best + a.exact.length };
+    if (own) {
+      var o = bestHitIn(own, a, false);
+      if (o) out.push(o);
     }
-    return null;
+    blocks.forEach(function (b) {
+      if (b === own) return;
+      var c = bestHitIn(b, a, true);
+      if (c) out.push(c);
+    });
+    return out;
   }
 
   /* ---------- mark rendering ---------- */
@@ -169,20 +215,21 @@
       parent.normalize();
     });
   }
-  function renderAnnotation(a, blockIndex) {
-    var loc = locate(a);
-    if (!loc) { orphans.push(a.id); return; }
-    var made = markRange(loc.block, loc.start, loc.end, a.id, !!a.note);
-    if (!made) {
+  function renderAnnotation(a, blockIndex, blocks) {
+    var cands = locateAll(a, blocks);
+    for (var i = 0; i < cands.length; i++) {
+      var loc = cands[i];
+      var made = markRange(loc.block, loc.start, loc.end, a.id, !!a.note);
       // quote matched, but every segment sits in excluded content (math,
-      // chrome): no mark exists to jump to, so file it as unanchored rather
-      // than letting a ghost row with a dead Jump button count as anchored
-      orphans.push(a.id);
+      // chrome): nothing was inserted, so try the next candidate rather than
+      // reporting a recoverable annotation as unanchored
+      if (!made) continue;
+      var marker = loc.block.getAttribute('data-pg-block');
+      if (a.pid !== marker) a.pid = marker;  // heal drift (corroborated only)
+      posCache[a.id] = { bi: blockIndex.get(loc.block), start: loc.start };
       return;
     }
-    var marker = loc.block.getAttribute('data-pg-block');
-    if (a.pid !== marker) a.pid = marker;  // heal drift
-    posCache[a.id] = { bi: blockIndex.get(loc.block), start: loc.start };
+    orphans.push(a.id);
   }
   function renderAll() {
     Array.prototype.forEach.call(
@@ -194,9 +241,17 @@
       });
     posCache = {};
     orphans = [];
+    var blocks = allBlocks();
     var blockIndex = new Map();
-    allBlocks().forEach(function (b, i) { blockIndex.set(b, i); });
-    store.annotations.forEach(function (a) { renderAnnotation(a, blockIndex); });
+    blocks.forEach(function (b, i) { blockIndex.set(b, i); });
+    // one textContent read per block for the whole pass, not one per block
+    // per annotation — locateAll now scans every block when the stored one
+    // no longer holds the quote
+    textCache = new Map();
+    store.annotations.forEach(function (a) {
+      renderAnnotation(a, blockIndex, blocks);
+    });
+    textCache = null;
     persist();  // pids may have healed
   }
   function ordered() {
@@ -237,7 +292,7 @@
   }
   function closeAnnotationUI() {
     hideToolbar();
-    closeEditor(false);
+    closeEditor();
     closePanel();
     fallback.hidden = true;
   }
@@ -272,9 +327,15 @@
   var backdrop = el('div', 'pg-annot-backdrop pg-annot-ui');
   backdrop.hidden = true;
 
+  // NB: no paragraph / list-item / definition-description / heading tag
+  // literal may appear anywhere in this file — markup OR comment. The whole
+  // file is embedded into the page, and Phase 3 asserts injection leaves the
+  // page's paragraph and heading counts exactly unchanged; any such literal
+  // makes that gate false-fail on a clean run. role + aria-level carry the
+  // semantics the heading tags would have.
   var panel = el('aside', 'pg-annot-panel pg-annot-ui',
     '<button type="button" class="pg-annot-panel-close" aria-label="Close">×</button>' +
-    '<h2>Annotations</h2>' +
+    '<div class="pg-annot-panel-title" role="heading" aria-level="2">Annotations</div>' +
     '<div class="pg-annot-hint">Notes live in this browser only — export to keep them safe.</div>' +
     '<div class="pg-annot-actions" style="justify-content:flex-start">' +
     '<button type="button" data-act="export-md">Export Markdown</button>' +
@@ -283,11 +344,13 @@
     '<input type="file" accept=".json,application/json" hidden></div>' +
     '<div class="pg-annot-status"></div>' +
     '<ol class="pg-annot-list"></ol>' +
-    '<div class="pg-annot-orphans" hidden><h3>Unanchored</h3><ol></ol></div>');
+    '<div class="pg-annot-orphans" hidden>' +
+    '<div class="pg-annot-orphans-title" role="heading" aria-level="3">Unanchored</div>' +
+    '<ol></ol></div>');
   panel.hidden = true;
 
   var fallback = el('div', 'pg-annot-fallback pg-annot-ui',
-    '<p class="pg-annot-fallback-msg"></p>' +
+    '<div class="pg-annot-fallback-msg"></div>' +
     '<textarea readonly></textarea>' +
     '<div class="pg-annot-actions">' +
     '<button type="button" data-act="copy">Copy</button>' +
@@ -299,7 +362,18 @@
   });
 
   function updateBadge() {
-    toggle.textContent = '✏️ Notes (' + store.annotations.length + ')';
+    // The panel hint alone is not enough: it lives inside a panel that is
+    // hidden by default, so a reader whose storage is blocked (private mode,
+    // a partitioned artifact iframe) would watch this counter climb for an
+    // hour and lose everything on tab close without ever opening the panel.
+    if (!toggle) return;
+    toggle.textContent = storageOk
+      ? '✏️ Notes (' + store.annotations.length + ')'
+      : '⚠️ Notes (' + store.annotations.length + ') — not saved';
+    toggle.classList.toggle('pg-annot-toggle--warn', !storageOk);
+    toggle.title = storageOk
+      ? ''
+      : 'This browser is blocking storage — your notes are only in this tab. Export them before you close it.';
   }
   function status(msg) {
     panel.querySelector('.pg-annot-status').textContent = msg || '';
@@ -363,6 +437,7 @@
   function openEditor(id, fresh) {
     var a = byId(id);
     if (!a) return;
+    closeEditor();          // switching annotations commits the open draft
     closeOtherSurfaces();
     closePanel();
     hideToolbar();
@@ -383,17 +458,22 @@
     persist();
     updateBadge();
   }
-  function closeEditor(commit) {
-    // Closing without commit DISMISSES — it never deletes. "Highlight →
-    // start a note → click a jargon term to check it" is the page's most
-    // natural gesture and must not destroy the highlight; only the explicit
-    // Cancel button discards a fresh one (below).
+  function closeEditor(mode) {
+    // Dismissal COMMITS the draft. "Highlight → start a note → click a jargon
+    // term to check what it means" is the page's most natural gesture, and it
+    // must destroy neither the highlight nor the words already typed — every
+    // dismissal path (term click, glossary toggle, figure, Escape, body click,
+    // opening the panel, switching to another annotation) lands here. Only the
+    // explicit Cancel button passes 'discard'.
     if (editor.hidden) return;
     var a = byId(editorState.id);
-    if (a && commit) {
-      a.note = editor.querySelector('textarea').value.trim();
-      persist();
-      renderAll();
+    if (a && mode !== 'discard') {
+      var typed = editor.querySelector('textarea').value.trim();
+      if (typed !== (a.note || '')) {
+        a.note = typed;
+        persist();
+        renderAll();
+      }
     }
     editor.hidden = true;
     editorState = { id: null, fresh: false };
@@ -402,10 +482,10 @@
     var btn = e.target.closest('button');
     if (!btn) return;
     var act = btn.getAttribute('data-act');
-    if (act === 'save') closeEditor(true);
+    if (act === 'save') closeEditor();
     else if (act === 'cancel') {
       var wasFresh = editorState.fresh, freshId = editorState.id;
-      closeEditor(false);
+      closeEditor('discard');
       var fa = byId(freshId);
       if (wasFresh && fa && !fa.note) removeAnnotation(freshId);
     }
@@ -422,7 +502,7 @@
   function openPanel() {
     closeOtherSurfaces();
     hideToolbar();
-    closeEditor(false);
+    closeEditor();
     refreshPanelList();
     panel.hidden = false;
     backdrop.hidden = false;
@@ -564,8 +644,10 @@
     var existing = {};
     store.annotations.forEach(function (a) { existing[a.id] = true; });
     var added = 0, skipped = 0;
+    // Validate BEFORE anything is stored: a record that can't anchor is
+    // rejected at the boundary, never persisted and then discovered at render.
     p.annotations.forEach(function (a) {
-      if (a && a.id && !existing[a.id] && typeof a.exact === 'string') {
+      if (isUsable(a) && !existing[a.id]) {
         store.annotations.push(a); existing[a.id] = true; added++;
       } else skipped++;
     });
@@ -606,12 +688,15 @@
     if (t.closest('.pg-annot-ui')) return;
     var m = t.closest('mark.pg-hl');
     if (m && !m.closest('.gloss-term')) {   // a highlight inside a gloss button defers to the popover
+      // read the id first: openEditor commits any open draft, and that
+      // re-renders the marks, detaching this node
+      var clickedId = m.getAttribute('data-annot-id');
       closeOtherSurfaces();
-      openEditor(m.getAttribute('data-annot-id'), false);
+      openEditor(clickedId, false);
       return;
     }
     hideToolbar();
-    closeEditor(false);
+    closeEditor();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeAnnotationUI();
