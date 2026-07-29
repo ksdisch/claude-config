@@ -259,4 +259,4 @@ well-specified, judgment-adjacent writing build (the config calls are pre-made; 
 and verification still need care), which is exactly the `high` band; no fan-out needed, so
 no ultracode. Launch: `cd ~/Projects/claude-config && claude --model claude-opus-5 --effort high`,
 then prompt: *"Check out the `docs/usage-playbook` branch and execute
-`docs/plans/usage-playbook-plan.md` end to end."*
+`docs/plans/2026-07-28-usage-playbook-plan.md` end to end."*

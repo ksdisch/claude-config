@@ -104,7 +104,7 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
 | [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 | ❌ `DENY` |
 | [`.githooks/`](.githooks/) | Tracked git hooks — [`pre-push`](.githooks/pre-push) runs the sync check; activated by `install.sh` via `core.hooksPath` | ❌ `DENY` |
-| [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [usage playbook](docs/usage-playbook.md), [build plans](docs/plans/) (the canonical home — one file per plan), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
+| [`docs/`](docs/) | [Command & skill reference](docs/command-skill-reference.md), [usage playbook](docs/usage-playbook.md), [build plans](docs/plans/) (the canonical home — one file per plan, named `YYYY-MM-DD-<slug>.md`), [design specs](docs/superpowers/specs/), [idea docs](docs/ideas/), [project guide](docs/project-guide/) | ❌ `DENY` |
 | [`BACKLOG.md`](BACKLOG.md) | Open improvements and explorations | ❌ `DENY` |
 
 ## Conventions
@@ -150,9 +150,11 @@ model: opus
    [`docs/usage-playbook.md`](docs/usage-playbook.md) card in the same commit.** The index
    records that an item exists; the playbook says how to run it. The rule lives in
    [`CLAUDE.md`](CLAUDE.md), and [`scripts/check-doc-sync.py`](scripts/check-doc-sync.py) —
-   run by the tracked [`pre-push` hook](.githooks/pre-push) — blocks a push whose rows and
-   cards don't line up. It fires only when an item's *existence, name, or description*
-   changes; reworking a file's internals needs no doc edit.
+   run by the tracked [`pre-push` hook](.githooks/pre-push) — blocks a push whose commits
+   carry rows and cards that don't line up, or a standard-layout global item file with no
+   row at all. It
+   fires only when an item's *existence, name, or description* changes; reworking a file's
+   internals needs no doc edit.
 2. **A new top-level file or directory gets symlinked into `~/.claude/` unless you add it to
    `DENY` in [`install.sh`](install.sh).** Repo-meta and docs belong in `DENY`; content
    Claude should load does not. New files *inside* `commands/`, `skills/`, or `agents/` need

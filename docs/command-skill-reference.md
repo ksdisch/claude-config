@@ -12,11 +12,18 @@ Every row below links to its card with `config →`.
 - **Skills** → Claude invokes them automatically, or you type `/skill-name`
 - **Project-specific** items → same syntax, only available inside that project
 
-**Keep in sync:** the two docs stay 1:1 — a row added, renamed, or deleted here carries its
-playbook card in the **same commit**. That's checked rather than asked: the rule lives in
+---
+
+## Keeping the two docs in sync
+
+The two docs stay 1:1 — a row added, renamed, or deleted here carries its playbook card in the
+**same commit**. That's checked rather than asked: the rule lives in
 [`../CLAUDE.md`](../CLAUDE.md) under *Reference Doc Maintenance*, and
 [`scripts/check-doc-sync.py`](../scripts/check-doc-sync.py) runs as the repo's `pre-push` hook,
-so drift blocks the push. See
+so drift blocks the push.
+
+The full mechanics — every condition the check enforces, and the two things it deliberately
+does not — live in the playbook's section of the same name:
 [Keeping the two docs in sync](usage-playbook.md#keeping-the-two-docs-in-sync).
 
 ---

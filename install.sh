@@ -63,8 +63,22 @@ if [ -d "$REPO/.githooks" ]; then
   if [ "$current_hooks_path" = ".githooks" ]; then
     echo "✓ git hooks already active (core.hooksPath=.githooks)"
   else
+    # Never displace someone else's hooks silently — same contract as the symlink
+    # loop above, which reports what it replaces before replacing it. A --get here
+    # also reports an inherited *global* value, which the repo-local set shadows.
+    if [ -n "$current_hooks_path" ]; then
+      echo "› repointing core.hooksPath (was -> $current_hooks_path)"
+      echo "    hooks under '$current_hooks_path' will no longer run for this clone."
+    fi
     git -C "$REPO" config core.hooksPath .githooks
-    chmod +x "$REPO"/.githooks/* 2>/dev/null || true
+
+    # Restore the exec bit only on hooks git already records as executable, so a
+    # future non-executable file in .githooks/ can't be flipped into a tracked
+    # mode change that leaves the working tree dirty.
+    while IFS= read -r hook; do
+      [ -n "$hook" ] && chmod +x "$REPO/$hook"
+    done < <(git -C "$REPO" ls-files -s .githooks | awk '$1 == "100755"' | cut -f2)
+
     echo "✓ activated tracked git hooks (core.hooksPath=.githooks)"
   fi
 fi
