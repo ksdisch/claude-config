@@ -722,7 +722,10 @@ rows get re-pointed to match.
 - **Notes:** STOP at the proposed term list — whatever you approve or edit flows through
   unchanged. Prose is only wrapped, never rewritten; terms are never wrapped inside math or
   citations. `--retrofit` repairs math in an already-published page and redeploys to the same
-  Artifact URL.
+  Artifact URL. Highlights and notes persist per browser via localStorage; export to
+  Markdown/JSON is the durability guarantee (a fresh publish starts empty — only
+  `--retrofit`/`--annotate` redeploys keep stored notes). `--annotate` retrofits
+  the layer onto an existing page.
 
 #### `paper-figures`
 
