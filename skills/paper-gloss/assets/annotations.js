@@ -11,9 +11,21 @@
     '#gloss-popover,#gloss-panel,#gloss-backdrop,#figure-lightbox,.pg-annot-ui';
 
   /* ---------- storage ---------- */
+  var PID_RE = /^[A-Za-z0-9_-]+$/;
   function isUsable(a) {
     return !!a && typeof a.id === 'string' && a.id !== '' &&
       typeof a.exact === 'string' && a.exact.trim() !== '';
+  }
+  function sanitize(a) {
+    // pid is interpolated into a CSS selector. An untrusted one is either an
+    // invalid selector — querySelector throws SyntaxError out of renderAll,
+    // bricking every later load — or a crafted selector LIST, which makes an
+    // arbitrary block the annotation's "own" block, and the own-block path is
+    // the one path that skips the cross-block corroboration gate. Drop a pid
+    // we can't vouch for rather than the whole annotation: without one the
+    // record simply re-anchors by context, which is the safe path anyway.
+    if (typeof a.pid !== 'string' || !PID_RE.test(a.pid)) a.pid = '';
+    return a;
   }
   function load() {
     try {
@@ -21,9 +33,10 @@
       if (raw) {
         var p = JSON.parse(raw);
         if (p && p.v === 1 && Array.isArray(p.annotations)) {
-          // Drop records that can't anchor — a payload written by an older
-          // build (or hand-edited) must never be able to wedge the runtime.
-          p.annotations = p.annotations.filter(isUsable);
+          // Drop records that can't anchor and neutralise fields that reach a
+          // selector — a payload written by an older build (or hand-edited)
+          // must never be able to wedge the runtime.
+          p.annotations = p.annotations.filter(isUsable).map(sanitize);
           return p;
         }
       }
@@ -644,14 +657,14 @@
     var existing = {};
     store.annotations.forEach(function (a) { existing[a.id] = true; });
     var added = 0, skipped = 0;
-    // Validate BEFORE anything is stored: a record that can't anchor is
-    // rejected at the boundary, never persisted and then discovered at render.
+    // Validate and neutralise BEFORE anything is stored, and let renderAll's
+    // own trailing persist() be the write: if rendering this payload throws,
+    // the poisoned record must not be what is left behind in storage.
     p.annotations.forEach(function (a) {
       if (isUsable(a) && !existing[a.id]) {
-        store.annotations.push(a); existing[a.id] = true; added++;
+        store.annotations.push(sanitize(a)); existing[a.id] = true; added++;
       } else skipped++;
     });
-    persist();
     renderAll();
     updateBadge();
     refreshPanelList();
