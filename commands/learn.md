@@ -25,5 +25,5 @@ Skip: trivial fixes (typos, syntax errors), one-time events (an outage, a transi
    - Frontmatter: `name:` (the slug) and `description:` (what it does + explicit "Use when …" trigger conditions — this is what makes the skill fire).
    - Body: Problem → Solution → Example (if code) → When to use.
    - Write it project-agnostic; if the pattern came from one project, name that origin in the description.
-4. For each new skill, in the same commit (house rule): add a row to `docs/command-skill-reference.md` **and a card to `docs/usage-playbook.md`** (Run config · Reach for it when · Pairs well with, following that doc's own conventions), with the row's `config →` link pointing at the card's anchor. the repo's `pre-push` hook runs `scripts/check-doc-sync.py` and blocks the push if they don't match.
+4. For each new skill, in the same commit (house rule): add a row to `docs/command-skill-reference.md` **and a card to `docs/usage-playbook.md`** (Run config · Reach for it when · Pairs well with, following that doc's own conventions), with the row's `config →` link pointing at the card's anchor. The repo's `pre-push` hook runs `scripts/check-doc-sync.py` and blocks the push if they don't match.
 5. Land via the standard git workflow: feature branch + PR + the adversarial-review gate (skills edits never use the trivial-diff escape hatch).

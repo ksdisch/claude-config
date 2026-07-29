@@ -30,10 +30,12 @@ restatement for convenience, not a second authority:
 - **Subagent cards state pinned config** from the agent file's own frontmatter. Those aren't
   recommendations — the dispatch already sets them.
 
-Names in `Pairs well with` link to their card. A few unlinked names (`superpowers:*`,
-plugin-provided items) have no card here because they aren't in this repo.
+Names in `Pairs well with` link to their card. A few unlinked names have no card here because
+they aren't in this repo: `superpowers:*` and other plugin-provided items, and harness
+built-ins like `run`. Each is labeled where it appears, so an unlinked name is never a dead
+end.
 
-### Keeping the two docs in sync
+## Keeping the two docs in sync
 
 When a row is added, renamed, or deleted in
 [`command-skill-reference.md`](command-skill-reference.md), the matching card changes in the
@@ -50,19 +52,28 @@ some other item's card); that no two rows claim one card; that no card is an orp
 no two headings collide into one anchor, which GitHub resolves by silently suffixing the second
 and re-pointing an existing link at the wrong card.
 
+It checks the *other* direction too: every tracked file in `commands/`, `skills/`, and
+`agents/` has a row, no row links to a file that's been deleted or renamed, and a row's name
+matches the file it links. That list comes from `git ls-files`, so a skill deliberately kept
+out of this public repo (`skills/interview-prep/` is gitignored) is excluded because git
+doesn't list it — not because of an exemption list that would quietly drift.
+
 It runs as the repo's tracked `pre-push` hook (`.githooks/pre-push`, activated by `install.sh`
 via `core.hooksPath`), so a mismatch blocks the push instead of landing — for terminal and
-agent pushes alike, with `git push --no-verify` as the deliberate bypass. By hand, from
-anywhere:
+agent pushes alike, with `git push --no-verify` as the deliberate bypass. What it examines is
+the **commits being pushed**, not the working tree: a card written before its row — the
+natural authoring order — won't block an unrelated branch's push, and pushing an explicit
+refspec checks that refspec rather than whatever happens to be checked out. By hand, against
+the working tree, from anywhere:
 
 ```bash
 python3 scripts/check-doc-sync.py
-# doc sync check: in sync — 79 index rows, 79 cards.
+# doc sync check: in sync — 79 index rows, 79 cards, 50 item files.
 ```
 
-Two things it does **not** do. It never checks that an item file has a row at all — the two
-docs are compared to each other, not to `commands/`, `skills/`, and `agents/`. And it can't
-tell you what a card should *say*.
+Two things it still does **not** do. It can't verify project-specific items — their files
+live in other repos, so an unlinked row is taken on faith. And it can't tell you what a card
+should *say*.
 
 One consequence worth knowing: a duplicate item name across projects is a hard error, not a
 warning. If a second project ever gains an item that already has a card, both cards take a
@@ -289,7 +300,8 @@ rows get re-pointed to match.
   - Pass `live` to open the deployed page (GitHub Pages and friends) instead of localhost.
 - **Pairs well with:** [`/smoke-test`](#smoke-test) (calls it),
   [`/screenshot-iterate`](#screenshot-iterate) (needs the app reachable),
-  `run` (the project-aware launcher).
+  `run` (Claude Code's built-in launcher skill — project-aware, ships with the harness, so
+  it has no file in this repo and no card here).
 - **Notes:** prefers the repo's own launcher, reuses an already-running server instead of
   starting a second one, and waits for a real response before opening Chrome — on a timeout
   it shows the last lines of the server log rather than claiming success.
