@@ -11,20 +11,37 @@
     '#gloss-popover,#gloss-panel,#gloss-backdrop,#figure-lightbox,.pg-annot-ui';
 
   /* ---------- storage ---------- */
-  var PID_RE = /^[A-Za-z0-9_-]+$/;
+  var TOKEN_RE = /^[A-Za-z0-9_-]+$/;
+  function str(v) { return typeof v === 'string' ? v : ''; }
   function isUsable(a) {
-    return !!a && typeof a.id === 'string' && a.id !== '' &&
+    // The two fields that cannot be repaired: `id` is the record's identity
+    // AND is interpolated into three selectors, so a non-token id is
+    // unusable (rewriting it would break dedupe against the rest of the
+    // payload); a blank quote can never anchor. Everything else is
+    // normalised by sanitize() rather than costing the reader the note.
+    return !!a && typeof a.id === 'string' && TOKEN_RE.test(a.id) &&
       typeof a.exact === 'string' && a.exact.trim() !== '';
   }
   function sanitize(a) {
-    // pid is interpolated into a CSS selector. An untrusted one is either an
-    // invalid selector — querySelector throws SyntaxError out of renderAll,
-    // bricking every later load — or a crafted selector LIST, which makes an
-    // arbitrary block the annotation's "own" block, and the own-block path is
-    // the one path that skips the cross-block corroboration gate. Drop a pid
-    // we can't vouch for rather than the whole annotation: without one the
-    // record simply re-anchors by context, which is the safe path anyway.
-    if (typeof a.pid !== 'string' || !PID_RE.test(a.pid)) a.pid = '';
+    // Normalise EVERY field the runtime consumes — not just the one that most
+    // recently caused a bug. Import is this module's only untrusted input, and
+    // each field feeds code that assumes its type:
+    //   pid, id  -> CSS selectors. An invalid one throws SyntaxError out of an
+    //               unguarded handler; a crafted selector LIST silently widens
+    //               the match (own-block status, or unmark hitting every
+    //               highlight on the page).
+    //   created  -> localeCompare in ordered()'s comparator, which openPanel
+    //               runs BEFORE it un-hides the panel — a bad value locks the
+    //               reader out of the panel, and out of export with it.
+    //   prefix/suffix/offset -> the anchoring score.
+    //   note/section         -> rendered, and written into the export.
+    if (typeof a.pid !== 'string' || !TOKEN_RE.test(a.pid)) a.pid = '';
+    a.prefix = str(a.prefix);
+    a.suffix = str(a.suffix);
+    a.note = str(a.note);
+    a.section = str(a.section);
+    a.created = str(a.created);
+    if (typeof a.offset !== 'number' || !isFinite(a.offset)) a.offset = 0;
     return a;
   }
   function load() {
@@ -33,9 +50,9 @@
       if (raw) {
         var p = JSON.parse(raw);
         if (p && p.v === 1 && Array.isArray(p.annotations)) {
-          // Drop records that can't anchor and neutralise fields that reach a
-          // selector — a payload written by an older build (or hand-edited)
-          // must never be able to wedge the runtime.
+          // Drop records that can't anchor and normalise every field the
+          // runtime consumes — a payload written by an older build (or
+          // hand-edited) must never be able to wedge the runtime.
           p.annotations = p.annotations.filter(isUsable).map(sanitize);
           return p;
         }
