@@ -278,7 +278,9 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        if reference is None:
+        # Only drift when the playbook is actually there to be paired with —
+        # a revision missing BOTH docs predates the pairing and falls through.
+        if reference is None and playbook is not None:
             print(
                 f"doc sync check FAILED{where} — {REFERENCE} does not exist there while\n"
                 f"{PLAYBOOK} does. Cards with no index to pair with is drift.",
@@ -287,8 +289,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         print(
-            f"doc sync check: not verified{where} — {absent} does not exist there, and "
-            f"{REFERENCE} has no `config →` links, so this revision predates the pairing.",
+            f"doc sync check: not verified{where} — {absent} does not exist there, "
+            f"so this revision predates the pairing.",
             file=sys.stderr,
         )
         return 0
