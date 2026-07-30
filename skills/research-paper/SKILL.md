@@ -41,10 +41,12 @@ mechanical look is enough.)
 
 ## Hard constraints (non-negotiable, in force through every phase)
 
-1. **NO NEW MEASUREMENTS.** Do not run experiments, call any model or API, or
-   execute the repo's measurement/ablation scripts. Use only numbers already
-   recorded in the repo. Drawing a plot *of* those recorded numbers is not a
-   measurement — see **Figures** below for what that is allowed to compute.
+1. **NO NEW MEASUREMENTS.** Do not run experiments, call any model or API, or execute
+   any script the target repo already ships — measurement, ablation, reanalysis and
+   figure-rendering scripts alike — and never overwrite a committed artifact. Use only
+   numbers already recorded in the repo. Drawing a *new* plot of those recorded
+   numbers, in a new file this skill writes, is not a measurement — see **Figures**
+   below for what such a plot may compute and which executions are permitted.
 2. **NO FABRICATED NUMBERS.** Every statistic — each delta, confidence interval, N,
    percentage, dollar figure — is lifted verbatim from a real file. Numbers you
    *derive* (even trivial arithmetic over recorded values) don't qualify: cite the
@@ -134,9 +136,14 @@ All four, non-negotiable:
    recorded ones.
 
 Add no dependency to the project's manifest; inject the plotting library for that run
-only (lineage form: `uv run --with matplotlib docs/paper/figures.py`). Rendering this
-script is the *sole* execution this skill permits — it touches no model, no lens, and
-no measurement code.
+only (lineage form: `uv run --with matplotlib docs/paper/figures.py`).
+
+**The complete set of execution this skill permits** — nothing outside it: the scripts
+it writes itself (`figures.py`, plus `derived_contrasts.py` where a prose-only
+statistic needs it), and read-only parsing of committed files (as Phase 5 requires for
+JSON sources). None of that touches a model, a lens, a measurement or ablation script,
+or **any script the target repo already ships** — constraint 1 governs those, and
+re-running one to refresh a committed image is exactly what it forbids.
 
 ## Phase 1 — Comprehend (read before writing a word)
 
@@ -257,8 +264,10 @@ framing, all nulls, and honest citations are intact; length targets are respecte
 prose; a review-only PR is open; and the final report gives paths + PR link + headline
 results + sources of truth + flagged gaps.
 
-On figures, one of these two is true and stated in the final report: **either** every
-figure was rendered by the committed script from recorded values, computes nothing
-past the carve-out, is disclosed all four ways, and carries a caption matching what it
-actually shows — **or** the paper is declared tables-only in its preamble with the
-reason given.
+On figures, every figure the paper carries falls into one of two cases, and the final
+report states which: **rendered here** — produced by the committed script from recorded
+values, computing nothing past the carve-out, disclosed all four ways, with a caption
+matching what it shows; or **repo-supplied** — an image the repo already had, embedded
+with its caption verified against what that image actually shows (no script is owed for
+one of these). A paper carrying neither is **tables-only**, declared so in its preamble,
+with the reason in the final report.
