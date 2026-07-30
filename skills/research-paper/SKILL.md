@@ -23,9 +23,9 @@ Preflight; everything after it runs end-to-end without asking.
 ## Parse `$ARGUMENTS`
 
 - **A path** → treat it as the project repo root. Default: the current repo.
-- **Anything else** → operator notes: fold them into the mission (length overrides,
-  emphasis, a section to add or skip, a specific audience for the pack). Notes tune
-  the mission; they never override the Hard constraints below.
+- **Anything else** → operator notes: fold them into the mission (an explicit
+  length budget, emphasis, a section to add or skip, a specific audience for the
+  pack). Notes tune the mission; they never override the Hard constraints below.
 
 ## Preflight
 
@@ -74,9 +74,20 @@ mechanical look is enough.)
    this repo actually recorded. A delta whose CI includes zero is a null/small
    effect and is stated as such; anything the repo pre-declared underpowered is
    stated as no-claim.
-6. **CONSTRAIN LENGTH — precision over volume.** ~3,000–5,000 words for the paper,
-   ~1,200–1,800 for the presenter pack. Judge on prose (`wc -w` over-counts table
-   tokens). No padding, no sections the material doesn't earn.
+6. **FIT LENGTH TO CONTENT — no padding, no omission.** No default target word
+   count: the recorded material decides how long the paper is. Don't make it longer
+   than the record requires — no padding, no restatement, no section the material
+   doesn't earn. Don't make it shorter by leaving recorded content out — measured
+   results, nulls, required disclosures, owned deviations, and the constraint-4
+   honesty framing are never dropped to hit a size. An operator note may set an
+   explicit length budget: it tightens the no-padding half — trim discretionary
+   prose (motivating context, connective transitions, restatement) to meet it,
+   never a section's mandated content: the recorded measurement discipline, the
+   nulls' interpretation, and the un-validatable residual are not discretionary.
+   A budget never licenses omission; one that can't be met without dropping
+   recorded content is kept unmet, with the overrun flagged in the final report.
+   Judge length on the prose (`wc -w` over-counts table tokens). The same rule
+   governs the presenter pack.
 
 ## Figures — encouraged when they earn their place
 
@@ -262,8 +273,9 @@ Fix everything that fails and re-verify. Do not claim done until this passes.
 
 Two Markdown files exist under `docs/paper/` (or `paper/`); every statistic in them
 traces to a real repo file and survived the Phase 5 mechanical check; the honesty
-framing, all nulls, and honest citations are intact; length targets are respected on
-prose; a review-only PR is open; and the final report gives paths + PR link + headline
+framing, all nulls, and honest citations are intact; the length fits the content —
+nothing padded, no recorded content dropped for size, judged on the prose; a
+review-only PR is open; and the final report gives paths + PR link + headline
 results + sources of truth + flagged gaps.
 
 On figures, every figure the paper carries falls into one of two cases, and the final
