@@ -43,7 +43,9 @@ mechanical look is enough.)
 
 1. **NO NEW MEASUREMENTS.** Do not run experiments, call any model or API, or execute
    any script the target repo already ships — measurement, ablation, reanalysis and
-   figure-rendering scripts alike — and never overwrite a committed artifact. Use only
+   figure-rendering scripts alike — and never overwrite an artifact the repo *recorded*
+   (a result file, a figure image, a data JSON). The only files you write are this
+   skill's own deliverables in the paper directory, which a re-run may replace. Use only
    numbers already recorded in the repo. Drawing a *new* plot of those recorded
    numbers, in a new file this skill writes, is not a measurement — see **Figures**
    below for what such a plot may compute and which executions are permitted.
