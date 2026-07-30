@@ -12,9 +12,9 @@ paper at hobby scale and *measures* the paper's claim honestly under pre-committ
 statistical gates. The write-up must preserve exactly that honesty: it reports what
 was measured — including the nulls — and nothing else.
 
-**Deliverables:** (1) a research paper, (2) a presenter pack, (3) a review-only PR,
-(4) a final report with provenance and flagged gaps. You take **no new measurements**
-and you **merge nothing**.
+**Deliverables:** (1) a research paper — with figures where the recorded data earns
+them, (2) a presenter pack, (3) a review-only PR, (4) a final report with provenance
+and flagged gaps. You take **no new measurements** and you **merge nothing**.
 
 Designed for an unattended max-effort run (cloud / autonomous session) — the
 unattended rules in the global operating constraints apply. The only hard stop is in
@@ -41,14 +41,23 @@ mechanical look is enough.)
 
 ## Hard constraints (non-negotiable, in force through every phase)
 
-1. **NO NEW MEASUREMENTS.** Do not run experiments, call any model or API, execute
-   ablation scripts, or regenerate figures/results. Use only numbers already
-   recorded in the repo.
+1. **NO NEW MEASUREMENTS.** Do not run experiments, call any model or API, or execute
+   any script the target repo already ships — measurement, ablation, reanalysis and
+   figure-rendering scripts alike — and never overwrite an artifact the repo *recorded*
+   (a result file, a figure image, a data JSON). The only files you write are this
+   skill's own deliverables in the paper directory, which a re-run may replace. Use only
+   numbers already recorded in the repo. Drawing a *new* plot of those recorded
+   numbers, in a new file this skill writes, is not a measurement — see **Figures**
+   below for what such a plot may compute and which executions are permitted.
 2. **NO FABRICATED NUMBERS.** Every statistic — each delta, confidence interval, N,
    percentage, dollar figure — is lifted verbatim from a real file. Numbers you
    *derive* (even trivial arithmetic over recorded values) don't qualify: cite the
    recorded form or drop the claim. If a number you want isn't recorded anywhere,
    say so plainly in the text and flag it in the final report. Never estimate.
+   **The one carve-out** is the narrow, scripted, disclosed derivation defined under
+   **Figures** below — it exists because plotting inherently computes something, and
+   it is bounded so that a reviewer can check every plotted value against a file.
+   Nothing outside that carve-out is exempt.
 3. **NO FABRICATED CITATIONS.** Cite exactly what the repo records. If only an arXiv
    ID + title is on record (no author list), cite that and note it. If the repo
    names no source for a primitive, describe it as established/common practice and
@@ -68,6 +77,75 @@ mechanical look is enough.)
 6. **CONSTRAIN LENGTH — precision over volume.** ~3,000–5,000 words for the paper,
    ~1,200–1,800 for the presenter pack. Judge on prose (`wc -w` over-counts table
    tokens). No padding, no sections the material doesn't earn.
+
+## Figures — encouraged when they earn their place
+
+Figures are **welcome, and expected wherever the recorded data plots well**: a dose
+curve, a 2-D prime × probe grid, per-arm rates with their intervals, a cliff. Some
+results are far more legible as a picture than as a row of numbers, and a repo whose
+own brief calls something "the killer figure" should not ship tables-only.
+
+This is encouragement, not a mandate. **Tables-only stays a legitimate outcome — it
+just stops being the default** for a repo full of plottable recorded data. Judge each
+candidate on one question: *does it show a shape a table hides* — a curve, a cliff, a
+grid, an interval overlap? If no, use the table. State what you decided, and why, in
+the final report.
+
+**Chart conventions are the global `dataviz` skill's job — invoke it before writing
+the first line of plotting code** (palette, axes, legends, light/dark). Do not
+restate or re-derive those rules here.
+
+### What a figure may compute — the constraint-2 carve-out
+
+A figure plots the record. Exactly two things are permitted:
+
+- values lifted verbatim from a committed result file — counts, rates, recorded
+  confidence intervals, and the axis values the repo itself used (α, tier, layer,
+  band, concept);
+- one rate from a recorded numerator over a recorded denominator (`hits / n`) — the
+  single arithmetic step allowed, because both operands are on record and the result
+  is checkable against the paper's own tables.
+
+Forbidden: smoothing, interpolation, fitted or trend lines, error bars you compute
+yourself (plot the **recorded** interval or none at all), pooling across cells the
+repo never pooled, re-binning, axis values read off an existing image, and any value
+the repo does not hold.
+
+If the paper wants a statistic that exists only in prose (a milestone brief,
+`DECISIONS.md`), do **not** do that arithmetic inline or inside the plotting script.
+Take the lineage route instead — a sibling `docs/paper/derived_contrasts.py` that
+recomputes it **through the repo's own stats module** from counts parsed out of
+committed result files, **asserts** it equals the prose-recorded value at the
+recorded precision, writes one result JSON for the paper to cite, and writes nothing
+at all if any assertion fails. A mismatch is a finding to report, never something to
+paper over. A statistic recorded nowhere at all stays out of the paper and goes into
+the final report as a flagged gap.
+
+### How the derivation is disclosed
+
+All four, non-negotiable:
+
+1. **A committed script, never hand-placed pixels** — `docs/paper/figures.py`,
+   deterministic and headless (matplotlib `Agg`), reading only committed result
+   files: same data in, same figures out on any re-run.
+2. **Its docstring states the contract** — the run command, which files it reads,
+   one line per figure describing what that figure shows, and an explicit sentence
+   on what the script does and does not compute.
+3. **It prints every plotted number**, so a reviewer can check the figures against
+   the paper's tables without opening a PNG.
+4. **The paper points back** — the Reproducibility section names the script and its
+   run command; every caption gives the n and says the intervals shown are the
+   recorded ones.
+
+Add no dependency to the project's manifest; inject the plotting library for that run
+only (lineage form: `uv run --with matplotlib docs/paper/figures.py`).
+
+**The complete set of execution this skill permits** — nothing outside it: the scripts
+it writes itself (`figures.py`, plus `derived_contrasts.py` where a prose-only
+statistic needs it), and read-only parsing of committed files (as Phase 5 requires for
+JSON sources). None of that touches a model, a lens, a measurement or ablation script,
+or **any script the target repo already ships** — constraint 1 governs those, and
+re-running one to refresh a committed image is exactly what it forbids.
 
 ## Phase 1 — Comprehend (read before writing a word)
 
@@ -113,10 +191,14 @@ directory name. Empirical-methods structure, adapted to the material:
   them (clean / injected-fault / natural-gap / …); manufactured gaps labeled
   manufactured here and again in Results
 - **Results** — every measured delta with its CI, INCLUDING the nulls, plus a
-  results table. Embed existing figure images with honest captions and correct
-  relative paths — captions must match what the figures actually show. If the repo
-  has no figures, the paper is tables-only and its preamble says so; never generate
-  figures.
+  results table. **Build the figures the data earns** (see **Figures** above): decide
+  the figure list from what the recorded results actually contain, render it with the
+  committed script, and embed each one with a correct relative path and a caption
+  stating what it shows, its n, and that the intervals are the recorded ones. Embed
+  figures the repo already has the same way, with captions matching what those images
+  actually show. Tables carry results whose shape a plot wouldn't clarify; a paper
+  with nothing worth plotting is tables-only, says so in its preamble, and gives the
+  reason in the final report.
 - **Discussion** — the thesis as measured (e.g. matched-guardrail: each mechanism
   against the gap it targets), what the nulls mean, the un-validatable residual
 - **Threats to validity / Limitations**
@@ -151,13 +233,23 @@ been caught in a real run of this mission):
 - a CI-straddling delta stated as a win → restate as null
 - a manufactured gap missing its "manufactured" label; a null missing from Results
 - an invented or embellished citation
+- **A plotted value that isn't in its source file** — check the script's printed
+  numbers against the paper's tables and against the parsed result files
+- **A figure computing past the carve-out** — a smoothed or fitted line, an error bar
+  the script computed itself, a pooling the repo never performed
+- **A caption that overstates** — wrong n, wrong arm, a missing "manufactured" label,
+  or an interval described as anything other than what was recorded
 
 Fix everything that fails and re-verify. Do not claim done until this passes.
 
 ## Phase 6 — Deliver
 
-- Create a `docs/paper` feature branch (suffix it if one already exists), commit
-  both files with a descriptive message, push, open a PR.
+- Create a `docs/paper` feature branch (suffix it if one already exists), commit both
+  Markdown files with a descriptive message, push, open a PR. **Commit the figure
+  assets in the same PR** — `figures.py`, any `derived_contrasts.py` and the result
+  JSON it wrote, and the rendered PNGs — so the paper and the images that back it are
+  reviewed together. Confirm the PNGs aren't caught by a `.gitignore` rule before
+  claiming they landed.
 - **Do NOT merge and do NOT push to `main`.** This PR is for Kyle's review — an
   explicit gate that overrides the global merge-autonomously workflow. Leave the
   repo on its default branch with a clean tree.
@@ -170,7 +262,14 @@ Fix everything that fails and re-verify. Do not claim done until this passes.
 
 Two Markdown files exist under `docs/paper/` (or `paper/`); every statistic in them
 traces to a real repo file and survived the Phase 5 mechanical check; the honesty
-framing, all nulls, and honest citations are intact; figure captions match what the
-figures actually show (or the paper is declared tables-only); length targets are
-respected on prose; a review-only PR is open; and the final report gives paths + PR
-link + headline results + sources of truth + flagged gaps.
+framing, all nulls, and honest citations are intact; length targets are respected on
+prose; a review-only PR is open; and the final report gives paths + PR link + headline
+results + sources of truth + flagged gaps.
+
+On figures, every figure the paper carries falls into one of two cases, and the final
+report states which: **rendered here** — produced by the committed script from recorded
+values, computing nothing past the carve-out, disclosed all four ways, with a caption
+matching what it shows; or **repo-supplied** — an image the repo already had, embedded
+with its caption verified against what that image actually shows (no script is owed for
+one of these). A paper carrying neither is **tables-only**, declared so in its preamble,
+with the reason in the final report.
