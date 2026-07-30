@@ -74,13 +74,17 @@ mechanical look is enough.)
    this repo actually recorded. A delta whose CI includes zero is a null/small
    effect and is stated as such; anything the repo pre-declared underpowered is
    stated as no-claim.
-6. **FIT LENGTH TO CONTENT — no padding, no omission.** There is no target word
+6. **FIT LENGTH TO CONTENT — no padding, no omission.** No default target word
    count: the recorded material decides how long the paper is. Don't make it longer
    than the record requires — no padding, no restatement, no section the material
    doesn't earn. Don't make it shorter by leaving recorded content out — measured
    results, nulls, required disclosures, and owned deviations are never dropped to
-   hit a size. Judge length on the prose (`wc -w` over-counts table tokens). The
-   same rule governs the presenter pack.
+   hit a size. An operator note may set an explicit length budget: it tightens the
+   no-padding half — trim framing and discussion prose to meet it — but never
+   licenses omission; a budget that can't be met without dropping recorded content
+   is kept unmet, with the overrun flagged in the final report. Judge length on the
+   prose (`wc -w` over-counts table tokens). The same rule governs the presenter
+   pack.
 
 ## Figures — encouraged when they earn their place
 
