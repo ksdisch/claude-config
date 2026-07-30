@@ -56,7 +56,18 @@ become the fit-pilot's named risks in the next project's KICKOFF.
    directed correction "the order was wrong" *is* a flip instruction — qwen obeying it
    inflated the lossy arm and broke source_first, costing M4 its second model. Binary or
    flippable answer spaces are confound magnets; ask "could the manipulation's wording
-   produce the effect by itself?" *(lossy-wall D25 outcome, M4 PARTIAL.)*
+   produce the effect by itself?" *(lossy-wall D25 outcome, M4 PARTIAL.)* A third
+   species: **control-arm composition and dimensionality**. mute-map M3's
+   "category-block collateral dissolves with scale" inverted at M4 because M3's
+   within-category arm was 30 of 34 pairs *countries* — a one-sided sample
+   manufactured a scale story; the finding's numbers stood, its scope collapsed.
+   And a *single control cell* cannot distinguish a row effect from a column
+   effect: `silver`'s pre-registered "non-specific" label turned out to be a fact
+   about its **column** (fragile probe), not its **row** (its direction damages
+   nothing) — only the full matrix separated the two readings. Audit a control
+   arm's composition as skeptically as a treatment arm's, and prefer designs
+   whose controls form a matrix over designs resting on one spot-check cell.
+   *(mute-map M3/M4 briefs.)*
 
 5. **Statistics is the binding constraint.** It was, in all eleven forge-gap stages and
    all six decay-pin stages — never the code, never the cost. Proportion outcomes need
@@ -78,7 +89,17 @@ become the fit-pilot's named risks in the next project's KICKOFF.
    cliff, crossovers bracketing the paper's anchors). Papers that publish their effect's
    boundary hand you that arm for free; and a PARTIAL with a *diagnosed mechanism*
    (lossy-wall M4's correction-flip confound) is a fully reportable outcome.
-   *(lossy-wall D28/D29 REPRODUCED; D25 PARTIAL.)*
+   *(lossy-wall D28/D29 REPRODUCED; D25 PARTIAL.)* Sharpened again: **pre-commit
+   the aggregation unit, and bake the qualifier into the verdict string.**
+   mute-map M4's item-level gate cleared its 0.5 bar while the pre-registered
+   *concept-level* collapse of the same data sat below it (lower bounds
+   0.434/0.456) — the same run, two honest summaries, opposite sides of the bar.
+   Because the brief had pre-declared the collapse as the honest number, the
+   verdict shipped as VOCAB-SPARING **AS-SCORED ONLY** with the qualifier riding
+   *inside* the pre-committed verdict string. A qualifier living in prose gets
+   dropped in every retelling; one frozen into the string cannot be. Ask at
+   selection time: at what unit does this paper's claim aggregate, and does the
+   verdict survive re-aggregation? *(mute-map M4-BRIEF D20.)*
 
 7. **Must be stage-able and pilot-gated.** Every project starts with a fit-pilot carrying
    kill/swap triggers, and every paid wave sits behind a free mechanical gate plus an N≈5
@@ -91,7 +112,13 @@ become the fit-pilot's named risks in the next project's KICKOFF.
    starts, repair responses ran 9–13k chars (length scales with corruption depth),
    dropping first-parse to 68.9% below the 80% floor and forcing parse-length INVALIDs.
    Pre-measure operational params on the *damaged* states, or budget parse slack.
-   *(ghost-patch M4 §5.5.)*
+   *(ghost-patch M4 §5.5.)* Also operational: **make CI actually run the suite
+   from day one.** mute-map's workflow executed test files as plain scripts —
+   with no `__main__` guard they imported, defined functions, and exited 0 — so
+   every green badge for two weeks certified syntax, not behavior; making CI
+   real then immediately exposed a second latent defect (a test depending on
+   gitignored weights). A gate nobody has watched fail is not a gate.
+   *(mute-map PR #13 F1/F5.)*
 
 8. **Range vs reuse is Kyle's call, not yours.** Reusing the harness muscle (tool loops,
    Wilson/Newcombe) is fast but "more of the same"; a new surface (RAG / memory /
@@ -146,6 +173,18 @@ become the fit-pilot's named risks in the next project's KICKOFF.
     "aware-but-does-wrong-thing" paper the awareness leg is the fragile one at the cheap
     tier: make it the fit-pilot's first gate and expect it may null (a headline, but it
     decapitates the chain's framing). *(ghost-patch M0 §5.1; KICKOFF risk 1c.)*
+    Sharpened: **a deterministic oracle's competence gate is itself a selection
+    filter, and it biases floors.** mute-map's first-token oracle could score
+    only 34 of 60 roster words (two whole categories gated zero items on every
+    subject), and even the widened prefix rule left 25/7/5 of 48 concepts
+    unmeasurable by scale — plausibly enriching every "survival floor" for
+    robust, cleanly-tokenized concepts and biasing it upward. Two riders: scope
+    every claim to "the *measurable* vocabulary" explicitly and report what the
+    oracle excludes as part of the result; and if the instrument must widen
+    mid-chain, freeze the new rule before any run, let published numbers stand,
+    and land the re-score as a labelled reanalysis beside them (the D9b/D10a
+    pattern) — never a silent restatement. *(mute-map M1 owned caveat, D9b/D10a,
+    M4 HANDOFF.)*
 
 11. **Chained-thesis papers: power the funnel's END, and check it survives an early
     null.** When a paper's thesis is a chain of conditional claims (each link's population
@@ -188,6 +227,8 @@ become the fit-pilot's named risks in the next project's KICKOFF.
 | decay-pin (`~/Projects/decay-pin`) | arXiv 2606.22528 — Governance Decay + Constraint Pinning | M0–M5 | 0%→100%→0% arc (floor/truncate/pinned) on 3 models, replicated on a 2nd task; v2 strategy axis: truncate 20/20 · summarize 2/40 (STRATEGY-NULL) · head-tail 0/40 (PROTECTIVE) | M5, PR #18, merge `5ae1a0a` (2026-07-06) |
 | lossy-wall (`~/Projects/lossy-wall`) | arXiv 2606.25449 — Brittle Memory / reclaim eval | M0–M5 | v1 claims 1–3 REPRODUCED + independent-build cross-check AGREE 6/6; M4 logic PARTIAL (deepseek clears; correction-flip confound); M5 boundary REPRODUCED (cliff tracks the budget: N=4@300 → N=12@600); ≈$2.13 total | M5+D31, PR #33, merge `2de5b4d` (2026-07-09) |
 | ghost-patch (`~/Projects/ghost-patch`) | arXiv 2607.04537 — "Obey, Diverge, Collapse" repair-failure chain | M0–M4 | chain closed end-to-end on 2 cheap models: obey NULL ×2 (awareness precondition NULL across 6 models incl. paper's Kimi ~25% vs 63%; single-pass drop +4.0/+3.6 pts) → recover REPORTED ×2 (78.3%/52.6%, pass-1 front-loaded) → compound REPORTED-qwen (pass-1-only escape 30.4%, curve [7,7,7,7,7]) / UNDERPOWERED-deepseek (wholesale-rewrite verifier starvation) → collapse UNDERPOWERED ×2 pre-declared + descriptive IDR 6/12 = 50% stuck-half; ~$1.42 total | M4 + close-out, PRs #13–15, merge `0cafc77` (2026-07-14) |
+| dim-stage (`~/Projects/dim-stage`) | Anthropic workspace/J-lens paper (transformer-circuits.pub/2026/workspace, no arXiv ID) | M0–M3 + S1–S4b | pre-registered triple NULL on readability (0/6 distributions at Wilson LB ≥ .5, ×3 scales) with descriptive structure inside it: 1.5B-only injected-thought dose–response; one CI-clean J-transport advantage (M2 at 3B) + two CI-clean reversals; dose-ordered scale-growing M3 focus signal; and the S4b discovery — a concept-specific late-band output off-switch. First local-open-weights project (Qwen2.5 0.5B/1.5B/3B on MPS); ~$0.83 total (rented 4090 for the 3B lens fit) | v1 closed 2026-07-16; paper deliverables 2026-07-19 |
+| mute-map (`~/Projects/mute-map`) | dim-stage's own S4b result (first *original characterization*, not a reproduction — an effect found during a replication, characterized here) | M0–M4 | anchor reproduced bit-for-bit ×3 subjects → BREADTH-SPECIFIC (60-concept/180-item battery, 1.5B & 3B) → LATE-LOCALIZED + dose-is-a-dimmer → MATRIX-SPECIFIC (full 12×12 prime×probe grid, +0.971/+0.881 CI-clean) → VOCAB-SPARING **AS-SCORED ONLY** (item-level floor clears 0.5; pre-registered concept-level collapse's lower bound does not: 0.434/0.456); $0 total, all local MPS | M4 PASSED 2026-07-29, PR #13 merge `e777a85` |
 
 **Queue note (2026-07-15):** the #5 slot was re-decided at this date's hunt. Pick = the
 Anthropic workspace/J-lens paper ("Verbalizable Representations Form a Global Workspace
@@ -198,3 +239,17 @@ next-in-queue** with its approved KICKOFF intact at `~/Projects/blind-cite` — 
 kill; zero spend, no lessons to harvest. Both were range picks; deciding factors were
 timeliness (workspace paper 9 days old, ecosystem replicating fast) and the internals
 skill axis. The next hunt should treat blind-cite as the default #6 before sweeping.
+
+**Queue note (2026-07-29):** mute-map closed and the next pick was decided at a
+`/backlog-hygiene` pass over the J-lens follow-on backlog — deliberately NOT a full
+seed-hunt (no arXiv sweep); this note plus the two ledger rows above are the harvest
+that pass folded in. Pick = **A3 secret-leak / "hush-gauge"** (audit-brainstorm
+2026-07-28; build plan pre-written at
+`~/Projects/j-lens-proj-ideas/secret-leak-build-plan-2026-07-28.md`; $0 local;
+audit-template + off-switch-unification headline). Round lens: portfolio-first,
+$0/local. **blind-cite remains parked and was passed over *knowingly*, not
+forgotten** — the round was scoped to the J-lens corpus; entry 8's range-vs-reuse
+pressure (this is the third consecutive internals-surface project) was surfaced in
+the decision brief and Kyle chose the arc. The next *full* seed-hunt still treats
+blind-cite as default-next-before-sweeping. Decision brief:
+`~/Projects/j-lens-proj-ideas/docs/backlog-hygiene/2026-07-29.md`.
