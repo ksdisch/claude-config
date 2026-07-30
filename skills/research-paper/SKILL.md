@@ -80,12 +80,14 @@ mechanical look is enough.)
    doesn't earn. Don't make it shorter by leaving recorded content out — measured
    results, nulls, required disclosures, owned deviations, and the constraint-4
    honesty framing are never dropped to hit a size. An operator note may set an
-   explicit length budget: it tightens the no-padding half — trim motivation,
-   background, and interpretive prose to meet it — but never licenses omission; a
-   budget that can't be met without dropping recorded content
-   is kept unmet, with the overrun flagged in the final report. Judge length on the
-   prose (`wc -w` over-counts table tokens). The same rule governs the presenter
-   pack.
+   explicit length budget: it tightens the no-padding half — trim discretionary
+   prose (motivating context, connective transitions, restatement) to meet it,
+   never a section's mandated content: the recorded measurement discipline, the
+   nulls' interpretation, and the un-validatable residual are not discretionary.
+   A budget never licenses omission; one that can't be met without dropping
+   recorded content is kept unmet, with the overrun flagged in the final report.
+   Judge length on the prose (`wc -w` over-counts table tokens). The same rule
+   governs the presenter pack.
 
 ## Figures — encouraged when they earn their place
 
