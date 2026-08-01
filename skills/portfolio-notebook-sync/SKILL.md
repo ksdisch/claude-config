@@ -63,14 +63,18 @@ belong to the drift check, and the drift check has its own table and its own con
 
   ```sh
   tmp=$(mktemp)                       # never a bare relative path — cwd may be a guarded tree
-  code=$(curl -sL --max-time 15 -o "$tmp" -w '%{http_code}' "$url")
-  if [ "$code" = 200 ]; then
+  code=$(curl -sL --max-time 15 -o "$tmp" -w '%{http_code}' "$url"); rc=$?
+  if [ "$rc" = 0 ] && [ "$code" = 200 ]; then
     printf '200 %s\n' "$(shasum -a 256 < "$tmp" | cut -c1-12)"
   else
-    printf '%s —\n' "$code"           # always emit the code; step 2 needs it to split dead vs unknown
+    printf '%s rc=%s —\n' "$code" "$rc"   # always emit both; step 2 needs them
   fi
   rm -f "$tmp"
   ```
+
+  **Both the exit status and the code must be clean before you hash.** A transfer that
+  times out mid-download still reports `%{http_code} 200` while `rc=28`, so a status-only
+  guard hashes a truncated body and reports an unchanged document as `changed`.
 
   Never pipe `curl` straight into `shasum`: an error page has a body too, so a 404 hashes
   stably and reads as ordinary changed content. A NotebookLM `url` source is a snapshot
@@ -141,21 +145,30 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 4. **Report the drift table before changing anything**, with a row per
    `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished` source. Then get Kyle's
    confirm. (When another flow dispatched this skill with explicit pre-authorization,
-   proceed without the prompt — but still print the table.) Repairability by class:
-   `changed` → delete-and-re-add · `deleted` → delete only (the file is gone; there is
-   nothing to re-add) · `dead` → **substitute, never re-add the same URL** (below) ·
-   `vanished` → re-add only · `unknown` and `unverified` → reported, left alone.
+   proceed without the prompt — but still print the table.)
+
+   **Repairability is decided by `type` first, then class.**
+
+   - **`url` rows are never auto-repaired — report only, in every class.** Report the class
+     and the recommended action; Kyle decides. Three rounds of review on this skill each
+     found a *different* path by which an automatic URL repair re-imports an error page as
+     if it were the source. There is no automatic path worth that risk: the notebook's copy
+     may be the last surviving snapshot, and re-adding is never urgent.
+   - **`text` rows**, by class: `changed` → delete-and-re-add · `deleted` → delete only
+     (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
+     exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
+   - When step 2 and step 3 disagree about a row (`dead` by probe, `vanished` by
+     reconciliation), **the more conservative class wins** and it stays report-only.
 5. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
    snapshots under the same title scheme with today's date → rewrite `MANIFEST.md` and the
    sidecar README.
 
-   **A `dead` URL is the exception — never delete-then-re-add the same URL.** The URL is
-   dead; re-adding it either fails or imports an error page as if it were the source, and
-   the notebook's copy is the last surviving snapshot of that content. Substitute instead:
-   if the project's repo went private, add `~/Projects/<project>/README.md` as `text`
-   (title `<project> repo README (repo private) — snapshot <date>`) and only then delete the
-   dead row. If no local substitute exists, **leave the dead source in place** and report
-   it — a stale copy beats no copy.
+   **URL rows are not repaired here at all** (step 4). What you offer Kyle instead, for a
+   `dead` URL: substitute a local snapshot — if the project's repo went private, add
+   `~/Projects/<project>/README.md` as `text` (title
+   `<project> repo README (repo private) — snapshot <date>`) and only then delete the dead
+   row. If no local substitute exists, **leave the dead source in place** — a stale copy
+   beats no copy. Either way it happens on Kyle's say-so, never as part of a repair sweep.
 6. **Offer, don't force, study-aid regeneration** when any content source changed. Kyle
    decides; regenerating four aids is not free.
 
