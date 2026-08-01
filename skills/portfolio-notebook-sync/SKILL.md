@@ -59,11 +59,19 @@ belong to the drift check, and the drift check has its own table and its own con
 - `path-or-url` — absolute local path, or the URL as added.
 - `type` — `text` | `url`.
 - `sha256_12` — the content hash, for **both** types. Local:
-  `shasum -a 256 <file> | cut -c1-12`. URL: `curl -sL --max-time 15 <url> | shasum -a 256 |
-  cut -c1-12`. A NotebookLM `url` source is a snapshot taken at add time, so without a body
-  hash a rewritten repo README stays stale forever and every check calls it live-and-fine.
-  Liveness alone is not drift detection. Use `—` only where a body genuinely can't be
-  fetched, and mark that row `unverified` rather than clean.
+  `shasum -a 256 <file> | cut -c1-12`. URL: **status first, hash only on 200** —
+
+  ```sh
+  code=$(curl -sL --max-time 15 -o body.tmp -w '%{http_code}' "$url")
+  [ "$code" = 200 ] && cut -c1-12 <(shasum -a 256 < body.tmp)
+  ```
+
+  Never pipe `curl` straight into `shasum`: an error page has a body too, so a 404 hashes
+  stably and reads as ordinary changed content. A NotebookLM `url` source is a snapshot
+  taken at add time, so without a body hash a rewritten repo README stays stale forever and
+  every check calls it live-and-fine — but liveness and content are two questions and both
+  must be asked. Use `—` only where a body genuinely can't be fetched, and mark that row
+  `unverified` rather than clean.
 - `snapshot` — ISO date the source was added.
 - `repo_sha` — `~/Projects/portfolio` HEAD at snapshot time.
 
@@ -107,23 +115,29 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
-   - `url` rows — fetch the body, then classify on **both** liveness and hash. A stable
-     `404`/`410` → `dead`. A body whose hash differs from the row → `changed`, exactly like
-     a local file. Any other non-200 (`000`, `429`, `5xx`, redirects) → `unknown`: report
-     it, never auto-delete on it.
-3. **Reconcile the manifest against the notebook — always, and report-only.** Call
-   `notebook_get` and compare its `source_id`s to the manifest's. Every id the notebook has
-   and the manifest lacks is `unverified`: it is *not* clean, and it is *not* deletable
-   (reading `notebook_get` to **report** a gap is required; treating its output as a delete
-   list is the red flag). A manifest that doesn't cover every live source — including one
-   `--add` seeded with only its own rows — **may never report "in sync"**. Say how many
-   sources are unbacked and offer to finish the bootstrap.
+   - `url` rows — **read the status code first, and let it decide before any hashing.**
+     A stable `404`/`410` → `dead`. Any other non-200 (`000`, `429`, `5xx`) → `unknown`:
+     report it, never auto-delete on it. **Only on `200`** do you hash the body: differs
+     from the row → `changed`, same → `unchanged`. Hashing a non-200 body is how a dead
+     source gets "repaired" into a source whose content is the words `404: Not Found`.
+3. **Reconcile the manifest against the notebook — always, report-only, and in both
+   directions.** Call `notebook_get` and compare its `source_id`s to the manifest's.
+   - **In the notebook, not in the manifest** → `unverified`. Not clean, and not deletable
+     (reading `notebook_get` to **report** a gap is required; treating its output as a
+     delete list is the red flag). A manifest that doesn't cover every live source —
+     including one `--add` seeded with only its own rows — **may never report "in sync"**.
+     Say how many are unbacked and offer to finish the bootstrap.
+   - **In the manifest, not in the notebook** → `vanished`. Step 2 only ever looks at the
+     local file, so without this a source deleted out of the notebook reports `unchanged`
+     forever and the notebook silently shrinks. Report it and offer to re-add from the
+     recorded path; never treat it as drift to repair by deleting anything.
 
 4. **Report the drift table before changing anything**, with a row per
-   `changed`/`deleted`/`dead`/`unknown`/`unverified` source. Then get Kyle's confirm. (When
-   another flow dispatched this skill with explicit pre-authorization, proceed without the
-   prompt — but still print the table.) Only `changed`, `deleted`, and `dead` rows are
-   repairable; `unknown` and `unverified` are reported and left alone.
+   `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished` source. Then get Kyle's
+   confirm. (When another flow dispatched this skill with explicit pre-authorization,
+   proceed without the prompt — but still print the table.) Only `changed`, `deleted`, and
+   `dead` rows are repairable by delete-and-re-add; `vanished` is repairable by re-adding
+   only; `unknown` and `unverified` are reported and left alone.
 5. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
    snapshots under the same title scheme with today's date → rewrite `MANIFEST.md` and the
    sidecar README.
@@ -181,11 +195,11 @@ three-row manifest reports clean over twenty-eight unchecked sources.
   **Artifacts** live only in the sidecar README, so an artifact delete reads that instead —
   same two-part shape: recorded there, plus this run's confirm. An untracked item is a
   discrepancy to report, never a thing to guess about.
-- **Authorization does not travel between documents.** A delete is authorized by two things
-  only: the id is in the manifest, and Kyle confirmed *this* run. A plan file, an approved
-  refresh doc, or a prior session's enumerated id list authorizes **that** run, not yours —
-  even when it names the exact id you want and even when it's the same notebook. Citing
-  another document's §-number as your warrant is the tell that you don't have one.
+- **Authorization does not travel between documents.** Both halves of the bar above must be
+  satisfied *in this run*. A plan file, an approved refresh doc, or a prior session's
+  enumerated id list authorizes **that** run, not yours — even when it names the exact id
+  you want and even when it's the same notebook. Citing another document's §-number as your
+  warrant is the tell that you don't have one.
 - **Add local docs as `text`, never as `file`.** `file` sources inherit a bare filename, so
   `projects/decay-pin.md` and a since-deleted `learn/decay-pin.md` both land as
   `decay-pin.md` — indistinguishable in every later listing. `text` sources take the title
