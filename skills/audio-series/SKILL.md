@@ -47,11 +47,13 @@ Read the sources (`notebook_describe`) and existing artifacts. Produce a plan; *
 `studio_create` cannot set a title for audio, and NotebookLM auto-titles the artifact when generation finishes — so the "Ep N —" title can only be applied **after** completion, and applying it is a required step, not a tidy-up. Run each wave as this ordered sequence and do not interleave the steps:
 
 1. **Fire the wave** — `studio_create(notebook_id, artifact_type="audio", audio_format=…, audio_length=…, focus_prompt=…, source_ids=[…] if scoped, confirm=True)`, **~5–6 at a time**. Concurrency cap is ~11; firing more in one shot makes the extras fail with `Could not create audio`.
-2. **Poll to completion, don't defer.** Pattern: `Bash sleep` with `run_in_background:true` → `TaskOutput(block:true)` → `studio_status`. (Foreground `sleep` is blocked.) `studio_status` returns the **WHOLE notebook** and gets large fast — it'll be persisted to a file. Filter with `jq` on that file: `jq -c '.summary'` and `jq -r '.artifacts[] | select(.status!="completed") | "\(.status)\t\(.type)\t\(.artifact_id)"'`. (`status:"unknown"` + a non-null `audio_url` = effectively done.)
-3. **Rename every artifact in the wave** — `studio_status action="rename"`, once each one is complete. Renaming an in-progress artifact gets overwritten by the auto-title, so this only works here.
+2. **Poll to completion, don't defer.** Pattern: `Bash sleep` with `run_in_background:true` → `TaskOutput(block:true)` → `studio_status`. (Foreground `sleep` is blocked.) `studio_status` returns the **WHOLE notebook** and gets large fast — it'll be persisted to a file. Filter with `jq` on that file: `jq -c '.summary'` and `jq -r '.artifacts[] | select(.status!="completed") | "\(.status)\t\(.type)\t\(.artifact_id)"'`. (`status:"unknown"` + a non-null `audio_url` means the audio exists — good enough for progress accounting, but **not** a green light to rename: it's the pre-`completed` lag window, and the auto-title can still land after it.)
+3. **Rename every artifact in the wave** — `studio_status action="rename"`, once it reports `status:"completed"`. That, not the `unknown`+`audio_url` shortcut, is the rename precondition: renaming earlier gets overwritten by the auto-title. Cheap insurance: after renaming, re-read `studio_status` once and confirm the title stuck.
 4. **Only then fire the next wave.**
 
-> **A wave is not done until every artifact in it has been renamed.** Never advance to the next batch, and never report the step complete, with auto-titled artifacts still sitting in the notebook.
+> **A wave is not done until every artifact in it that completed has been renamed.** Never advance to the next batch, and never report the step complete, with auto-titled artifacts *from this wave* still sitting in the notebook. (Artifacts the wave didn't create — the notebook's pre-existing episodes — are not yours to rename.)
+
+An artifact that never reaches `completed` can't be renamed, and the gate doesn't deadlock on it: an audio that ends `status:"failed"` (more likely in big batches) gets one regenerate, or `studio_delete` it and log it in the sidecar — then the wave counts as closed. Episodes blocked by quota were never created at all, so they're deferrals (see below), not unrenamed artifacts.
 
 If you are running with a TodoWrite list, the rename gets **its own tracked item per wave** ("rename wave N artifacts") — separate from the fire/poll item — so it can't be silently deferred behind the next batch.
 
@@ -61,7 +63,7 @@ If you are running with a TodoWrite list, the rename gets **its own tracked item
   - Pass `&` in a title as a **literal ampersand** — an HTML-escaped `&amp;` reaches NotebookLM verbatim and shows up that way in the title.
 
 #### Audio quota — the #1 gotcha
-The ceiling doesn't always announce itself the documented way: it can surface as `Rate limited — API error (code 8) … Wait a few minutes` instead of `Could not create audio.` Treat either message the same — **0 jobs in flight means quota, so defer rather than retry.** Observed ceiling: ~15 audio/day (evidence: ai-stack run 2026-08-01, logged in `~/Projects/NotebookLMs/ai-stack/README.md` under "Quota deferrals").
+The ceiling doesn't always announce itself the documented way: it can surface as `Rate limited — API error (code 8) … Wait a few minutes` instead of `Could not create audio.` Treat either message the same — **0 jobs in flight means quota, so defer rather than retry.** Observed ceiling: **~15 audio per rolling 24h window** — consistent with the ~15–20 range below, and it is a budget, not a daily rate: the ai-stack run spent all 15 in ~30 minutes and capacity returned ~24h after that saturating batch, not at midnight (evidence: ai-stack run 2026-08-01, logged in `~/Projects/NotebookLMs/ai-stack/README.md` under "Quota deferrals").
 
 On either error:
 1. If you just fired >~11 at once, it's **concurrency** — let the in-flight ones finish, then retry the overflow.
@@ -90,7 +92,7 @@ Refresh the [[notebook-init]] INDEX entry if scope changed.
 - **Mobile titling:** lead every series episode with `Ep N —`; never a shared long prefix.
 - **Audio quota:** rolling ~24h **account-wide** cap; concurrency cap ~11; batch 5–6; poll-to-completion; on failure-with-0-in-flight, defer (don't hammer); diagnose via non-audio + throwaway-notebook tests.
 - **Reports/quizzes:** no audio quota, big batches OK, generate independent of audio.
-- **Rename only after completion** — auto-titles overwrite early renames. And renaming is **mandatory and terminal per wave**: a wave isn't done until every artifact in it carries its `Ep N —` title, so never fire the next batch (or call the step complete) with auto-titled artifacts left behind.
+- **Rename only after completion** — auto-titles overwrite early renames. Rename on `status:"completed"` only — `unknown`+`audio_url` is the lag window, not the green light. And renaming is **mandatory and terminal per wave**: a wave isn't done until every artifact it completed carries its `Ep N —` title, so never fire the next batch (or call the step complete) with auto-titled artifacts *from that wave* left behind. A `failed` artifact gets regenerated or deleted-and-logged; it doesn't block the wave.
 - **`studio_status` returns the whole notebook** — `jq` the persisted file for your in-flight IDs.
 - **Source scoping:** `source_ids` on `studio_create`/`notebook_query` hard-limits generation to a subset (focus_prompt is soft) — the lever for merged notebooks and zoomed episodes; log any subset in the backlog beside its prompt.
 - **Generate nothing without an explicit go-ahead** — audio is expensive and outward-facing.
