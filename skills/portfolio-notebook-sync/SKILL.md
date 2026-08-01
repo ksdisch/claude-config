@@ -53,7 +53,7 @@ belong to the drift check, and the drift check has its own table and its own con
 ## MANIFEST.md format
 
 ```
-| path-or-url | type | source_id | sha256_12 | snapshot | repo_sha |
+| path-or-url | type | source_id | sha256_12 | snapshot | baseline | repo_sha |
 ```
 
 - `path-or-url` — absolute local path, or the URL as added.
@@ -65,10 +65,10 @@ belong to the drift check, and the drift check has its own table and its own con
   tmp=$(mktemp)                       # never a bare relative path — cwd may be a guarded tree
   code=$(curl -sL --max-time 15 -o "$tmp" -w '%{http_code}' "$url"); rc=$?
   if [ "$rc" = 0 ] && [ "$code" = 200 ]; then
-    printf '200 %s\n' "$(shasum -a 256 < "$tmp" | cut -c1-12)"
+    printf '200 rc=0 %s\n' "$(shasum -a 256 < "$tmp" | cut -c1-12)"
   else
-    printf '%s rc=%s —\n' "$code" "$rc"   # always emit both; step 2 needs them
-  fi
+    printf '%s rc=%s —\n' "$code" "$rc"
+  fi                                    # both branches emit (code, rc) — step 2 keys on the pair
   rm -f "$tmp"
   ```
 
@@ -80,9 +80,22 @@ belong to the drift check, and the drift check has its own table and its own con
   stably and reads as ordinary changed content. A NotebookLM `url` source is a snapshot
   taken at add time, so without a body hash a rewritten repo README stays stale forever and
   every check calls it live-and-fine — but liveness and content are two questions and both
-  must be asked. Use `—` only where a body genuinely can't be fetched, and mark that row
-  `unverified` rather than clean.
-- `snapshot` — ISO date the source was added.
+  must be asked.
+
+  **A failed fetch never overwrites a good hash.** `—` means *this row has never had a
+  hash* — a source whose body couldn't be fetched at bootstrap. It is not what you write
+  when today's fetch fails: a transient `429` or timeout must leave `sha256_12` exactly as
+  it was, or the row loses the only baseline it could ever be compared against. Failed
+  fetches are reported as `unknown` for the run; they change nothing on disk.
+- `snapshot` — ISO date the source was **added to the notebook**. Records what the
+  notebook's copy is. **Never rewritten** by a drift check — re-adding a source is what
+  moves it.
+- `baseline` — ISO date `sha256_12` was last confirmed against the live content. This is
+  the column a manifest-only baseline refresh updates. Keeping it separate from `snapshot`
+  is the point: when they differ, the row is saying *"the upstream content has moved on and
+  Kyle accepted that, and the notebook still holds the `snapshot`-dated copy"* — an
+  acknowledged divergence that stays visible instead of being flattened into a row
+  indistinguishable from a freshly re-added one.
 - `repo_sha` — `~/Projects/portfolio` HEAD at snapshot time.
 
 Deliberate exclusions are recorded in the sidecar README, not the manifest: `PROJECT.md`,
@@ -163,11 +176,13 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 
      **This is not the same as the manifest baseline, which must stay updatable.** On Kyle's
      confirm that a `changed` URL's new content is legitimate, **rewrite that row's
-     `sha256_12` and `snapshot` date** — a manifest-only edit that touches nothing in the
-     notebook. Without it a `changed` repo README is reported as `changed` on every future
-     run forever, with no action in the skill that can ever clear it, and a permanently
-     dirty drift table trains you to ignore the drift table. Updating the baseline is
-     bookkeeping; re-adding the source is the dangerous act. Only the second one is banned.
+     `sha256_12` and its `baseline` date — and leave `snapshot` alone** (that column records
+     what the notebook's copy is, and the notebook's copy did not change). A manifest-only
+     edit, touching nothing in the notebook. Without it a `changed` repo README is reported
+     as `changed` on every future run forever, with no action in the skill that can ever
+     clear it, and a permanently dirty drift table trains you to ignore the drift table.
+     Updating the baseline is bookkeeping; re-adding the source is the dangerous act. Only
+     the second one is banned.
    - **`text` rows**, by class: `changed` → delete-and-re-add · `deleted` → delete only
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
@@ -178,10 +193,15 @@ three-row manifest reports clean over twenty-eight unchecked sources.
    sidecar README.
 
    **URL sources are not repaired here** (step 4) — but their manifest rows still converge:
-   - `changed` + Kyle confirms the new content is fine → **update `sha256_12` and `snapshot`
-     in the manifest only.** The notebook keeps its original snapshot; the row goes
+   - `changed` + Kyle confirms the new content is fine → **update `sha256_12` and `baseline`
+     in the manifest only; `snapshot` is untouched.** The notebook keeps its original copy,
+     the divergence stays visible in the gap between the two dates, and the row goes
      `unchanged` next run. If instead he wants the notebook to carry the new content, that's
      an explicit re-add he asks for by name.
+   - `vanished` (in the manifest, gone from the notebook) → offer to re-add from the
+     recorded URL, **after a fresh probe returns `200 rc=0`**; on anything else report and
+     leave it. Re-adding is the one action a `vanished` row needs and the one a `dead` row
+     must never get, which is why they are listed separately.
    - `dead` → offer a substitute: if the repo went private, add `~/Projects/<project>/README.md`
      as `text` (title `<project> repo README (repo private) — snapshot <date>`) and only
      then delete the dead row. If no local substitute exists, **leave the dead source in
