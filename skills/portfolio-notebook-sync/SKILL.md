@@ -232,10 +232,13 @@ three-row manifest reports clean over twenty-eight unchecked sources.
   `projects/decay-pin.md` and a since-deleted `learn/decay-pin.md` both land as
   `decay-pin.md` — indistinguishable in every later listing. `text` sources take the title
   you give them.
-- **Assert the returned artifact type matches what you asked for.** `studio_create` has
-  silently produced a `flashcards` artifact for a `mind_map` request; the sidecar recorded
-  the request, so the error survived undetected for eleven days. Check `studio_status`
-  before writing the id down.
+- **`studio_status` mis-types mind maps as `flashcards`** (with a bogus `flashcard_count`).
+  Verified 2026-08-01: a `studio_create(artifact_type="mind_map")` that returned
+  `mind_map_json`, `root_name` and `children_count` — unambiguously a mind map — is listed
+  by `studio_status` as `type: flashcards`. So **trust the creation response, not the
+  listing**, and record the type you created. Do not "correct" a sidecar that says
+  `mind_map` just because the listing disagrees: the sidecar is right and the listing is
+  wrong. A notebook with one mind map will always appear to have two flashcard sets.
 - **All generation calls pass `confirm=True`.**
 
 ## Common mistakes
@@ -245,7 +248,8 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 | Rebuilding the source list from the repo instead of the manifest | You lose the record of what was deliberately excluded, and re-add churn docs. |
 | Onboarding a project during a bare drift check | Kyle asked what moved, not for a bigger notebook — and it spends audio quota he didn't budget. |
 | Snapshotting an unmerged branch without asking | The manifest's `repo_sha` vanishes on squash-merge, breaking every future drift check. |
-| Trusting the sidecar's recorded artifact *type* | It records what was requested. Verify against `studio_status`. |
+| "Correcting" a sidecar `mind_map` entry to `flashcards` because the listing says so | `studio_status` mis-types mind maps. The sidecar is right; you'd be corrupting a correct record with a known-bad signal. |
+| Steering a `report` or `mind_map` with `focus_prompt` alone | Both ignored it in practice — the paper sources dominated and the artifact came back about the source paper, not the portfolio. Scope with `source_ids` instead. |
 | Loop-retrying a quota-blocked audio call | The cap is rolling ~24h. Retrying burns time and changes nothing. |
 | Adding the `github.com/...` HTML page as a repo source | Every other repo source is the `raw.` README; the HTML page pulls in nav chrome. |
 | Letting an `--add` grow into a full refresh | One project's onboarding quietly became 7 deletes and 4 regenerated aids in testing — none of it asked for, all of it spending quota. |
