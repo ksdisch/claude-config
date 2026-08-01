@@ -62,8 +62,14 @@ belong to the drift check, and the drift check has its own table and its own con
   `shasum -a 256 <file> | cut -c1-12`. URL: **status first, hash only on 200** —
 
   ```sh
-  code=$(curl -sL --max-time 15 -o body.tmp -w '%{http_code}' "$url")
-  [ "$code" = 200 ] && cut -c1-12 <(shasum -a 256 < body.tmp)
+  tmp=$(mktemp)                       # never a bare relative path — cwd may be a guarded tree
+  code=$(curl -sL --max-time 15 -o "$tmp" -w '%{http_code}' "$url")
+  if [ "$code" = 200 ]; then
+    printf '200 %s\n' "$(shasum -a 256 < "$tmp" | cut -c1-12)"
+  else
+    printf '%s —\n' "$code"           # always emit the code; step 2 needs it to split dead vs unknown
+  fi
+  rm -f "$tmp"
   ```
 
   Never pipe `curl` straight into `shasum`: an error page has a body too, so a 404 hashes
@@ -135,12 +141,21 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 4. **Report the drift table before changing anything**, with a row per
    `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished` source. Then get Kyle's
    confirm. (When another flow dispatched this skill with explicit pre-authorization,
-   proceed without the prompt — but still print the table.) Only `changed`, `deleted`, and
-   `dead` rows are repairable by delete-and-re-add; `vanished` is repairable by re-adding
-   only; `unknown` and `unverified` are reported and left alone.
+   proceed without the prompt — but still print the table.) Repairability by class:
+   `changed` → delete-and-re-add · `deleted` → delete only (the file is gone; there is
+   nothing to re-add) · `dead` → **substitute, never re-add the same URL** (below) ·
+   `vanished` → re-add only · `unknown` and `unverified` → reported, left alone.
 5. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
    snapshots under the same title scheme with today's date → rewrite `MANIFEST.md` and the
    sidecar README.
+
+   **A `dead` URL is the exception — never delete-then-re-add the same URL.** The URL is
+   dead; re-adding it either fails or imports an error page as if it were the source, and
+   the notebook's copy is the last surviving snapshot of that content. Substitute instead:
+   if the project's repo went private, add `~/Projects/<project>/README.md` as `text`
+   (title `<project> repo README (repo private) — snapshot <date>`) and only then delete the
+   dead row. If no local substitute exists, **leave the dead source in place** and report
+   it — a stale copy beats no copy.
 6. **Offer, don't force, study-aid regeneration** when any content source changed. Kyle
    decides; regenerating four aids is not free.
 
