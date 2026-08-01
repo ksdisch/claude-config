@@ -679,9 +679,10 @@ rows get re-pointed to match.
   [`nlm-skill`](#nlm-skill) (the CLI/MCP reference it defers to).
 - **Notes:** `MANIFEST.md` is the contract — drift is a hash diff, never a judgment call. A
   bare drift check will *never* onboard a project it happens to notice, and neither mode
-  runs git or edits a file in `~/Projects/portfolio`; an unmerged branch or open PR is
-  escalated to Kyle rather than snapshotted. The drift table is always shown before anything
-  is deleted.
+  changes git state or edits a file in `~/Projects/portfolio` (read-only git is required —
+  it's how `repo_sha` gets filled); an unmerged branch or open PR is escalated to Kyle
+  rather than snapshotted. The drift table is always shown before anything is deleted, and
+  URL sources are content-hashed, not just liveness-checked.
 
 #### `nlm-skill`
 

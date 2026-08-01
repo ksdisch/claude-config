@@ -34,10 +34,14 @@ say it in the report and stop there. Adding it is `--add`'s job, and `--add` run
 Kyle asks for it by name. Silently growing the notebook during a "sync" is the failure this
 wall exists to prevent.
 
-**Neither mode touches git in `~/Projects/portfolio`.** That repo is read-only here: no
-commit, no checkout, no merge, no push, no branch. If the content you'd snapshot is sitting
-in an unmerged branch or an open PR, **stop and tell Kyle** — which tree to snapshot is his
-call, not a step you resolve on the way past.
+**Neither mode changes git state in `~/Projects/portfolio`.** Read-only git is not just
+allowed there, it's **required** — `rev-parse`, `status`, `branch`, `log`, `ls-tree`, and
+`gh pr list/view` are how you fill `repo_sha` and how you notice an unmerged branch at all.
+What is forbidden is anything that changes state or the working tree: commit, checkout,
+merge, rebase, pull, push, branch, stash, reset, or any file edit.
+
+If the content you'd snapshot is sitting in an unmerged branch or an open PR, **stop and
+tell Kyle** — which tree to snapshot is his call, not a step you resolve on the way past.
 
 **Neither mode edits a project's own repo.** You read `~/Projects/<project>/` to snapshot
 it. If a README contradicts itself or a doc is wrong, that is a **finding to report**, not a
@@ -54,7 +58,12 @@ belong to the drift check, and the drift check has its own table and its own con
 
 - `path-or-url` — absolute local path, or the URL as added.
 - `type` — `text` | `url`.
-- `sha256_12` — `shasum -a 256 <file> | cut -c1-12`. URLs get `—`.
+- `sha256_12` — the content hash, for **both** types. Local:
+  `shasum -a 256 <file> | cut -c1-12`. URL: `curl -sL --max-time 15 <url> | shasum -a 256 |
+  cut -c1-12`. A NotebookLM `url` source is a snapshot taken at add time, so without a body
+  hash a rewritten repo README stays stale forever and every check calls it live-and-fine.
+  Liveness alone is not drift detection. Use `—` only where a body genuinely can't be
+  fetched, and mark that row `unverified` rather than clean.
 - `snapshot` — ISO date the source was added.
 - `repo_sha` — `~/Projects/portfolio` HEAD at snapshot time.
 
@@ -64,11 +73,17 @@ be worth snapshotting.
 
 **When the manifest doesn't exist yet.** A bare drift check stops (see below). An `--add`
 may still proceed — but it seeds the manifest with **only the rows it actually adds**, and
-writes a header line saying the file is partial and which sources are unbacked. Never
-back-fill rows for pre-existing sources: their snapshot hashes and dates were never
+writes this exact machine-readable first line so no later run can miss it:
+
+```
+<!-- PARTIAL: N sources in this notebook are unbacked by any row below -->
+```
+
+Never back-fill rows for pre-existing sources: their snapshot hashes and dates were never
 recorded, so any value you write there is invented, and a hash you invented is worse than a
-row you left out. Without that header note the next drift check reads every untracked
-source as absent and proposes deleting the notebook out from under itself.
+row you left out. A manifest carrying that marker **can never report "in sync"** — the
+reconciliation step classifies every uncovered source as `unverified`. Without it, a
+three-row manifest reports clean over twenty-eight unchecked sources.
 
 ## Drift check (bare mode)
 
@@ -76,26 +91,43 @@ source as absent and proposes deleting the notebook out from under itself.
    meaningless without a baseline, but the skill must not dead-end here.
    - Bootstrapping is a **separate action needing Kyle's explicit yes** — it is not part of
      a drift check and never happens silently on the way to one.
-   - Build rows **only from what the sidecar README already records** (its
-     `source_id` → path tables). That is a record, not a guess. Re-deriving what *ought* to
-     be in the notebook by walking the repo is the red flag.
+   - Build rows from **records, not inference**: the sidecar README's `source_id` → path
+     tables, and `notebook_get`'s recorded titles (for `url` sources the title *is* the URL
+     as added — that's a record too). Re-deriving what *ought* to be in the notebook by
+     walking the repo, or reconstructing a URL from naming convention, is the red flag.
+   - Where neither record yields a `path-or-url` — the sidecar's papers table stores prose
+     labels like `Global Workspace / transformer-circuits 2026`, and a title may be
+     unhelpful — write the label you have, mark the row `unverified`, and ask Kyle to supply
+     or confirm the URL. Never invent one.
    - Historical hashes are usually unrecoverable. Write `unknown@<original-date>` rather
      than back-filling a hash from a commit you can't prove the snapshot came from — which
-     correctly forces every local row to re-snapshot on the first real check.
+     correctly forces every row to re-verify on the first real check.
    - Then re-run the check against the new manifest and print the table again before
      touching anything.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
-   - `url` rows — check liveness (`curl -s -o /dev/null -w "%{http_code}"`). A repo that
-     went private returns 404.
-3. **Report the drift table before changing anything**, with a row per stale/deleted/dead
-   source. Then get Kyle's confirm. (When another flow dispatched this skill with explicit
-   pre-authorization, proceed without the prompt — but still print the table.)
-4. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
+   - `url` rows — fetch the body, then classify on **both** liveness and hash. A stable
+     `404`/`410` → `dead`. A body whose hash differs from the row → `changed`, exactly like
+     a local file. Any other non-200 (`000`, `429`, `5xx`, redirects) → `unknown`: report
+     it, never auto-delete on it.
+3. **Reconcile the manifest against the notebook — always, and report-only.** Call
+   `notebook_get` and compare its `source_id`s to the manifest's. Every id the notebook has
+   and the manifest lacks is `unverified`: it is *not* clean, and it is *not* deletable
+   (reading `notebook_get` to **report** a gap is required; treating its output as a delete
+   list is the red flag). A manifest that doesn't cover every live source — including one
+   `--add` seeded with only its own rows — **may never report "in sync"**. Say how many
+   sources are unbacked and offer to finish the bootstrap.
+
+4. **Report the drift table before changing anything**, with a row per
+   `changed`/`deleted`/`dead`/`unknown`/`unverified` source. Then get Kyle's confirm. (When
+   another flow dispatched this skill with explicit pre-authorization, proceed without the
+   prompt — but still print the table.) Only `changed`, `deleted`, and `dead` rows are
+   repairable; `unknown` and `unverified` are reported and left alone.
+5. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
    snapshots under the same title scheme with today's date → rewrite `MANIFEST.md` and the
    sidecar README.
-5. **Offer, don't force, study-aid regeneration** when any content source changed. Kyle
+6. **Offer, don't force, study-aid regeneration** when any content source changed. Kyle
    decides; regenerating four aids is not free.
 
 ## Onboard (`--add <project>`)
@@ -114,9 +146,14 @@ source as absent and proposes deleting the notebook out from under itself.
      `~/Projects/<project>/README.md` as `text` instead;
    - the source paper, if the card names one, as an arXiv **`/pdf/`** URL. `/abs/` pages
      yield only the abstract.
-5. **Generate** `S<n> Ep <m> — <project>` (`audio`, `deep_dive`) at the next free slot in the
-   current season — propose the slot, confirm with Kyle — plus its `quiz`
-   (`question_count=8, difficulty=medium`) scoped to that episode.
+5. **Generate the episode** (`audio`, `deep_dive`) plus its `quiz`
+   (`question_count=8, difficulty=medium`) scoped to it.
+   - **Title to match the scheme already in the notebook** — read the sidecar's audio table
+     first. Today that is `Ep <n> — <topic>`. Do not invent a prefix: `audio-series` bans a
+     shared leading prefix because every episode then truncates identically on a phone.
+   - **Propose the slot, confirm with Kyle.** "Next free number" is not automatic — a season
+     may end on a designed finale (the current one closes with `Ep 8 — Skeptic Grilling`),
+     and appending past a capstone is a curriculum decision, not arithmetic.
 6. **Regenerate the four notebook-wide study aids** (delete-and-regen), recording new ids —
    **but only if the source layer is currently clean.** If a drift check would flag stale or
    dead sources, regenerating now bakes that staleness into four fresh artifacts. Say so,
@@ -138,8 +175,12 @@ source as absent and proposes deleting the notebook out from under itself.
   regardless of whether that hook fires in your session**. Do not go looking for which
   settings file registers the guard, or reason from "it isn't active in this repo" to using
   Write/Edit. Where a guard happens not to reach is not permission.
-- **Never delete a source or artifact that isn't recorded** in `MANIFEST.md` or the sidecar
-  README. An untracked item is a discrepancy to report, never a thing to guess about.
+- **One delete bar, stated once.** A **source** delete needs *both*: its `source_id` is a row
+  in `MANIFEST.md`, **and** Kyle confirmed this run's drift table. Being recorded is
+  necessary, never sufficient. No manifest → no source deletes, full stop; bootstrap first.
+  **Artifacts** live only in the sidecar README, so an artifact delete reads that instead —
+  same two-part shape: recorded there, plus this run's confirm. An untracked item is a
+  discrepancy to report, never a thing to guess about.
 - **Authorization does not travel between documents.** A delete is authorized by two things
   only: the id is in the manifest, and Kyle confirmed *this* run. A plan file, an approved
   refresh doc, or a prior session's enumerated id list authorizes **that** run, not yours —
@@ -170,7 +211,8 @@ source as absent and proposes deleting the notebook out from under itself.
 
 ## Red flags — stop
 
-- You're about to run `git` anything in `~/Projects/portfolio`.
+- You're about to run a **state-changing** `git` command in `~/Projects/portfolio` (reads
+  are fine and expected).
 - You're about to `source_delete` an id you got from `notebook_get` rather than the manifest.
 - You're about to add a project because you noticed it, not because Kyle said `--add`.
 - You can't find `MANIFEST.md` and are about to reconstruct it by guessing.
