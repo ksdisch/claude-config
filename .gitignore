@@ -34,3 +34,9 @@ __pycache__/
 
 # Playwright MCP scratch output (screenshots, snapshots, console logs)
 .playwright-mcp/
+
+# Trialing untracked before full adoption: the ADHD divergent-ideation skill
+# (vendored from UditAkhourii/adhd, MIT). Loads globally via the skills/ symlink
+# despite being unpublished. Promote to tracked (PR + adversarial review + doc
+# row/card) if the trial earns it; delete the dir and this block if not.
+skills/adhd/
