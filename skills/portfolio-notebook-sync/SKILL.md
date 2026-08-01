@@ -62,10 +62,28 @@ Deliberate exclusions are recorded in the sidecar README, not the manifest: `PRO
 `HANDOFF.md`, `Sources.md`, `Wiki/` — status and link-inventory docs that churn too fast to
 be worth snapshotting.
 
+**When the manifest doesn't exist yet.** A bare drift check stops (see below). An `--add`
+may still proceed — but it seeds the manifest with **only the rows it actually adds**, and
+writes a header line saying the file is partial and which sources are unbacked. Never
+back-fill rows for pre-existing sources: their snapshot hashes and dates were never
+recorded, so any value you write there is invented, and a hash you invented is worse than a
+row you left out. Without that header note the next drift check reads every untracked
+source as absent and proposes deleting the notebook out from under itself.
+
 ## Drift check (bare mode)
 
-1. **Read `MANIFEST.md`.** No manifest → say so and stop; the notebook predates this skill
-   and needs a manifest written before drift means anything.
+1. **Read `MANIFEST.md`.** No manifest → **stop and offer to bootstrap one**; drift is
+   meaningless without a baseline, but the skill must not dead-end here.
+   - Bootstrapping is a **separate action needing Kyle's explicit yes** — it is not part of
+     a drift check and never happens silently on the way to one.
+   - Build rows **only from what the sidecar README already records** (its
+     `source_id` → path tables). That is a record, not a guess. Re-deriving what *ought* to
+     be in the notebook by walking the repo is the red flag.
+   - Historical hashes are usually unrecoverable. Write `unknown@<original-date>` rather
+     than back-filling a hash from a commit you can't prove the snapshot came from — which
+     correctly forces every local row to re-snapshot on the first real check.
+   - Then re-run the check against the new manifest and print the table again before
+     touching anything.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
@@ -99,7 +117,11 @@ be worth snapshotting.
 5. **Generate** `S<n> Ep <m> — <project>` (`audio`, `deep_dive`) at the next free slot in the
    current season — propose the slot, confirm with Kyle — plus its `quiz`
    (`question_count=8, difficulty=medium`) scoped to that episode.
-6. **Regenerate the four notebook-wide study aids** (delete-and-regen), recording new ids.
+6. **Regenerate the four notebook-wide study aids** (delete-and-regen), recording new ids —
+   **but only if the source layer is currently clean.** If a drift check would flag stale or
+   dead sources, regenerating now bakes that staleness into four fresh artifacts. Say so,
+   skip the step, and recommend a drift check first; it is a separate, separately-confirmed
+   run.
 7. **Update** `MANIFEST.md`, the sidecar README, and `~/Projects/NotebookLMs/INDEX.md`.
 
 ## Shared rules
