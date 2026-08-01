@@ -125,11 +125,17 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
-   - `url` rows — **read the status code first, and let it decide before any hashing.**
-     A stable `404`/`410` → `dead`. Any other non-200 (`000`, `429`, `5xx`) → `unknown`:
-     report it, never auto-delete on it. **Only on `200`** do you hash the body: differs
-     from the row → `changed`, same → `unchanged`. Hashing a non-200 body is how a dead
-     source gets "repaired" into a source whose content is the words `404: Not Found`.
+   - `url` rows — classify on the **pair** the probe emits, `(code, rc)`, never on the code
+     alone. There are exactly three outcomes and no fourth:
+     - `rc=0` **and** `404`/`410`, stable across a retry → `dead`.
+     - `rc=0` **and** `200` → hash the body: differs from the row → `changed`, same →
+       `unchanged`. This is the **only** branch that produces a hash.
+     - **everything else** → `unknown`. That means `000`, `429`, `5xx`, redirects, *and any
+       non-zero `rc` whatever the code says* — a mid-download timeout reports `200 rc=28`,
+       which is not a 200 for our purposes. Report it; never delete or re-hash on it.
+
+     Keying on the code alone leaves `200 rc=28` in no bucket at all, and an unbucketed row
+     gets improvised into a silent "clean".
 3. **Reconcile the manifest against the notebook — always, report-only, and in both
    directions.** Call `notebook_get` and compare its `source_id`s to the manifest's.
    - **In the notebook, not in the manifest** → `unverified`. Not clean, and not deletable
@@ -149,11 +155,19 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 
    **Repairability is decided by `type` first, then class.**
 
-   - **`url` rows are never auto-repaired — report only, in every class.** Report the class
-     and the recommended action; Kyle decides. Three rounds of review on this skill each
-     found a *different* path by which an automatic URL repair re-imports an error page as
-     if it were the source. There is no automatic path worth that risk: the notebook's copy
-     may be the last surviving snapshot, and re-adding is never urgent.
+   - **The notebook SOURCE behind a `url` row is never auto-repaired — report only, in every
+     class.** No automatic `source_delete` + `source_add` on a URL, ever. Three review rounds
+     each found a *different* path by which that re-imports an error page as if it were the
+     source, and the notebook's copy may be the last surviving snapshot of a URL that has
+     since died. Kyle decides, case by case.
+
+     **This is not the same as the manifest baseline, which must stay updatable.** On Kyle's
+     confirm that a `changed` URL's new content is legitimate, **rewrite that row's
+     `sha256_12` and `snapshot` date** — a manifest-only edit that touches nothing in the
+     notebook. Without it a `changed` repo README is reported as `changed` on every future
+     run forever, with no action in the skill that can ever clear it, and a permanently
+     dirty drift table trains you to ignore the drift table. Updating the baseline is
+     bookkeeping; re-adding the source is the dangerous act. Only the second one is banned.
    - **`text` rows**, by class: `changed` → delete-and-re-add · `deleted` → delete only
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
@@ -163,12 +177,17 @@ three-row manifest reports clean over twenty-eight unchecked sources.
    snapshots under the same title scheme with today's date → rewrite `MANIFEST.md` and the
    sidecar README.
 
-   **URL rows are not repaired here at all** (step 4). What you offer Kyle instead, for a
-   `dead` URL: substitute a local snapshot — if the project's repo went private, add
-   `~/Projects/<project>/README.md` as `text` (title
-   `<project> repo README (repo private) — snapshot <date>`) and only then delete the dead
-   row. If no local substitute exists, **leave the dead source in place** — a stale copy
-   beats no copy. Either way it happens on Kyle's say-so, never as part of a repair sweep.
+   **URL sources are not repaired here** (step 4) — but their manifest rows still converge:
+   - `changed` + Kyle confirms the new content is fine → **update `sha256_12` and `snapshot`
+     in the manifest only.** The notebook keeps its original snapshot; the row goes
+     `unchanged` next run. If instead he wants the notebook to carry the new content, that's
+     an explicit re-add he asks for by name.
+   - `dead` → offer a substitute: if the repo went private, add `~/Projects/<project>/README.md`
+     as `text` (title `<project> repo README (repo private) — snapshot <date>`) and only
+     then delete the dead row. If no local substitute exists, **leave the dead source in
+     place** — a stale copy beats no copy.
+   - `unknown` → change nothing at all, including the manifest. An unknown is a failed
+     measurement, not a fact about the source.
 6. **Offer, don't force, study-aid regeneration** when any content source changed. Kyle
    decides; regenerating four aids is not free.
 
@@ -232,13 +251,20 @@ three-row manifest reports clean over twenty-eight unchecked sources.
   `projects/decay-pin.md` and a since-deleted `learn/decay-pin.md` both land as
   `decay-pin.md` — indistinguishable in every later listing. `text` sources take the title
   you give them.
-- **`studio_status` mis-types mind maps as `flashcards`** (with a bogus `flashcard_count`).
-  Verified 2026-08-01: a `studio_create(artifact_type="mind_map")` that returned
-  `mind_map_json`, `root_name` and `children_count` — unambiguously a mind map — is listed
-  by `studio_status` as `type: flashcards`. So **trust the creation response, not the
-  listing**, and record the type you created. Do not "correct" a sidecar that says
-  `mind_map` just because the listing disagrees: the sidecar is right and the listing is
-  wrong. A notebook with one mind map will always appear to have two flashcard sets.
+- **Verify an artifact's type from its CREATION response, not from a listing.** A
+  `studio_create(artifact_type="mind_map")` returns `mind_map_json`, `root_name` and
+  `children_count` — that is the authoritative signal, and it's what you record.
+
+  The listings disagree with each other, so neither is a safe check. Observed 2026-08-01 on
+  artifact `d1352488`, created as a mind map and confirmed by its `mind_map_json`: **MCP
+  `studio_status` reported `type: flashcards` with `flashcard_count: 9`**, while `nlm studio
+  status` reported it correctly as a mind map with no `flashcard_count`. This skill is
+  MCP-first, so the wrong reading is the one you'll hit by default.
+
+  Consequences, both directions: a notebook with one mind map can look like it has two
+  flashcard sets under MCP — so **never "correct" a sidecar `mind_map` entry from an MCP
+  listing** — and a genuine type mismatch is still worth catching, so check the creation
+  response and cross-check with the CLI when it matters.
 - **All generation calls pass `confirm=True`.**
 
 ## Common mistakes
@@ -248,7 +274,8 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 | Rebuilding the source list from the repo instead of the manifest | You lose the record of what was deliberately excluded, and re-add churn docs. |
 | Onboarding a project during a bare drift check | Kyle asked what moved, not for a bigger notebook — and it spends audio quota he didn't budget. |
 | Snapshotting an unmerged branch without asking | The manifest's `repo_sha` vanishes on squash-merge, breaking every future drift check. |
-| "Correcting" a sidecar `mind_map` entry to `flashcards` because the listing says so | `studio_status` mis-types mind maps. The sidecar is right; you'd be corrupting a correct record with a known-bad signal. |
+| "Correcting" a sidecar `mind_map` entry to `flashcards` because an MCP listing says so | MCP `studio_status` mis-types mind maps (the CLI doesn't). You'd corrupt a correct record with a known-bad signal. |
+| Treating a `changed` URL row as unfixable because URL sources aren't auto-repaired | The manifest baseline is still updatable on confirm — otherwise the row reports `changed` forever and the drift table becomes noise. |
 | Steering a `report` or `mind_map` with `focus_prompt` alone | Both ignored it in practice — the paper sources dominated and the artifact came back about the source paper, not the portfolio. Scope with `source_ids` instead. |
 | Loop-retrying a quota-blocked audio call | The cap is rolling ~24h. Retrying burns time and changes nothing. |
 | Adding the `github.com/...` HTML page as a repo source | Every other repo source is the `raw.` README; the HTML page pulls in nav chrome. |
