@@ -672,17 +672,24 @@ rows get re-pointed to match.
 - **Reach for it when:**
   - A portfolio project just got its card and should be covered in the notebook like the
     others (`--add <project>`).
+  - You merged a project's `/research-paper` PR and want the paper + presenter pack in the
+    notebook (`--add-paper <project>`).
   - You've reworked portfolio docs and suspect the notebook's snapshots have gone stale.
   - Something in the notebook cites a number the repo no longer says.
 - **Pairs well with:** [`notebook-assist`](#notebook-assist) (ad-hoc work on the same
   notebook), [`audio-series`](#audio-series) (the season this skill appends episodes to),
+  [`research-paper`](#research-paper) (writes the paper `--add-paper` later ingests),
   [`nlm-skill`](#nlm-skill) (the CLI/MCP reference it defers to).
 - **Notes:** `MANIFEST.md` is the contract — drift is a hash diff, never a judgment call. A
-  bare drift check will *never* onboard a project it happens to notice, and neither mode
-  changes git state or edits a file in `~/Projects/portfolio` (read-only git is required —
-  it's how `repo_sha` gets filled); an unmerged branch or open PR is escalated to Kyle
-  rather than snapshotted. The drift table is always shown before anything is deleted, and
-  URL sources are content-hashed, not just liveness-checked.
+  bare drift check will *never* onboard a project or a paper it happens to notice — it
+  reports `unpapered` and stops — and no mode changes git state or edits a file in
+  `~/Projects/portfolio` (read-only git is required — it's how `repo_sha` gets filled); an
+  unmerged branch or open PR is escalated to Kyle rather than snapshotted. The drift table
+  is always shown before anything is deleted, and URL sources are content-hashed, not just
+  liveness-checked. `--add-paper` is gated on the paper being on the project repo's
+  **default branch**, tested with `git ls-tree` rather than the working tree, and it matches
+  the two exact deliverable filenames — `docs/papers/` (plural) is `/paper-eli5`'s output
+  about *other people's* papers and is never read here.
 
 #### `nlm-skill`
 

@@ -1,6 +1,6 @@
 ---
 name: portfolio-notebook-sync
-description: Use when the research-portfolio NotebookLM notebook (alias `research-portfolio-prep`) may have fallen out of step with `~/Projects/portfolio`, or when a portfolio project has just been carded and belongs in it. Triggers on "sync the portfolio notebook", "add <project> to the portfolio notebook", "is the portfolio notebook stale", "the portfolio notebook is out of date", or `/portfolio-notebook-sync`.
+description: Use when the research-portfolio NotebookLM notebook (alias `research-portfolio-prep`) may have fallen out of step with `~/Projects/portfolio`, when a portfolio project has just been carded and belongs in it, or when a project's `/research-paper` write-up has been merged and should join the notebook. Triggers on "sync the portfolio notebook", "add <project> to the portfolio notebook", "add <project>'s paper to the notebook", "the paper is merged — put it in the notebook", "is the portfolio notebook stale", "the portfolio notebook is out of date", or `/portfolio-notebook-sync`.
 ---
 
 # portfolio-notebook-sync
@@ -22,17 +22,22 @@ Sidecar: `~/Projects/NotebookLMs/research-portfolio-prep/` — `README.md` (huma
 Tool preference: **MCP-first** (`mcp__notebooklm-mcp__*`); `nlm` CLI via Bash as fallback.
 See `nlm-skill` for full tool docs.
 
-## Two modes — and the wall between them
+## Three modes — and the walls between them
 
 | Mode | Invocation | Does |
 |---|---|---|
 | **Drift check** | bare | Re-hashes what's already tracked; repairs what moved. |
 | **Onboard** | `--add <project>` | Adds a project that isn't in the notebook yet. |
+| **Onboard a paper** | `--add-paper <project>` | Adds a merged `/research-paper` write-up for a project already in the notebook. |
 
 **A drift check never onboards.** If a drift check notices a project card with no source —
-say it in the report and stop there. Adding it is `--add`'s job, and `--add` runs only when
-Kyle asks for it by name. Silently growing the notebook during a "sync" is the failure this
-wall exists to prevent.
+or a merged paper with no source — say it in the report and stop there. Adding it is
+`--add`'s or `--add-paper`'s job, and each runs only when Kyle asks for it by name. Silently
+growing the notebook during a "sync" is the failure this wall exists to prevent.
+
+**`--add` and `--add-paper` don't call each other either.** `--add` onboards a project and
+does not go looking for its paper; `--add-paper` adds a paper and refuses to onboard the
+project underneath it. Each does the one thing it is named for.
 
 **Neither mode changes git state in `~/Projects/portfolio`.** Read-only git is not just
 allowed there, it's **required** — `rev-parse`, `status`, `branch`, `log`, `ls-tree`, and
@@ -96,7 +101,12 @@ belong to the drift check, and the drift check has its own table and its own con
   Kyle accepted that, and the notebook still holds the `snapshot`-dated copy"* — an
   acknowledged divergence that stays visible instead of being flattened into a row
   indistinguishable from a freshly re-added one.
-- `repo_sha` — `~/Projects/portfolio` HEAD at snapshot time.
+- `repo_sha` — default-branch HEAD of **the repo this row's content came from**, at snapshot
+  time. For card and portfolio-doc rows that is `~/Projects/portfolio`; for paper rows
+  (`--add-paper`) it is `~/Projects/<project>`. No new column is needed to tell them apart —
+  `path-or-url` already says which repo the row was snapshotted from. Record the sha of the
+  **default branch**, never of a feature branch: a branch sha vanishes on squash-merge and
+  takes the row's provenance with it.
 
 Deliberate exclusions are recorded in the sidecar README, not the manifest: `PROJECT.md`,
 `HANDOFF.md`, `Sources.md`, `Wiki/` — status and link-inventory docs that churn too fast to
@@ -160,11 +170,25 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      local file, so without this a source deleted out of the notebook reports `unchanged`
      forever and the notebook silently shrinks. Report it and offer to re-add from the
      recorded path; never treat it as drift to repair by deleting anything.
+   - **Merged paper with no row** → `unpapered`, **report-only**. For each project the
+     manifest already carries, check whether that project's repo has a paper on its default
+     branch (the detector is in `--add-paper` step 3 — match the exact filenames, never glob
+     the directory). Found, and no manifest row covers it → say so in the table.
+
+     Naming it is the entire job. Adding it is `--add-paper`'s, on Kyle's word — the same
+     wall that stops a drift check from onboarding a project stops it from onboarding a
+     paper. Without this line a paper that landed months ago is invisible to the one command
+     whose whole purpose is answering "is this notebook current?"
 
 4. **Report the drift table before changing anything**, with a row per
-   `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished` source. Then get Kyle's
-   confirm. (When another flow dispatched this skill with explicit pre-authorization,
+   `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished`/`unpapered` source. Then get
+   Kyle's confirm. (When another flow dispatched this skill with explicit pre-authorization,
    proceed without the prompt — but still print the table.)
+
+   **`unpapered` is never repairable here, in any `type`.** It is the one class that names
+   something *absent from* the notebook rather than stale inside it, so there is no row to
+   fix and no confirm that turns it into one. It appears in the table and nowhere else in
+   this mode.
 
    **Repairability is decided by `type` first, then class.**
 
@@ -242,6 +266,94 @@ three-row manifest reports clean over twenty-eight unchecked sources.
    run.
 7. **Update** `MANIFEST.md`, the sidecar README, and `~/Projects/NotebookLMs/INDEX.md`.
 
+## Onboard a paper (`--add-paper <project>`)
+
+The hop from a finished `/research-paper` write-up into this notebook, for a project the
+notebook already carries.
+
+1. **Verify the card exists** — `~/Projects/portfolio/projects/<project>.md`. No card → stop.
+   Same completion signal `--add` uses.
+
+2. **Verify the project is already in the notebook** — a card row for it exists in
+   `MANIFEST.md`. If it doesn't, the project has never been onboarded, and **that is
+   `--add`'s job, not this one.** Stop and say so. A paper landing in a notebook that holds
+   no other context for its project is a source with nothing to sit against.
+
+3. **Locate the deliverables by exact filename, never by globbing the directory.**
+   `<slug>` = the project's repo directory name.
+
+   ```
+   ~/Projects/<slug>/docs/paper/<slug>-paper.md
+   ~/Projects/<slug>/docs/paper/<slug>-presenter-pack.md
+   ```
+
+   No `docs/` in that repo → `paper/` at the repo root, the same fallback `/research-paper`
+   uses when it writes them.
+
+   **`docs/papers/` — plural — belongs to a different skill and must never be read here.**
+   That is `/paper-eli5`'s output: plain-English rewrites of *other people's* papers. The two
+   directory names differ by one letter and their contents are categorically different —
+   Kyle's own work versus third-party work. Globbing the plural imports strangers' papers
+   into an interview-prep notebook about Kyle's portfolio.
+
+   **Globbing the singular is unsafe too**, which is why the rule is exact filenames rather
+   than "the two `.md` files in there". `~/Projects/dim-stage/docs/paper/` today holds
+   `global-workspace-readable-small-language-models-eli5.md` alongside the two real
+   deliverables. Match the two names above and **skip anything matching `*-eli5*`**.
+
+4. **Require the files to be on the default branch — this is the trigger, and it is a tree
+   query, not a filesystem check.**
+
+   ```sh
+   git -C ~/Projects/<slug> ls-tree --name-only main -- docs/paper/<slug>-paper.md
+   ```
+
+   Testing the working tree instead reads whatever branch that repo happens to be sitting
+   on, which is routinely not the default one — as of 2026-08-02, `ghost-patch` and
+   `dim-stage` are both parked on `chore/add-ci` while their papers are merged. The tree
+   query is independent of that.
+
+   Empty result → **the paper has not landed. Stop and report**, naming the open PR if
+   `gh pr list` shows one. `/research-paper` deliberately opens a **review-only PR it never
+   merges**, so an unmerged paper is the *expected* state, not an anomaly to work around.
+   Snapshotting it anyway is the red flag this skill already names: the `repo_sha` recorded
+   from a feature branch vanishes on squash-merge and takes the row's provenance with it.
+   Merging is Kyle's call, made on the PR, not a step taken on the way past.
+
+5. **Hash and surface — then confirm.** Print one row per file *before* adding anything:
+
+   | path | type | `sha256_12` | on default branch |
+   |---|---|---|---|
+
+   Then get Kyle's confirm. This mode grows the notebook, and growing it silently is exactly
+   the failure the drift-check wall exists to prevent — the wall is about the act, not about
+   which mode performs it. (Pre-authorized dispatch: proceed without the prompt, still print
+   the table.)
+
+6. **Add both as `text`** — never `file`, per the shared rule. Titles:
+
+   - `<project> paper — snapshot <date>`
+   - `<project> presenter pack — snapshot <date>`
+
+7. **Write the manifest rows.** `repo_sha` is `~/Projects/<slug>`'s default-branch HEAD —
+   the tree the snapshot actually came from — not `~/Projects/portfolio`'s. `baseline` equals
+   `snapshot` on a fresh add: the hash was taken and confirmed the same day.
+
+8. **Figures are reported, not ingested.** `mute-map/docs/paper/` carries six rendered PNGs
+   and `dim-stage/docs/paper/` a `figures/` directory. A NotebookLM `text` source cannot
+   carry an image, so list them in the report as present-and-not-added. Saying the notebook
+   has the paper when it has the prose and not the figures is the kind of half-truth that
+   costs Kyle an answer in a live interview.
+
+9. **Artifact generation is offered, never assumed.** Unlike `--add`, this mode does not
+   presume an episode — a paper may warrant one, or may belong to a season that already
+   closed. Offer an `audio` + `quiz` scoped to the new sources with `source_ids`, and apply
+   `--add` step 6's precondition unchanged: if the source layer isn't currently clean,
+   say so and skip rather than baking staleness into fresh artifacts.
+
+10. **Update** `MANIFEST.md` and the sidecar README. `INDEX.md` describes the notebook as a
+    whole and does not change when one project gains a paper.
+
 ## Shared rules
 
 - **Rate limits:** 2s between source ops, 5s between generation calls, 2s between status
@@ -301,6 +413,10 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 | Adding the `github.com/...` HTML page as a repo source | Every other repo source is the `raw.` README; the HTML page pulls in nav chrome. |
 | Letting an `--add` grow into a full refresh | One project's onboarding quietly became 7 deletes and 4 regenerated aids in testing — none of it asked for, all of it spending quota. |
 | Fixing a defect you found inside a project's repo | Report it. An unreviewed commit in someone else's repo is not a sync step. |
+| Reading `docs/papers/` (plural) for a project's paper | That's `/paper-eli5`'s output — other people's papers, rewritten. You'd file a stranger's work in Kyle's portfolio notebook. |
+| Globbing `docs/paper/` instead of matching the two exact filenames | The directory is not clean: `dim-stage/docs/paper/` holds an eli5 of someone else's paper next to the real deliverables. |
+| Checking the working tree to decide whether a paper is merged | It reads whatever branch the repo is parked on. `git ls-tree <default-branch>` is the question you actually mean. |
+| Adding a paper during `--add`, or a project during `--add-paper` | Each mode does the one thing it is named for; the other is a separate confirmed run. |
 
 ## Red flags — stop
 
@@ -314,3 +430,6 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 - You're checking where a guard hook is registered rather than just using Bash.
 - You're about to edit a file in `~/Projects/portfolio` or `~/Projects/<project>`.
 - An `--add` has grown a second phase that touches sources unrelated to the project.
+- You're about to snapshot a paper that `ls-tree` didn't find on the default branch — or
+  you're reaching for the working-tree file after the tree query came back empty.
+- You're about to add a file from `docs/papers/` (plural), or one whose name contains `eli5`.

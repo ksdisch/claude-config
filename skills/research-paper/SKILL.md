@@ -268,6 +268,18 @@ Fix everything that fails and re-verify. Do not claim done until this passes.
   written in the paper; the sources of truth you used; every flagged gap (numbers
   that weren't recorded, adaptations you made because this repo's layout differed
   from the mission's examples).
+- **Close the report by routing the paper onward**, in these terms and no stronger —
+  the hop is Kyle's to trigger, and this skill does not perform it:
+
+  > **Portfolio notebook:** this PR is review-only and is not merged, so nothing has
+  > been added anywhere. Once you merge it, the paper becomes eligible for the
+  > research-portfolio notebook — run `/portfolio-notebook-sync --add-paper <slug>`.
+  > While it sits on a branch, that command will correctly refuse it.
+
+  Do not claim the paper "will be added automatically" or that a sync has been
+  scheduled. Neither is true: `--add-paper` reads the **default branch** and surfaces
+  what it would add for confirmation before touching the notebook. Overstating this
+  is the same failure mode the paper's own honesty framing exists to prevent.
 
 ## Definition of done
 
