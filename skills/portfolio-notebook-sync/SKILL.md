@@ -190,25 +190,53 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      second — `git show` alone cannot, because it returns the same 128 for "removed from the
      tree" and "I couldn't read this repo at all"):
 
+     Per row, inside the loop — **every arm ends the row; none falls through**:
+
      ```sh
      abs=<the row's path-or-url>                      # never name this `path` — zsh ties it to PATH
-     repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null) || echo unknown
+     repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null) \
+       || { classify "$abs" unchecked "not inside a git repo"; continue; }
+     [ -n "$repo" ] \
+       || { classify "$abs" unchecked "empty repo root"; continue; }
      rel=${abs#"$repo"/}                              # git show needs a REPO-RELATIVE path
-     def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
-     git -C "$repo" fetch --no-write-fetch-head origin "$def" || echo unknown
-     lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") || echo unknown
+     def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+     [ -n "$def" ] \
+       || { classify "$abs" unchecked "cannot resolve default branch"; continue; }
+     git -C "$repo" fetch --no-write-fetch-head origin "$def" \
+       || { classify "$abs" unchecked "fetch failed"; continue; }
+     lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") \
+       || { classify "$abs" unchecked "ls-tree failed"; continue; }
      ```
 
-     Classify on that, exit status before output — the discipline the `url` probe applies to
-     `(code, rc)`:
+     **`git -C ""` is a foot-gun and the reason `[ -n "$repo" ]` is not optional.** Per
+     `git(1)`, an empty `-C` argument leaves the current working directory unchanged — it does
+     not error. So a non-terminal failure arm that leaves `repo` empty does not stop anything:
+     the next three commands silently retarget to **whichever repo the agent happens to be
+     standing in**, and they *succeed*. `symbolic-ref` returns that repo's default branch,
+     the fetch runs inside a repo this skill was never authorised to touch, and `ls-tree`
+     returns exit 0 with zero lines against a mangled `rel`.
+
+     Exit 0 with zero lines is exactly the `deleted` classification below — so an uncloned
+     project would be reported to Kyle as *"the paper was removed from the default branch"*
+     and its notebook source proposed for deletion. That is a false positive wearing the
+     label of the one class this step calls a real event, and it is strictly worse than the
+     false negative the same mistake produced in step 4. This is not hypothetical: run
+     verbatim during review, the non-terminal form fetched inside an unrelated checkout and
+     moved a remote-tracking ref there.
+
+     Classify on the above, exit status before output — the discipline the `url` probe applies
+     to `(code, rc)`:
      - `ls-tree` clean **and** one line back → hash `git show "origin/$def:$rel"`: differs →
        `changed`, same → `unchanged`.
      - `ls-tree` clean **and zero lines** → `deleted`. The paper was removed from the default
        branch — a real event, and one only `ls-tree` can distinguish, since it exits 0 on a
-       pathspec that matches nothing.
-     - **any non-zero exit**, at any step above — repo not cloned, not a repo, ref missing,
-       fetch failed → `unknown`. Change nothing, including the manifest. A repo you couldn't
-       read is not a repo whose paper you know anything about.
+       pathspec that matches nothing. **Reachable only once every arm above has passed**,
+       which is what makes the label trustworthy enough to act on.
+     - **any non-zero exit or empty capture**, at any step above — repo not cloned, not a
+       repo, ref missing, fetch failed → `unchecked`, and move to the next row. Change
+       nothing, including the manifest. A repo you couldn't read is not a repo whose paper you
+       know anything about, and `unchecked` (not `unknown`) is the right class precisely
+       because it bars the run from reporting "in sync".
    - `url` rows — classify on the **pair** the probe emits, `(code, rc)`, never on the code
      alone. There are exactly three outcomes and no fourth:
      - `rc=0` **and** `404`/`410`, stable across a retry → `dead`.
@@ -585,6 +613,8 @@ notebook already carries.
 | Branching on `git ls-tree`'s exit status to detect absence | It exits 0 when the pathspec matches nothing. Absence is empty stdout; only a non-zero exit means unreadable. |
 | Using `git show` alone to decide whether a paper was deleted | It returns 128 for "removed from the tree" *and* "couldn't read the repo". `ls-tree` separates them; `git show` is for the body once existence is settled. |
 | Naming a shell variable `path` in these snippets | Kyle's shell is zsh, where `path` is tied to `PATH`. The assignment wipes the environment and every later command dies with `command not found`. |
+| Writing `\|\| echo unknown` (or any non-terminal arm) as a failure handler | `echo` returns 0, so execution continues with the variable unset. Failure arms must end the row (`continue`) or the run (`exit 1`). |
+| Running `git -C "$repo"` without checking `$repo` is non-empty | `git -C ""` is a documented no-op: it runs in the agent's own cwd repo, succeeds, and the wrong answer looks clean. |
 | Adding a paper during `--add`, or a project during `--add-paper` | Each mode does the one thing it is named for; the other is a separate confirmed run. |
 
 ## Red flags — stop
@@ -606,3 +636,7 @@ notebook already carries.
 - A `git` command exited non-zero and you're about to report its empty output as a fact.
 - You're adding a paper whose `path-or-url` already has a `paper` row in the manifest.
 - You're about to run `git pull` in a project repo because `fetch` felt insufficient.
+- A `git -C "$repo"` is about to run and you haven't proved `$repo` is non-empty — the empty
+  case doesn't fail, it silently runs in whatever repo you're standing in.
+- A failure arm in a snippet you're writing doesn't `continue` or `exit` — check what the
+  next line does with the variable that arm failed to set.
