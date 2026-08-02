@@ -686,10 +686,13 @@ rows get re-pointed to match.
   `~/Projects/portfolio` (read-only git is required — it's how `repo_sha` gets filled); an
   unmerged branch or open PR is escalated to Kyle rather than snapshotted. The drift table
   is always shown before anything is deleted, and URL sources are content-hashed, not just
-  liveness-checked. `--add-paper` is gated on the paper being on the project repo's
-  **default branch**, tested with `git ls-tree` rather than the working tree, and it matches
-  the two exact deliverable filenames — `docs/papers/` (plural) is `/paper-eli5`'s output
-  about *other people's* papers and is never read here.
+  liveness-checked. `--add-paper` is gated on **both** deliverables being on the project
+  repo's **default branch** — queried as `origin/<default>` after a fetch, since Kyle merges
+  the paper PR on GitHub and a local ref would still say "not landed" — and hashes and
+  ingests them with `git show` from that same tree, never from the working tree. It matches
+  two exact filenames: `docs/papers/` (plural) is `/paper-eli5`'s output about *other
+  people's* papers and is never read here. Re-running it is safe — an existing `paper` row
+  stops it rather than duplicating the source.
 
 #### `nlm-skill`
 

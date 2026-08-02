@@ -39,11 +39,22 @@ growing the notebook during a "sync" is the failure this wall exists to prevent.
 does not go looking for its paper; `--add-paper` adds a paper and refuses to onboard the
 project underneath it. Each does the one thing it is named for.
 
-**Neither mode changes git state in `~/Projects/portfolio`.** Read-only git is not just
-allowed there, it's **required** — `rev-parse`, `status`, `branch`, `log`, `ls-tree`, and
-`gh pr list/view` are how you fill `repo_sha` and how you notice an unmerged branch at all.
+**No mode changes git state in `~/Projects/portfolio` or in a project repo.** Read-only git
+is not just allowed there, it's **required** — `rev-parse`, `status`, `branch`, `log`,
+`ls-tree`, `show`, `symbolic-ref`, and `gh pr list/view` are how you fill `repo_sha`, how you
+read merged content, and how you notice an unmerged branch at all.
 What is forbidden is anything that changes state or the working tree: commit, checkout,
 merge, rebase, pull, push, branch, stash, reset, or any file edit.
+
+**One narrow exception, and it is not `pull`:** `git fetch --no-write-fetch-head origin
+<default-branch>` is allowed in a **project** repo. Kyle merges a paper's PR **on GitHub**,
+so the local ref does not advance on its own; without a fetch, `--add-paper` reports "the
+paper has not landed" about a paper that landed minutes ago, and the read-only rule would
+leave the run with no sanctioned way out. A fetch advances a remote-tracking ref only — no
+local branch moves, no working tree is touched, nothing is merged. `pull` stays forbidden
+precisely because it does both. Every default-branch read below is against
+`origin/<default-branch>`, never the local branch, which is also why a stale clone can never
+stamp a row with provenance that predates its own content.
 
 If the content you'd snapshot is sitting in an unmerged branch or an open PR, **stop and
 tell Kyle** — which tree to snapshot is his call, not a step you resolve on the way past.
@@ -62,9 +73,30 @@ belong to the drift check, and the drift check has its own table and its own con
 ```
 
 - `path-or-url` — absolute local path, or the URL as added.
-- `type` — `text` | `url`.
-- `sha256_12` — the content hash, for **both** types. Local:
-  `shasum -a 256 <file> | cut -c1-12`. URL: **status first, hash only on 200** —
+- `type` — **how this row is re-checked**, which is not the same question as what kind of
+  source NotebookLM holds: `text` (a local file, read from disk) | `url` (fetched) | `paper`
+  (a blob on a project repo's default branch, read with `git show`). A `paper` row is added
+  to the notebook as an ordinary **`text`** source — the column records the *basis for
+  comparison*, and for a paper that basis is the merged tree, never the working tree.
+
+  Only `--add-paper` creates `paper` rows. The distinction is load-bearing: project repos sit
+  on feature branches for long stretches (`ghost-patch` and `dim-stage` are on `chore/add-ci`
+  as of 2026-08-02, and that branch already diverges from the default one inside
+  `docs/paper/`), so re-hashing a paper from disk reports `changed` about a file nobody
+  changed — and `text` + `changed` is auto-repairable, which would replace the notebook's
+  merged snapshot with unmerged branch prose under a confirm that said only "changed".
+- `sha256_12` — the content hash, for **all three** types. Local `text`:
+  `shasum -a 256 <file> | cut -c1-12`. `paper`: hash the merged blob, never the path —
+
+  ```sh
+  git -C ~/Projects/<slug> show "origin/$def:$path" | shasum -a 256 | cut -c1-12
+  ```
+
+  If that `git show` exits non-zero — no clone, no such ref, blob gone — the row is
+  `unknown` for the run and **nothing on disk changes**, exactly as with a failed URL fetch.
+  An unreadable tree is a failed measurement, not evidence the paper is gone.
+
+  URL: **status first, hash only on 200** —
 
   ```sh
   tmp=$(mktemp)                       # never a bare relative path — cwd may be a guarded tree
@@ -148,6 +180,16 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
+   - `paper` rows — **never touch the working tree.** Fetch the project repo's default branch
+     (the one allowed write, above), then re-hash the merged blob with
+     `git show "origin/$def:$path"`. Classify on the git exit status first, then the output,
+     the same discipline the `url` probe uses on `(code, rc)`:
+     - exit 0, hash differs → `changed`; same → `unchanged`.
+     - exit 0 but the path is gone from the tree → `deleted` (the paper was removed from the
+       default branch — a real event worth reporting).
+     - **any non-zero exit** — repo not cloned, not a repo, ref missing, fetch failed →
+       `unknown`. Change nothing, including the manifest. A repo you couldn't read is not a
+       repo whose paper you know anything about.
    - `url` rows — classify on the **pair** the probe emits, `(code, rc)`, never on the code
      alone. There are exactly three outcomes and no fourth:
      - `rc=0` **and** `404`/`410`, stable across a retry → `dead`.
@@ -171,9 +213,16 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      forever and the notebook silently shrinks. Report it and offer to re-add from the
      recorded path; never treat it as drift to repair by deleting anything.
    - **Merged paper with no row** → `unpapered`, **report-only**. For each project the
-     manifest already carries, check whether that project's repo has a paper on its default
-     branch (the detector is in `--add-paper` step 3 — match the exact filenames, never glob
-     the directory). Found, and no manifest row covers it → say so in the table.
+     manifest already carries, run `--add-paper`'s step-3 detector and step-4 gate against
+     that project's repo. Both deliverables present on the default branch, and no `paper` row
+     covers them → say so in the table.
+
+     **A repo you couldn't read is `unchecked`, never `unpapered` and never silence.** Branch
+     on the git exit status before branching on its output: a project that isn't cloned at
+     `~/Projects/<slug>`, isn't a git repo, or whose fetch failed produces empty stdout for
+     exactly the same reason a paperless repo does. Reporting nothing for it would let the
+     sweep say "current" about projects nobody looked at — the same failure the `PARTIAL:`
+     marker exists to prevent. Count them and name them.
 
      Naming it is the entire job. Adding it is `--add-paper`'s, on Kyle's word — the same
      wall that stops a drift check from onboarding a project stops it from onboarding a
@@ -181,14 +230,17 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      whose whole purpose is answering "is this notebook current?"
 
 4. **Report the drift table before changing anything**, with a row per
-   `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished`/`unpapered` source. Then get
-   Kyle's confirm. (When another flow dispatched this skill with explicit pre-authorization,
-   proceed without the prompt — but still print the table.)
+   `changed`/`deleted`/`dead`/`unknown`/`unverified`/`vanished`/`unpapered`/`unchecked`
+   source. Then get Kyle's confirm. (When another flow dispatched this skill with explicit
+   pre-authorization, proceed without the prompt — but still print the table.)
 
-   **`unpapered` is never repairable here, in any `type`.** It is the one class that names
-   something *absent from* the notebook rather than stale inside it, so there is no row to
-   fix and no confirm that turns it into one. It appears in the table and nowhere else in
-   this mode.
+   **`unpapered` and `unchecked` are never repairable here, in any `type`.** They are the two
+   classes that name something *outside* the notebook rather than stale inside it — one a
+   paper the notebook doesn't carry, the other a repo this run couldn't read — so there is no
+   row to fix and no confirm that turns either into one. They appear in the table and nowhere
+   else in this mode. **A run reporting any `unchecked` may not call the notebook "in
+   sync"**, for the same reason a `PARTIAL:` manifest may not: an unread source is not a
+   clean one.
 
    **Repairability is decided by `type` first, then class.**
 
@@ -210,6 +262,12 @@ three-row manifest reports clean over twenty-eight unchecked sources.
    - **`text` rows**, by class: `changed` → delete-and-re-add · `deleted` → delete only
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
+   - **`paper` rows** repair like `text` rows with one substitution that is not optional:
+     every re-add takes its body from `git show "origin/$def:$path"`, never from the path on
+     disk. `changed` → delete-and-re-add from the merged blob · `deleted` → delete only ·
+     `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
+     `unknown` → left alone. Re-adding from disk here would ingest whatever branch the repo
+     is parked on while the row goes on claiming default-branch provenance.
    - When step 2 and step 3 disagree about a row (`dead` by probe, `vanished` by
      reconciliation), **the more conservative class wins** and it stays report-only.
 5. **Repair, in this order:** `source_delete` the stale `source_id`s → `source_add` fresh
@@ -274,10 +332,19 @@ notebook already carries.
 1. **Verify the card exists** — `~/Projects/portfolio/projects/<project>.md`. No card → stop.
    Same completion signal `--add` uses.
 
-2. **Verify the project is already in the notebook** — a card row for it exists in
-   `MANIFEST.md`. If it doesn't, the project has never been onboarded, and **that is
-   `--add`'s job, not this one.** Stop and say so. A paper landing in a notebook that holds
-   no other context for its project is a source with nothing to sit against.
+2. **Verify the project is already in the notebook, and that its paper isn't.** Two checks
+   against `MANIFEST.md`, both required:
+   - a **card row** for the project exists. If it doesn't, the project has never been
+     onboarded, and **that is `--add`'s job, not this one.** Stop and say so. A paper landing
+     in a notebook that holds no other context for its project is a source with nothing to
+     sit against.
+   - **no `paper` row already covers either deliverable path.** If one does, this project's
+     paper is already in the notebook — **stop and report it as already-present.** An updated
+     paper is a `changed` drift repair, not a second add: re-running `--add-paper` otherwise
+     puts a duplicate copy of both files in the notebook and writes a second row for the same
+     `path-or-url`, breaking the manifest's one-row-per-source contract. Worse, the duplicate
+     then reconciles as `unchanged` forever, so nothing downstream ever flags it. "Did I
+     already do this?" is a question the command must answer, not a way to corrupt it.
 
 3. **Locate the deliverables by exact filename, never by globbing the directory.**
    `<slug>` = the project's repo directory name.
@@ -288,7 +355,8 @@ notebook already carries.
    ```
 
    No `docs/` in that repo → `paper/` at the repo root, the same fallback `/research-paper`
-   uses when it writes them.
+   uses when it writes them. Step 4 resolves which of the two applies (`$dir`) against the
+   default-branch tree, so the fallback is tested rather than merely documented.
 
    **`docs/papers/` — plural — belongs to a different skill and must never be read here.**
    That is `/paper-eli5`'s output: plain-English rewrites of *other people's* papers. The two
@@ -301,43 +369,88 @@ notebook already carries.
    `global-workspace-readable-small-language-models-eli5.md` alongside the two real
    deliverables. Match the two names above and **skip anything matching `*-eli5*`**.
 
-4. **Require the files to be on the default branch — this is the trigger, and it is a tree
-   query, not a filesystem check.**
+4. **Require BOTH files to be on the default branch — this is the trigger, and it is a tree
+   query against the *fetched remote* ref, not a filesystem check and not the local branch.**
+
+   Resolve the default branch rather than assuming `main`, refresh the remote ref, then ask
+   for both pathspecs at once:
 
    ```sh
-   git -C ~/Projects/<slug> ls-tree --name-only main -- docs/paper/<slug>-paper.md
+   repo=~/Projects/<slug>
+   def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
+   git -C "$repo" fetch --no-write-fetch-head origin "$def" || exit_unchecked
+   dir=docs/paper; git -C "$repo" ls-tree -d --name-only "origin/$def" -- docs >/dev/null 2>&1 || dir=paper
+   git -C "$repo" ls-tree --name-only "origin/$def" \
+       -- "$dir/<slug>-paper.md" "$dir/<slug>-presenter-pack.md"
    ```
+
+   Three things this shape gets right, each of which was wrong when assumed away:
+
+   - **`origin/$def`, after a fetch.** Kyle merges the paper's PR **on GitHub**; the local
+     ref does not advance on its own. Querying the local branch reports "not landed" about a
+     paper that landed minutes ago — on precisely the happy path the handoff prescribes — and
+     stamps `repo_sha` from a tree that predates the content it claims to describe.
+   - **Resolved, not hardcoded.** Every other statement here says *default branch*; writing
+     `main` into the one command that decides it would silently mean "never landed" in any
+     repo on `master` or `trunk`.
+   - **Both pathspecs, expecting two lines back.** Step 6 adds two files, so gating one is
+     a gate on nothing. **One line back → report the partial and stop**; never add half a
+     pair, and never let a merged paper drag an unmerged presenter pack in behind it.
 
    Testing the working tree instead reads whatever branch that repo happens to be sitting
    on, which is routinely not the default one — as of 2026-08-02, `ghost-patch` and
-   `dim-stage` are both parked on `chore/add-ci` while their papers are merged. The tree
-   query is independent of that.
+   `dim-stage` are both parked on `chore/add-ci` while their papers are merged, and that
+   branch already diverges from the default one *inside* `docs/paper/`.
 
-   Empty result → **the paper has not landed. Stop and report**, naming the open PR if
-   `gh pr list` shows one. `/research-paper` deliberately opens a **review-only PR it never
-   merges**, so an unmerged paper is the *expected* state, not an anomaly to work around.
-   Snapshotting it anyway is the red flag this skill already names: the `repo_sha` recorded
-   from a feature branch vanishes on squash-merge and takes the row's provenance with it.
-   Merging is Kyle's call, made on the PR, not a step taken on the way past.
+   **Branch on the exit status before the output.** A repo that isn't cloned, isn't a git
+   repo, or whose fetch failed prints nothing to stdout — identical to a repo with no paper.
+   Non-zero exit → `unchecked`; say the check could not be made. Only a **clean exit with no
+   matching lines** means the paper has not landed.
 
-5. **Hash and surface — then confirm.** Print one row per file *before* adding anything:
+   Not landed → **stop and report**, naming the open PR if `gh pr list` shows one.
+   `/research-paper` deliberately opens a **review-only PR it never merges**, so an unmerged
+   paper is the *expected* state, not an anomaly to work around. Snapshotting it anyway is
+   the red flag this skill already names: a `repo_sha` recorded from a feature branch
+   vanishes on squash-merge and takes the row's provenance with it. Merging is Kyle's call,
+   made on the PR, not a step taken on the way past.
 
-   | path | type | `sha256_12` | on default branch |
-   |---|---|---|---|
+5. **Hash the merged blobs — not the files on disk — then surface and confirm.**
 
-   Then get Kyle's confirm. This mode grows the notebook, and growing it silently is exactly
-   the failure the drift-check wall exists to prevent — the wall is about the act, not about
-   which mode performs it. (Pre-authorized dispatch: proceed without the prompt, still print
-   the table.)
+   ```sh
+   git -C "$repo" show "origin/$def:$dir/<slug>-paper.md" | shasum -a 256 | cut -c1-12
+   ```
 
-6. **Add both as `text`** — never `file`, per the shared rule. Titles:
+   The gate certifies the merged tree, so the hash and the ingested body must come from that
+   same tree. Hashing `<repo>/$dir/<slug>-paper.md` instead certifies one thing and ingests
+   another: the notebook ends up holding unmerged branch prose while the manifest asserts
+   default-branch provenance — the exact failure step 4 exists to prevent, arriving through
+   the back door.
+
+   Print one row per file *before* adding anything:
+
+   | path | type | `sha256_12` | on default branch | already in notebook |
+   |---|---|---|---|---|
+
+   The last column is step 2's answer, restated where Kyle can see it at the moment of
+   confirming. Then get his confirm. This mode grows the notebook, and growing it silently is
+   exactly the failure the drift-check wall exists to prevent — the wall is about the act,
+   not about which mode performs it. (Pre-authorized dispatch: proceed without the prompt,
+   still print the table.)
+
+6. **Add both to the notebook as `text` sources, with bodies from `git show`** — never
+   `file` (per the shared rule), and never read from the working tree. Write each blob to a
+   `mktemp` file and add from that. Titles:
 
    - `<project> paper — snapshot <date>`
    - `<project> presenter pack — snapshot <date>`
 
-7. **Write the manifest rows.** `repo_sha` is `~/Projects/<slug>`'s default-branch HEAD —
-   the tree the snapshot actually came from — not `~/Projects/portfolio`'s. `baseline` equals
-   `snapshot` on a fresh add: the hash was taken and confirmed the same day.
+7. **Write the manifest rows**, one per deliverable, with `type` = **`paper`** — the row is
+   re-checked against the merged blob, not the path, and that column is what tells the drift
+   check so. `repo_sha` is `git -C "$repo" rev-parse "origin/$def"`: the tree the snapshot
+   actually came from, not `~/Projects/portfolio`'s HEAD and not the local branch's.
+   `baseline` equals `snapshot` on a fresh add — the hash was taken and confirmed the same
+   day. `path-or-url` is the absolute path the blob corresponds to, which is what makes step
+   2's already-present check answerable next time.
 
 8. **Figures are reported, not ingested.** `mute-map/docs/paper/` carries six rendered PNGs
    and `dim-stage/docs/paper/` a `figures/` directory. A NotebookLM `text` source cannot
@@ -415,7 +528,11 @@ notebook already carries.
 | Fixing a defect you found inside a project's repo | Report it. An unreviewed commit in someone else's repo is not a sync step. |
 | Reading `docs/papers/` (plural) for a project's paper | That's `/paper-eli5`'s output — other people's papers, rewritten. You'd file a stranger's work in Kyle's portfolio notebook. |
 | Globbing `docs/paper/` instead of matching the two exact filenames | The directory is not clean: `dim-stage/docs/paper/` holds an eli5 of someone else's paper next to the real deliverables. |
-| Checking the working tree to decide whether a paper is merged | It reads whatever branch the repo is parked on. `git ls-tree <default-branch>` is the question you actually mean. |
+| Checking the working tree to decide whether a paper is merged | It reads whatever branch the repo is parked on. `git ls-tree origin/<default>` is the question you actually mean. |
+| Querying the **local** default branch instead of `origin/<default>` | Kyle merges the PR on GitHub. Without a fetch the local ref never moves, so the command denies a paper that landed minutes ago. |
+| Gating on the tree but hashing the file on disk | You certify the merged blob and ingest the branch's. The row then claims provenance the content doesn't have. |
+| Re-running `--add-paper` to "make sure" | Without the step-2 already-present check that's a duplicate source *and* a duplicate row, and the duplicate reconciles `unchanged` forever. |
+| Treating a git error as "no paper" | A missing clone and a paperless repo both print nothing. Exit status first, output second — otherwise the sweep reports clean over repos nobody read. |
 | Adding a paper during `--add`, or a project during `--add-paper` | Each mode does the one thing it is named for; the other is a separate confirmed run. |
 
 ## Red flags — stop
@@ -430,6 +547,10 @@ notebook already carries.
 - You're checking where a guard hook is registered rather than just using Bash.
 - You're about to edit a file in `~/Projects/portfolio` or `~/Projects/<project>`.
 - An `--add` has grown a second phase that touches sources unrelated to the project.
-- You're about to snapshot a paper that `ls-tree` didn't find on the default branch — or
+- You're about to snapshot a paper that `ls-tree` didn't find on `origin/<default>` — or
   you're reaching for the working-tree file after the tree query came back empty.
 - You're about to add a file from `docs/papers/` (plural), or one whose name contains `eli5`.
+- You're reading a paper's body or hash from a path on disk rather than from `git show`.
+- A `git` command exited non-zero and you're about to report its empty output as a fact.
+- You're adding a paper whose `path-or-url` already has a `paper` row in the manifest.
+- You're about to run `git pull` in a project repo because `fetch` felt insufficient.
