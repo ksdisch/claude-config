@@ -86,15 +86,19 @@ belong to the drift check, and the drift check has its own table and its own con
   changed — and `text` + `changed` is auto-repairable, which would replace the notebook's
   merged snapshot with unmerged branch prose under a confirm that said only "changed".
 - `sha256_12` — the content hash, for **all three** types. Local `text`:
-  `shasum -a 256 <file> | cut -c1-12`. `paper`: hash the merged blob, never the path —
+  `shasum -a 256 <file> | cut -c1-12`. `paper`: hash the **merged blob**, never the file on
+  disk. `git show` takes a *repo-relative* path, while `path-or-url` is absolute, so the
+  row's own value has to be split before it can be used — see the derivation in the drift
+  check's step 2. Passing the absolute path straight through is not a near-miss that
+  degrades gracefully: `git show <ref>:/Users/…` exits 128 with *"exists on disk, but not
+  in …"*, which the `unknown` rule then turns into "changed nothing" on **every** run,
+  forever. The row that has its own type precisely so it can be re-checked becomes the one
+  row the check can never read, and it never escalates, because `unknown` is defined as a
+  failed measurement rather than a fact.
 
-  ```sh
-  git -C ~/Projects/<slug> show "origin/$def:$path" | shasum -a 256 | cut -c1-12
-  ```
-
-  If that `git show` exits non-zero — no clone, no such ref, blob gone — the row is
-  `unknown` for the run and **nothing on disk changes**, exactly as with a failed URL fetch.
-  An unreadable tree is a failed measurement, not evidence the paper is gone.
+  **Never name a shell variable `path` in these snippets.** Kyle's shell is zsh, where `path`
+  is tied to `PATH`; assigning it wipes the environment mid-run and every later command dies
+  with `command not found`. Use `abs` / `rel`.
 
   URL: **status first, hash only on 200** —
 
@@ -180,16 +184,31 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 2. **Classify every row:**
    - local `text` rows — re-hash the path. Missing file → `deleted`. Hash differs →
      `changed`. Same → `unchanged`.
-   - `paper` rows — **never touch the working tree.** Fetch the project repo's default branch
-     (the one allowed write, above), then re-hash the merged blob with
-     `git show "origin/$def:$path"`. Classify on the git exit status first, then the output,
-     the same discipline the `url` probe uses on `(code, rc)`:
-     - exit 0, hash differs → `changed`; same → `unchanged`.
-     - exit 0 but the path is gone from the tree → `deleted` (the paper was removed from the
-       default branch — a real event worth reporting).
-     - **any non-zero exit** — repo not cloned, not a repo, ref missing, fetch failed →
-       `unknown`. Change nothing, including the manifest. A repo you couldn't read is not a
-       repo whose paper you know anything about.
+   - `paper` rows — **never touch the working tree.** The manifest carries one absolute path
+     and no repo or branch column, so derive all three from it, then ask **existence and
+     content as two separate questions** (`ls-tree` answers the first, `git show` the
+     second — `git show` alone cannot, because it returns the same 128 for "removed from the
+     tree" and "I couldn't read this repo at all"):
+
+     ```sh
+     abs=<the row's path-or-url>                      # never name this `path` — zsh ties it to PATH
+     repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null) || echo unknown
+     rel=${abs#"$repo"/}                              # git show needs a REPO-RELATIVE path
+     def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
+     git -C "$repo" fetch --no-write-fetch-head origin "$def" || echo unknown
+     lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") || echo unknown
+     ```
+
+     Classify on that, exit status before output — the discipline the `url` probe applies to
+     `(code, rc)`:
+     - `ls-tree` clean **and** one line back → hash `git show "origin/$def:$rel"`: differs →
+       `changed`, same → `unchanged`.
+     - `ls-tree` clean **and zero lines** → `deleted`. The paper was removed from the default
+       branch — a real event, and one only `ls-tree` can distinguish, since it exits 0 on a
+       pathspec that matches nothing.
+     - **any non-zero exit**, at any step above — repo not cloned, not a repo, ref missing,
+       fetch failed → `unknown`. Change nothing, including the manifest. A repo you couldn't
+       read is not a repo whose paper you know anything about.
    - `url` rows — classify on the **pair** the probe emits, `(code, rc)`, never on the code
      alone. There are exactly three outcomes and no fourth:
      - `rc=0` **and** `404`/`410`, stable across a retry → `dead`.
@@ -263,7 +282,8 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
    - **`paper` rows** repair like `text` rows with one substitution that is not optional:
-     every re-add takes its body from `git show "origin/$def:$path"`, never from the path on
+     every re-add takes its body from `git show "origin/$def:$rel"` — the repo-relative path
+     step 2 derived, never the row's absolute one and never the file on
      disk. `changed` → delete-and-re-add from the merged blob · `deleted` → delete only ·
      `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
      `unknown` → left alone. Re-adding from disk here would ingest whatever branch the repo
@@ -377,14 +397,21 @@ notebook already carries.
 
    ```sh
    repo=~/Projects/<slug>
-   def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
-   git -C "$repo" fetch --no-write-fetch-head origin "$def" || exit_unchecked
-   dir=docs/paper; git -C "$repo" ls-tree -d --name-only "origin/$def" -- docs >/dev/null 2>&1 || dir=paper
-   git -C "$repo" ls-tree --name-only "origin/$def" \
-       -- "$dir/<slug>-paper.md" "$dir/<slug>-presenter-pack.md"
+   def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+   [ -n "$def" ] || { echo "unchecked: cannot resolve default branch for <slug>"; exit 1; }
+   git -C "$repo" fetch --no-write-fetch-head origin "$def" \
+     || { echo "unchecked: fetch failed for <slug> — ref is stale, no answer is possible"; exit 1; }
+
+   # Probe for the deliverables themselves at each candidate dir, not for a `docs/` directory.
+   for d in docs/paper paper; do
+     hits=$(git -C "$repo" ls-tree --name-only "origin/$def" \
+              -- "$d/<slug>-paper.md" "$d/<slug>-presenter-pack.md") \
+       || { echo "unchecked: ls-tree failed for <slug>"; exit 1; }
+     [ -n "$hits" ] && { dir=$d; break; }
+   done
    ```
 
-   Three things this shape gets right, each of which was wrong when assumed away:
+   Five things this shape gets right, each of which was wrong when assumed away:
 
    - **`origin/$def`, after a fetch.** Kyle merges the paper's PR **on GitHub**; the local
      ref does not advance on its own. Querying the local branch reports "not landed" about a
@@ -396,6 +423,17 @@ notebook already carries.
    - **Both pathspecs, expecting two lines back.** Step 6 adds two files, so gating one is
      a gate on nothing. **One line back → report the partial and stop**; never add half a
      pair, and never let a merged paper drag an unmerged presenter pack in behind it.
+   - **Every failure is terminal, and says so.** A `|| some_helper` that isn't defined
+     anywhere returns 127 and lets execution *continue* — so a failed fetch would fall
+     through and the gate would answer from exactly the stale ref the fetch existed to
+     refresh, resurrecting the "paper has not landed" bug as a swallowed error. Offline, on
+     VPN, or against a private clone with expired auth, that is the common case, not the
+     exotic one.
+   - **The fallback dir is found by looking for the files, not for `docs/`.** `git ls-tree`
+     exits **0** when a pathspec matches nothing — absence shows up only as empty stdout — so
+     any probe that branches on its exit status has a dead fallback branch and silently
+     pins `docs/paper`. Testing `-n "$hits"` is what makes the documented `paper/` fallback
+     real rather than decorative.
 
    Testing the working tree instead reads whatever branch that repo happens to be sitting
    on, which is routinely not the default one — as of 2026-08-02, `ghost-patch` and
@@ -449,8 +487,18 @@ notebook already carries.
    check so. `repo_sha` is `git -C "$repo" rev-parse "origin/$def"`: the tree the snapshot
    actually came from, not `~/Projects/portfolio`'s HEAD and not the local branch's.
    `baseline` equals `snapshot` on a fresh add — the hash was taken and confirmed the same
-   day. `path-or-url` is the absolute path the blob corresponds to, which is what makes step
-   2's already-present check answerable next time.
+   day.
+
+   `path-or-url` is `$repo/$dir/<file>` — the **absolute** path, matching every other row in
+   the manifest and keeping step 2's already-present check answerable next time.
+
+   **The drift check must be able to split that string back into `repo` + `rel`, and this
+   step is what guarantees it can.** `git show` takes a repo-relative path; the manifest
+   stores an absolute one and has no repo or branch column, so the re-check derives all three
+   (`rev-parse --show-toplevel`, `${abs#"$repo"/}`, `symbolic-ref`) from this one value.
+   Write the path any other way — a `~`, a symlinked parent, a trailing `./` — and the
+   derivation silently stops matching, which surfaces as a paper row that is `unknown` on
+   every run instead of as an error. Store the same absolute path the gate resolved.
 
 8. **Figures are reported, not ingested.** `mute-map/docs/paper/` carries six rendered PNGs
    and `dim-stage/docs/paper/` a `figures/` directory. A NotebookLM `text` source cannot
@@ -533,6 +581,10 @@ notebook already carries.
 | Gating on the tree but hashing the file on disk | You certify the merged blob and ingest the branch's. The row then claims provenance the content doesn't have. |
 | Re-running `--add-paper` to "make sure" | Without the step-2 already-present check that's a duplicate source *and* a duplicate row, and the duplicate reconciles `unchanged` forever. |
 | Treating a git error as "no paper" | A missing clone and a paperless repo both print nothing. Exit status first, output second — otherwise the sweep reports clean over repos nobody read. |
+| Passing a manifest row's absolute path to `git show <ref>:…` | It exits 128 (*"exists on disk, but not in …"*), which the `unknown` rule turns into "changed nothing" on every run forever. Split it into repo + repo-relative first. |
+| Branching on `git ls-tree`'s exit status to detect absence | It exits 0 when the pathspec matches nothing. Absence is empty stdout; only a non-zero exit means unreadable. |
+| Using `git show` alone to decide whether a paper was deleted | It returns 128 for "removed from the tree" *and* "couldn't read the repo". `ls-tree` separates them; `git show` is for the body once existence is settled. |
+| Naming a shell variable `path` in these snippets | Kyle's shell is zsh, where `path` is tied to `PATH`. The assignment wipes the environment and every later command dies with `command not found`. |
 | Adding a paper during `--add`, or a project during `--add-paper` | Each mode does the one thing it is named for; the other is a separate confirmed run. |
 
 ## Red flags — stop
