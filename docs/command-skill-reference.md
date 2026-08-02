@@ -114,6 +114,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`notebook-merge`](../skills/notebook-merge/SKILL.md) | Merges 2+ existing notebooks into one unified notebook — migrates sources and notes, regenerates artifacts, proposes new cross-notebook synthesis, archives originals. · [config →](usage-playbook.md#notebook-merge) |
 | [`audio-series`](../skills/audio-series/SKILL.md) | Generates an episodic NotebookLM audio course from an existing notebook — a flagship "building" season plus standalones, with optional Study Guide + Quiz per episode. · [config →](usage-playbook.md#audio-series) |
 | [`video-series`](../skills/video-series/SKILL.md) | Generates an episodic NotebookLM video course from an existing notebook — same episodic structure as `audio-series` but video overviews with per-season visual style. · [config →](usage-playbook.md#video-series) |
+| [`portfolio-notebook-sync`](../skills/portfolio-notebook-sync/SKILL.md) | Keeps the research-portfolio notebook in step with `~/Projects/portfolio` — a manifest-backed drift check, or `--add <project>` to onboard a newly carded project. · [config →](usage-playbook.md#portfolio-notebook-sync) |
 | [`nlm-skill`](../skills/nlm-skill/SKILL.md) | Expert guide for the `nlm` CLI and NotebookLM MCP server — use when interacting with NotebookLM programmatically. · [config →](usage-playbook.md#nlm-skill) |
 
 ### Research & Writing

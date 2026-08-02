@@ -664,6 +664,26 @@ rows get re-pointed to match.
   series episodes. Blocked episodes get deferred to the sidecar with prompts intact rather
   than loop-retried against a hard quota.
 
+#### `portfolio-notebook-sync`
+
+- **Run config:** Sonnet 5 · `medium` — a checklist-scoped mechanical sync driven by the
+  sidecar manifest; the judgment calls it might face are the ones it's built to escalate
+  rather than resolve.
+- **Reach for it when:**
+  - A portfolio project just got its card and should be covered in the notebook like the
+    others (`--add <project>`).
+  - You've reworked portfolio docs and suspect the notebook's snapshots have gone stale.
+  - Something in the notebook cites a number the repo no longer says.
+- **Pairs well with:** [`notebook-assist`](#notebook-assist) (ad-hoc work on the same
+  notebook), [`audio-series`](#audio-series) (the season this skill appends episodes to),
+  [`nlm-skill`](#nlm-skill) (the CLI/MCP reference it defers to).
+- **Notes:** `MANIFEST.md` is the contract — drift is a hash diff, never a judgment call. A
+  bare drift check will *never* onboard a project it happens to notice, and neither mode
+  changes git state or edits a file in `~/Projects/portfolio` (read-only git is required —
+  it's how `repo_sha` gets filled); an unmerged branch or open PR is escalated to Kyle
+  rather than snapshotted. The drift table is always shown before anything is deleted, and
+  URL sources are content-hashed, not just liveness-checked.
+
 #### `nlm-skill`
 
 - **Run config:** inherits the session · `low` — it's a reference guide, not a workflow.
