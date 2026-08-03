@@ -91,10 +91,9 @@ belong to the drift check, and the drift check has its own table and its own con
   row's own value has to be split before it can be used — see the derivation in the drift
   check's step 2. Passing the absolute path straight through is not a near-miss that
   degrades gracefully: `git show <ref>:/Users/…` exits 128 with *"exists on disk, but not
-  in …"*, which the `unknown` rule then turns into "changed nothing" on **every** run,
+  in …"*, which the failure rule then turns into "changed nothing" on **every** run,
   forever. The row that has its own type precisely so it can be re-checked becomes the one
-  row the check can never read, and it never escalates, because `unknown` is defined as a
-  failed measurement rather than a fact.
+  row the check can never read.
 
   **Never name a shell variable `path` in these snippets.** Kyle's shell is zsh, where `path`
   is tied to `PATH`; assigning it wipes the environment mid-run and every later command dies
@@ -190,23 +189,45 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      second — `git show` alone cannot, because it returns the same 128 for "removed from the
      tree" and "I couldn't read this repo at all"):
 
-     Per row, inside the loop — **every arm ends the row; none falls through**:
+     Run **this** block — the loop is part of it, not something you supply:
 
      ```sh
-     abs=<the row's path-or-url>                      # never name this `path` — zsh ties it to PATH
-     repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null) \
-       || { classify "$abs" unchecked "not inside a git repo"; continue; }
-     [ -n "$repo" ] \
-       || { classify "$abs" unchecked "empty repo root"; continue; }
-     rel=${abs#"$repo"/}                              # git show needs a REPO-RELATIVE path
-     def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
-     [ -n "$def" ] \
-       || { classify "$abs" unchecked "cannot resolve default branch"; continue; }
-     git -C "$repo" fetch --no-write-fetch-head origin "$def" \
-       || { classify "$abs" unchecked "fetch failed"; continue; }
-     lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") \
-       || { classify "$abs" unchecked "ls-tree failed"; continue; }
+     rows=<the paper rows' path-or-url values>   # never name a variable `path` — zsh ties it to PATH
+     out=$(mktemp)                               # one sink: <abs>\t<class>\t<why>, read back for the table
+     for abs in $rows; do
+       # A failed rev-parse prints nothing, so emptiness tests BOTH the error and the empty capture.
+       repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null)
+       [ -n "$repo" ] || { printf '%s\tunchecked\tnot a readable git repo\n' "$abs" >>"$out"; continue; }
+
+       def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+       [ -n "$def" ] || { printf '%s\tunchecked\tno default branch\n' "$abs" >>"$out"; continue; }
+
+       git -C "$repo" fetch --no-write-fetch-head origin "$def" >/dev/null 2>&1 \
+         || { printf '%s\tunchecked\tfetch failed\n' "$abs" >>"$out"; continue; }
+
+       lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "${abs#"$repo"/}") \
+         || { printf '%s\tunchecked\tls-tree failed\n' "$abs" >>"$out"; continue; }
+
+       # Survivor: every read succeeded. `lines` empty → `deleted`; one line → hash and compare.
+       printf '%s\treadable\t%s\n' "$abs" "$lines" >>"$out"
+     done
      ```
+
+     **Why the loop is in the block rather than assumed around it.** `continue` is terminal
+     *only inside a loop*, and the two shells disagree about what it does outside one — bash
+     prints a warning, **returns 0 and falls through**; zsh **aborts the whole script**. A
+     bare sequence of `|| { …; continue; }` arms is therefore either no guard at all (bash:
+     the row proceeds with `repo` unset, `git -C ""` retargets at the agent's own repo, and
+     the run ends at the false `deleted` below) or a guard that kills the entire sweep on the
+     first unreadable repo (zsh: no drift table at all). Neither is what the prose says.
+     Measured, not reasoned: bash 3.2.57 falls through, zsh 5.9 aborts.
+
+     **Why the arms `printf` instead of calling a helper.** A `|| some_helper` whose helper is
+     defined nowhere is the same defect one rung down: it runs, fails, returns non-zero or
+     127, and the decision it was supposed to record is never recorded — so the `unchecked`
+     bar below has nothing to read. Every arm here writes the row's class where the report is
+     built from. This file forbids that anti-pattern in its own mistakes table; the snippet
+     has to obey it too.
 
      **`git -C ""` is a foot-gun and the reason `[ -n "$repo" ]` is not optional.** Per
      `git(1)`, an empty `-C` argument leaves the current working directory unchanged — it does
@@ -314,7 +335,9 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      step 2 derived, never the row's absolute one and never the file on
      disk. `changed` → delete-and-re-add from the merged blob · `deleted` → delete only ·
      `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
-     `unknown` → left alone. Re-adding from disk here would ingest whatever branch the repo
+     `unchecked` → left alone. (`unchecked`, not `unknown`: a `paper` row's git read either
+     succeeds or the row never reaches classification, so `unknown` cannot arise here.)
+     Re-adding from disk here would ingest whatever branch the repo
      is parked on while the row goes on claiming default-branch provenance.
    - When step 2 and step 3 disagree about a row (`dead` by probe, `vanished` by
      reconciliation), **the more conservative class wins** and it stays report-only.
@@ -525,7 +548,7 @@ notebook already carries.
    stores an absolute one and has no repo or branch column, so the re-check derives all three
    (`rev-parse --show-toplevel`, `${abs#"$repo"/}`, `symbolic-ref`) from this one value.
    Write the path any other way — a `~`, a symlinked parent, a trailing `./` — and the
-   derivation silently stops matching, which surfaces as a paper row that is `unknown` on
+   derivation silently stops matching, which surfaces as a paper row that is `unchecked` on
    every run instead of as an error. Store the same absolute path the gate resolved.
 
 8. **Figures are reported, not ingested.** `mute-map/docs/paper/` carries six rendered PNGs
@@ -609,7 +632,7 @@ notebook already carries.
 | Gating on the tree but hashing the file on disk | You certify the merged blob and ingest the branch's. The row then claims provenance the content doesn't have. |
 | Re-running `--add-paper` to "make sure" | Without the step-2 already-present check that's a duplicate source *and* a duplicate row, and the duplicate reconciles `unchanged` forever. |
 | Treating a git error as "no paper" | A missing clone and a paperless repo both print nothing. Exit status first, output second — otherwise the sweep reports clean over repos nobody read. |
-| Passing a manifest row's absolute path to `git show <ref>:…` | It exits 128 (*"exists on disk, but not in …"*), which the `unknown` rule turns into "changed nothing" on every run forever. Split it into repo + repo-relative first. |
+| Passing a manifest row's absolute path to `git show <ref>:…` | It exits 128 (*"exists on disk, but not in …"*), so the row is never actually checked on any run. Split it into repo + repo-relative first. |
 | Branching on `git ls-tree`'s exit status to detect absence | It exits 0 when the pathspec matches nothing. Absence is empty stdout; only a non-zero exit means unreadable. |
 | Using `git show` alone to decide whether a paper was deleted | It returns 128 for "removed from the tree" *and* "couldn't read the repo". `ls-tree` separates them; `git show` is for the body once existence is settled. |
 | Naming a shell variable `path` in these snippets | Kyle's shell is zsh, where `path` is tied to `PATH`. The assignment wipes the environment and every later command dies with `command not found`. |
