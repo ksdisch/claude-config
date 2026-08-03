@@ -48,20 +48,24 @@ stands and what to pick up next).
 
 ## Sources
 
+- **Team & method (always read)** — `~/Projects/portfolio/README.md` (lanes +
+  tables) and `METHODOLOGY.md` (the charter): segment 1's grounding, read on
+  every run, tour or no tour.
 - **Current project** — the repo the session runs in: README, CLAUDE.md,
   PROJECT.md / Wiki, HANDOFF.md, GAPS / backlog docs, wrap logs
   (`docs/session-logs/` or equivalent), `git log`. Read deeper live during Q&A
   as questions demand.
-- **Lineup tour** — `~/Projects/portfolio`: README.md (lanes + tables),
-  METHODOLOGY.md (the charter), `projects/*.md` (the cards — already distilled
-  and verified), GAPS-AND-NEXT.md. The cards are the dossier; do NOT read the
-  underlying project repos for the tour.
+- **Lineup tour** — `~/Projects/portfolio`: `projects/*.md` (the cards —
+  already distilled and verified) and GAPS-AND-NEXT.md, on top of the team &
+  method files above. The cards are the dossier; do NOT read the underlying
+  project repos for the tour.
 - **Degradation rules:** run inside the portfolio repo → the portfolio *is* the
   current project and the tour walks its cards. Current repo not part of the
   research lineup → session still works; the tour stays available but adapt or
   drop the "where this project sits" positioning. `~/Projects/portfolio`
-  missing → declare the tour unavailable, in character and honestly; never fake
-  it from memory.
+  missing → declare the tour unavailable AND shrink segment 1 to the current
+  repo's own framing (its README / stated method), in character and honestly;
+  never recite the charter from memory.
 
 ## The agenda — five segments, a Q&A stop after each
 
@@ -97,8 +101,9 @@ that exists so far") rather than pad.
   digging into the segment's significance, purpose, and methods, not trivia. For
   the lineup Q&A, questions are **lineup-wide** (cross-project connections, the
   method as a body of work, positioning) rather than about one project.
-- **Every answer ends with 3 fresh suggested questions** until Kyle concludes
-  the session ("next", "move on", "that's all"). Not sometimes — every answer.
+- **Every answer ends with 3 fresh suggested questions** until Kyle closes the
+  Q&A ("next" / "move on" → advance to the next segment) or ends the whole
+  onboarding early ("that's all"). Not sometimes — every answer.
 - **No repeats** across the entire onboarding — neither of questions already
   suggested nor of ones Kyle already asked.
 - **Escalation ladder:** early suggestions orienting/factual → then methods →
@@ -116,6 +121,12 @@ that exists so far") rather than pad.
 `docs/onboarding/YYYY-MM-DD-onboarding.md` in the current repo, **written
 progressively** — append each segment when it completes, so an interrupted
 session still leaves a partial packet (marked as such in its header).
+
+**Collision rule:** if the dated file already exists (a same-day re-run), do
+not write into it — take the next free suffix (`YYYY-MM-DD-onboarding-2.md`,
+`-3`, …). Never truncate or overwrite an existing packet, especially one whose
+header says `partial`: it may not be committed yet, and it is the only record
+of that run.
 
 ```markdown
 # Onboarding — <project> — YYYY-MM-DD
