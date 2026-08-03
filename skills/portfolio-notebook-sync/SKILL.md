@@ -97,12 +97,8 @@ belong to the drift check, and the drift check has its own table and its own con
 
   1. Make a **fresh** temp file for *this* deliverable. Never reuse one name across two
      deliverables — see the caution below.
-  2. Redirect `git -C <that row's repo root> show origin/<branch-name>:<repo-relative-path>`
-     into it. **Name the repo explicitly.** A bare `git show` runs wherever the agent happens
-     to be standing, which for a sweep over eight repos is almost never the right one — and it
-     does not error, it answers about the wrong tree. This is the same hazard as the empty
-     `-C` in invariant 4 of the drift check, reached by omitting the flag rather than by
-     passing it an empty value.
+  2. Redirect `git -C <the repo this deliverable came from> show
+     origin/<branch-name>:<repo-relative-path>` into it.
   3. **If that `git show` fails, stop here for this row.** Do not hash, do not ingest, do not
      write a manifest cell. The drift check classifies the row `unchecked` and moves to the
      next; `--add-paper` reports and ends the run. This step is the whole reason for the
@@ -111,7 +107,21 @@ belong to the drift check, and the drift check has its own table and its own con
   4. Only on a clean read, hash the **file**: `shasum -a 256 < <that file> | cut -c1-12`.
   5. Keep that file. It is the body that gets added to the notebook.
 
-  Four properties, and dropping any one of them has already caused a defect here:
+  Five properties, and dropping any one of them has already caused a defect here:
+  - **Every git command names its repo — `git -C <repo>`, on all of them.** Not just this
+    procedure's `git show`: the drift check's per-row `fetch` and `ls-tree` too. The danger is
+    *inverted* from what it looks like, which is how this was gotten wrong once already:
+    - a bare `git show` almost always **exits 128** (paper paths are `<slug>`-specific, so the
+      wrong repo has no such path) — the hard stop catches it. Fail-safe.
+    - a bare `ls-tree` **exits 0 with zero lines**, which this file classifies as `deleted`,
+      and `deleted` on a `paper` row is repairable as *delete only* — so a live paper's
+      notebook source is deleted, under a confirm that says it was removed upstream.
+      Fail-destructive.
+    - a bare `fetch` **succeeds**, writing in a repo the read-only rule permits it to touch
+      only when it is that row's repo.
+
+    Guarding the command that fails safely and leaving the two that fail silently is worse
+    than guarding none, because the asymmetry reads as "those didn't need it".
   - **Redirect to a file, never a `$( )` capture.** Command substitution strips *all* trailing
     newlines, and every Markdown file ends in one — so the captured form hashes a different
     byte string than the blob it claims to describe. Measured on the same blob: redirect and
@@ -237,22 +247,34 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      Work **one row at a time, start to finish**, recording that row's answer before moving
      to the next. Per row:
 
-     1. **Derive the repo** from the row's absolute path (`rev-parse --show-toplevel` on its
-        directory). Can't resolve it, or resolves empty → `unchecked`, next row.
+     1. **Derive the repo** from the row's absolute path — `git -C <the row path's directory>
+        rev-parse --show-toplevel`. Can't resolve it, or resolves empty → `unchecked`, next
+        row. Every git command in steps 1–5 names its repo with `-C`; see the *every git
+        command names its repo* property on the canonical blob read for why omitting it is
+        more dangerous on some of these commands than on others.
      2. **Derive the repo-relative path** by stripping the repo root off the absolute one.
         `git show` and `ls-tree` both need the relative form.
-     3. **Resolve the default branch *name*** — the bare `main`, not the ref. `symbolic-ref
-        --short refs/remotes/origin/HEAD` prints `origin/main`, so **strip the `origin/`
-        prefix** (`| sed 's|^origin/||'`). Steps 4 and 5 then compose `origin/<name>`; feeding
-        them the unstripped value builds `origin/origin/main`, which is not a valid object
-        name and exits 128 — and invariant 1 below would dutifully report that as `unchecked`
-        on every row forever, so the mistake reads as a legitimate answer instead of a bug.
-        Then fetch that branch, with `--no-write-fetch-head` (this mode sweeps every carded
-        repo; none of those fetches should be writing `FETCH_HEAD`). Either step failing →
+     3. **Resolve the default branch *name*** — the bare `main`, not the ref. `git -C <repo>
+        symbolic-ref --short refs/remotes/origin/HEAD` prints `origin/main`, so **strip the
+        `origin/` prefix** (`| sed 's|^origin/||'`). Steps 4 and 5 then compose
+        `origin/<name>`; feeding them the unstripped value builds `origin/origin/main`, which
+        is not a valid object name and exits 128 — and the *a-git-error-is-never-an-answer*
+        invariant below would dutifully report that as `unchecked` on every row forever, so
+        the mistake reads as a legitimate answer instead of a bug.
+        Then `git -C <repo> fetch --no-write-fetch-head origin <name>` (this mode sweeps every
+        carded repo; none of those fetches should be writing `FETCH_HEAD`, and a fetch that
+        forgets `-C` writes in a repo this skill may not touch). Either step failing →
         `unchecked`, next row.
-     4. **Ask existence with `ls-tree`** against `origin/<name>`: non-zero exit →
+     4. **Ask existence with `git -C <repo> ls-tree`** against `origin/<name>`: non-zero exit →
         `unchecked` · exit 0 with **zero lines** → `deleted` · exit 0 with **one line** → the
         paper is there.
+
+        **`-C <repo>` is load-bearing here specifically.** This is the one per-row command
+        whose wrong-repo answer is both silent and destructive: run from the wrong tree it
+        exits 0 with zero lines, which is `deleted`, which is repairable as *delete only* —
+        deleting a live paper's notebook source under a confirm that says it was removed
+        upstream. The `git show` two steps down mostly exits 128 and gets caught; this one
+        does not.
      5. **Only then hash it, with the canonical blob read** defined in the `MANIFEST.md`
         format section — that procedure, not a paraphrase of it. It carries its own failure arm
         (`git show` non-zero → `unchecked`, next row) and it is the *only* form guaranteed to
@@ -698,6 +720,8 @@ notebook already carries.
 | Naming a shell variable `path` in these snippets | Kyle's shell is zsh, where `path` is tied to `PATH`. The assignment wipes the environment and every later command dies with `command not found`. |
 | Writing `\|\| echo unknown` (or any non-terminal arm) as a failure handler | `echo` returns 0, so execution continues with the variable unset. Failure arms must end the row (`continue`) or the run (`exit 1`). |
 | Running `git -C "$repo"` without checking `$repo` is non-empty | `git -C ""` is a documented no-op: it runs in the agent's own cwd repo, succeeds, and the wrong answer looks clean. |
+| Omitting `-C` altogether on a per-row git command | Same wrong-repo answer as the empty case, minus the variable. On `ls-tree` it exits 0 with zero lines → `deleted` → *delete only* → a live paper's source is deleted. On `fetch` it writes in a repo this skill may not touch. |
+| Guarding the repo on `git show` and not on `ls-tree`/`fetch` | Backwards: `git show` mostly exits 128 and is caught. The two you skipped are the ones that succeed against the wrong tree. |
 | Adding a paper during `--add`, or a project during `--add-paper` | Each mode does the one thing it is named for; the other is a separate confirmed run. |
 
 ## Red flags — stop
@@ -719,6 +743,8 @@ notebook already carries.
 - A `git` command exited non-zero and you're about to report its empty output as a fact.
 - You're adding a paper whose `path-or-url` already has a `paper` row in the manifest.
 - You're about to run `git pull` in a project repo because `fetch` felt insufficient.
+- A per-row `git` command in the paper lane has **no `-C` at all** — check `ls-tree` and
+  `fetch` first; those are the two that succeed against the wrong tree instead of erroring.
 - A `git -C "$repo"` is about to run and you haven't proved `$repo` is non-empty — the empty
   case doesn't fail, it silently runs in whatever repo you're standing in.
 - A failure arm in a snippet you're writing doesn't `continue` or `exit` — check what the
