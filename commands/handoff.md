@@ -185,6 +185,17 @@ not on this session's work. Use this shape:
 Keep it terse, like the rest of the handoff. If the next action is genuinely
 ambiguous between two modes, name both and say what tips it.
 
+## Opus 5 builder handoffs
+
+When the run-config model pick is **Opus 5**, read
+`~/.claude/opus5-builder-notes.md` before writing the fenced block and apply
+its rules to the block: full spec and done-bars front-loaded, no verification
+boilerplate, the one-line delegation cap, and the deliverable-length line
+when the next session will author documents. The notes shape the paste-able
+prompt only — the "For Kyle" briefing and run-config note are unaffected. If
+the file is missing, say so in the run-config note and write the block
+normally.
+
 ## Audio narration (only if `--audio` was passed)
 
 Generate a spoken version of the brief so I can listen to it on a walk instead
