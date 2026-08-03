@@ -46,8 +46,8 @@ read merged content, and how you notice an unmerged branch at all.
 What is forbidden is anything that changes state or the working tree: commit, checkout,
 merge, rebase, pull, push, branch, stash, reset, or any file edit.
 
-**One narrow exception, and it is not `pull`:** `git fetch --no-write-fetch-head origin
-<default-branch>` is allowed in a **project** repo. Kyle merges a paper's PR **on GitHub**,
+**One narrow exception, and it is not `pull`:** `git -C <project repo> fetch
+--no-write-fetch-head origin <default-branch>` is allowed in a **project** repo. Kyle merges a paper's PR **on GitHub**,
 so the local ref does not advance on its own; without a fetch, `--add-paper` reports "the
 paper has not landed" about a paper that landed minutes ago, and the read-only rule would
 leave the run with no sanctioned way out. A fetch advances a remote-tracking ref only — no
@@ -247,11 +247,21 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      Work **one row at a time, start to finish**, recording that row's answer before moving
      to the next. Per row:
 
-     1. **Derive the repo** from the row's absolute path — `git -C <the row path's directory>
-        rev-parse --show-toplevel`. Can't resolve it, or resolves empty → `unchecked`, next
-        row. Every git command in steps 1–5 names its repo with `-C`; see the *every git
-        command names its repo* property on the canonical blob read for why omitting it is
-        more dangerous on some of these commands than on others.
+     1. **Derive the repo** from the row's absolute path **by string split, not by walking the
+        working tree**: rows are `~/Projects/<slug>/…`, so the repo root is `~/Projects/<slug>`.
+        Confirm it with `git -C <that root> rev-parse --show-toplevel`; can't resolve, or
+        resolves empty → `unchecked`, next row.
+
+        **Do not point `-C` at the paper's own directory.** `git -C` on a path that doesn't
+        exist exits 128 *before* it consults the repo, and `docs/paper/` is frequently absent
+        from whatever branch the clone is parked on — which is the entire premise of this lane.
+        Deriving the repo through the working tree would make a row `unchecked` for the very
+        reason it needs checking. The repo root is the one directory that exists regardless of
+        the checked-out branch.
+
+        Every git command in steps 1–5 names its repo with `-C`; see the *every git command
+        names its repo* property on the canonical blob read for why omitting it is more
+        dangerous on some of these commands than on others.
      2. **Derive the repo-relative path** by stripping the repo root off the absolute one.
         `git show` and `ls-tree` both need the relative form.
      3. **Resolve the default branch *name*** — the bare `main`, not the ref. `git -C <repo>
@@ -296,7 +306,7 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      - **Existence and content are two questions.** `git show` returns the same 128 for
        "removed from the tree" and "couldn't read this repo at all", so it cannot decide
        `deleted`. `ls-tree` can: it exits 0 with no output when a pathspec matches nothing.
-     - **Never run `git show <ref>:` with an empty path.** That is not an error — it is the
+     - **Never run `git -C <repo> show <ref>:` with an empty path.** That is not an error — it is the
        **root tree**, exits 0, and hashes stably to a value no paper can match. Every row
        would read `changed`, and `changed` is repairable for `paper` rows, so the check would
        delete the notebook's source and re-ingest a directory listing.
@@ -628,7 +638,8 @@ notebook already carries.
    **The drift check must be able to split that string back into `repo` + `rel`, and this
    step is what guarantees it can.** `git show` takes a repo-relative path; the manifest
    stores an absolute one and has no repo or branch column, so the re-check derives all three
-   (`rev-parse --show-toplevel`, `${abs#"$repo"/}`, `symbolic-ref`) from this one value.
+   (`git -C … rev-parse --show-toplevel`, the string split for the relative path, and
+   `git -C … symbolic-ref`) from this one value.
    Write the path any other way — a `~`, a symlinked parent, a trailing `./` — and the
    derivation silently stops matching, which surfaces as a paper row that is `unchecked` on
    every run instead of as an error. Store the same absolute path the gate resolved.
@@ -709,7 +720,7 @@ notebook already carries.
 | Fixing a defect you found inside a project's repo | Report it. An unreviewed commit in someone else's repo is not a sync step. |
 | Reading `docs/papers/` (plural) for a project's paper | That's `/paper-eli5`'s output — other people's papers, rewritten. You'd file a stranger's work in Kyle's portfolio notebook. |
 | Globbing `docs/paper/` instead of matching the two exact filenames | The directory is not clean: `dim-stage/docs/paper/` holds an eli5 of someone else's paper next to the real deliverables. |
-| Checking the working tree to decide whether a paper is merged | It reads whatever branch the repo is parked on. `git ls-tree origin/<default>` is the question you actually mean. |
+| Checking the working tree to decide whether a paper is merged | It reads whatever branch the repo is parked on. `git -C <repo> ls-tree origin/<default>` is the question you actually mean. |
 | Querying the **local** default branch instead of `origin/<default>` | Kyle merges the PR on GitHub. Without a fetch the local ref never moves, so the command denies a paper that landed minutes ago. |
 | Gating on the tree but hashing the file on disk | You certify the merged blob and ingest the branch's. The row then claims provenance the content doesn't have. |
 | Re-running `--add-paper` to "make sure" | Without the step-2 already-present check that's a duplicate source *and* a duplicate row, and the duplicate reconciles `unchanged` forever. |
