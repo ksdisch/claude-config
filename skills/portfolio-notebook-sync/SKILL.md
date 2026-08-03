@@ -86,8 +86,32 @@ belong to the drift check, and the drift check has its own table and its own con
   changed — and `text` + `changed` is auto-repairable, which would replace the notebook's
   merged snapshot with unmerged branch prose under a confirm that said only "changed".
 - `sha256_12` — the content hash, for **all three** types. Local `text`:
-  `shasum -a 256 <file> | cut -c1-12`. `paper`: hash the **merged blob**, never the file on
-  disk. `git show` takes a *repo-relative* path, while `path-or-url` is absolute, so the
+  `shasum -a 256 <file> | cut -c1-12`.
+
+  **`paper` — the canonical blob hash. Every place that hashes a paper uses exactly this, and
+  no place restates it in its own words.**
+
+  ```sh
+  blob=$(mktemp)
+  git -C "$repo" show "origin/$def:$rel" > "$blob" \
+    || { echo "unchecked: cannot read $rel from origin/$def"; }   # ...and end this row
+  shasum -a 256 < "$blob" | cut -c1-12
+  ```
+
+  Three properties, and dropping any one of them has already caused a defect here:
+  - **Redirect to a file, never `blob=$(git show …)`.** Command substitution strips *all*
+    trailing newlines, and every Markdown file ends in one — so the captured form hashes a
+    different byte string than the blob it claims to describe. Measured on the same blob:
+    redirect and pipeline both give `478eab6138d2`; `$( )` gives `b19d18598324`. A row written
+    one way and re-checked the other reports `changed` forever on content nobody touched.
+  - **Never pipe `git show` straight into `shasum`.** A pipeline reports its *last* command's
+    status, so a failed read exits 0 and yields `e3b0c44298fc`, the empty-string hash — a
+    real-looking value that is simply wrong. The redirect keeps `git show`'s own status
+    checkable (a failed read exits 128).
+  - **The same `$blob` file is what gets added to the notebook.** Hashing one byte string and
+    ingesting another is the whole failure this row type exists to prevent.
+
+  `git show` takes a *repo-relative* path, while `path-or-url` is absolute, so the
   row's own value has to be split before it can be used — see the derivation in the drift
   check's step 2. Passing the absolute path straight through is not a near-miss that
   degrades gracefully: `git show <ref>:/Users/…` exits 128 with *"exists on disk, but not
@@ -208,15 +232,17 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      4. **Ask existence with `ls-tree`** against `origin/<name>`: non-zero exit →
         `unchecked` · exit 0 with **zero lines** → `deleted` · exit 0 with **one line** → the
         paper is there.
-     5. **Only then hash it**, with a failure arm of its own — this step has one for the same
-        reason the `url` probe does. Capture `git show origin/<name>:<relative-path>` and
-        **check its exit status before hashing**; non-zero → `unchecked`, next row. Never pipe
-        `git show` straight into `shasum`: the pipeline reports the *last* command's status, so
-        a failed read yields rc 0 and the stable empty-string hash `e3b0c44298fc`, which never
-        matches the recorded value and therefore classifies `changed` — the repairable class,
-        which would delete the notebook's source and re-ingest an empty body. Only on a clean
-        read, compare to the row's recorded `sha256_12`: differs → `changed`, same →
-        `unchanged`.
+     5. **Only then hash it, with the canonical blob hash** defined in the `MANIFEST.md`
+        format section — that recipe, not a paraphrase of it. It carries its own failure arm
+        (`git show` non-zero → `unchecked`, next row) and it is the *only* form guaranteed to
+        reproduce the value `--add-paper` wrote. Compare the result to the row's recorded
+        `sha256_12`: differs → `changed`, same → `unchanged`.
+
+        **This step must not invent its own hashing.** Two independently-worded recipes drift,
+        and the drift is silent: if the writer strips trailing newlines and the checker does
+        not, the first drift check after every `--add-paper` calls both fresh rows `changed` —
+        the repairable class — on content nobody touched, and a permanently dirty drift table
+        trains you to ignore the drift table.
 
      Five invariants make the difference between this working and quietly corrupting the
      notebook. Each one is here because violating it did exactly that during review:
@@ -495,21 +521,23 @@ notebook already carries.
 
 5. **Hash the merged blobs — not the files on disk — then surface and confirm.**
 
+   Apply the **canonical blob hash** from the `MANIFEST.md` format section to each deliverable
+   in turn — that recipe verbatim, not a local variant of it — and **keep each `$blob` temp
+   file**, because step 6 adds the source from that same file:
+
    ```sh
    for f in "<slug>-paper.md" "<slug>-presenter-pack.md"; do
-     blob=$(git -C "$repo" show "origin/$def:$dir/$f") \
-       || { echo "unchecked: cannot read $f from origin/$def"; exit 1; }
-     printf '%s\t%s\n' "$f" "$(printf '%s' "$blob" | shasum -a 256 | cut -c1-12)"
+     rel="$dir/$f"
+     # ...canonical blob hash here: mktemp, redirect, check status, shasum < file
+     # Keep the temp path alongside "$f" — step 6 ingests exactly the bytes hashed here.
    done
    ```
 
-   **Capture the blob and check the status before hashing; never pipe `git show` straight
-   into `shasum`.** A pipeline reports its *last* command's status, so a failed read exits 0
-   and yields the stable empty-string hash `e3b0c44298fc` — a real-looking value that is
-   simply wrong. Here it would be written into the manifest as the paper's hash, and every
-   later drift check would compare against it. This file already states the rule for `url`
-   sources ("Never pipe `curl` straight into `shasum`"); it holds for `git show` for exactly
-   the same reason.
+   **Do not restate the recipe in this step's own words.** The last time these two sites
+   spelled out hashing independently they disagreed — a `$( )` capture strips trailing
+   newlines, so `--add-paper` recorded `b19d18598324` for a blob the drift check hashes as
+   `478eab6138d2`, and every subsequent check would have called the fresh rows `changed`.
+   One definition, two call sites.
 
    The gate certifies the merged tree, so the hash and the ingested body must come from that
    same tree. Hashing `<repo>/$dir/<slug>-paper.md` instead certifies one thing and ingests
@@ -528,9 +556,11 @@ notebook already carries.
    not about which mode performs it. (Pre-authorized dispatch: proceed without the prompt,
    still print the table.)
 
-6. **Add both to the notebook as `text` sources, with bodies from `git show`** — never
-   `file` (per the shared rule), and never read from the working tree. Write each blob to a
-   `mktemp` file and add from that. Titles:
+6. **Add both to the notebook as `text` sources, from the very `$blob` files step 5 hashed** —
+   never `file` (per the shared rule), and never read from the working tree. Do not re-run
+   `git show` here: re-reading gives a second chance to read something different from what was
+   measured, and the whole point of a `paper` row is that the hash in the manifest describes
+   the bytes in the notebook. Hash once, ingest that. Titles:
 
    - `<project> paper — snapshot <date>`
    - `<project> presenter pack — snapshot <date>`
