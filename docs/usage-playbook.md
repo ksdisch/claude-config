@@ -438,6 +438,25 @@ rows get re-pointed to match.
   main evidence. It runs the project's own cheap checks and reports real output, then stops
   for your pick. A wrap log's recommendation is treated as a candidate decayed by the gap.
 
+#### `onboard`
+
+- **Run config:** Opus 5 · `high` — a long interactive session of grounded synthesis and
+  in-character Q&A over the repo; the judgment is in the answers and the suggested questions.
+- **Reach for it when:**
+  - You want to re-learn one of your own projects the way a new hire would — briefed in team
+    voice, then pulled deeper by suggested questions you ask back.
+  - You're building interview fluency and want the reviewer-attack questions surfaced before
+    a real interviewer finds them.
+- **Pairs well with:** [`reorient`](#reorient) (plain after-a-gap catch-up with routing — no
+  role-play), [`project-guide`](#project-guide) (the written reference doc; onboard's packet
+  records a session instead), [`/wrap`](#wrap) (the quiz direction reversed: wrap tests your
+  recall, onboard hands you the questions).
+- **Notes:** fixed five-segment agenda with a Q&A stop after each; exactly 3 suggested
+  questions open every Q&A and 3 fresh ones close every answer, escalating from factual to
+  reviewer-attack. The lineup tour reads `~/Projects/portfolio`'s cards, not the underlying
+  repos. Everything said is traceable to the repos — the fiction is only the frame. Leaves
+  `docs/onboarding/YYYY-MM-DD-onboarding.md` in the project.
+
 #### `reweave`
 
 - **Run config:** inherits the session · `medium` — the answer is already in context; never

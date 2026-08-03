@@ -90,6 +90,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | Skill | What it does |
 |---|---|
 | [`reorient`](../skills/reorient/SKILL.md) | Use when returning to a project after a real gap (days to months). Rebuilds fluency and routes the next move to the right skill. NOT for ordinary session starts (use `/begin`). · [config →](usage-playbook.md#reorient) |
+| [`onboard`](../skills/onboard/SKILL.md) | Role-played new-hire onboarding — Claude plays a senior teammate briefing you on the current project (and optionally the whole lineup) in five segments, each ending in a Q&A where it suggests the questions you ask; leaves a dated onboarding packet. · [config →](usage-playbook.md#onboard) |
 | [`reweave`](../skills/reweave/SKILL.md) | Re-integrates a follow-up answer into the original response at the source so you get one clean standalone version instead of mentally splicing the update back in. · [config →](usage-playbook.md#reweave) |
 | [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
