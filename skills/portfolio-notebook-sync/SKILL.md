@@ -192,12 +192,13 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      Run **this** block — the loop is part of it, not something you supply:
 
      ```sh
-     rows=<the paper rows' path-or-url values>   # never name a variable `path` — zsh ties it to PATH
-     out=$(mktemp)                               # one sink: <abs>\t<class>\t<why>, read back for the table
-     for abs in $rows; do
+     rows=( <the paper rows' path-or-url values> )   # an ARRAY — see the zsh note below
+     out=$(mktemp)                                   # sink: <abs>\t<class>\t<detail>
+     for abs in "${rows[@]}"; do                     # never name a variable `path` — zsh ties it to PATH
        # A failed rev-parse prints nothing, so emptiness tests BOTH the error and the empty capture.
        repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null)
        [ -n "$repo" ] || { printf '%s\tunchecked\tnot a readable git repo\n' "$abs" >>"$out"; continue; }
+       rel=${abs#"$repo"/}                           # git show needs a REPO-RELATIVE path
 
        def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
        [ -n "$def" ] || { printf '%s\tunchecked\tno default branch\n' "$abs" >>"$out"; continue; }
@@ -205,13 +206,32 @@ three-row manifest reports clean over twenty-eight unchecked sources.
        git -C "$repo" fetch --no-write-fetch-head origin "$def" >/dev/null 2>&1 \
          || { printf '%s\tunchecked\tfetch failed\n' "$abs" >>"$out"; continue; }
 
-       lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "${abs#"$repo"/}") \
+       lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") \
          || { printf '%s\tunchecked\tls-tree failed\n' "$abs" >>"$out"; continue; }
+       [ -n "$lines" ] || { printf '%s\tdeleted\t\n' "$abs" >>"$out"; continue; }
 
-       # Survivor: every read succeeded. `lines` empty → `deleted`; one line → hash and compare.
-       printf '%s\treadable\t%s\n' "$abs" "$lines" >>"$out"
+       # Hash HERE, while repo/def/rel are still this row's. Compare to the row's sha256_12.
+       printf '%s\thashed\t%s\n' "$abs" \
+         "$(git -C "$repo" show "origin/$def:$rel" | shasum -a 256 | cut -c1-12)" >>"$out"
      done
      ```
+
+     **Every per-row value is consumed inside the loop, on purpose.** `repo`, `def` and `rel`
+     are clobbered on each iteration, so after `done` they hold whatever the *last* row left —
+     and an empty `repo` if that row hit a failure arm. Any instruction placed after the loop
+     that says `git show "origin/$def:$rel"` is therefore reading another row's state, or
+     none. Worse, it does not fail: `git show "origin/<branch>:"` is a **valid ref — the root
+     tree** — so it exits 0 and hashes stably to a value that can never match a paper's hash.
+     Every readable row would classify `changed`, and `changed` is *repairable* for `paper`
+     rows, so the check would delete the notebook's paper source and re-ingest a directory
+     listing. The sink carries the finished answer precisely so nothing downstream has to
+     reach back for state that is already gone.
+
+     **`rows` is an array and the expansion is quoted, because zsh does not word-split.**
+     `for abs in $rows` over a whitespace-joined scalar iterates once per path in bash and
+     **once for the whole string** in zsh — so on Kyle's shell a multi-paper manifest collapses
+     to one bogus row and no paper is ever checked. Single-row tests pass under both shells,
+     which is exactly why they are not sufficient evidence here: test the multi-row shape.
 
      **Why the loop is in the block rather than assumed around it.** `continue` is terminal
      *only inside a loop*, and the two shells disagree about what it does outside one — bash
@@ -245,12 +265,12 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      verbatim during review, the non-terminal form fetched inside an unrelated checkout and
      moved a remote-tracking ref there.
 
-     Classify on the above, exit status before output — the discipline the `url` probe applies
-     to `(code, rc)`:
-     - `ls-tree` clean **and** one line back → hash `git show "origin/$def:$rel"`: differs →
+     Classify **by reading `$out`** — every answer is already in it, and no `git` command runs
+     after the loop:
+     - class `hashed` → compare column 3 against the row's recorded `sha256_12`: differs →
        `changed`, same → `unchanged`.
-     - `ls-tree` clean **and zero lines** → `deleted`. The paper was removed from the default
-       branch — a real event, and one only `ls-tree` can distinguish, since it exits 0 on a
+     - class `deleted` → the paper was removed from the default branch — a real event, and one
+       only `ls-tree` can distinguish, since it exits 0 on a
        pathspec that matches nothing. **Reachable only once every arm above has passed**,
        which is what makes the label trustworthy enough to act on.
      - **any non-zero exit or empty capture**, at any step above — repo not cloned, not a
@@ -331,9 +351,12 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
    - **`paper` rows** repair like `text` rows with one substitution that is not optional:
-     every re-add takes its body from `git show "origin/$def:$rel"` — the repo-relative path
-     step 2 derived, never the row's absolute one and never the file on
-     disk. `changed` → delete-and-re-add from the merged blob · `deleted` → delete only ·
+     every re-add takes its body from the merged blob, never from the file on disk. Re-derive
+     `repo`, `def` and `rel` for that row exactly as step 2's loop does — those variables do
+     not survive the loop, and reaching for them here reads another row's state or an empty
+     string, which `git show "origin/<branch>:"` silently answers with the **root tree**
+     rather than an error. `changed` → delete-and-re-add from the merged blob · `deleted` →
+     delete only ·
      `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
      `unchecked` → left alone. (`unchecked`, not `unknown`: a `paper` row's git read either
      succeeds or the row never reaches classification, so `unknown` cannot arise here.)
