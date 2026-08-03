@@ -156,6 +156,20 @@ Finish the turn. Don't end on a plan or "I'll now do X" — do it. Pause only fo
 You're operating autonomously; I'm not watching live and can't answer mid-task, so don't ask "Shall I…?" For reversible actions that follow from the request, proceed.
 ```
 
+When **Opus 5** is the chosen model, read `~/.claude/opus5-builder-notes.md`
+and apply its rules to the prompt body: full spec and acceptance criteria
+front-loaded, no verification boilerplate, the one-line delegation cap, the
+deliverable-length line when the task writes documents, and — for
+review-shaped prompts — never suppress findings by severity (report all,
+filter in a later pass). Include the delegation cap only when the chosen
+archetype is single-agent (linear, explore→plan→confirm→build, TDD, visual
+iteration); every archetype whose shape delegates — subagent-assisted,
+parallel worktree batch (`/batch`), multi-agent/ultracode, autonomous
+milestone, research & synthesis — omits it, because the archetype's own
+delegation design governs, verification votes included (the notes'
+exception says the same). No preamble block for Opus; the notes shape the
+body itself. If the file is missing, say so in chat and proceed without it.
+
 The prompt body uses surface-appropriate conventions (XML-tagged + phased + scope boundaries for Claude Code; vault/MCP-aware for Cowork; role + output-format framing for chat) and is shaped by the chosen archetype — for multi-agent/ultracode, include the orchestration sketch. No `[FILL THIS IN]` placeholders — if something's unspecified, you should have asked in step 2.
 
 Below the block, in chat: the 2–3 sentence design explanation (and the cost read, if it changed since the gate). Then a one-line footer:
@@ -169,7 +183,7 @@ Below the block, in chat: the 2–3 sentence design explanation (and the cost re
 - Don't synthesize before the gate — surface, run-mode, and model/effort are settled and accepted first.
 - Match orchestration to scope: don't bolt a multi-agent fleet onto a one-file task, and don't cram an epic into a single linear thread.
 - ONE model + ONE effort recommendation, plan/build as tiebreaker — strongest ≠ default; Fable 5 for judgment-first and long-horizon/autonomous work, Opus 5 (or Sonnet 5) for executing settled plans, and keep fan-out drones on a cheaper tier.
-- Cost read in chat only — never inside the prompt block. Fable preamble only on Fable prompts; autonomy line only on async runs.
+- Cost read in chat only — never inside the prompt block. Fable preamble only on Fable prompts; autonomy line only on async runs; Opus 5 prompts follow `~/.claude/opus5-builder-notes.md`.
 - Recommend only real, installed components.
 - Ask 1–2 clarifying questions only when the answer changes the output; otherwise infer and state assumptions.
 - Finished prompts have no placeholders.
