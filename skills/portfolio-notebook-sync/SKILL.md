@@ -249,9 +249,8 @@ three-row manifest reports clean over twenty-eight unchecked sources.
 
      1. **Derive the repo** from the row's absolute path **by string split, not by walking the
         working tree**: rows are absolute paths of the form `/Users/kyledisch/Projects/<slug>/…`
-        (never the `~` form — the manifest stores expanded paths), so the repo root is the
-        first three segments plus `<slug>`. A row not matching that shape → `unchecked`, next
-        row.
+        (never the `~` form — the manifest stores expanded paths), and the repo root is that
+        path truncated at `<slug>`. A row not matching that shape → `unchecked`, next row.
 
         **Confirm by equality, not by exit status.** `git -C <that root> rev-parse
         --show-toplevel` must print `<that root>` **itself**. A bare success proves only "this
