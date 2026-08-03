@@ -100,6 +100,7 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | [`agents/`](agents/) | Global subagents — [`adversarial-reviewer`](agents/adversarial-reviewer.md), [`review-judge`](agents/review-judge.md), [`silent-failure-hunter`](agents/silent-failure-hunter.md), [`spec-miner`](agents/spec-miner.md) | ✅ |
 | [`CLAUDE.md`](CLAUDE.md) | Global instructions loaded into every session | ✅ |
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
+| [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules folded into generated builder prompts by `/handoff` and `/prompt-optimize`. Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
 | [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 | ❌ `DENY` |

@@ -17,12 +17,18 @@ guide; the rationale for adopting only this slice is in that guide plus the
    tokens with no quality gain. Never emit "double-check your work,"
    "re-verify before responding," "add a final verification step," or "use a
    subagent to verify." Targeted gates tied to a named artifact remain fine
-   ("run the test suite and paste the output before claiming done").
+   ("run the test suite and paste the output before claiming done"), and
+   verification votes inside an explicit multi-agent orchestration sketch
+   are the design, not boilerplate.
 3. **Cap delegation.** Opus 5 spawns subagents more readily than prior
    models. Include one line like: *"Delegate to a subagent only for large,
    genuinely independent, parallelizable tracks. Don't delegate work you can
-   finish yourself in a handful of tool calls, and don't use subagents to
-   verify your own work."*
+   finish yourself in a handful of tool calls, and don't use ad-hoc
+   subagents to verify your own work — the `adversarial-review` pre-merge
+   loop is exempt and still required."* Exception: when the prompt itself
+   specifies multi-agent orchestration (ultracode effort, or a
+   multi-agent/Workflow archetype), omit the cap line entirely — the
+   orchestration sketch governs, verification votes included.
 4. **Calibrate written deliverables.** Files Opus 5 writes to disk run long.
    If the session will author documents, include: *"Match document length to
    what the task needs — cover the substance; no filler sections, redundant

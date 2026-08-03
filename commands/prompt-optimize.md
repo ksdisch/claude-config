@@ -161,8 +161,11 @@ and apply its rules to the prompt body: full spec and acceptance criteria
 front-loaded, no verification boilerplate, the one-line delegation cap, the
 deliverable-length line when the task writes documents, and — for
 review-shaped prompts — never suppress findings by severity (report all,
-filter in a later pass). No preamble block for Opus; the notes shape the body
-itself. If the file is missing, say so in chat and proceed without it.
+filter in a later pass). Exception: for the multi-agent/ultracode archetype,
+omit the delegation cap — the orchestration sketch and its verification
+votes govern (the notes say the same). No preamble block for Opus; the notes
+shape the body itself. If the file is missing, say so in chat and proceed
+without it.
 
 The prompt body uses surface-appropriate conventions (XML-tagged + phased + scope boundaries for Claude Code; vault/MCP-aware for Cowork; role + output-format framing for chat) and is shaped by the chosen archetype — for multi-agent/ultracode, include the orchestration sketch. No `[FILL THIS IN]` placeholders — if something's unspecified, you should have asked in step 2.
 

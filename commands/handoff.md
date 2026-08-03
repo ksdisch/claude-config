@@ -189,12 +189,22 @@ ambiguous between two modes, name both and say what tips it.
 
 When the run-config model pick is **Opus 5**, read
 `~/.claude/opus5-builder-notes.md` before writing the fenced block and apply
-its rules to the block: full spec and done-bars front-loaded, no verification
-boilerplate, the one-line delegation cap, and the deliverable-length line
-when the next session will author documents. The notes shape the paste-able
-prompt only — the "For Kyle" briefing and run-config note are unaffected. If
-the file is missing, say so in the run-config note and write the block
-normally.
+its rules **within the handoff's existing contract** — the five-section
+structure, the derivability rule, and the ~600-word cap all still govern:
+
+- The notes' "complete spec up front" rule is satisfied by pointing, not
+  inlining: name the plan / source-of-truth file in the Overview and state
+  the next done-bar in "Where the plan stands" — the plan file carries the
+  spec.
+- Add the delegation-cap line — and the deliverable-length line when the
+  next session will author documents — as the final bullets of "Where the
+  plan stands." Skip the cap line when the recommended effort is ultracode
+  (the notes' multi-agent exception: the orchestration governs).
+- Emit no verification boilerplate anywhere in the block.
+
+The notes shape the paste-able prompt only — the "For Kyle" briefing and
+run-config note are unaffected. If the file is missing, say so in the
+run-config note and write the block normally.
 
 ## Audio narration (only if `--audio` was passed)
 
