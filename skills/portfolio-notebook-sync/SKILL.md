@@ -196,13 +196,27 @@ three-row manifest reports clean over twenty-eight unchecked sources.
         directory). Can't resolve it, or resolves empty → `unchecked`, next row.
      2. **Derive the repo-relative path** by stripping the repo root off the absolute one.
         `git show` and `ls-tree` both need the relative form.
-     3. **Resolve the default branch** from `refs/remotes/origin/HEAD`, then fetch it. Either
-        step failing → `unchecked`, next row.
-     4. **Ask existence with `ls-tree`** against `origin/<default>`: non-zero exit →
+     3. **Resolve the default branch *name*** — the bare `main`, not the ref. `symbolic-ref
+        --short refs/remotes/origin/HEAD` prints `origin/main`, so **strip the `origin/`
+        prefix** (`| sed 's|^origin/||'`). Steps 4 and 5 then compose `origin/<name>`; feeding
+        them the unstripped value builds `origin/origin/main`, which is not a valid object
+        name and exits 128 — and invariant 1 below would dutifully report that as `unchecked`
+        on every row forever, so the mistake reads as a legitimate answer instead of a bug.
+        Then fetch that branch, with `--no-write-fetch-head` (this mode sweeps every carded
+        repo; none of those fetches should be writing `FETCH_HEAD`). Either step failing →
+        `unchecked`, next row.
+     4. **Ask existence with `ls-tree`** against `origin/<name>`: non-zero exit →
         `unchecked` · exit 0 with **zero lines** → `deleted` · exit 0 with **one line** → the
         paper is there.
-     5. **Only then hash it** with `git show origin/<default>:<relative-path>`, and compare to
-        the row's recorded `sha256_12`: differs → `changed`, same → `unchanged`.
+     5. **Only then hash it**, with a failure arm of its own — this step has one for the same
+        reason the `url` probe does. Capture `git show origin/<name>:<relative-path>` and
+        **check its exit status before hashing**; non-zero → `unchecked`, next row. Never pipe
+        `git show` straight into `shasum`: the pipeline reports the *last* command's status, so
+        a failed read yields rc 0 and the stable empty-string hash `e3b0c44298fc`, which never
+        matches the recorded value and therefore classifies `changed` — the repairable class,
+        which would delete the notebook's source and re-ingest an empty body. Only on a clean
+        read, compare to the row's recorded `sha256_12`: differs → `changed`, same →
+        `unchanged`.
 
      Five invariants make the difference between this working and quietly corrupting the
      notebook. Each one is here because violating it did exactly that during review:
@@ -303,12 +317,13 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      (nothing to re-add) · `vanished` → re-add, but **only after re-confirming the file
      exists and hashes at the recorded path** · `unknown`/`unverified` → left alone.
    - **`paper` rows** repair like `text` rows with one substitution that is not optional:
-     every re-add takes its body from the merged blob, never from the file on disk. Re-derive
-     `repo`, `def` and `rel` for that row exactly as step 2's loop does — those variables do
-     not survive the loop, and reaching for them here reads another row's state or an empty
-     string, which `git show "origin/<branch>:"` silently answers with the **root tree**
-     rather than an error. `changed` → delete-and-re-add from the merged blob · `deleted` →
-     delete only ·
+     every re-add takes its body from the merged blob, never from the file on disk. **Re-derive
+     the repo root, default-branch name and repo-relative path for that row**, by step 2's
+     first three steps — do not carry them over from the classification pass. Whatever computed
+     them there belongs to the row being classified, and reaching back gets another row's
+     values or an empty string; an empty path is the case that bites, since
+     `git show origin/<name>:` is the **root tree** rather than an error. `changed` →
+     delete-and-re-add from the merged blob · `deleted` → delete only ·
      `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
      `unchecked` → left alone. (`unchecked`, not `unknown`: a `paper` row's git read either
      succeeds or the row never reaches classification, so `unknown` cannot arise here.)
@@ -481,8 +496,20 @@ notebook already carries.
 5. **Hash the merged blobs — not the files on disk — then surface and confirm.**
 
    ```sh
-   git -C "$repo" show "origin/$def:$dir/<slug>-paper.md" | shasum -a 256 | cut -c1-12
+   for f in "<slug>-paper.md" "<slug>-presenter-pack.md"; do
+     blob=$(git -C "$repo" show "origin/$def:$dir/$f") \
+       || { echo "unchecked: cannot read $f from origin/$def"; exit 1; }
+     printf '%s\t%s\n' "$f" "$(printf '%s' "$blob" | shasum -a 256 | cut -c1-12)"
+   done
    ```
+
+   **Capture the blob and check the status before hashing; never pipe `git show` straight
+   into `shasum`.** A pipeline reports its *last* command's status, so a failed read exits 0
+   and yields the stable empty-string hash `e3b0c44298fc` — a real-looking value that is
+   simply wrong. Here it would be written into the manifest as the paper's hash, and every
+   later drift check would compare against it. This file already states the rule for `url`
+   sources ("Never pipe `curl` straight into `shasum`"); it holds for `git show` for exactly
+   the same reason.
 
    The gate certifies the merged tree, so the hash and the ingested body must come from that
    same tree. Hashing `<repo>/$dir/<slug>-paper.md` instead certifies one thing and ingests
