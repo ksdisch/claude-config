@@ -97,7 +97,12 @@ belong to the drift check, and the drift check has its own table and its own con
 
   1. Make a **fresh** temp file for *this* deliverable. Never reuse one name across two
      deliverables — see the caution below.
-  2. Redirect `git show origin/<branch-name>:<repo-relative-path>` into it.
+  2. Redirect `git -C <that row's repo root> show origin/<branch-name>:<repo-relative-path>`
+     into it. **Name the repo explicitly.** A bare `git show` runs wherever the agent happens
+     to be standing, which for a sweep over eight repos is almost never the right one — and it
+     does not error, it answers about the wrong tree. This is the same hazard as the empty
+     `-C` in invariant 4 of the drift check, reached by omitting the flag rather than by
+     passing it an empty value.
   3. **If that `git show` fails, stop here for this row.** Do not hash, do not ingest, do not
      write a manifest cell. The drift check classifies the row `unchecked` and moves to the
      next; `--add-paper` reports and ends the run. This step is the whole reason for the
@@ -248,8 +253,8 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      4. **Ask existence with `ls-tree`** against `origin/<name>`: non-zero exit →
         `unchecked` · exit 0 with **zero lines** → `deleted` · exit 0 with **one line** → the
         paper is there.
-     5. **Only then hash it, with the canonical blob hash** defined in the `MANIFEST.md`
-        format section — that recipe, not a paraphrase of it. It carries its own failure arm
+     5. **Only then hash it, with the canonical blob read** defined in the `MANIFEST.md`
+        format section — that procedure, not a paraphrase of it. It carries its own failure arm
         (`git show` non-zero → `unchecked`, next row) and it is the *only* form guaranteed to
         reproduce the value `--add-paper` wrote. Compare the result to the row's recorded
         `sha256_12`: differs → `changed`, same → `unchanged`.
