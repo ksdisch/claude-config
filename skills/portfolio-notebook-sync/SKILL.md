@@ -248,9 +248,19 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      to the next. Per row:
 
      1. **Derive the repo** from the row's absolute path **by string split, not by walking the
-        working tree**: rows are `~/Projects/<slug>/…`, so the repo root is `~/Projects/<slug>`.
-        Confirm it with `git -C <that root> rev-parse --show-toplevel`; can't resolve, or
-        resolves empty → `unchecked`, next row.
+        working tree**: rows are absolute paths of the form `/Users/kyledisch/Projects/<slug>/…`
+        (never the `~` form — the manifest stores expanded paths), so the repo root is the
+        first three segments plus `<slug>`. A row not matching that shape → `unchecked`, next
+        row.
+
+        **Confirm by equality, not by exit status.** `git -C <that root> rev-parse
+        --show-toplevel` must print `<that root>` **itself**. A bare success proves only "this
+        path is somewhere inside a repo" — it exits 0 from any subdirectory — so a `<slug>`
+        that is a plain directory inside some *other* repo would pass, and then step 3's fetch
+        writes in a repo the read-only rule forbids while step 4's `ls-tree` resolves the
+        pathspec against the outer root, matches nothing, and returns exit 0 with zero lines:
+        `deleted`, *delete only*, a live paper's source gone. Anything other than an exact
+        match — including a shorter path — means the split was wrong → `unchecked`, next row.
 
         **Do not point `-C` at the paper's own directory.** `git -C` on a path that doesn't
         exist exits 128 *before* it consults the repo, and `docs/paper/` is frequently absent
@@ -635,14 +645,19 @@ notebook already carries.
    `path-or-url` is `$repo/$dir/<file>` — the **absolute** path, matching every other row in
    the manifest and keeping step 2's already-present check answerable next time.
 
-   **The drift check must be able to split that string back into `repo` + `rel`, and this
-   step is what guarantees it can.** `git show` takes a repo-relative path; the manifest
-   stores an absolute one and has no repo or branch column, so the re-check derives all three
-   (`git -C … rev-parse --show-toplevel`, the string split for the relative path, and
-   `git -C … symbolic-ref`) from this one value.
+   **The drift check must be able to split that string back into a repo root and a
+   repo-relative path, and this step is what guarantees it can.** `git show` takes a
+   repo-relative path; the manifest stores an absolute one and has no repo or branch column,
+   so the re-check derives everything from this one value — the repo root **by string split**
+   (confirmed by equality against `git -C … rev-parse --show-toplevel`, never by that
+   command's exit status alone), the relative path by stripping that root, and the branch name
+   with `git -C … symbolic-ref`. See drift step 2's step 1 for the derivation itself; this note
+   only states the obligation this step owes it.
+
    Write the path any other way — a `~`, a symlinked parent, a trailing `./` — and the
    derivation silently stops matching, which surfaces as a paper row that is `unchecked` on
-   every run instead of as an error. Store the same absolute path the gate resolved.
+   every run instead of as an error. Store the same absolute, fully expanded path the gate
+   resolved.
 
 8. **Figures are reported, not ingested.** `mute-map/docs/paper/` carries six rendered PNGs
    and `dim-stage/docs/paper/` a `figures/` directory. A NotebookLM `text` source cannot
