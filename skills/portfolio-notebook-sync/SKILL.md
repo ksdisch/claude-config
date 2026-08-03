@@ -189,95 +189,47 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      second — `git show` alone cannot, because it returns the same 128 for "removed from the
      tree" and "I couldn't read this repo at all"):
 
-     Run **this** block — the loop is part of it, not something you supply:
+     Work **one row at a time, start to finish**, recording that row's answer before moving
+     to the next. Per row:
 
-     ```sh
-     rows=( <the paper rows' path-or-url values> )   # an ARRAY — see the zsh note below
-     out=$(mktemp)                                   # sink: <abs>\t<class>\t<detail>
-     for abs in "${rows[@]}"; do                     # never name a variable `path` — zsh ties it to PATH
-       # A failed rev-parse prints nothing, so emptiness tests BOTH the error and the empty capture.
-       repo=$(git -C "$(dirname "$abs")" rev-parse --show-toplevel 2>/dev/null)
-       [ -n "$repo" ] || { printf '%s\tunchecked\tnot a readable git repo\n' "$abs" >>"$out"; continue; }
-       rel=${abs#"$repo"/}                           # git show needs a REPO-RELATIVE path
+     1. **Derive the repo** from the row's absolute path (`rev-parse --show-toplevel` on its
+        directory). Can't resolve it, or resolves empty → `unchecked`, next row.
+     2. **Derive the repo-relative path** by stripping the repo root off the absolute one.
+        `git show` and `ls-tree` both need the relative form.
+     3. **Resolve the default branch** from `refs/remotes/origin/HEAD`, then fetch it. Either
+        step failing → `unchecked`, next row.
+     4. **Ask existence with `ls-tree`** against `origin/<default>`: non-zero exit →
+        `unchecked` · exit 0 with **zero lines** → `deleted` · exit 0 with **one line** → the
+        paper is there.
+     5. **Only then hash it** with `git show origin/<default>:<relative-path>`, and compare to
+        the row's recorded `sha256_12`: differs → `changed`, same → `unchanged`.
 
-       def=$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
-       [ -n "$def" ] || { printf '%s\tunchecked\tno default branch\n' "$abs" >>"$out"; continue; }
+     Five invariants make the difference between this working and quietly corrupting the
+     notebook. Each one is here because violating it did exactly that during review:
 
-       git -C "$repo" fetch --no-write-fetch-head origin "$def" >/dev/null 2>&1 \
-         || { printf '%s\tunchecked\tfetch failed\n' "$abs" >>"$out"; continue; }
+     - **A git error is never an answer about the paper.** Non-zero exit means *you could not
+       look*, which is `unchecked` — never `deleted`, never `unchanged`. `unchecked` also bars
+       the run from reporting "in sync"; `unknown` would not, which is why the class differs.
+     - **Existence and content are two questions.** `git show` returns the same 128 for
+       "removed from the tree" and "couldn't read this repo at all", so it cannot decide
+       `deleted`. `ls-tree` can: it exits 0 with no output when a pathspec matches nothing.
+     - **Never run `git show <ref>:` with an empty path.** That is not an error — it is the
+       **root tree**, exits 0, and hashes stably to a value no paper can match. Every row
+       would read `changed`, and `changed` is repairable for `paper` rows, so the check would
+       delete the notebook's source and re-ingest a directory listing.
+     - **Never run `git -C` with an empty path.** Per `git(1)` that is a no-op, so the command
+       silently runs in whatever repo you are standing in and *succeeds* — fetching in a repo
+       this skill may not touch and answering about the wrong tree. Prove the repo root is
+       non-empty before using it.
+     - **A row's derived values must not outlive the row.** Finish each row's classification
+       while its repo, branch and relative path are still that row's; carry forward the
+       finished answer, never the intermediates.
 
-       lines=$(git -C "$repo" ls-tree --name-only "origin/$def" -- "$rel") \
-         || { printf '%s\tunchecked\tls-tree failed\n' "$abs" >>"$out"; continue; }
-       [ -n "$lines" ] || { printf '%s\tdeleted\t\n' "$abs" >>"$out"; continue; }
-
-       # Hash HERE, while repo/def/rel are still this row's. Compare to the row's sha256_12.
-       printf '%s\thashed\t%s\n' "$abs" \
-         "$(git -C "$repo" show "origin/$def:$rel" | shasum -a 256 | cut -c1-12)" >>"$out"
-     done
-     ```
-
-     **Every per-row value is consumed inside the loop, on purpose.** `repo`, `def` and `rel`
-     are clobbered on each iteration, so after `done` they hold whatever the *last* row left —
-     and an empty `repo` if that row hit a failure arm. Any instruction placed after the loop
-     that says `git show "origin/$def:$rel"` is therefore reading another row's state, or
-     none. Worse, it does not fail: `git show "origin/<branch>:"` is a **valid ref — the root
-     tree** — so it exits 0 and hashes stably to a value that can never match a paper's hash.
-     Every readable row would classify `changed`, and `changed` is *repairable* for `paper`
-     rows, so the check would delete the notebook's paper source and re-ingest a directory
-     listing. The sink carries the finished answer precisely so nothing downstream has to
-     reach back for state that is already gone.
-
-     **`rows` is an array and the expansion is quoted, because zsh does not word-split.**
-     `for abs in $rows` over a whitespace-joined scalar iterates once per path in bash and
-     **once for the whole string** in zsh — so on Kyle's shell a multi-paper manifest collapses
-     to one bogus row and no paper is ever checked. Single-row tests pass under both shells,
-     which is exactly why they are not sufficient evidence here: test the multi-row shape.
-
-     **Why the loop is in the block rather than assumed around it.** `continue` is terminal
-     *only inside a loop*, and the two shells disagree about what it does outside one — bash
-     prints a warning, **returns 0 and falls through**; zsh **aborts the whole script**. A
-     bare sequence of `|| { …; continue; }` arms is therefore either no guard at all (bash:
-     the row proceeds with `repo` unset, `git -C ""` retargets at the agent's own repo, and
-     the run ends at the false `deleted` below) or a guard that kills the entire sweep on the
-     first unreadable repo (zsh: no drift table at all). Neither is what the prose says.
-     Measured, not reasoned: bash 3.2.57 falls through, zsh 5.9 aborts.
-
-     **Why the arms `printf` instead of calling a helper.** A `|| some_helper` whose helper is
-     defined nowhere is the same defect one rung down: it runs, fails, returns non-zero or
-     127, and the decision it was supposed to record is never recorded — so the `unchecked`
-     bar below has nothing to read. Every arm here writes the row's class where the report is
-     built from. This file forbids that anti-pattern in its own mistakes table; the snippet
-     has to obey it too.
-
-     **`git -C ""` is a foot-gun and the reason `[ -n "$repo" ]` is not optional.** Per
-     `git(1)`, an empty `-C` argument leaves the current working directory unchanged — it does
-     not error. So a non-terminal failure arm that leaves `repo` empty does not stop anything:
-     the next three commands silently retarget to **whichever repo the agent happens to be
-     standing in**, and they *succeed*. `symbolic-ref` returns that repo's default branch,
-     the fetch runs inside a repo this skill was never authorised to touch, and `ls-tree`
-     returns exit 0 with zero lines against a mangled `rel`.
-
-     Exit 0 with zero lines is exactly the `deleted` classification below — so an uncloned
-     project would be reported to Kyle as *"the paper was removed from the default branch"*
-     and its notebook source proposed for deletion. That is a false positive wearing the
-     label of the one class this step calls a real event, and it is strictly worse than the
-     false negative the same mistake produced in step 4. This is not hypothetical: run
-     verbatim during review, the non-terminal form fetched inside an unrelated checkout and
-     moved a remote-tracking ref there.
-
-     Classify **by reading `$out`** — every answer is already in it, and no `git` command runs
-     after the loop:
-     - class `hashed` → compare column 3 against the row's recorded `sha256_12`: differs →
-       `changed`, same → `unchanged`.
-     - class `deleted` → the paper was removed from the default branch — a real event, and one
-       only `ls-tree` can distinguish, since it exits 0 on a
-       pathspec that matches nothing. **Reachable only once every arm above has passed**,
-       which is what makes the label trustworthy enough to act on.
-     - **any non-zero exit or empty capture**, at any step above — repo not cloned, not a
-       repo, ref missing, fetch failed → `unchecked`, and move to the next row. Change
-       nothing, including the manifest. A repo you couldn't read is not a repo whose paper you
-       know anything about, and `unchecked` (not `unknown`) is the right class precisely
-       because it bars the run from reporting "in sync".
+     Whatever shell you write for this, **test it on a multi-row case in the shell you are
+     running.** Single-row tests pass under both `bash` and `zsh` even when the loop is wrong —
+     `zsh` does not word-split unquoted expansions, and `continue` outside a loop is a
+     fall-through in `bash` but aborts the script in `zsh`. Every one of those cost a review
+     round here.
    - `url` rows — classify on the **pair** the probe emits, `(code, rc)`, never on the code
      alone. There are exactly three outcomes and no fourth:
      - `rc=0` **and** `404`/`410`, stable across a retry → `dead`.
