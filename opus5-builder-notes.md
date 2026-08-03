@@ -25,10 +25,11 @@ guide; the rationale for adopting only this slice is in that guide plus the
    genuinely independent, parallelizable tracks. Don't delegate work you can
    finish yourself in a handful of tool calls, and don't use ad-hoc
    subagents to verify your own work — the `adversarial-review` pre-merge
-   loop is exempt and still required."* Exception: when the prompt itself
-   specifies multi-agent orchestration (ultracode effort, or a
-   multi-agent/Workflow archetype), omit the cap line entirely — the
-   orchestration sketch governs, verification votes included.
+   loop is exempt and still required."* Exception: when the prompt's own
+   shape delegates — a multi-agent/ultracode orchestration sketch, a batch
+   of per-unit subagents, a single orchestrator dispatching subagents, or a
+   fan-out research/verification design — omit the cap line entirely; the
+   prompt's delegation design governs, verification votes included.
 4. **Calibrate written deliverables.** Files Opus 5 writes to disk run long.
    If the session will author documents, include: *"Match document length to
    what the task needs — cover the substance; no filler sections, redundant
