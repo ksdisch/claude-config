@@ -122,11 +122,13 @@ that exists so far") rather than pad.
 progressively** — append each segment when it completes, so an interrupted
 session still leaves a partial packet (marked as such in its header).
 
-**Collision rule:** if the dated file already exists (a same-day re-run), do
-not write into it — take the next free suffix (`YYYY-MM-DD-onboarding-2.md`,
-`-3`, …). Never truncate or overwrite an existing packet, especially one whose
-header says `partial`: it may not be committed yet, and it is the only record
-of that run.
+**Collision rule:** resolve the packet path ONCE, at session start, before
+segment 1: if the dated file already exists (a same-day re-run), take the next
+free suffix (`YYYY-MM-DD-onboarding-2.md`, `-3`, …). Every append for the rest
+of the session reuses that one resolved path — the existence test never
+re-runs mid-session, so this session's own appends can never trigger it. Never
+truncate or overwrite an existing packet, especially one whose header says
+`partial`: it may not be committed yet, and it is the only record of that run.
 
 ```markdown
 # Onboarding — <project> — YYYY-MM-DD
