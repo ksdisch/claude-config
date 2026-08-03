@@ -88,28 +88,44 @@ belong to the drift check, and the drift check has its own table and its own con
 - `sha256_12` — the content hash, for **all three** types. Local `text`:
   `shasum -a 256 <file> | cut -c1-12`.
 
-  **`paper` — the canonical blob hash. Every place that hashes a paper uses exactly this, and
-  no place restates it in its own words.**
+  **`paper` — the canonical blob read. Every place that hashes or ingests a paper does this,
+  and no place restates it in its own words.** Stated as a procedure, not a snippet: this
+  file's shell blocks have produced a non-terminal failure arm four separate times, so the
+  stopping behaviour is written in words that cannot be `||`-ed away.
 
-  ```sh
-  blob=$(mktemp)
-  git -C "$repo" show "origin/$def:$rel" > "$blob" \
-    || { echo "unchecked: cannot read $rel from origin/$def"; }   # ...and end this row
-  shasum -a 256 < "$blob" | cut -c1-12
-  ```
+  For **one** deliverable, in order:
 
-  Three properties, and dropping any one of them has already caused a defect here:
-  - **Redirect to a file, never `blob=$(git show …)`.** Command substitution strips *all*
-    trailing newlines, and every Markdown file ends in one — so the captured form hashes a
-    different byte string than the blob it claims to describe. Measured on the same blob:
-    redirect and pipeline both give `478eab6138d2`; `$( )` gives `b19d18598324`. A row written
-    one way and re-checked the other reports `changed` forever on content nobody touched.
+  1. Make a **fresh** temp file for *this* deliverable. Never reuse one name across two
+     deliverables — see the caution below.
+  2. Redirect `git show origin/<branch-name>:<repo-relative-path>` into it.
+  3. **If that `git show` fails, stop here for this row.** Do not hash, do not ingest, do not
+     write a manifest cell. The drift check classifies the row `unchecked` and moves to the
+     next; `--add-paper` reports and ends the run. This step is the whole reason for the
+     redirect, and it is the step that has been dropped or written non-terminally four times
+     in this file's review history — read it as a hard stop, not a warning.
+  4. Only on a clean read, hash the **file**: `shasum -a 256 < <that file> | cut -c1-12`.
+  5. Keep that file. It is the body that gets added to the notebook.
+
+  Four properties, and dropping any one of them has already caused a defect here:
+  - **Redirect to a file, never a `$( )` capture.** Command substitution strips *all* trailing
+    newlines, and every Markdown file ends in one — so the captured form hashes a different
+    byte string than the blob it claims to describe. Measured on the same blob: redirect and
+    pipeline both give `478eab6138d2`; `$( )` gives `b19d18598324`. A row written one way and
+    re-checked the other reports `changed` forever on content nobody touched.
   - **Never pipe `git show` straight into `shasum`.** A pipeline reports its *last* command's
     status, so a failed read exits 0 and yields `e3b0c44298fc`, the empty-string hash — a
     real-looking value that is simply wrong. The redirect keeps `git show`'s own status
-    checkable (a failed read exits 128).
-  - **The same `$blob` file is what gets added to the notebook.** Hashing one byte string and
-    ingesting another is the whole failure this row type exists to prevent.
+    checkable (a failed read exits 128) — but only if step 3 actually stops on it. Checking
+    the status and then hashing anyway reaches the identical wrong value by a longer route.
+  - **Hash once, ingest that same file.** Re-reading the blob to ingest it is a second chance
+    to store bytes other than the ones measured, and nothing downstream ever re-reads what
+    NotebookLM actually received — so a mismatch there is undetectable forever.
+  - **One temp file per deliverable, and they must not share a variable.** A single scalar
+    reused across a two-deliverable loop holds the *last* one when the loop ends; adding "both"
+    from it puts the presenter pack in the notebook twice, one copy titled as the paper, while
+    the manifest carries the paper's correct hash. Every check downstream then passes: the
+    blob is right, the hash is right, and the only wrong thing — which bytes reached the
+    notebook — is the one thing nothing re-reads.
 
   `git show` takes a *repo-relative* path, while `path-or-url` is absolute, so the
   row's own value has to be split before it can be used — see the derivation in the drift
@@ -348,8 +364,15 @@ three-row manifest reports clean over twenty-eight unchecked sources.
      first three steps — do not carry them over from the classification pass. Whatever computed
      them there belongs to the row being classified, and reaching back gets another row's
      values or an empty string; an empty path is the case that bites, since
-     `git show origin/<name>:` is the **root tree** rather than an error. `changed` →
-     delete-and-re-add from the merged blob · `deleted` → delete only ·
+     `git show origin/<name>:` is the **root tree** rather than an error.
+
+     Then run the **canonical blob read** and re-add from the file it produced, writing that
+     same read's hash into the row. This is a repair, so it re-reads by necessity — but the
+     hash it records and the bytes it ingests must come from *that one read*, not from the
+     classification pass's hash paired with a fresh read's bytes. Otherwise the manifest
+     documents a blob the notebook doesn't hold, which is the one error class nothing
+     downstream can detect. `changed` → delete-and-re-add from the merged blob · `deleted` →
+     delete only ·
      `vanished` → re-add from the merged blob, after re-confirming it still resolves ·
      `unchecked` → left alone. (`unchecked`, not `unknown`: a `paper` row's git read either
      succeeds or the row never reaches classification, so `unknown` cannot arise here.)
@@ -521,20 +544,18 @@ notebook already carries.
 
 5. **Hash the merged blobs — not the files on disk — then surface and confirm.**
 
-   Apply the **canonical blob hash** from the `MANIFEST.md` format section to each deliverable
-   in turn — that recipe verbatim, not a local variant of it — and **keep each `$blob` temp
-   file**, because step 6 adds the source from that same file:
+   Run the **canonical blob read** from the `MANIFEST.md` format section once for the paper and
+   once for the presenter pack — that procedure, not a local variant of it. Either read
+   failing ends the run; a half-added pair is worse than an un-added one.
 
-   ```sh
-   for f in "<slug>-paper.md" "<slug>-presenter-pack.md"; do
-     rel="$dir/$f"
-     # ...canonical blob hash here: mktemp, redirect, check status, shasum < file
-     # Keep the temp path alongside "$f" — step 6 ingests exactly the bytes hashed here.
-   done
-   ```
+   **Each deliverable gets its own temp file, and the two must be held separately** — keyed by
+   filename, not in one variable the second pass overwrites. Step 6 ingests these exact files,
+   so if they collapse into one, the notebook receives the presenter pack under both titles
+   while the manifest records the paper's correct hash, and nothing downstream can ever detect
+   it.
 
-   **Do not restate the recipe in this step's own words.** The last time these two sites
-   spelled out hashing independently they disagreed — a `$( )` capture strips trailing
+   **Do not restate the hashing procedure in this step's own words.** The last time these two
+   sites spelled it out independently they disagreed — a `$( )` capture strips trailing
    newlines, so `--add-paper` recorded `b19d18598324` for a blob the drift check hashes as
    `478eab6138d2`, and every subsequent check would have called the fresh rows `changed`.
    One definition, two call sites.
@@ -556,11 +577,13 @@ notebook already carries.
    not about which mode performs it. (Pre-authorized dispatch: proceed without the prompt,
    still print the table.)
 
-6. **Add both to the notebook as `text` sources, from the very `$blob` files step 5 hashed** —
-   never `file` (per the shared rule), and never read from the working tree. Do not re-run
-   `git show` here: re-reading gives a second chance to read something different from what was
-   measured, and the whole point of a `paper` row is that the hash in the manifest describes
-   the bytes in the notebook. Hash once, ingest that. Titles:
+6. **Add both to the notebook as `text` sources, each from its own temp file — the one step 5
+   hashed for that deliverable** — never `file` (per the shared rule), and never read from the
+   working tree. Do not re-run `git show` here: re-reading gives a second chance to store
+   something other than what was measured, and the whole point of a `paper` row is that the
+   hash in the manifest describes the bytes in the notebook. Confirm you are adding **two
+   distinct files** before you add them; if both titles would draw from the same path, step 5's
+   two reads collapsed and the run must stop rather than publish the pack twice. Titles:
 
    - `<project> paper — snapshot <date>`
    - `<project> presenter pack — snapshot <date>`
