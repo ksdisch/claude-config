@@ -156,9 +156,9 @@ Finish the turn. Don't end on a plan or "I'll now do X" — do it. Pause only fo
 You're operating autonomously; I'm not watching live and can't answer mid-task, so don't ask "Shall I…?" For reversible actions that follow from the request, proceed.
 ```
 
-When **Opus 5** is the chosen model, read the builder notes — the vendored
-repo copy `.claude/opus5-builder-notes.md` if present, else
-`~/.claude/opus5-builder-notes.md` — and apply their rules to the prompt
+When **Opus 5** is the chosen model, read the builder notes —
+`~/.claude/opus5-builder-notes.md` if present, else the vendored repo copy
+`.claude/opus5-builder-notes.md` — and apply their rules to the prompt
 body: full spec and acceptance criteria front-loaded, no verification
 boilerplate, the one-line delegation cap, the deliverable-length line when
 the task writes documents, and — for review-shaped prompts — never suppress
@@ -186,7 +186,7 @@ Below the block, in chat: the 2–3 sentence design explanation (and the cost re
 - Don't synthesize before the gate — surface, run-mode, and model/effort are settled and accepted first.
 - Match orchestration to scope: don't bolt a multi-agent fleet onto a one-file task, and don't cram an epic into a single linear thread.
 - ONE model + ONE effort recommendation, plan/build as tiebreaker — strongest ≠ default; Fable 5 for judgment-first and long-horizon/autonomous work, Opus 5 (or Sonnet 5) for executing settled plans, and keep fan-out drones on a cheaper tier.
-- Cost read in chat only — never inside the prompt block. Fable preamble only on Fable prompts; autonomy line only on async runs; Opus 5 prompts follow `~/.claude/opus5-builder-notes.md`.
+- Cost read in chat only — never inside the prompt block. Fable preamble only on Fable prompts; autonomy line only on async runs; Opus 5 prompts follow the builder notes (resolution order in Output format).
 - Recommend only real, installed components.
 - Ask 1–2 clarifying questions only when the answer changes the output; otherwise infer and state assumptions.
 - Finished prompts have no placeholders.

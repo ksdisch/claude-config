@@ -187,9 +187,9 @@ ambiguous between two modes, name both and say what tips it.
 
 ## Opus 5 builder handoffs
 
-When the run-config model pick is **Opus 5**, read the builder notes — the
-vendored repo copy `.claude/opus5-builder-notes.md` if present, else
-`~/.claude/opus5-builder-notes.md` — before writing the fenced block and
+When the run-config model pick is **Opus 5**, read the builder notes —
+`~/.claude/opus5-builder-notes.md` if present, else the vendored repo copy
+`.claude/opus5-builder-notes.md` — before writing the fenced block and
 apply their rules **within the handoff's existing contract** — the five-section
 structure, the derivability rule, and the ~600-word cap all still govern:
 
