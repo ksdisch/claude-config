@@ -156,19 +156,22 @@ Finish the turn. Don't end on a plan or "I'll now do X" — do it. Pause only fo
 You're operating autonomously; I'm not watching live and can't answer mid-task, so don't ask "Shall I…?" For reversible actions that follow from the request, proceed.
 ```
 
-When **Opus 5** is the chosen model, read `~/.claude/opus5-builder-notes.md`
-and apply its rules to the prompt body: full spec and acceptance criteria
-front-loaded, no verification boilerplate, the one-line delegation cap, the
-deliverable-length line when the task writes documents, and — for
-review-shaped prompts — never suppress findings by severity (report all,
-filter in a later pass). Include the delegation cap only when the chosen
-archetype is single-agent (linear, explore→plan→confirm→build, TDD, visual
-iteration); every archetype whose shape delegates — subagent-assisted,
-parallel worktree batch (`/batch`), multi-agent/ultracode, autonomous
-milestone, research & synthesis — omits it, because the archetype's own
-delegation design governs, verification votes included (the notes'
-exception says the same). No preamble block for Opus; the notes shape the
-body itself. If the file is missing, say so in chat and proceed without it.
+When **Opus 5** is the chosen model, read the builder notes — the vendored
+repo copy `.claude/opus5-builder-notes.md` if present, else
+`~/.claude/opus5-builder-notes.md` — and apply their rules to the prompt
+body: full spec and acceptance criteria front-loaded, no verification
+boilerplate, the one-line delegation cap, the deliverable-length line when
+the task writes documents, and — for review-shaped prompts — never suppress
+findings by severity (report all, filter in a later pass). The delegation
+cap is surface-conditioned like the autonomy line (async-only): emit it
+only when the surface is Claude Code, and apply the notes' shape test
+rather than an archetype roster — include the cap only when the prompt body
+specifies no delegation of its own; whenever the body itself delegates (an
+orchestration sketch, per-unit fan-out like `/batch`, an orchestrator
+dispatching subagents, fan-out research/verification), omit it — the
+prompt's delegation design governs, verification votes included. No
+preamble block for Opus; the notes shape the body itself. If neither notes
+copy exists, say so in chat and proceed without them.
 
 The prompt body uses surface-appropriate conventions (XML-tagged + phased + scope boundaries for Claude Code; vault/MCP-aware for Cowork; role + output-format framing for chat) and is shaped by the chosen archetype — for multi-agent/ultracode, include the orchestration sketch. No `[FILL THIS IN]` placeholders — if something's unspecified, you should have asked in step 2.
 
