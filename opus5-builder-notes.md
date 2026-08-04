@@ -1,11 +1,17 @@
 # OPUS 5 BUILDER NOTES
 
-Rules for any prompt that an **Opus 5** session will consume. Consumed by the
-prompt generators — `commands/handoff.md` and `commands/prompt-optimize.md` —
-when their model recommendation is Opus 5; not loaded into sessions directly.
+Rules for any prompt that an **Opus 5** session will consume. Consumed by
+the prompt generators when their model recommendation is Opus 5 —
+`commands/handoff.md`, `commands/prompt-optimize.md`, and the starter
+prompts of `skills/ship-and-route` and `skills/backlog-hygiene` — not loaded
+into sessions directly. Consumers read `~/.claude/opus5-builder-notes.md`
+(a live symlink to this canonical file) and fall back to the vendored
+`.claude/opus5-builder-notes.md` that `/claudify-repo` copies into repos —
+the fallback exists for cloud/web sessions, where `~/.claude/` is absent;
+it is a point-in-time snapshot, so it never outranks the symlink locally.
 Distilled from Anthropic's [Prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)
-guide; the rationale for adopting only this slice is in that guide plus the
-2026-08-02 assessment (PR for this file).
+guide; the rationale for adopting only this slice is recorded in
+[PR #69](https://github.com/ksdisch/claude-config/pull/69).
 
 1. **Complete spec up front, then hands off.** Opus 5 performs best given the
    full task specification and left to run — it finishes tasks rather than
@@ -20,12 +26,14 @@ guide; the rationale for adopting only this slice is in that guide plus the
    ("run the test suite and paste the output before claiming done"), and
    verification votes inside an explicit multi-agent orchestration sketch
    are the design, not boilerplate.
-3. **Cap delegation.** Opus 5 spawns subagents more readily than prior
-   models. Include one line like: *"Delegate to a subagent only for large,
-   genuinely independent, parallelizable tracks. Don't delegate work you can
-   finish yourself in a handful of tool calls, and don't use ad-hoc
-   subagents to verify your own work — the `adversarial-review` pre-merge
-   loop is exempt and still required."* Exception: when the prompt's own
+3. **Cap delegation** — only for surfaces that have subagents (Claude
+   Code); skip the line entirely for claude.ai chat, Cowork, or any other
+   surface without delegation. Opus 5 spawns subagents more readily than
+   prior models. Include one line like: *"Delegate to a subagent only for
+   large, genuinely independent, parallelizable tracks. Don't delegate work
+   you can finish yourself in a handful of tool calls, and don't use ad-hoc
+   subagents to verify your own work — a pre-merge review loop the project
+   requires is exempt and still runs."* Exception: when the prompt's own
    shape delegates — a multi-agent/ultracode orchestration sketch, a batch
    of per-unit subagents, a single orchestrator dispatching subagents, or a
    fan-out research/verification design — omit the cap line entirely; the
