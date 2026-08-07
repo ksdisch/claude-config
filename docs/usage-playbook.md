@@ -713,6 +713,34 @@ rows get re-pointed to match.
   people's* papers and is never read here. Re-running it is safe — an existing `paper` row
   stops it rather than duplicating the source.
 
+#### `curriculum-sync`
+
+- **Run config:** Opus 5 · `high` — the mechanics are delegated, but the judgment isn't:
+  reconstructing a scope you can defend, deciding what a partial hash means, and costing a
+  multi-day quota plan are all calls a checklist can't make. Drop to Sonnet 5 · `medium` for a
+  bare drift check, which is pure table computation.
+- **Reach for it when:**
+  - You updated the repos underneath a notebook and its episodes, quizzes, study guides, or
+    hub course are now describing an older version of the work.
+  - You want to know *which* derived artifacts went stale, not regenerate all of them blindly.
+  - You're building a new notebook + course pair and want it to start life with a ledger
+    (`--new`), instead of hand-assembling three skills' output.
+  - A pair predates the ledger and needs baselining once (`--adopt`).
+- **Pairs well with:** [`portfolio-notebook-sync`](#portfolio-notebook-sync) (owns the source
+  layer this skill refuses to run on top of when it's dirty),
+  [`audio-series`](#audio-series) / [`video-series`](#video-series) (own every generation
+  mechanic), [`notebook-init`](#notebook-init) (the `--new` first step),
+  [`course-builder`](#course-builder) (owns the course contract and its syllabus gate).
+- **Notes:** `DERIVED.md` is the contract — staleness is a hash comparison, never memory of a
+  prior run, and an uncomputable basis is marked `unverified` and **treated as stale** rather
+  than guessed at. A dirty source layer is a hard stop: regenerating over stale sources bakes
+  the staleness into artifacts that then *look* current. Audio re-records at **season** level
+  by design (cross-episode consistency), which against the ~15/24h account-wide cap makes a
+  two-season refresh a multi-day plan — costed at the plan gate, never discovered mid-wave.
+  Deletion is a separate confirm from the plan approval. Cross-link repair is terminal: the
+  portfolio study path hard-references artifact ids across 37 steps, and re-recording one
+  season invalidates eight at once.
+
 #### `nlm-skill`
 
 - **Run config:** inherits the session · `low` — it's a reference guide, not a workflow.
