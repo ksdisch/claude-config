@@ -95,11 +95,22 @@ For **one** row:
      has been dropped or written non-terminally four times in `portfolio-notebook-sync`'s review
      history.
 
-3. **If any identifier has no hash available — a missing `MANIFEST.md` row, a failed blob read, a
-   deleted file — do not compute a basis.** Mark the row `unverified` and report it.
+3. **If any identifier has no hash available — a failed blob read, a deleted file — do not compute a
+   basis.** Mark the row `unverified` and report it.
 
    A basis computed over a partial list is worse than no basis: it is a hash that looks
    authoritative and silently ignores an input.
+
+   **One case is not `unverified` — it is definitive staleness.** A `source_id` in an artifact's
+   scope that is **absent from `MANIFEST.md` entirely** does not mean "I couldn't hash it". It means
+   that source was **deleted and replaced** — `portfolio-notebook-sync` repairs a changed source by
+   `source_delete` + `source_add`, which mints a new id. The revision the artifact was generated
+   from no longer exists in the notebook. Record `stale`, not `unverified`, and say which sources
+   were replaced.
+
+   This is a **stronger** signal than a hash mismatch, and it is the one that fires in practice: the
+   2026-08-05 seven-row repair on the portfolio notebook left seven of the S2/standalone episodes
+   pointing at ids that are gone.
 
 4. **Concatenate the `(identifier, hash)` pairs in sorted order with a fixed separator, hash the
    result with SHA-256, take the first twelve hex characters.** That is the basis. Use the same
@@ -138,15 +149,38 @@ honest about where it could not reconstruct the truth.
    scope is stated, use it. Where it is not, mark the row `unverified`; **do not infer scope from
    the artifact's title.**
 
-3. **Compute a basis only for rows with a confidently reconstructed scope.** Every other row gets
-   `status: unverified` and no basis cell.
+3. **Compute a basis only for rows with a confidently reconstructed scope — and only when the basis
+   would be honest.** Adopt computes hashes from **today's** manifest, but the artifact was generated
+   at some **past** source state, so a naively computed basis can certify staleness as freshness.
 
-4. **Reconstruct §2 `upstream` per material** from `course.json` (the lesson's `reading` URLs and
+   The date test that makes it honest, using `MANIFEST.md`'s `snapshot` column (the date the
+   notebook's copy of that source was added) against the artifact's generation date `G`:
+
+   | Condition | Meaning | Record |
+   |---|---|---|
+   | Any in-scope source has `snapshot` **after** `G` | The notebook's copy was replaced after the artifact was made | `stale`, **no basis** |
+   | Every in-scope `snapshot` is **at or before** `G`, and all hashes currently match | The content the artifact was made from is still exactly what the notebook holds | `current`, basis is valid |
+   | Any in-scope source currently mismatches the manifest | Upstream moved since the manifest last confirmed it | `stale`, no basis |
+
+   Only the middle row earns a basis. This is what lets adopt say `current` about anything at all
+   without inventing history.
+
+4. **Take generation dates from the sidecar README, not from the API.** `studio_status.created_at`
+   is not provenance — on the portfolio notebook it reports the Season 1 episodes as 2026-08-01 when
+   the README records them created 2026-07-21 and never re-recorded, and stamps most artifacts with
+   a date that appears nowhere in the sidecar's history. Treat it as a last-touched timestamp.
+
+5. **Expect `source_ids` to be empty for non-audio types.** The API returns scope for audio and not
+   for quizzes, reports, videos, mind maps, or flashcards — even when the sidecar states those
+   artifacts *were* source-scoped. Those rows are `unverified` unless the sidecar records the scope
+   explicitly. Do not infer scope from a title.
+
+6. **Reconstruct §2 `upstream` per material** from `course.json` (the lesson's `reading` URLs and
    `notebooklm` links) plus the project the lesson is named for. A course whose modules map
    one-lesson-per-project reconstructs cleanly: `upstream` is that project's card plus its paper and
    presenter pack where those exist. Anything ambiguous is `unverified`.
 
-5. **Write `DERIVED.md`** and report three counts separately: rows baselined with a real basis, rows
+7. **Write `DERIVED.md`** and report three counts separately: rows baselined with a real basis, rows
    marked `unverified`, and reconciliation mismatches. Do not blend them into one "adopted N rows"
    number.
 
