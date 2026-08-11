@@ -58,7 +58,9 @@ Referenced by name below. Each holds on every path.
   process that was not there before*. Multiple Claude sessions run on this machine
   routinely, and `/launch` exists to add more, so matching `ps` output against the
   launch command finds someone else's session and reports a failed launch as a
-  success. Identity comes from a PID that is new, never from matching arguments.
+  success. Identity comes from a PID that is new, never from matching arguments —
+  and the probe that produces those PIDs must match on executable name, or it
+  counts itself and manufactures a new PID on every call.
 - **Bracket-quoting** — 1M-context model IDs contain `[` and `]`, which are a glob
   to zsh and a character class to `grep`. Single-quote every model ID for the shell
   (`--model 'claude-opus-5[1m]'`) **and** match it only with `grep -F`, never as a
@@ -88,9 +90,15 @@ Referenced by name below. Each holds on every path.
    | `vscode` | `Visual Studio Code` |
    | anything else, or unset | `Terminal` — the named default; `$TERM_PROGRAM` is unset over ssh and in bare shells |
 
-3. **Snapshot the running sessions** (*Verified-start*) — record the set of PIDs whose
-   args contain `claude --model`, matched with `grep -F`. This is the "before" set that
-   step 7 diffs against.
+3. **Snapshot the running sessions** (*Verified-start*) — record the PID set from exactly
+   `pgrep -x claude`. This is the "before" set that step 7 diffs against, and the same
+   invocation is used at both ends of the diff. Call it **the session probe**.
+
+   The probe matches on the executable name being exactly `claude`. Do not substitute a
+   `ps | grep` for it: any pattern matching the *command line* also matches the `grep`
+   itself and the shell wrapper the command runs in, both of which get a fresh PID every
+   invocation. Two such snapshots taken seconds apart, with no launch in between, differ by
+   three PIDs — so the diff finds a "new session" every time and can never report failure.
 4. **Build the launch command** as one line: `claude --model <id> --effort <level>`,
    with the model ID single-quoted (*Bracket-quoting*). Under `--send`, write the
    prompt to a file under `$TMPDIR` and append `"$(cat '<file>')"` so the prompt
@@ -116,13 +124,13 @@ Referenced by name below. Each holds on every path.
    Check `open`'s exit status: a non-zero status means no window appeared, and the
    report must say that rather than claiming one opened. Then give Kyle the literal
    launch command to run in it.
-7. **Verify** (*Verified-start*) — wait 3 seconds, then take the PID set again the same
-   way as step 3 and diff it against the "before" set. A PID present now and absent
-   then is the new session; report it. Retry the diff twice more, 3 seconds apart,
-   before concluding it did not start — the CLI takes a moment to exec. Never treat a
-   PID from the "before" set as the new session, however well its arguments match.
-   When no new PID appears, say the window opened but the session did not start, and
-   give the literal command — do not retry the launch itself.
+7. **Verify** (*Verified-start*) — wait 3 seconds, run the session probe from step 3
+   again, and diff it against the "before" set. A PID present now and absent then is the
+   new session; report it. Retry the diff twice more, 3 seconds apart, before concluding
+   it did not start — the CLI takes a moment to exec. Never treat a PID from the "before"
+   set as the new session, however well its arguments match. When no new PID appears, say
+   the window opened but the session did not start, and give the literal command — do not
+   retry the launch itself.
 
 ## Report
 
