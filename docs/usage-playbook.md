@@ -129,6 +129,21 @@ rows get re-pointed to match.
 - **Pairs well with:** [`narrate`](#narrate) (the TTS engine it calls),
   [`/wrap`](#wrap) (the endgame sibling — `/catchup` explicitly does *not* end the session).
 
+#### `/handoff`
+
+- **Run config:** inherits the session · `medium` — mostly summarization, but it ends on a
+  real run-config judgment for the next session.
+- **Reach for it when:**
+  - Context is getting long and the remaining work would be cleaner in a fresh session.
+  - You want hard-won lessons and rejected options captured so the next session doesn't
+    relitigate them.
+- **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
+  [`/launch`](#launch) (opens the fresh session and loads the prompt into it),
+  [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
+  [`narrate`](#narrate) (`--audio`).
+- **Notes:** it **stops the current work** after printing — that's deliberate. The
+  run-config note lands outside the paste-able block, never inside it.
+
 #### `/launch`
 
 - **Run config:** inherits the session · `low` — it opens a window and starts a process;
@@ -144,21 +159,9 @@ rows get re-pointed to match.
   misfired launch costs one ⌘V rather than a regenerated handoff. Only Warp on macOS can
   truly auto-start the session; other terminals get the window plus the command to run, said
   plainly. It never types into an already-open window — that needs Accessibility permission
-  and can hit whatever is focused.
-
-#### `/handoff`
-
-- **Run config:** inherits the session · `medium` — mostly summarization, but it ends on a
-  real run-config judgment for the next session.
-- **Reach for it when:**
-  - Context is getting long and the remaining work would be cleaner in a fresh session.
-  - You want hard-won lessons and rejected options captured so the next session doesn't
-    relitigate them.
-- **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
-  [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
-  [`narrate`](#narrate) (`--audio`).
-- **Notes:** it **stops the current work** after printing — that's deliberate. The
-  run-config note lands outside the paste-able block, never inside it.
+  and can hit whatever is focused. Identity of the started session comes from a PID that
+  wasn't running before, never from matching `ps` arguments — several Claude sessions are
+  usually running, and `/launch` exists to add another.
 
 #### `/learn`
 
