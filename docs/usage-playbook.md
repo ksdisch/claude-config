@@ -138,10 +138,30 @@ rows get re-pointed to match.
   - You want hard-won lessons and rejected options captured so the next session doesn't
     relitigate them.
 - **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
+  [`/launch`](#launch) (opens the fresh session and loads the prompt into it),
   [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
   [`narrate`](#narrate) (`--audio`).
 - **Notes:** it **stops the current work** after printing — that's deliberate. The
   run-config note lands outside the paste-able block, never inside it.
+
+#### `/launch`
+
+- **Run config:** inherits the session · `low` — it opens a window and starts a process;
+  the judgment already happened in the run-config note it reads.
+- **Reach for it when:**
+  - You've just run `/handoff` (or `/ship-and-route`, `/prompt-optimize`,
+    `/backlog-hygiene`) and want the fresh session open rather than assembled by hand.
+  - Pass `--send` when you want it working immediately instead of pausing on your ⌘V.
+- **Pairs well with:** [`/handoff`](#handoff) (the usual caller — `/launch` consumes its
+  paste-able block and run-config note), [`/begin`](#begin) (what the launched session
+  often runs first).
+- **Notes:** the prompt lands on the clipboard on **every** path, including failures, so a
+  misfired launch costs one ⌘V rather than a regenerated handoff. Only Warp on macOS can
+  truly auto-start the session; other terminals get the window plus the command to run, said
+  plainly. It never types into an already-open window — that needs Accessibility permission
+  and can hit whatever is focused. Identity of the started session comes from a PID that
+  wasn't running before, never from matching `ps` arguments — several Claude sessions are
+  usually running, and `/launch` exists to add another.
 
 #### `/learn`
 
