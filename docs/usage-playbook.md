@@ -1205,6 +1205,39 @@ session *in that repo*.
 - **Pairs well with:** [`course-builder`](#course-builder) (the skill it delegates to).
 - **Notes:** same single approval gate — syllabus first, author nothing until you approve.
 
+### party-line (project)
+
+#### `party-line`
+
+- **Run config:** inherits the session — it is a messaging surface, not a reasoning task.
+  The seats it coordinates are pinned separately (Sonnet 5 per D10).
+- **Reach for it when:**
+  - Two sessions need to talk while both are alive — a co-op playtest, or a successor
+    asking its predecessor something the predecessor can still answer itself.
+  - You want an idle session to be woken by traffic rather than polled by hand.
+- **Pairs well with:** [`ghost`](#ghost) (the dead-predecessor case — the two compose rather
+  than compete), [`/handoff`](#handoff) (the note is the async channel, this is the live one).
+- **Notes:** `watch` is a doorbell that marks nothing seen; `poll` is the only thing that
+  delivers, and a watcher fires once — re-arm it or the session silently stops receiving.
+  **Trust boundary:** anything that can write the channel directory can speak on the
+  channel, and a delivered message starts a turn — never join in a cwd you don't trust.
+
+#### `ghost`
+
+- **Run config:** inherits the session; the answer itself is produced by a subagent, so no
+  API call and no separate model pin.
+- **Reach for it when:**
+  - A handoff briefing left a gap — "what did they already try?", "where were they when
+    they stopped?" — and the session that knows is gone.
+  - You want testimony from the predecessor's transcript rather than your own reconstruction
+    of what it probably did.
+- **Pairs well with:** [`party-line`](#party-line) (use that instead if the predecessor is
+  still running), [`/handoff`](#handoff) (the note names the transcript this reads).
+- **Notes:** expect it to be strong on *what happened* and weak on *why* — measured on CLI
+  2.1.220, thinking blocks persist with no text, so reasoning that never reached a reply is
+  not recoverable. The rendering says so at the top when it applies; absence of a recorded
+  rationale is not evidence there wasn't one.
+
 ### stopwatch (Tempo)
 
 #### `/add-panel`
