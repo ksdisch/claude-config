@@ -453,6 +453,42 @@ rows get re-pointed to match.
   bug. Decisions tables and History are append-only. Broad changes (3+ pages) get their
   scope reported first.
 
+#### `grill-me`
+
+- **Run config:** Fable 5 · `high` — a pressure-test interview is judgment-first work; bump
+  to `xhigh` when the plan hangs on one genuinely hard design call.
+- **Reach for it when:**
+  - You have a plan or design that *feels* done and you want its weak branches found before
+    you commit to building.
+  - You're about to hand work to a builder session and want every silent assumption
+    surfaced first.
+- **Pairs well with:** [`grilling`](#grilling) (the method this invokes),
+  [`kickoff`](#kickoff) (grill the brief a kickoff produced), [`/explore-plan`](#explore-plan)
+  (grill the winning approach before approving it), [`/handoff`](#handoff) (turn the
+  sharpened plan into a builder handoff).
+- **Notes:** deliberately a thin wrapper (`disable-model-invocation: true`) — it only fires
+  when you type `/grill-me`; the auto-trigger surface lives on `grilling`. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
+
+#### `grilling`
+
+- **Run config:** inherits the session · `high` — it auto-fires mid-session on "grill me"
+  phrasing, interrogating whatever plan that session already holds.
+- **Reach for it when:**
+  - You say "grill me on this" about a plan, decision, or idea mid-session.
+  - A decision has branches you haven't consciously visited and you want them enumerated
+    rather than assumed.
+- **Pairs well with:** [`grill-me`](#grill-me) (the typed entry point),
+  [`adversarial-review`](#adversarial-review) (the post-code sibling — grilling
+  stress-tests the plan, the review loop stress-tests the diff),
+  [`backlog-hygiene`](#backlog-hygiene) (grill the "what's next" pick it produces).
+- **Notes:** works in rounds — the whole frontier of askable questions at once, each
+  numbered with a recommended answer; questions whose prerequisites are still open wait for
+  a later round. Facts are Claude's job (dispatched to subagents, never asked of you);
+  decisions are yours. Done only when the frontier is empty *and* you confirm shared
+  understanding — it does not act on the plan before that. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
+
 ### Session & Context Management
 
 #### `reorient`
