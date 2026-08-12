@@ -204,7 +204,7 @@ Referenced by name below. Each holds on every path.
    and worse for reading a failed launch's error (see Report). It is still the
    precondition for any close-on-exit behavior, which is why it lands before the answer.
 
-   If the answer comes back "no", the revert is five sites, not one line — and half a
+   If the answer comes back "no", the revert is every site below, not one line — and half a
    revert is worse than none, because it leaves this file telling the agent to report "the
    window is probably gone" while a live shell prompt sits in that tab. All of these go
    together: the inner `exec` in the schema above, the paragraph below defending it against
