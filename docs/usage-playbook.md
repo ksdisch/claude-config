@@ -159,9 +159,12 @@ rows get re-pointed to match.
   misfired launch costs one ⌘V rather than a regenerated handoff. Only Warp on macOS can
   truly auto-start the session; other terminals get the window plus the command to run, said
   plainly. It never types into an already-open window — that needs Accessibility permission
-  and can hit whatever is focused. Identity of the started session comes from a PID that
-  wasn't running before, never from matching `ps` arguments — several Claude sessions are
-  usually running, and `/launch` exists to add another.
+  and can hit whatever is focused. Identity of the started session starts from a PID that
+  wasn't running before — necessary but not sufficient, since several Claude sessions are
+  usually running and `/launch` exists to add another — and is confirmed by checking that
+  PID's working directory and the `--model`/`--effort` head of its command line. The report
+  names the exact tab to paste into, because a stray ⌘V into some other session looks
+  exactly like success.
 
 #### `/learn`
 

@@ -60,7 +60,18 @@ Referenced by name below. Each holds on every path.
   launch command finds someone else's session and reports a failed launch as a
   success. Identity comes from a PID that is new, never from matching arguments —
   and the probe that produces those PIDs must match on executable name, or it
-  counts itself and manufactures a new PID on every call.
+  counts itself and manufactures a new PID on every call. A new PID is necessary
+  but not sufficient: confirm it is *the launched session* by checking its working
+  directory equals the target directory and its command line carries the model and
+  effort that were launched. A new PID at the wrong directory is someone else's
+  session that happened to start during the wait.
+- **Named-target** — with a dozen sessions running, "the new window" is not an
+  identification. The report must name the destination — the Warp tab title, or on
+  the fallback path the terminal application and directory — and when the "before"
+  probe found other sessions already running, it must say so and warn that a stray
+  ⌘V into one of them runs the handoff on the wrong model in the wrong directory
+  while looking exactly like success. That failure mode has happened; the window
+  this command opens is not necessarily the window Kyle is looking at.
 - **Bracket-quoting** — 1M-context model IDs contain `[` and `]`, which are a glob
   to zsh and a character class to `grep`. Single-quote every model ID for the shell
   (`--model 'claude-opus-5[1m]'`) **and** match it only with `grep -F`, never as a
@@ -125,23 +136,46 @@ Referenced by name below. Each holds on every path.
    report must say that rather than claiming one opened. Then give Kyle the literal
    launch command to run in it.
 7. **Verify** (*Verified-start*) — wait 3 seconds, run the session probe from step 3
-   again, and diff it against the "before" set. A PID present now and absent then is the
-   new session; report it. Retry the diff twice more, 3 seconds apart, before concluding
-   it did not start — the CLI takes a moment to exec. Never treat a PID from the "before"
-   set as the new session, however well its arguments match. When no new PID appears, say
-   the window opened but the session did not start, and give the literal command — do not
-   retry the launch itself.
+   again, and diff it against the "before" set. Every PID present now and absent then
+   is a candidate — more than one session can start during the wait, and novelty alone
+   cannot tell the launched one from a stranger's. Retry the diff twice more, 3 seconds
+   apart, before concluding no session started — the CLI takes a moment to exec. Never
+   treat a PID from the "before" set as the new session, however well its arguments
+   match.
+
+   Then run both identity checks against **each** candidate; the launched session is
+   whichever candidate passes both:
+   - **Directory** — `lsof -a -p <pid> -d cwd` names its working directory; it must
+     equal the target directory from step 1 of Resolve inputs.
+   - **Command** — `ps -p <pid> -o command=` shows its command line; the line must
+     *begin with* the launch command from step 4, quoting stripped — the shell removes
+     the quotes before exec, so the head of the line reads `claude --model <id>
+     --effort <level>` unquoted. Compare the head of the line against that literal
+     prefix as fixed strings, never as a pattern (*Bracket-quoting*), and never search
+     the whole line: under `--send` the entire prompt rides in the command line, and a
+     model ID or effort word occurring in the prompt's prose satisfies a whole-line
+     search while the actual flags are wrong.
+
+   Three outcomes, each reported honestly: a candidate passes both checks → the
+   session is verified; report that PID. Candidates appeared but none passes both →
+   say a session started somewhere but it is not the launched one, and treat the
+   launch as unverified. No new PID → say the window opened but the session did not
+   start, and give the literal command — do not retry the launch itself.
 
 ## Report
 
-Three or four lines, outside any code block:
+Four or five lines, outside any code block:
 
 - Where the window opened — or that it did not, when `open` returned non-zero.
-- Whether the session is running, with the new PID, or needs the command run manually.
+- Whether the session is verified running (new PID + both identity checks), or
+  needs the command run manually.
 - **The exact command that was launched**, so a wrong inferred model or effort is
   visible rather than silently in force.
-- Whether to paste (⌘V) or that the prompt was already submitted.
-- Any honest caveat: fallback terminal, unverified start, an inferred directory that
-  differed from cwd.
+- **Where to paste** (*Named-target*) — the Warp tab title from step 5, or the
+  application and directory on the fallback path; then ⌘V, or that the prompt was
+  already submitted. When the "before" probe found other sessions running, add the
+  warning *Named-target* requires.
+- Any honest caveat: fallback terminal, unverified start or failed identity check,
+  an inferred directory that differed from cwd.
 
 Then stop.
