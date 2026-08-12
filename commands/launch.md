@@ -1,6 +1,6 @@
 ---
-description: Open a new terminal window in a project directory and start a fresh Claude Code session there, with a prompt already on the clipboard (or auto-submitted via --send). Reads the target directory, model, and effort from the run-config note the current session just produced. macOS + Warp gets a real auto-start; other terminals get the window plus an honest "run this yourself" message.
-argument-hint: "[dir] [--model <id>] [--effort <level>] [--send]"
+description: Open a new terminal window in a project directory and start a fresh Claude Code session there, with a prompt already on the clipboard (or auto-submitted via --send). Reads the target directory, model, and effort from the run-config note the current session just produced, and names the session descriptively via `claude --name` so it's findable in the resume picker instead of carrying an auto-generated title. macOS + Warp gets a real auto-start; other terminals get the window plus an honest "run this yourself" message.
+argument-hint: "[dir] [--model <id>] [--effort <level>] [--name <session-name>] [--send]"
 allowed-tools: Bash, Read, Write
 ---
 
@@ -19,11 +19,12 @@ don't continue the current session's task.
 - *(none)* → infer everything from this conversation (see Resolve inputs).
 - A path → the target directory, overriding what was inferred.
 - `--model <id>` / `--effort <level>` → override the inferred run config.
+- `--name <session-name>` → override the derived session name.
 - `--send` → auto-submit the prompt instead of leaving it for Kyle to paste.
 
 ## Resolve inputs
 
-Five values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
+Six values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
 
 1. **Directory** — the repo the next session works in. Infer from the most recent
    run-config note or handoff in this conversation; that is often *not* the
@@ -39,7 +40,15 @@ Five values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
 4. **Prompt** — the paste-able block this session most recently printed, with the
    fence markers stripped. Never include the "For Kyle" briefing or run-config
    note; those are notes to Kyle, not part of the prompt.
-5. **Send mode** — paste (default) or auto-submit (`--send`).
+5. **Session name** — a short descriptive title for the new session, so the resume
+   picker and session lists show what it's for instead of an auto-generated name.
+   Derive it from the task the prompt describes: kebab-case, 2–5 words, leading
+   with the project when the directory isn't obvious from the task
+   (`doghood-stripe-webhooks`, `wiki-backfill-all-projects`). This is never a stop
+   rule — a name is always derivable, worst case `<repo-basename>-handoff`. The
+   same string becomes the Warp tab title in step 5, so the paste target and the
+   session list agree on what to call this session.
+6. **Send mode** — paste (default) or auto-submit (`--send`).
 
 **Stop rules apply to all three of prompt, model, and effort.** If any of them
 cannot be resolved and was not supplied, stop, say which one, and ask. Never fall
@@ -110,10 +119,23 @@ Referenced by name below. Each holds on every path.
    itself and the shell wrapper the command runs in, both of which get a fresh PID every
    invocation. Two such snapshots taken seconds apart, with no launch in between, differ by
    three PIDs — so the diff finds a "new session" every time and can never report failure.
-4. **Build the launch command** as one line: `claude --model <id> --effort <level>`,
-   with the model ID single-quoted (*Bracket-quoting*). Under `--send`, write the
-   prompt to a file under `$TMPDIR` and append `"$(cat '<file>')"` so the prompt
-   arrives as a single argument regardless of what it contains.
+4. **Build the launch command** as one line:
+   `claude --model <id> --effort <level> --name '<session name>'`, with the model
+   ID single-quoted (*Bracket-quoting*) and the session name single-quoted too — it
+   may contain spaces or shell-significant characters. The flags appear in exactly
+   that order, because step 7 compares against this line as a literal prefix.
+   `--name` sets the session's title at launch, so `claude --resume` and the
+   session lists show the descriptive name instead of an auto-generated one.
+
+   First check the flag is supported: `claude --help 2>&1 | grep -F -- '--name'`.
+   On an older CLI where it isn't, build the command without `--name` and note in
+   the report that the session launched unnamed and Kyle can run
+   `/rename <session name>` inside it — never pass a flag the binary would reject,
+   because a rejected flag means no session at all.
+
+   Under `--send`, write the prompt to a file under `$TMPDIR` and append
+   `"$(cat '<file>')"` so the prompt arrives as a single argument regardless of
+   what it contains.
 5. **Warp path** — write `~/.warp/launch_configurations/claude-launch.yaml`
    (*Config-is-disposable*), creating the directory if absent, then open
    `warp://launch/claude-launch`. The schema, which is the one exact literal here:
@@ -123,7 +145,7 @@ Referenced by name below. Each holds on every path.
    name: claude-launch
    windows:
      - tabs:
-         - title: <short title>
+         - title: <session name>
            layout:
              cwd: <absolute directory>
              commands:
@@ -150,7 +172,8 @@ Referenced by name below. Each holds on every path.
    - **Command** — `ps -p <pid> -o command=` shows its command line; the line must
      *begin with* the launch command from step 4, quoting stripped — the shell removes
      the quotes before exec, so the head of the line reads `claude --model <id>
-     --effort <level>` unquoted. Compare the head of the line against that literal
+     --effort <level> --name <session name>` unquoted (without `--name` when the
+     flag-support check in step 4 dropped it). Compare the head of the line against that literal
      prefix as fixed strings, never as a pattern (*Bracket-quoting*), and never search
      the whole line: under `--send` the entire prompt rides in the command line, and a
      model ID or effort word occurring in the prompt's prose satisfies a whole-line
@@ -169,13 +192,15 @@ Four or five lines, outside any code block:
 - Where the window opened — or that it did not, when `open` returned non-zero.
 - Whether the session is verified running (new PID + both identity checks), or
   needs the command run manually.
-- **The exact command that was launched**, so a wrong inferred model or effort is
-  visible rather than silently in force.
+- **The exact command that was launched**, so a wrong inferred model, effort, or
+  session name is visible rather than silently in force.
 - **Where to paste** (*Named-target*) — the Warp tab title from step 5, or the
   application and directory on the fallback path; then ⌘V, or that the prompt was
-  already submitted. When the "before" probe found other sessions running, add the
-  warning *Named-target* requires.
+  already submitted. The session name doubles as the identity to look for in
+  `claude --resume` and the session lists later. When the "before" probe found
+  other sessions running, add the warning *Named-target* requires.
 - Any honest caveat: fallback terminal, unverified start or failed identity check,
-  an inferred directory that differed from cwd.
+  an inferred directory that differed from cwd, or a CLI too old for `--name`
+  (session launched unnamed — run `/rename <session name>` inside it).
 
 Then stop.
