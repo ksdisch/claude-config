@@ -245,6 +245,21 @@ A personal learning hub — NotebookLM-backed course catalog with audio/video ep
 
 ---
 
+### party-line (`~/Projects/party-line/`)
+
+Session-to-session collaboration for Claude Code — a file-mailbox intercom, a two-AI-player
+Constellation playtest harness, and handoff notes with a ghost responder, all on the Max
+subscription with zero API-credit billing.
+
+**Skills**
+
+| Skill | What it does |
+|---|---|
+| `party-line` | Live messaging between Claude Code sessions over a file mailbox — join a channel, send, poll, and get woken by a background watcher when a peer writes. · [config →](usage-playbook.md#party-line) |
+| `ghost` | Asks the previous session a question, answered as that session from its saved transcript by a subagent — the escape hatch when a handoff briefing leaves a gap. · [config →](usage-playbook.md#ghost) |
+
+---
+
 ### stopwatch (Tempo)
 
 A biofeedback / rhythm-tracking browser app.
