@@ -136,24 +136,31 @@ Referenced by name below. Each holds on every path.
    report must say that rather than claiming one opened. Then give Kyle the literal
    launch command to run in it.
 7. **Verify** (*Verified-start*) — wait 3 seconds, run the session probe from step 3
-   again, and diff it against the "before" set. A PID present now and absent then is the
-   candidate. Retry the diff twice more, 3 seconds apart, before concluding no session
-   started — the CLI takes a moment to exec. Never treat a PID from the "before" set as
-   the new session, however well its arguments match.
+   again, and diff it against the "before" set. Every PID present now and absent then
+   is a candidate — more than one session can start during the wait, and novelty alone
+   cannot tell the launched one from a stranger's. Retry the diff twice more, 3 seconds
+   apart, before concluding no session started — the CLI takes a moment to exec. Never
+   treat a PID from the "before" set as the new session, however well its arguments
+   match.
 
-   Then confirm the candidate's identity with two checks:
+   Then run both identity checks against **each** candidate; the launched session is
+   whichever candidate passes both:
    - **Directory** — `lsof -a -p <pid> -d cwd` names its working directory; it must
-     equal the target directory from step 1.
-   - **Command** — `ps -p <pid> -o command=` shows its command line; it must contain
-     the launched `--model` and `--effort` values, matched with `grep -F`
-     (*Bracket-quoting*). The shell strips the quoting before exec, so match the
-     unquoted model ID, not the quoted form from step 4.
+     equal the target directory from step 1 of Resolve inputs.
+   - **Command** — `ps -p <pid> -o command=` shows its command line; the line must
+     *begin with* the launch command from step 4, quoting stripped — the shell removes
+     the quotes before exec, so the head of the line reads `claude --model <id>
+     --effort <level>` unquoted. Compare the head of the line against that literal
+     prefix as fixed strings, never as a pattern (*Bracket-quoting*), and never search
+     the whole line: under `--send` the entire prompt rides in the command line, and a
+     model ID or effort word occurring in the prompt's prose satisfies a whole-line
+     search while the actual flags are wrong.
 
-   Three outcomes, each reported honestly: both checks pass → the session is verified;
-   a new PID appears but a check fails → say a session started somewhere but it is not
-   the launched one, and treat the launch as unverified; no new PID → say the window
-   opened but the session did not start, and give the literal command — do not retry
-   the launch itself.
+   Three outcomes, each reported honestly: a candidate passes both checks → the
+   session is verified; report that PID. Candidates appeared but none passes both →
+   say a session started somewhere but it is not the launched one, and treat the
+   launch as unverified. No new PID → say the window opened but the session did not
+   start, and give the literal command — do not retry the launch itself.
 
 ## Report
 
