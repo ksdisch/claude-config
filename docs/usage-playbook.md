@@ -167,9 +167,15 @@ rows get re-pointed to match.
   exactly like success. The launched session gets a descriptive name via `claude --name`
   (override with `--name <session-name>`), and the Warp tab title reuses the same string —
   so the resume picker, the session lists, and the paste target all agree on what the
-  session is called instead of showing an auto-generated title. Caveat on mobile: CLI
-  session names show in `claude --resume` and the desktop app; they appear in the
-  claude.ai/mobile lists only for Remote Control sessions, which `/launch` doesn't start.
+  session is called instead of showing an auto-generated title. CLI session names show in
+  `claude --resume` and the desktop app; to have the named session appear in the
+  claude.ai/mobile lists too, pass `--remote` — it launches via
+  `claude --remote-control '<name>'`, still a normal terminal session locally with the
+  phone as an extra control surface. Two `--remote` caveats: it can't combine with
+  `--send` (Remote Control takes no initial prompt, so it's always a ⌘V paste), and it
+  has claude.ai-side preconditions (paid-plan login, no custom `ANTHROPIC_BASE_URL`)
+  that the launcher can't verify up front — a failed start gets reported honestly with
+  the command to run by hand.
 
 #### `/learn`
 

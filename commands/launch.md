@@ -1,6 +1,6 @@
 ---
-description: Open a new terminal window in a project directory and start a fresh Claude Code session there, with a prompt already on the clipboard (or auto-submitted via --send). Reads the target directory, model, and effort from the run-config note the current session just produced, and names the session descriptively via `claude --name` so it's findable in the resume picker instead of carrying an auto-generated title. macOS + Warp gets a real auto-start; other terminals get the window plus an honest "run this yourself" message.
-argument-hint: "[dir] [--model <id>] [--effort <level>] [--name <session-name>] [--send]"
+description: Open a new terminal window in a project directory and start a fresh Claude Code session there, with a prompt already on the clipboard (or auto-submitted via --send). Reads the target directory, model, and effort from the run-config note the current session just produced, and names the session descriptively via `claude --name` so it's findable in the resume picker instead of carrying an auto-generated title. Pass --remote to start it as a Remote Control session so the name also shows in the claude.ai/mobile session lists. macOS + Warp gets a real auto-start; other terminals get the window plus an honest "run this yourself" message.
+argument-hint: "[dir] [--model <id>] [--effort <level>] [--name <session-name>] [--remote] [--send]"
 allowed-tools: Bash, Read, Write
 ---
 
@@ -20,7 +20,14 @@ don't continue the current session's task.
 - A path → the target directory, overriding what was inferred.
 - `--model <id>` / `--effort <level>` → override the inferred run config.
 - `--name <session-name>` → override the derived session name.
+- `--remote` → start the session in Remote Control mode, so the session (under its
+  descriptive name) also appears in the claude.ai and mobile-app session lists and
+  can be steered from the phone. Without it, the name shows only in
+  `claude --resume` and the desktop app.
 - `--send` → auto-submit the prompt instead of leaving it for Kyle to paste.
+  **Incompatible with `--remote`** — a Remote Control invocation takes no initial
+  prompt, so under `--remote` the prompt always arrives by ⌘V. When both are
+  given, `--remote` wins; say in the report that `--send` was ignored and why.
 
 ## Resolve inputs
 
@@ -46,9 +53,11 @@ Six values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
    with the project when the directory isn't obvious from the task
    (`doghood-stripe-webhooks`, `wiki-backfill-all-projects`). This is never a stop
    rule — a name is always derivable, worst case `<repo-basename>-handoff`. The
-   same string becomes the Warp tab title in step 5, so the paste target and the
-   session list agree on what to call this session.
-6. **Send mode** — paste (default) or auto-submit (`--send`).
+   same string becomes the Warp tab title in step 5 — and, under `--remote`, the
+   Remote Control session title — so the paste target and every session list agree
+   on what to call this session.
+6. **Mode** — paste (default), auto-submit (`--send`), or Remote Control
+   (`--remote`); the `--send`/`--remote` conflict resolves per the parse rules.
 
 **Stop rules apply to all three of prompt, model, and effort.** If any of them
 cannot be resolved and was not supplied, stop, say which one, and ask. Never fall
@@ -133,9 +142,19 @@ Referenced by name below. Each holds on every path.
    `/rename <session name>` inside it — never pass a flag the binary would reject,
    because a rejected flag means no session at all.
 
-   Under `--send`, write the prompt to a file under `$TMPDIR` and append
-   `"$(cat '<file>')"` so the prompt arrives as a single argument regardless of
-   what it contains.
+   **Under `--remote`**, the command is instead
+   `claude --remote-control '<session name>' --model <id> --effort <level>` — the
+   session name rides as the positional argument to `--remote-control` (that *is*
+   the Remote Control naming syntax; no separate `--name`), and the session is
+   still a normal interactive terminal session locally, with the phone as an extra
+   control surface. Probe `claude --help 2>&1 | grep -F -- '--remote-control'`
+   the same way; if unsupported, fall back to the plain named launch above and say
+   in the report that the name won't reach the mobile list. No prompt argument is
+   ever appended on this path — Remote Control takes no initial prompt.
+
+   Under `--send` (non-remote only), write the prompt to a file under `$TMPDIR`
+   and append `"$(cat '<file>')"` so the prompt arrives as a single argument
+   regardless of what it contains.
 5. **Warp path** — write `~/.warp/launch_configurations/claude-launch.yaml`
    (*Config-is-disposable*), creating the directory if absent, then open
    `warp://launch/claude-launch`. The schema, which is the one exact literal here:
@@ -173,7 +192,8 @@ Referenced by name below. Each holds on every path.
      *begin with* the launch command from step 4, quoting stripped — the shell removes
      the quotes before exec, so the head of the line reads `claude --model <id>
      --effort <level> --name <session name>` unquoted (without `--name` when the
-     flag-support check in step 4 dropped it). Compare the head of the line against that literal
+     flag-support check in step 4 dropped it), or under `--remote`
+     `claude --remote-control <session name> --model <id> --effort <level>`. Compare the head of the line against that literal
      prefix as fixed strings, never as a pattern (*Bracket-quoting*), and never search
      the whole line: under `--send` the entire prompt rides in the command line, and a
      model ID or effort word occurring in the prompt's prose satisfies a whole-line
@@ -200,7 +220,14 @@ Four or five lines, outside any code block:
   `claude --resume` and the session lists later. When the "before" probe found
   other sessions running, add the warning *Named-target* requires.
 - Any honest caveat: fallback terminal, unverified start or failed identity check,
-  an inferred directory that differed from cwd, or a CLI too old for `--name`
-  (session launched unnamed — run `/rename <session name>` inside it).
+  an inferred directory that differed from cwd, a CLI too old for `--name`
+  (session launched unnamed — run `/rename <session name>` inside it), or `--send`
+  ignored because `--remote` was also given. On the `--remote` path, when the
+  window opened but no session started, say that Remote Control has its own
+  preconditions the probe can't see — it needs a claude.ai login (not an API key)
+  on a paid plan, is disabled under a custom `ANTHROPIC_BASE_URL` or
+  telemetry-off env vars, and the docs don't guarantee `--model`/`--effort`
+  compose with it — and give the literal command so Kyle can run it and read the
+  actual error.
 
 Then stop.
