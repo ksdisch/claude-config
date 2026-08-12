@@ -5,6 +5,13 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Feature] Session auto-close: the `/launch` companion that reaps finished sessions
+- **Why:** `/launch` (PRs #75/#76) made opening sessions one command, but nothing ever closes them — finished Warp windows/tabs accumulate on the desktop until Kyle sweeps them by hand, and the more `/launch` gets used the faster they pile up. Sessions need the ability and insight to close sessions that are *for sure* done being used. The governing asymmetry: a launch mistake costs one ⌘V; a close mistake kills live work. Full write-up in [`docs/ideas/session-auto-close.md`](docs/ideas/session-auto-close.md).
+- **Acceptance:** A plan doc in `docs/plans/` settling the four open design questions (Warp close mechanism, what "for sure done" means, where the reaper lives, consent model), then the build it specifies — or the plan session itself ships the build if it turns out light.
+- **Size:** M
+- **Added:** 2026-08-12
+- **Ready to start:** paste the handoff from [`docs/ideas/session-auto-close.md` § Handoff prompt](docs/ideas/session-auto-close.md#handoff-prompt-ready-to-paste). Run on Fable 5 at `xhigh`, **on the Mac** — the feasibility question is a hands-on Warp experiment, and the design questions need deciding before any code.
+
 ### [Improvement] Two deferred nice-to-haves from PR #46's review
 - **Why:** F4 — the silent-failure dimension shipped in `hunt-engine.template.js` passes the whole `ROOT` while `bug-hunt`'s own slicing rule mandates one slice per finder, so on a 6+-finder repo hunt it overlaps every other slice and must self-bound its coverage (the thing the skill says never to do silently); and because `agentType` resolves the agent definition, that dimension silently inherits `model: sonnet` regardless of session model, putting the one mandated lens on the fan-out's weakest model. F7 — `CLAUDE.md`'s newly-declared owner rung is missing two criteria both dependents attribute to it: `prompt-optimize`'s "long autonomous run where self-verification pays" on `xhigh`/`max`, and the ultracode `/config` prerequisite + silent-degradation caveat that currently live only in `handoff.md` and `ship-and-route`. An incomplete owner sends a reader who obeys "cite here, never each other" to the thinner text. Full record in PR #46's review comment.
 - **Acceptance:** F4 — the example dimension shows the sliced form, SKILL.md step 1 says to fan the lens out per subsystem like the others, and the sonnet pin is disclosed so an adapter can override with `model:`. F7 — both clauses added to the owner rungs (a half-line each). Each shipped or explicitly declined with a reason.
