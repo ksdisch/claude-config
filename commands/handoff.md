@@ -104,11 +104,20 @@ fresh session needs to know about.
 Some projects run the **party-line** handoff suite: a `SessionStart` hook briefs every new
 session with the newest note left on disk, and a `SessionEnd` hook writes a mechanical
 digest for any session that didn't leave a better one. In those projects this command is
-the *rich* writer — the note it leaves is what the next session actually reads, and the
-mechanical digest is only the fallback for the sessions where I never ran `/handoff`.
+the *rich* writer, and the note it leaves supersedes that digest.
 
 Everywhere else **this section does not apply**: no probe result, no note, no extra line in
 the output. The command behaves exactly as it does without this section.
+
+**What the note is, and what it is not.** It is **not** how the successor I am launching
+right now gets its context — the paste-able block still is. party-line's reader deliberately
+holds back any pending note whose author process is still alive, and `/handoff` stops this
+session without exiting it, so a window opened while this one is still up is handed nothing.
+What the note buys is the session after that: whenever I next start work here **after this
+session exits**, party-line briefs it with this rich note instead of the mechanical digest —
+better crash insurance, and a better briefing on any return where I don't still have the
+block in hand. Report it in exactly those terms. Never tell me a session starting now will
+be briefed with it.
 
 ### 1. Detect it — one command, before printing anything
 
@@ -173,8 +182,9 @@ claim a note was written when the command exited non-zero.
 
 In slot 3 of "Output format" (after the run-config note), one line addressed to me:
 
-> **Party-line note:** written to `<the path the writer printed>` — the next session in
-> this project will be briefed with it, and the SessionEnd digest is disarmed.
+> **Party-line note:** written to `<the path the writer printed>` — it disarms the
+> mechanical SessionEnd digest and briefs the next session started here **after this one
+> exits**. The block below is still how the successor I launch now gets its context.
 
 On failure, one line saying that instead, naming the reason the writer gave.
 
