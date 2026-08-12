@@ -39,12 +39,13 @@ Print the handoff as a single fenced code block so I can copy it verbatim —
 and print it **LAST**, so it's the final thing in the response, right above my
 prompt box. Before the block, in this order: (1) the "For Kyle" briefing (see
 "'For Kyle' briefing" below), then (2) the short run-config recommendation
-described in "Run-config recommendation" below (3–5 lines), then (3) the audio
-note **only if `--audio` was passed** (see "Audio narration") — all OUTSIDE
-the block, notes to me, not part of the paste-able prompt; none of these
-pollute the block. Then the fenced block, with nothing after it. Once it's
-printed, **STOP** — do not continue the current work and do not ask "what's
-next." I'll start a fresh session.
+described in "Run-config recommendation" below (3–5 lines), then (3) the
+one-line note-written line **only in a party-line project** (see "Party-line
+handoff note"), then (4) the audio note **only if `--audio` was passed** (see
+"Audio narration") — all OUTSIDE the block, notes to me, not part of the
+paste-able prompt; none of these pollute the block. Then the fenced block, with
+nothing after it. Once it's printed, **STOP** — do not continue the current
+work and do not ask "what's next." I'll start a fresh session.
 
 Match my CLAUDE.md preferences: structured, concise but thorough, no filler,
 name tradeoffs, quote exact paths/branches/PRs/commands rather than
@@ -97,6 +98,95 @@ If something is half-done or wrong, say so. If a decision was made under
 uncertainty, flag the assumption so the fresh session can revisit. Don't
 paper over gaps to make the handoff look tidy — gaps are exactly what the
 fresh session needs to know about.
+
+## Party-line handoff note (only where the project has one)
+
+Some projects run the **party-line** handoff suite: a `SessionStart` hook briefs every new
+session with the newest note left on disk, and a `SessionEnd` hook writes a mechanical
+digest for any session that didn't leave a better one. In those projects this command is
+the *rich* writer, and the note it leaves supersedes that digest.
+
+Everywhere else **this section does not apply**: no probe result, no note, no extra line in
+the output. The command behaves exactly as it does without this section.
+
+**What the note is, and what it is not.** It is **not** how the successor I am launching
+right now gets its context — the paste-able block still is. party-line's reader deliberately
+holds back any pending note whose author process is still alive, and `/handoff` stops this
+session without exiting it, so a window opened while this one is still up is handed nothing.
+What the note buys is the session after that: whenever I next start work here **after this
+session exits**, party-line briefs it with this rich note instead of the mechanical digest —
+better crash insurance, and a better briefing on any return where I don't still have the
+block in hand. Report it in exactly those terms. Never tell me a session starting now will
+be briefed with it.
+
+### 1. Detect it — one command, before printing anything
+
+```bash
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ -f "$root/handoff/cli.mjs" ] && [ -f "$root/.claude/party-line/handoffs/state/$CLAUDE_CODE_SESSION_ID.json" ]; then
+  echo "PARTY_LINE_ACTIVE root=$root body=${TMPDIR:-/tmp}/party-line-handoff-$CLAUDE_CODE_SESSION_ID.md"
+fi
+```
+
+No `PARTY_LINE_ACTIVE` on stdout → skip the rest of this section. Don't improvise a
+different signal and don't run the writer on a hunch: `node handoff/cli.mjs` in some
+unrelated project that merely happens to have that path would be executing a stranger's
+script.
+
+Both halves are required, and they prove different things:
+
+- **`handoff/cli.mjs`** is the writer. Without it there is nothing to call.
+- **the per-session state file** is the *reader's* receipt. Only party-line's own
+  `SessionStart` hook writes it, one per session per project, so its presence proves the
+  hooks ran for THIS session in THIS project — not merely that the code is checked out. It
+  is also exactly the precondition the writer itself enforces, so the probe and the write
+  can't disagree about whether this session is wired.
+
+**This detection is a judgment call, not a settled contract.** It is the simplest signal
+that is reliable today, and it is worth revisiting when party-line promotes its hooks out
+of a project's `.claude/settings.json` into user-level settings. If it ever stops firing
+the failure is a silent no-op — `/handoff` just behaves as it does everywhere else — which
+is the safe direction to fail in.
+
+### 2. Write the note, before printing the response
+
+1. **Write the composed block to `body`** (the path the probe printed) with the Write tool:
+   the *contents* of the fenced block, byte for byte, without the fence markers. One
+   composition, two destinations — the fresh session pastes the block, and the next session
+   in this project is handed the same text by the `SessionStart` hook. Compose it here
+   first and quote that same text when you print the block, so the two can never drift.
+
+2. **Hand it to the writer** (`root` and `body` are the probe's values):
+
+   ```bash
+   node "<root>/handoff/cli.mjs" write --source human --cwd "<root>" --kickoff '<one line>' < "<body>"
+   ```
+
+   - `--source human` is what records that this session left a real note, which is what
+     stops the `SessionEnd` digest from writing a second, worse one over the top of it.
+     Never pass any other value from this command.
+   - `--kickoff` is the **next concrete action** from "Where the plan stands", as one
+     imperative line: no newlines, no leading `--`, under ~160 characters, and no
+     apostrophes so the single-quoting stays simple.
+   - It prints the note's path on success, and exits non-zero with a reason on failure.
+
+3. **Delete `body`** — `rm -f "<body>"` — once the writer has returned, whatever it
+   returned.
+
+**If the writer fails, print its reason and carry on.** The paste-able block is the
+deliverable and it is unaffected; a failed write just leaves the `SessionEnd` digest armed,
+which is the fallback doing its job. Never retry with a different `--source`, and never
+claim a note was written when the command exited non-zero.
+
+### 3. Report it — one line, outside the block
+
+In slot 3 of "Output format" (after the run-config note), one line addressed to me:
+
+> **Party-line note:** written to `<the path the writer printed>` — it disarms the
+> mechanical SessionEnd digest and briefs the next session started here **after this one
+> exits**. The block below is still how the successor I launch now gets its context.
+
+On failure, one line saying that instead, naming the reason the writer gave.
 
 ## "For Kyle" briefing (printed FIRST, at the top of the response)
 
