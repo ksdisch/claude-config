@@ -290,7 +290,7 @@ A research / learning project following a structured learning spine.
 
 ## Custom Subagents
 
-Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Global subagent types (e.g., `Explore`, `Plan`, `code-reviewer`) are provided by the Superpowers plugin and live outside this repo.
+Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Other subagent types live outside this repo: `Explore` and `Plan` ship with Claude Code itself, and plugin-provided ones (e.g., `code-reviewer` from Superpowers) come with their plugin.
 
 | Agent | What it does |
 |---|---|

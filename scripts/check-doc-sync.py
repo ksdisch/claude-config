@@ -266,7 +266,7 @@ def main(argv: list[str] | None = None) -> int:
         # the index says which. Before the playbook existed the index had no
         # `config →` links at all; deleting the playbook leaves every one of
         # them behind, pointing at nothing. So links-without-a-playbook is the
-        # worst drift there is — all 79 at once — and must not pass, while a
+        # worst drift there is — every link at once — and must not pass, while a
         # commit that predates the pairing has nothing to check and must not
         # block a push of any branch cut back then.
         orphaned_links = len(CONFIG_LINK.findall(reference)) if reference else 0

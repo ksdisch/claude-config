@@ -71,7 +71,7 @@ the working tree, from anywhere:
 
 ```bash
 python3 scripts/check-doc-sync.py
-# doc sync check: in sync — 79 index rows, 79 cards, 50 item files.
+# doc sync check: in sync — <N> index rows, <N> cards, <M> item files.
 ```
 
 Two things it still does **not** do. It can't verify project-specific items — their files
