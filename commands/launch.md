@@ -193,11 +193,17 @@ Referenced by name below. Each holds on every path.
 
    **Open, one-time:** whether Warp *closes* the tab (and with it a single-tab window)
    once that root process exits was not verifiable from a shell — Warp's windows do not
-   answer an AX window count, so it needs one human look. Probe left in place:
-   `open warp://launch/exec-exit-probe` opens a tab whose root process exits after 10s;
-   watch whether the tab closes itself. Record the answer here, with the Warp setting it
-   depends on if it turns out to need one. Until it is recorded, `exec` still costs
-   nothing and is still the precondition for any close-on-exit behavior.
+   answer an AX window count, so it needs one human look. To check: write a scratch launch
+   config with this same schema whose command is `exec zsh -c 'sleep 10'`, open it with
+   `open warp://launch/<name>`, and watch whether the tab closes itself when the sleep
+   ends. Record the answer here, with the Warp setting it depends on if it needs one.
+
+   Until it is recorded, `exec` is a bet, not a free option. If Warp does close the tab,
+   this is the whole feature. If it does not, the trade is a dead "process exited" tab
+   where there used to be a live shell prompt — worse for a window Kyle wanted to reuse,
+   and worse for reading a failed launch's error (see Report). It is still the
+   precondition for any close-on-exit behavior, which is why it lands before the answer;
+   if the answer comes back "no", reverting this one line is the fix.
 
 6. **Fallback path** — `open -a "<application from step 2>" <directory>` opens the
    window at the right directory but cannot start the session (*No-blind-keystrokes*).
@@ -230,8 +236,13 @@ Referenced by name below. Each holds on every path.
    Three outcomes, each reported honestly: a candidate passes both checks → the
    session is verified; report that PID. Candidates appeared but none passes both →
    say a session started somewhere but it is not the launched one, and treat the
-   launch as unverified. No new PID → say the window opened but the session did not
-   start, and give the literal command — do not retry the launch itself.
+   launch as unverified. No new PID → the session did not start; give the literal
+   command and do not retry the launch itself. On the Warp path do **not** say the
+   window is waiting for it: the session is the tab's root process (*Exec-rooted*),
+   so a command that failed to exec took the tab down with it. Say the window is
+   probably gone and the command needs one Kyle opens himself. Only on the fallback
+   path, where `open -a` opened a plain shell window, is "the window is open, run
+   this in it" true.
 
 ## Report
 
@@ -247,11 +258,10 @@ Four or five lines, outside any code block:
   already submitted. The session name doubles as the identity to look for in
   `claude --resume` and the session lists later. When the "before" probe found
   other sessions running, add the warning *Named-target* requires.
-- On the Warp path, when no session started: say the window may no longer exist to
-  read the error in. The session is the tab's root process (*Exec-rooted*), so a
-  command that failed to exec took the tab with it rather than leaving a shell
-  prompt. Give the literal command to run in a window Kyle opens himself — never
-  re-fire the launch to "see what happens".
+- On the Warp path, when no session started: say the window is probably gone rather
+  than waiting (*Exec-rooted* — a command that failed to exec took the tab with it),
+  so the literal command needs a window Kyle opens himself. Never re-fire the launch
+  to "see what happens".
 - Any honest caveat: fallback terminal, unverified start or failed identity check,
   an inferred directory that differed from cwd, a CLI too old for `--name`
   (session launched unnamed — run `/rename <session name>` inside it), or `--send`
