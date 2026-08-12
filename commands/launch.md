@@ -202,8 +202,14 @@ Referenced by name below. Each holds on every path.
    this is the whole feature. If it does not, the trade is a dead "process exited" tab
    where there used to be a live shell prompt — worse for a window Kyle wanted to reuse,
    and worse for reading a failed launch's error (see Report). It is still the
-   precondition for any close-on-exit behavior, which is why it lands before the answer;
-   if the answer comes back "no", reverting this one line is the fix.
+   precondition for any close-on-exit behavior, which is why it lands before the answer.
+
+   If the answer comes back "no", the revert is five sites, not one line — and half a
+   revert is worse than none, because it leaves this file telling the agent to report "the
+   window is probably gone" while a live shell prompt sits in that tab. All of these go
+   together: the inner `exec` in the schema above, the paragraph below defending it against
+   exactly this cleanup, the argv note, step 7's Warp branch, and the Report bullet — plus
+   the *Exec-rooted* invariant they all cite.
 
 6. **Fallback path** — `open -a "<application from step 2>" <directory>` opens the
    window at the right directory but cannot start the session (*No-blind-keystrokes*).
