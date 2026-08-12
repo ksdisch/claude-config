@@ -650,9 +650,33 @@
       }, function () { btn.textContent = 'Press ⌘C to copy'; });
     } else { btn.textContent = 'Press ⌘C to copy'; }
   });
+  // Blob + <a download> works in every browser, including file:// — without it
+  // an artifact opened outside claude.ai can never actually save an export.
+  function blobSave(filename, text) {
+    try {
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      return true;
+    } catch (e) { return false; }
+  }
+
   function saveFile(filename, text) {
     var dl = window.claude && window.claude.downloads;
-    if (!dl) { showFallback(filename, text); return; }
+    if (!dl) {
+      // the anchor click is fire-and-forget: report that the download was
+      // started, never that it landed, since a blocked download looks identical
+      if (blobSave(filename, text)) { status('Download started: ' + filename); return; }
+      showFallback(filename, text);
+      return;
+    }
     dl.save({ filename: filename, data: text }).then(function () {
       status('Saved ' + filename);
     }, function (err) {
@@ -662,6 +686,9 @@
           'A download prompt was already open — copy instead, or try again shortly.');
         return;
       }
+      // the anchor click is fire-and-forget: report that the download was
+      // started, never that it landed, since a blocked download looks identical
+      if (blobSave(filename, text)) { status('Download started: ' + filename); return; }
       showFallback(filename, text);
     });
   }
