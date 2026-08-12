@@ -486,8 +486,10 @@ rows get re-pointed to match.
   numbered with a recommended answer; questions whose prerequisites are still open wait for
   a later round. Facts are Claude's job (dispatched to subagents, never asked of you);
   decisions are yours. Done only when the frontier is empty *and* you confirm shared
-  understanding — it does not act on the plan before that. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
+  understanding — it does not act on the plan before that. Unattended runs don't stall: it
+  writes round 1's frontier with recommended answers as unconfirmed assumptions and stops.
+  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
+  edits for trigger conditions and unattended runs.
 
 ### Session & Context Management
 
