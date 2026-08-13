@@ -7,6 +7,13 @@ argument-hint: "What would you like to learn about?"
 
 The user has asked you to teach them something. This is a stateful request - they intend to learn the topic over multiple sessions.
 
+## Workspace Guard
+
+This skill writes `MISSION.md`, `RESOURCES.md`, `NOTES.md`, `GLOSSARY.md`, `lessons/`, `reference/`, `learning-records/`, and `assets/` at the root of the current directory. Before any other step — including the mission interview — check that the current directory is a dedicated learning workspace:
+
+- If `MISSION.md` already exists here, this is an established workspace: proceed.
+- Otherwise, if the directory shows signs of being a software project or other pre-existing content (`.git`, `package.json`, `CLAUDE.md`, source code, an existing `assets/` or `NOTES.md`), or is the user's home directory, **stop before writing anything**: report the resolved current directory and the exact paths listed above, suggest a dedicated directory instead (e.g. `~/Learning/<topic>/`), and wait for the user to confirm this location or point at another. Never create the first workspace file until the location is confirmed.
+
 ## Teaching Workspace
 
 Treat the current directory as a teaching workspace. The state of their learning is captured in this directory in several files:
@@ -14,6 +21,7 @@ Treat the current directory as a teaching workspace. The state of their learning
 - `MISSION.md`: A document capturing the _reason_ the user is interested in the topic. This should be used to ground all teaching. Use the format in [MISSION-FORMAT.md](./MISSION-FORMAT.md).
 - `./reference/*.html`: A directory of reference materials. These are the compressed learnings from the lessons - cheat sheets, reference algorithms, syntax, yoga poses, glossaries. They are the raw units of learning. They should be beautiful documents which print out well, and are designed for quick reference.
 - `RESOURCES.md`: A list of resources which can be explored to ground your teaching in contextual knowledge, or to acquire knowledge and wisdom. Use the format in [RESOURCES-FORMAT.md](./RESOURCES-FORMAT.md).
+- `GLOSSARY.md`: The canonical vocabulary for this workspace — every lesson, reference document, and learning record adheres to its terminology. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
 - `./learning-records/*.md`: A directory of learning records, which capture what the user has learned. These are loosely equivalent to architectural decision records in software development - they capture non-obvious lessons and key insights that may need to be revised later, or drive future sessions. These should be used to calculate the zone of proximal development. They are titled `0001-<dash-case-name>.md`, where the number increments each time. Use the format in [LEARNING-RECORD-FORMAT.md](./LEARNING-RECORD-FORMAT.md).
 - `./lessons/*.html`: A directory of lessons. A **lesson** is a single, self-contained HTML output that teaches one tightly-scoped thing tied to the mission. This is the primary unit of teaching in this workspace.
 - `./assets/*`: Reusable **components** shared across lessons. See [Assets](#assets).
@@ -133,7 +141,7 @@ Some learning topics lend themselves to reference:
 - Exercises and routines for fitness
 - Glossaries for any topic with its own nomenclature
 
-Glossaries, in particular, are an essential reference. Once one is created, it should be adhered to in every lesson.
+Glossaries, in particular, are an essential reference. The workspace's glossary lives at `GLOSSARY.md` in the root, per [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md). Once one is created, it should be adhered to in every lesson.
 
 ## `NOTES.md`
 
