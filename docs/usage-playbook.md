@@ -938,6 +938,26 @@ rows get re-pointed to match.
 - **Notes:** one question at a time, then it stops and waits — a list of questions is an
   interrogation. Don't expect it to hand you an answer; it's built to surface yours.
 
+#### `teach`
+
+- **Run config:** Fable 5 · `high` — lesson design is judgment work: choosing what fits the
+  zone of proximal development matters more than producing HTML.
+- **Reach for it when:**
+  - You want to learn a topic over multiple sessions — programming or not (yoga, physics,
+    fitness all fit) — with your progress tracked on disk instead of in chat scrollback.
+  - You want lessons grounded in *why* you're learning (the mission), not a generic course.
+- **Pairs well with:** [`curriculum-sync`](#curriculum-sync) (the NotebookLM/home-base
+  learning chain — separate system, same goal), [`/wrap`](#wrap) (active-recall quizzing at
+  session end), [`career-coach`](#career-coach) (when the question is *what* to learn, not
+  how).
+- **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach`. Run it
+  from a dedicated learning directory (e.g. `~/Learning/<topic>/`), one mission per
+  workspace; it writes `MISSION.md`, `lessons/`, `reference/`, `learning-records/`,
+  `RESOURCES.md`, and `NOTES.md` at the root of wherever it runs, so don't start it inside a
+  project repo. First session interviews you into a concrete mission before teaching
+  anything. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT),
+  with a house-edited description; body and format docs kept verbatim upstream.
+
 ### UI & Frontend
 
 #### `match-the-mock`
