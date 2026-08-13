@@ -1337,6 +1337,25 @@ session *in that repo*.
   not recoverable. The rendering says so at the top when it applies; absence of a recorded
   rationale is not evidence there wasn't one.
 
+#### `auto-handoff`
+
+- **Run config:** inherits the session — it is a decision the session makes about its own
+  work, and the model it recommends is for the *successor*, never for itself.
+- **Reach for it when:**
+  - The session just wrote a run-config note naming a different model than it is running —
+    the Planner/Builder Protocol makes that handoff mandatory, and this is what closes the
+    gap between the note and `/launch`.
+  - A milestone's done-bar was discharged with results written, or a reviewed branch merged
+    CLEAR with nothing already queued behind it.
+- **Pairs well with:** [`/handoff`](#handoff) (the composition spec it follows, and where
+  this flow lands at M4), [`/launch`](#launch) (step 4a is `--send`), [`ghost`](#ghost) (what
+  the successor reaches for when the note leaves a gap).
+- **Notes:** propose-first by design — the note and the paste-able block are written *before*
+  the question, so a declined proposal still leaves the artifact. It asks exactly one yes/no
+  and never fires in a headless seat. T3 (context fullness) is not built yet; only T1 and T2
+  fire, once per trigger per session, and every run appends a row to
+  `~/.claude/party-line/proposals.jsonl`.
+
 ### stopwatch (Tempo)
 
 #### `/add-panel`
