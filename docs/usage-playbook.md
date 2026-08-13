@@ -956,7 +956,9 @@ rows get re-pointed to match.
   `RESOURCES.md`, and `NOTES.md` at the root of wherever it runs, so don't start it inside a
   project repo. First session interviews you into a concrete mission before teaching
   anything. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT),
-  with a house-edited description; body and format docs kept verbatim upstream.
+  with a house-edited description; format docs kept verbatim upstream, body carries two
+  house edits from the pre-merge review — a workspace-location guard before the first write,
+  and `GLOSSARY.md` wired into the workspace list.
 
 ### UI & Frontend
 
