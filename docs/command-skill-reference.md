@@ -259,6 +259,7 @@ subscription with zero API-credit billing.
 |---|---|
 | `party-line` | Live messaging between Claude Code sessions over a file mailbox — join a channel, send, poll, and get woken by a background watcher when a peer writes. · [config →](usage-playbook.md#party-line) |
 | `ghost` | Asks the previous session a question, answered as that session from its saved transcript by a subagent — the escape hatch when a handoff briefing leaves a gap. · [config →](usage-playbook.md#ghost) |
+| `auto-handoff` | Proposes a handoff and launches the successor at the moment the work calls for one — a planner→builder model change, or a completion-shaped stopping point — instead of waiting to be asked. · [config →](usage-playbook.md#auto-handoff) |
 
 ---
 
