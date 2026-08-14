@@ -1321,6 +1321,24 @@ session *in that repo*.
   **Trust boundary:** anything that can write the channel directory can speak on the
   channel, and a delivered message starts a turn — never join in a cwd you don't trust.
 
+#### `auto-handoff`
+
+- **Run config:** inherits the session — it fires *inside* whatever session hit the trigger,
+  and the handoff it writes is composed by that session. The successor's model and effort come
+  from the run-config note it is proposing, not from this skill.
+- **Reach for it when:**
+  - You don't — it reaches for itself. It fires when a session writes a run-config note naming
+    a different model (T1), finishes a milestone or merges a CLEAR review with nothing queued
+    (T2), or is blocked by the T3 gate at `PARTY_LINE_WATCH_AT` percent of context.
+  - You want to ask for one anyway: "should we hand off", "propose a handoff".
+- **Pairs well with:** [`/handoff`](#handoff) (whose composition spec it follows — it calls the
+  writer itself rather than invoking the command), [`/launch`](#launch) (step 4a, on yes).
+- **Notes:** propose-first by design — the note and the paste-able block are written *before*
+  the question, so a declined or unanswered proposal still leaves the artifact. One yes/no,
+  no timeout, no third option. `PARTY_LINE_NOTIFY=off` silences the push that announces it;
+  `PARTY_LINE_WATCH=off` silences T3's gate; `auto` is recognised, resolves to propose, and
+  warns — full-auto graduates on ledger evidence by a decision, never by an env var.
+
 #### `ghost`
 
 - **Run config:** inherits the session; the answer itself is produced by a subagent, so no
