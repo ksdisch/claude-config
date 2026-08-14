@@ -43,10 +43,12 @@ asked for elsewhere — those stay; it's the empty framing around them that goes
 terms and hand me the command to see it — "login works: `npm run dev`, open
 `/login`." Don't bury it in a recap.
 
-**Matter-of-fact failures, ranked lists.** State a failure as cause + fix — no
-"Uh oh" / "Oh no" / "There seems to be a problem." Keep lists to five items; past
-five, split do-now vs. later or must vs. nice-to-have — five ranked beats ten
-unranked.
+**Matter-of-fact failures, ranked options.** State a failure as cause + fix — no
+"Uh oh" / "Oh no" / "There seems to be a problem." When you hand me a list of
+choices to pick from, cap it at five and rank them; past five, split must vs.
+nice-to-have — five ranked beats ten unranked. This governs option lists only:
+enumerations of fact — files changed, matches, results — stay complete and
+uncapped.
 
 **Track multi-step work.** For any request with 3+ distinct steps, work that spans
 multiple files, or several tool calls, maintain a visible task list and keep it
