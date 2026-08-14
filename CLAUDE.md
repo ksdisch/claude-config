@@ -77,7 +77,12 @@ When I say "new feature mode" or "feature mode", before building anything:
 
 **This is a presentation rule and it outranks a skill's or command's output spec.** If a template says `# · grade · verdict · one-line reason`, render it with the title column anyway. Where a skill or command writes a durable artifact for somewhere else (a PR comment, a report file), that artifact follows its own template — this rule governs what reaches *me*, in chat.
 
-**Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — it never follows a paste-able block.** `/handoff` is the case that forced this sentence: it enumerates the notes that may precede the block and then requires nothing after it. The path line is part of the **"For Kyle" briefing** there, not a new slot appended to the list — so it lands before the run-config note and nothing about the run-config ordering rule changes. A spec that closes its slot list wins on *placement*; it does not win on *omission*.
+**Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — wherever that note sits.** It is never appended as a new trailing slot after a spec's final element, and it never goes inside the paste. Two response shapes exist and the rule has to work for both:
+
+- `/handoff` puts its notes **before** the fenced block and forbids anything after it, so the path line joins the "For Kyle" briefing (slot 1) and the run-config ordering rule is untouched.
+- `ship-and-route` and `backlog-hygiene` put the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
+
+A spec that fixes its order wins on *placement*; it does not win on *omission*.
 
 **What it does not license:** dumping full claims, evidence blocks, or quoted code inline. The gloss is a title, not a paragraph. The point is that I can decide from the table and open the file when I want depth — not that the file gets pasted into the conversation.
 
