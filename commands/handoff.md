@@ -208,6 +208,12 @@ first time, clearer not longer. It's the plain-English distillation of "Where th
 done. If the next step is genuinely uncertain or pending my decision, say that plainly instead
 of inventing a plan.
 
+**If the briefing cites any identifier** (`D31`, `F2`, `T3`, "slice C"), the global "Never show
+me a bare identifier" rule applies here too: gloss each one on first mention, and put its
+path + `code <path>` line **inside this briefing**. It belongs to slot (1), not to a new slot
+appended to the note list — so the run-config note still closes the substance and the fenced
+block is still the last thing in the response.
+
 ## Run-config recommendation (the second note, still before the code block)
 
 After the "For Kyle" briefing, print a 3–5 line note — OUTSIDE the block, addressed to
