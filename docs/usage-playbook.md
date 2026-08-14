@@ -1346,6 +1346,28 @@ session *in that repo*.
   to propose, and warns — full-auto graduates on ledger evidence by a decision, never by an
   env var.
 
+#### `reaper`
+
+- **Run config:** inherits the session — it fires *inside* the successor, in the turn where
+  that session ingested its predecessor's handoff note. Nothing about it is model-sensitive;
+  every judgment it could have made is a check in `handoff/reap.mjs` instead.
+- **Reach for it when:**
+  - You don't — it reaches for itself, one turn after a handoff lands. R2 is the only v1
+    trigger: this session consumed a note, and the session that launched it is still running.
+  - You want to see the clutter without proposing anything: `node handoff/cli.mjs
+    reaper-status` lists every launch row with a live probe of both ends and kills nothing.
+- **Pairs well with:** [`auto-handoff`](#auto-handoff) (whose accepted proposal writes the
+  registry row this reads — spawn and teardown are the two halves of one loop),
+  [`/launch`](#launch) (whose *Verified-start* identity discipline the kill path inherits, with
+  the stakes inverted).
+- **Notes:** propose-first, and the ask is the backstop the design leans on — no SIGTERM
+  without a yes, one machine-initiated proposal per registry row ever, and a decline is
+  permanent against the machine. Registry-only targeting means a session that never handed off
+  through the flow is structurally invisible. Close ≠ destroy: it ends a process and frees a
+  window, and no path in it deletes a transcript, a note, or a state file. If the target
+  survives SIGTERM it says so and stops — no SIGKILL, no retry. R1 (Kyle's "close it") is
+  slice H and is not built.
+
 #### `ghost`
 
 - **Run config:** inherits the session; the answer itself is produced by a subagent, so no
