@@ -33,7 +33,7 @@ Dispatch the reviewer with: `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, `ROUN
 
 For each finding, append to its mailbox thread `Triage (author): ACCEPT — <note>` or `Triage (author): DISPUTE — <evidence-based rebuttal citing code or tests>`, and update `Status:`. "I meant to do that" is not a rebuttal — intent that isn't visible in the code is itself a finding about the code.
 
-Present the triage table (# · grade · verdict · one-line reason), then **STOP**. Kyle can flip verdicts, waive findings by name (`WAIVED-BY-KYLE`, his words recorded verbatim), or say proceed. **Unattended runs: proceed without pausing — but waivers never happen on Kyle's behalf; an unfixed blocker stays a blocker.**
+Present the triage table (**# · grade · finding title · verdict · one-line reason** — the title column is mandatory per the global "Never show me a bare identifier" rule; `F2` alone tells Kyle nothing he can decide from), followed by the mailbox path and a copy-pasteable `code <path>` line so he can read any full thread. Then **STOP**. Kyle can flip verdicts, waive findings by name (`WAIVED-BY-KYLE`, his words recorded verbatim), or say proceed. **Unattended runs: proceed without pausing — but waivers never happen on Kyle's behalf; an unfixed blocker stays a blocker.**
 
 ## Phase 3 — Judge (only if disputes exist)
 

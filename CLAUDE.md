@@ -65,6 +65,20 @@ When I say "new feature mode" or "feature mode", before building anything:
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
 
+## Never show me a bare identifier (added 2026-08-13)
+
+**An ID you minted is a pointer into a document I don't have open.** `F2`, `D31`, `S1.4`, `T3`, "slice C" — each is a label whose meaning lives somewhere else, and I can't memorize them across sessions. A table of `# · grade · verdict` tells me the shape of a decision without telling me what I'm deciding, so I either approve blind or go hunting. Neither is what I'm paying attention for.
+
+**The rule, in three parts:**
+
+1. **Every minted ID carries a gloss on its first mention in a turn** — `F2 (digest strips the wrong tags)`, `D31 (T3 threshold 70 → 85)`, `S1.4 (statusline reads one turn stale)`. Later mentions in the same turn can go bare; prose shouldn't turn into a glossary. Applies to whatever you mint: review findings, decision rows, spike questions, triggers, build slices, milestones.
+2. **Any table listing IDs gets a title column.** ID, severity/status, **what it is**, then your reason or disposition. The title column is not optional and is not the same as the reason column — "contradicts the plan table" is what's wrong; "recorded in one file while §13 says otherwise" is why you think so. I need both.
+3. **Say where the full text lives, and how to open it.** Once per response that references IDs, give the absolute path *and* a copy-pasteable command — `code <path>` (or `open <path>` for anything that isn't text). Not "see the mailbox"; the actual line I can paste.
+
+**This is a presentation rule and it outranks a skill's output spec.** If a skill's template says `# · grade · verdict · one-line reason`, render it with the title column anyway. Where a skill writes a durable artifact for somewhere else (a PR comment, a report file), that artifact follows the skill's template — this rule governs what reaches *me*, in chat.
+
+**What it does not license:** dumping full claims, evidence blocks, or quoted code inline. The gloss is a title, not a paragraph. The point is that I can decide from the table and open the file when I want depth — not that the file gets pasted into the conversation.
+
 ## Planner/Builder Protocol (added 2026-07-27)
 
 How model choice works across my sessions: **Fable 5 plans, Opus 5 builds, Sonnet 5 grinds.**
