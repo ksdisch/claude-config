@@ -104,7 +104,7 @@ fresh session needs to know about.
 Some projects run the **party-line** handoff suite: a `SessionStart` hook briefs every new
 session with the newest note left on disk, and a `SessionEnd` hook writes a mechanical
 digest for any session that didn't leave a better one. In those projects this command is
-the *rich* writer, and the note it leaves supersedes that digest.
+the *rich* writer, and the note it leaves disarms this session's digest.
 
 Everywhere else **this section does not apply**: no probe result, no note, no extra line in
 the output. The command behaves exactly as it does without this section.
@@ -113,19 +113,27 @@ the output. The command behaves exactly as it does without this section.
 right now gets its context — the paste-able block still is. party-line's reader deliberately
 holds back any pending note whose author process is still alive, and `/handoff` stops this
 session without exiting it, so a window opened while this one is still up is handed nothing.
-What the note buys is the session after that: whenever I next start work here **after this
-session exits**, party-line briefs it with this rich note instead of the mechanical digest —
-better crash insurance, and a better briefing on any return where I don't still have the
-block in hand. Report it in exactly those terms. Never tell me a session starting now will
-be briefed with it.
+What the note guarantees is narrower and worth stating exactly: it disarms **this session's**
+mechanical digest, and it is the newest note on disk *as of the write*. The next session
+started here after this one exits is briefed with it **unless a later session leaves
+something newer** — in a repo with concurrent sessions, a sibling that exits after this
+write leaves a digest that is newer and immediately eligible, and this note drops to the
+briefing memo's "Also pending" line instead. Still better crash insurance than the digest,
+and still a better briefing on any return where I don't have the block in hand — but report
+it in exactly those terms. Never tell me a session starting now will be briefed with it, and
+never promise the *next* session will be, unconditionally.
 
 ### 1. Detect it — one command, before printing anything
 
 ```bash
-root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if [ -f "$root/handoff/cli.mjs" ] && [ -f "$root/.claude/party-line/handoffs/state/$CLAUDE_CODE_SESSION_ID.json" ]; then
-  echo "PARTY_LINE_ACTIVE root=$root body=${TMPDIR:-/tmp}/party-line-handoff-$CLAUDE_CODE_SESSION_ID.md"
-fi
+gitroot="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+tmp="${TMPDIR:-/tmp}"; tmp="${tmp%/}"
+for stateroot in "$PWD" "$gitroot"; do
+  if [ -f "$gitroot/handoff/cli.mjs" ] && grep -q '"session_pid"' "$stateroot/.claude/party-line/handoffs/state/$CLAUDE_CODE_SESSION_ID.json" 2>/dev/null; then
+    echo "PARTY_LINE_ACTIVE gitroot=$gitroot stateroot=$stateroot body=$tmp/party-line-handoff-$CLAUDE_CODE_SESSION_ID.md"
+    break
+  fi
+done
 ```
 
 No `PARTY_LINE_ACTIVE` on stdout → skip the rest of this section. Don't improvise a
@@ -135,12 +143,19 @@ script.
 
 Both halves are required, and they prove different things:
 
-- **`handoff/cli.mjs`** is the writer. Without it there is nothing to call.
-- **the per-session state file** is the *reader's* receipt. Only party-line's own
-  `SessionStart` hook writes it, one per session per project, so its presence proves the
-  hooks ran for THIS session in THIS project — not merely that the code is checked out. It
-  is also exactly the precondition the writer itself enforces, so the probe and the write
-  can't disagree about whether this session is wired.
+- **`handoff/cli.mjs`** is the writer, and it lives at the git toplevel. Without it there
+  is nothing to call.
+- **the `"session_pid"` field in the per-session state file** is the *reader's* receipt.
+  Only party-line's `SessionStart` hook stamps that field — its `UserPromptSubmit` hook can
+  create the same file *without* it — so grep-for-the-field, not mere file existence, is
+  what proves the hooks ran for THIS session in THIS project. It is also the writer's own
+  precondition (`cli.mjs` refuses to write unless `session_pid` is an integer), so the
+  probe checks the same thing the writer enforces.
+
+The state file is probed at **both `$PWD` and the git toplevel** because the hooks root it
+at the *session's* working directory (`input.cwd`), which in a session started in a
+subdirectory of the repo is not the toplevel. `stateroot` is wherever it was found; the
+writer call below needs both values.
 
 **This detection is a judgment call, not a settled contract.** It is the simplest signal
 that is reliable today, and it is worth revisiting when party-line promotes its hooks out
@@ -156,10 +171,11 @@ is the safe direction to fail in.
    in this project is handed the same text by the `SessionStart` hook. Compose it here
    first and quote that same text when you print the block, so the two can never drift.
 
-2. **Hand it to the writer** (`root` and `body` are the probe's values):
+2. **Hand it to the writer** (`gitroot`, `stateroot`, and `body` are the probe's values —
+   the script runs from the toplevel, the note lands where the hooks will look):
 
    ```bash
-   node "<root>/handoff/cli.mjs" write --source human --cwd "<root>" --kickoff '<one line>' < "<body>"
+   node "<gitroot>/handoff/cli.mjs" write --source human --cwd "<stateroot>" --kickoff '<one line>' < "<body>"
    ```
 
    - `--source human` is what records that this session left a real note, which is what
@@ -182,9 +198,11 @@ claim a note was written when the command exited non-zero.
 
 In slot 3 of "Output format" (after the run-config note), one line addressed to me:
 
-> **Party-line note:** written to `<the path the writer printed>` — it disarms the
-> mechanical SessionEnd digest and briefs the next session started here **after this one
-> exits**. The block below is still how the successor I launch now gets its context.
+> **Party-line note:** written to `<the path the writer printed>` — it disarms this
+> session's mechanical SessionEnd digest and is the newest note on disk as of now: the
+> next session started here **after this one exits** is briefed with it unless a later
+> session leaves something newer. The block below is still how the successor I launch now
+> gets its context.
 
 On failure, one line saying that instead, naming the reason the writer gave.
 

@@ -1321,6 +1321,31 @@ session *in that repo*.
   **Trust boundary:** anything that can write the channel directory can speak on the
   channel, and a delivered message starts a turn — never join in a cwd you don't trust.
 
+#### `auto-handoff`
+
+- **Run config:** inherits the session — it fires *inside* whatever session hit the trigger,
+  and the handoff it writes is composed by that session. The successor's model and effort come
+  from the run-config note it is proposing, not from this skill.
+- **Reach for it when:**
+  - You don't — it reaches for itself. It fires when a session writes a run-config note naming
+    a different model (T1 — the Planner/Builder Protocol makes that handoff mandatory), when a
+    milestone's done-bar is discharged with results written or a reviewed branch merges CLEAR
+    with nothing already queued (T2), or when the Stop gate blocks at `PARTY_LINE_WATCH_AT`
+    percent of context (T3).
+  - You want to ask for one anyway: "should we hand off", "propose a handoff".
+- **Pairs well with:** [`/handoff`](#handoff) (whose composition spec it follows — it calls the
+  writer itself rather than invoking the command, and where this flow lands at M4),
+  [`/launch`](#launch) (step 4a, on yes), [`ghost`](#ghost) (what the successor reaches for
+  when the note leaves a gap).
+- **Notes:** propose-first by design — the note and the paste-able block are written *before*
+  the question, so a declined or unanswered proposal still leaves the artifact. One yes/no, no
+  timeout, no third option, and never in a headless seat. Every run appends a row to
+  `~/.claude/party-line/proposals.jsonl`; T1/T2 fire once per trigger per session, while T3's
+  once-per-crossing discipline lives in the gate. `PARTY_LINE_NOTIFY=off` silences the push
+  that announces it; `PARTY_LINE_WATCH=off` silences T3's gate; `auto` is recognised, resolves
+  to propose, and warns — full-auto graduates on ledger evidence by a decision, never by an
+  env var.
+
 #### `ghost`
 
 - **Run config:** inherits the session; the answer itself is produced by a subagent, so no
@@ -1336,25 +1361,6 @@ session *in that repo*.
   2.1.220, thinking blocks persist with no text, so reasoning that never reached a reply is
   not recoverable. The rendering says so at the top when it applies; absence of a recorded
   rationale is not evidence there wasn't one.
-
-#### `auto-handoff`
-
-- **Run config:** inherits the session — it is a decision the session makes about its own
-  work, and the model it recommends is for the *successor*, never for itself.
-- **Reach for it when:**
-  - The session just wrote a run-config note naming a different model than it is running —
-    the Planner/Builder Protocol makes that handoff mandatory, and this is what closes the
-    gap between the note and `/launch`.
-  - A milestone's done-bar was discharged with results written, or a reviewed branch merged
-    CLEAR with nothing already queued behind it.
-- **Pairs well with:** [`/handoff`](#handoff) (the composition spec it follows, and where
-  this flow lands at M4), [`/launch`](#launch) (step 4a is `--send`), [`ghost`](#ghost) (what
-  the successor reaches for when the note leaves a gap).
-- **Notes:** propose-first by design — the note and the paste-able block are written *before*
-  the question, so a declined proposal still leaves the artifact. It asks exactly one yes/no
-  and never fires in a headless seat. T3 (context fullness) is not built yet; only T1 and T2
-  fire, once per trigger per session, and every run appends a row to
-  `~/.claude/party-line/proposals.jsonl`.
 
 ### stopwatch (Tempo)
 
