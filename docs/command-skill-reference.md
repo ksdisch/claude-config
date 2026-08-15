@@ -262,6 +262,12 @@ subscription with zero API-credit billing.
 | `auto-handoff` | Proposes a handoff and launches the successor at the moment the work calls for one — fires on a planner→builder run-config note (T1), a completion-shaped stopping point (T2), or the Stop gate's context-fullness block (T3). · [config →](usage-playbook.md#auto-handoff) |
 | `reaper` | Proposes closing a session's process — the predecessor that launched this one once its handoff note has been consumed (R2), or any open session Kyle names (R1, where an ambiguous name asks rather than guesses) — one SIGTERM after a live identity re-verification and one yes/no; never touches a transcript or a note. · [config →](usage-playbook.md#reaper) |
 
+**Commands**
+
+| Command | What it does |
+|---|---|
+| `/threshold` | Shows the T3 context-fullness threshold in force for the project, which layer set it, and the reading it will be compared against — then changes it with a stepped picker, effective at the next turn boundary with nothing restarted. · [config →](usage-playbook.md#threshold) |
+
 ---
 
 ### stopwatch (Tempo)

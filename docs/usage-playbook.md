@@ -1395,6 +1395,28 @@ session *in that repo*.
   not recoverable. The rendering says so at the top when it applies; absence of a recorded
   rationale is not evidence there wasn't one.
 
+#### `/threshold`
+
+- **Run config:** inherits the session — it reads one file and asks one question; the judgment
+  is yours, not the model's.
+- **Reach for it when:**
+  - You want to be warned about context earlier or later than 85% *in this project* — a repo
+    with a different window size, or a stretch of work you'd rather not be interrupted during.
+  - T3 just proposed and you want it to stop asking for a while: raise the threshold and the
+    gate goes quiet until the new number.
+  - You want to know where you stand — the number in force, which layer set it, and the current
+    reading with the window size it is a percentage *of*.
+- **Pairs well with:** [`auto-handoff`](#auto-handoff) (this sets the number that fires its T3
+  trigger), [`/handoff`](#handoff) (what a firing eventually produces).
+- **Notes:** project-scoped and stored, resolved *explicit `PARTY_LINE_WATCH_AT` > the project's
+  setting > 85*. The gate is a fresh process per turn boundary, so a change is honoured at the
+  very next turn with nothing restarted — and **a change re-arms a gate that already fired**, so
+  lowering the threshold below where you already are proposes at that next turn (the picker says
+  so before you commit it). A persistent `export PARTY_LINE_WATCH_AT=…` is **not** a machine-wide
+  default: there is no stored global layer, and env sits *above* the project layer, so an export
+  silently defeats every project setting. It is a stepped picker, not a slider — Claude Code has
+  no slider primitive. Turning T3 off entirely is a different setting (`PARTY_LINE_WATCH=off`).
+
 ### stopwatch (Tempo)
 
 #### `/add-panel`
