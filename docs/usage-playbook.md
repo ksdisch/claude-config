@@ -1348,12 +1348,18 @@ session *in that repo*.
 
 #### `reaper`
 
-- **Run config:** inherits the session — it fires *inside* the successor, in the turn where
-  that session ingested its predecessor's handoff note. Nothing about it is model-sensitive;
-  every judgment it could have made is a check in `handoff/reap.mjs` instead.
+- **Run config:** inherits the session — at R2 it fires *inside* the successor, in the turn
+  where that session ingested its predecessor's handoff note; at R1 it fires in whatever
+  session you said "close it" to. Nothing about it is model-sensitive; every judgment it could
+  have made is a check in `handoff/reap.mjs` instead. The one thing the model does own at R1 is
+  turning your sentence into a search term, and an ambiguous term makes the flow ask rather
+  than pick.
 - **Reach for it when:**
-  - You don't — it reaches for itself, one turn after a handoff lands. R2 is the only v1
-    trigger: this session consumed a note, and the session that launched it is still running.
+  - You don't — it reaches for itself, one turn after a handoff lands. That is R2: this session
+    consumed a note, and the session that launched it is still running.
+  - You want a window gone and can say which: "close the party-line one", "close that doghood
+    window", or plain "close it" when only one is open. That is R1, and it can close either end
+    of a launch — the window you point at is as often the successor as the predecessor.
   - You want to see the clutter without proposing anything: `node handoff/cli.mjs
     reaper-status` lists every launch row with a live probe of both ends and kills nothing.
 - **Pairs well with:** [`auto-handoff`](#auto-handoff) (whose accepted proposal writes the
@@ -1362,11 +1368,16 @@ session *in that repo*.
   the stakes inverted).
 - **Notes:** propose-first, and the ask is the backstop the design leans on — no SIGTERM
   without a yes, one machine-initiated proposal per registry row ever, and a decline is
-  permanent against the machine. Registry-only targeting means a session that never handed off
-  through the flow is structurally invisible. Close ≠ destroy: it ends a process and frees a
-  window, and no path in it deletes a transcript, a note, or a state file. If the target
-  survives SIGTERM it says so and stops — no SIGKILL, no retry. R1 (Kyle's "close it") is
-  slice H and is not built.
+  permanent *against the machine* (you can still close that session by name later; R1 is you
+  acting, not a proposal). Registry-only targeting holds at both signals: a session that never
+  handed off through the flow is structurally invisible, and naming it by hand does not change
+  that. A dismissal term is matched against the launch's project, the process's directory and
+  its Warp tab title — never the command line, because an argv carries the whole opening
+  prompt and would match every session ever *told* about the one you meant. Close ≠ destroy: it
+  ends a process and frees a window, and no path in it deletes a transcript, a note, or a state
+  file. If the target survives SIGTERM it says so and stops — no SIGKILL, no retry. An on-call
+  session — one with an armed intercom watcher — is refused with the reason even when you named
+  it, and the refusal is transient: fire the watcher and ask again.
 
 #### `ghost`
 
