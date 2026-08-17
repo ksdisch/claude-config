@@ -139,6 +139,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | [`career-coach`](../skills/career-coach/SKILL.md) | ICF MCC-level career and life coaching — progressive clarity on your next career move, grounded in values, life stage, and what you actually want. Supports multi-session continuity via [SNAPSHOT] / [UPDATE] / [FOCUS] tags. Auto-triggers when you feel stuck, unfulfilled, or at a professional crossroads. · [config →](usage-playbook.md#career-coach) |
 | [`teach`](../skills/teach/SKILL.md) | Multi-session tutor that treats the current directory as a persistent teaching workspace — mission-grounded HTML lessons sized to your zone of proximal development, printable reference docs, and ADR-style learning records. Typed-only (`/teach`); run from a dedicated learning directory. · [config →](usage-playbook.md#teach) |
+| [`teach-research`](../skills/teach-research/SKILL.md) | Research companion for `teach` — mission interview, parallel six-modality source discovery, a curation gate, then cached digests plus a curated `RESOURCES.md` that `/teach` consumes unchanged. Typed-only (`/teach-research`); run from the learning directory. · [config →](usage-playbook.md#teach-research) |
 
 ### UI & Frontend
 
