@@ -120,13 +120,16 @@ dedicated learning workspace:
    `## Gaps`, because they are verified sources the user has not yet seen rather than coverage
    nobody could find — and record in the closing summary that the gate was skipped.
 7. **Caching fan-out.** Assign the target paths here, before dispatching anything: cachers run
-   in parallel and cannot see each other's writes, so the main context — which holds every kept
-   title and the current `research/` listing — is the only actor that can see a collision
-   coming. Derive each slug per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md), append `-2` (then
-   `-3`, …) wherever two kept sources slugify alike or the path is already on disk, and hand
+   in parallel and cannot see each other's writes, so the main context is the only actor that
+   can see a collision coming. It holds every kept title, and it lists `research/` here
+   (read-only) to learn what earlier runs already wrote — no step before this one does. Derive
+   each slug per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md), append `-2` (then
+   `-3`, …) wherever two kept sources slugify alike or the slug is already on disk, and hand
    each cacher the exact path to write. Then batch the kept sources three to four per cacher
    subagent. Each cacher fetches its sources and writes one digest per source at the path it
-   was given (*digest-not-dump*) — never a path it derived itself, and never over an existing
+   was given, per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) — the digest template, the
+   `Fetched` field, and the metadata-only rules are all in that doc, so it belongs in every
+   cacher's brief (*digest-not-dump*) — never a path it derived itself, and never over an existing
    file: a path that turns out to be taken is reported back, not overwritten. A fetch that
    fails mid-run downgrades that source to a metadata-only digest plus a gap note — it never
    aborts the run (*honest-gaps*). Each cacher returns, per source: the exact path it wrote,
