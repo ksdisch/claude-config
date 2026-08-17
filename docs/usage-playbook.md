@@ -946,10 +946,11 @@ rows get re-pointed to match.
   - You want to learn a topic over multiple sessions — programming or not (yoga, physics,
     fitness all fit) — with your progress tracked on disk instead of in chat scrollback.
   - You want lessons grounded in *why* you're learning (the mission), not a generic course.
-- **Pairs well with:** [`curriculum-sync`](#curriculum-sync) (the NotebookLM/home-base
-  learning chain — separate system, same goal), [`/wrap`](#wrap) (active-recall quizzing at
-  session end), [`career-coach`](#career-coach) (when the question is *what* to learn, not
-  how).
+- **Pairs well with:** [`teach-research`](#teach-research) (stocks the workspace with
+  vetted, cached sources before lesson one), [`curriculum-sync`](#curriculum-sync) (the
+  NotebookLM/home-base learning chain — separate system, same goal), [`/wrap`](#wrap)
+  (active-recall quizzing at session end), [`career-coach`](#career-coach) (when the
+  question is *what* to learn, not how).
 - **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach`. Run it
   from a dedicated learning directory (e.g. `~/Learning/<topic>/`), one mission per
   workspace; it writes `MISSION.md`, `lessons/`, `reference/`, `learning-records/`,
@@ -959,6 +960,24 @@ rows get re-pointed to match.
   with a house-edited description; format docs kept verbatim upstream, body carries two
   house edits from the pre-merge review — a workspace-location guard before the first write,
   and `GLOSSARY.md` wired into the workspace list.
+
+#### `teach-research`
+
+- **Run config:** Opus 5 · `high` — the skill's own finder/cacher fan-out does the parallel
+  work; the session around it is orchestration plus synthesis-heavy digesting.
+- **Reach for it when:**
+  - You're about to start learning a topic with `/teach` and want the workspace stocked
+    first — mission captured, sources vetted, digests cached — so lesson one is a lesson,
+    not a search.
+  - A teach workspace's `RESOURCES.md` is thin, or its `## Gaps` section has grown
+    (top-up mode).
+- **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this),
+  [`career-coach`](#career-coach) (when the question is *what* to learn, not how).
+- **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach-research`.
+  `--auto` skips the interactive pauses (mission confirm + curation gate); the mission
+  interview still runs when no `MISSION.md` exists, so a truly unattended run needs
+  `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
+  the teach skill itself is never edited.
 
 ### UI & Frontend
 
