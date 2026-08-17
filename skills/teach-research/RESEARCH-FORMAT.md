@@ -5,8 +5,9 @@ source title (drop articles and punctuation: "The Rust Programming Language" →
 `rust-programming-language`). Digests exist so later lessons can cite and quote sources without
 re-fetching the web.
 
-The `Cached:` line in each `RESOURCES.md` entry is the only handoff to `/teach` — a teaching
-session reads the digest before searching the web.
+`RESOURCES.md` is the only handoff to `/teach`: a one-line note under its title points at
+`./research/`, and each entry's `Cached:` line names its digest — a teaching session reads
+the digest before searching the web.
 
 ## Template
 

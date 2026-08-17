@@ -1,8 +1,8 @@
 ---
 name: teach-research
-description: Research companion for the teach skill — interviews for the mission, fans out parallel finder agents across six source modalities, gates the candidate list through the user, then caches approved sources as digests, leaving MISSION.md, RESOURCES.md, and research/ ready for /teach to consume. The teach skill itself is never modified. Typed-only entry point (/teach-research <topic>) — run it from a dedicated learning directory, not inside a project repo, since it writes workspace files at the root of wherever it runs. Append --auto to skip the curation gate for unattended runs.
+description: Research companion for the teach skill — interviews for the mission, fans out parallel finder agents across six source modalities, gates the candidate list through the user, then caches approved sources as digests, leaving MISSION.md, RESOURCES.md, and research/ ready for /teach to consume. The teach skill itself is never modified. Typed-only entry point (/teach-research <topic>) — run it from a dedicated learning directory, not inside a project repo, since it writes workspace files at the root of wherever it runs. Append --auto to skip the interactive pauses (mission confirm + curation gate) for unattended runs.
 disable-model-invocation: true
-argument-hint: "What topic should be researched? (append --auto to skip the curation gate)"
+argument-hint: "What topic should be researched? (append --auto to skip the interactive pauses)"
 ---
 
 The user wants a learning workspace stocked with vetted sources before (or between) `/teach`
@@ -34,9 +34,10 @@ Referenced by name below. Each invariant holds on every path, whether or not a s
   listed as a source.
 - **digest-not-dump** — cache files are digests with select attributed quotes, never verbatim
   copies. Unfetchable sources get metadata-only digests; content is never fabricated.
-- **honest-gaps** — every modality no finder could cover, every candidate the user cut for a
-  reason worth remembering, and every failed fetch lands in the `## Gaps` section of
-  `RESOURCES.md`. Silent omission is the failure mode this invariant exists to prevent.
+- **honest-gaps** — every modality no finder could cover, every candidate cut for a reason
+  worth remembering — by the user, or by the skipped gate in auto mode, and every failed
+  fetch lands in the `## Gaps` section of `RESOURCES.md`. Silent omission is the failure
+  mode this invariant exists to prevent.
 - **gate-only-auto** — `--auto` removes exactly two pauses: the mission confirm (step 3, and
   only when `MISSION.md` already exists) and the curation gate (step 6). It never skips the
   workspace guard, the mission interview, or verification.
@@ -55,7 +56,8 @@ dedicated learning workspace:
   `~/Learning/<topic>/`), and wait for the user to confirm this location or point at another.
   Never create the first workspace file until the location is confirmed. In an unattended
   run, an unconfirmed location is a stop-and-report, never a wait.
-- Otherwise — an empty directory, or one holding only learning content — proceed.
+- Otherwise — nothing above matched: an empty directory, or one holding only content this
+  skill wrote — proceed.
 
 ## Procedure
 
@@ -88,8 +90,9 @@ dedicated learning workspace:
    and present one table grouped by modality — columns: #, title (linked to the URL), type, why
    trusted, mission fit, keep/cut recommendation. The user trims, swaps, or says "take all";
    wait for that answer. In auto mode (*gate-only-auto*): keep exactly the finders' top picks,
-   cut the rest, list the auto-cut candidates (title + URL, one line each) under `## Gaps` as
-   deferred by the skipped gate, and record in the closing summary that the gate was skipped.
+   cut the rest, record the auto-cut candidates (title + URL, one
+   line each) as gaps deferred by the skipped gate — step 8 writes them into `## Gaps` —,
+   and record in the closing summary that the gate was skipped.
 7. **Caching fan-out.** Batch the kept sources three to four per cacher subagent. Each cacher
    fetches its sources and writes one digest per source at `research/<slug>.md` per
    [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) (*digest-not-dump*). A fetch that fails
@@ -108,8 +111,10 @@ dedicated learning workspace:
 9. **Verify the contract.** Confirm: every `RESOURCES.md` entry's `Cached:` path exists; every
    file in `research/` is linked from some entry; no file outside `MISSION.md`,
    `RESOURCES.md`, `research/` was created or modified (*teach-untouched*). Any check that
-   fails is reported in the close, not repaired — in particular, never delete a `research/`
-   file (*never-clobber*).
+   fails is reported in the close, not repaired: never delete a `research/`
+   file and never rewrite a pre-existing entry (*never-clobber*). The one exception is a
+   `Cached:` line this run wrote that points nowhere — drop that line and note it in
+   `## Gaps` before the close.
 10. **Close.** Report to the user: sources found per modality, what was cached, the open gaps,
     whether the gate was skipped — and finish with: run `/teach` from this directory; the
     mission is answered and the resources are stocked.
