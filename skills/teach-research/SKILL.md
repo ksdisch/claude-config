@@ -91,7 +91,7 @@ dedicated learning workspace:
    candidates` section. Finders receive all three and use them differently — gaps are what to
    hunt for, entries and deferred candidates are what not to propose again — and results will
    merge (*never-clobber*).
-5. **Discovery fan-out.** Dispatch one finder subagent per modality in parallel, six in all:
+5. **Discovery fan-out.** Dispatch one finder subagent per modality in parallel:
    official docs / primary sources · books · structured courses · video · papers &
    high-signal blogs · communities (dropped when step 4 found a recorded opt-out). Each
    finder's brief contains: `MISSION.md` verbatim and whole — all four sections, so that
