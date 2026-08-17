@@ -974,9 +974,10 @@ rows get re-pointed to match.
 - **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this),
   [`career-coach`](#career-coach) (when the question is *what* to learn, not how).
 - **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach-research`.
-  `--auto` skips the curation gate only; the mission interview still runs, so a truly
-  unattended run needs `MISSION.md` to already exist. Writes only `MISSION.md`,
-  `RESOURCES.md`, and `research/` — the teach skill itself is never edited.
+  `--auto` skips the interactive pauses (mission confirm + curation gate); the mission
+  interview still runs when no `MISSION.md` exists, so a truly unattended run needs
+  `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
+  the teach skill itself is never edited.
 
 ### UI & Frontend
 

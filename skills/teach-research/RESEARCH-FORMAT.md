@@ -5,6 +5,9 @@ source title (drop articles and punctuation: "The Rust Programming Language" →
 `rust-programming-language`). Digests exist so later lessons can cite and quote sources without
 re-fetching the web.
 
+The `Cached:` line in each `RESOURCES.md` entry is the only handoff to `/teach` — a teaching
+session reads the digest before searching the web.
+
 ## Template
 
 ```md
@@ -15,6 +18,7 @@ re-fetching the web.
 - **Author/steward:** {who, plus one line on why they are trustworthy}
 - **Fetched:** {YYYY-MM-DD — or "not fetched: {reason}" for metadata-only digests}
 - **Covers:** {one line: which part of the mission this source serves}
+- **Where to get it:** {metadata-only digests only: where to buy, borrow, or enroll}
 
 ## Structure
 {The source's own shape — table of contents, chapter list, video chapters — so a lesson can
@@ -32,9 +36,11 @@ cite "chapter 4" without re-fetching.}
 - **Digest, not dump.** Select quotes and compressed concepts only — never a verbatim copy of
   the source. This is both a copyright posture and a usefulness one: a dump is as unreadable
   as the original.
-- **Metadata-only digests** (books, paywalls, anything unfetchable): keep the header block and
-  `Covers`, add one line on where to get the source, and omit `Structure`, `Key concepts`,
+- **Metadata-only digests** (books, paywalls, anything unfetchable): keep the header block
+  (including `Covers`), fill in `Where to get it`, and omit `Structure`, `Key concepts`,
   and `Notable quotes` entirely. Never fabricate content for a source that was not fetched.
-- **Every digest is linked.** Its `RESOURCES.md` entry carries `Cached: ./research/<slug>.md`;
-  a digest no entry links to is an orphan and should be deleted.
+- **Every digest is linked.** Its `RESOURCES.md` entry carries `Cached: ./research/<slug>.md`.
+  A digest no entry links to is an orphan: report it; deleting it is the user's call.
+- **Slug collisions.** Two distinct sources can slugify identically; append `-2` (then `-3`,
+  …) to the later one.
 - **One source per file.** A digest that covers two sources should be two files.
