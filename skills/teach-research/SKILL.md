@@ -29,9 +29,10 @@ Referenced by name below. Each invariant holds on every path, whether or not a s
   counts as confirmed. Every finder brief carries the mission.
 - **never-clobber** — existing `MISSION.md` content and existing `RESOURCES.md` entries are
   merged into, never overwritten or removed. Pruning is the user's move, not this skill's.
-- **verified-links** — no URL reaches the candidate table unless the finder that proposed it
-  confirmed the URL resolves. A source that cannot be verified is reported as a gap, not
-  listed as a source.
+- **verified-links** — no URL reaches the candidate table unless whoever put it there confirmed
+  *this run* that it resolves: the finder, for a candidate it proposes; the main context, for a
+  deferred candidate it re-tables from an earlier run. A source that cannot be verified is
+  reported as a gap, not listed as a source.
 - **digest-not-dump** — cache files are digests with select attributed quotes, never verbatim
   copies. Unfetchable sources get metadata-only digests; content is never fabricated.
 - **honest-gaps** — every modality no finder could cover, every candidate cut for a reason
@@ -109,22 +110,28 @@ dedicated learning workspace:
    and present one table grouped by modality — columns: #, title (linked to the URL), type, why
    trusted, mission fit, keep/cut recommendation. In top-up mode, anything already sitting in
    `## Deferred candidates` joins the table marked as deferred by an earlier run, so the user
-   can pull one in — the finders were told not to re-propose it. The user trims, swaps, or says
-   "take all"; wait for that answer. In auto mode (*gate-only-auto*): keep exactly the finders' top picks,
+   can pull one in — the finders were told not to re-propose it, which also means no finder
+   verified it: re-fetch each of those URLs here before tabling it, and send any that no longer
+   resolves to `## Gaps` as a failed fetch instead of offering it. Its link was verified
+   whenever it was deferred, which may be months ago (*verified-links*). The user trims, swaps,
+   or says "take all"; wait for that answer. In auto mode (*gate-only-auto*): keep exactly the finders' top picks,
    cut the rest, record the auto-cut candidates (title + URL, one line each) as candidates
    deferred by the skipped gate — step 8 writes them into `## Deferred candidates`, never into
    `## Gaps`, because they are verified sources the user has not yet seen rather than coverage
    nobody could find — and record in the closing summary that the gate was skipped.
-7. **Caching fan-out.** Batch the kept sources three to four per cacher subagent. Each cacher
-   fetches its sources and writes one digest per source at `research/<slug>.md` per
-   [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) (*digest-not-dump*). A fetch that fails
-   mid-run downgrades that source to a metadata-only digest plus a gap note — it never aborts
-   the run (*honest-gaps*). Cachers run in parallel and in a `research/` earlier runs may
-   already have filled, so no cacher can see another's writes: each one checks its target path
-   first and never overwrites a file it did not write — on a taken path it appends `-2` (then
-   `-3`, …) per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) and reports the collision. Each
-   cacher returns, per source: the exact path it wrote, the `Fetched` value (a date, or the
-   not-fetched reason), any collision it hit, and any gap note.
+7. **Caching fan-out.** Assign the target paths here, before dispatching anything: cachers run
+   in parallel and cannot see each other's writes, so the main context — which holds every kept
+   title and the current `research/` listing — is the only actor that can see a collision
+   coming. Derive each slug per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md), append `-2` (then
+   `-3`, …) wherever two kept sources slugify alike or the path is already on disk, and hand
+   each cacher the exact path to write. Then batch the kept sources three to four per cacher
+   subagent. Each cacher fetches its sources and writes one digest per source at the path it
+   was given (*digest-not-dump*) — never a path it derived itself, and never over an existing
+   file: a path that turns out to be taken is reported back, not overwritten. A fetch that
+   fails mid-run downgrades that source to a metadata-only digest plus a gap note — it never
+   aborts the run (*honest-gaps*). Each cacher returns, per source: the exact path it wrote,
+   the `Fetched` value (a date, or the not-fetched reason), any collision it hit, and any gap
+   note.
 8. **Write `RESOURCES.md`** per
    [../teach/RESOURCES-FORMAT.md](../teach/RESOURCES-FORMAT.md), with three additions this
    skill owns: each entry ends with a line `Cached: ./research/<slug>.md` — using the exact
@@ -135,11 +142,14 @@ dedicated learning workspace:
    sentence saying they were never shown to the user. Write the `## Gaps` section from the
    genuine absences *honest-gaps* collected — modalities no finder could cover, failed fetches,
    candidates cut for a reason worth remembering — and nothing else. In top-up mode, merge new
-   entries into the existing sections, rewrite `## Gaps` to reflect what is still missing, and
-   rewrite `## Deferred candidates` to hold only what is still deferred — a candidate the user
-   pulled in at step 6 drops out of it, now that it is an entry (*never-clobber* for entries;
-   those two are the sections this skill rewrites wholesale, because a filled gap and an
-   adopted candidate are not history worth keeping).
+   entries into the existing sections and rewrite `## Gaps` and `## Deferred candidates` to
+   reflect what is still open. A gap leaves `## Gaps` only when this run's finders hunted it and
+   it is now filled: a pre-existing gap outside this run's narrowing focus was never hunted, so
+   it carries forward verbatim — an unhunted gap is not a filled one, and a learning workspace
+   has no VCS to recover it from. A deferred candidate leaves when the user pulls it in at
+   step 6, now that it is an entry. (*never-clobber* for entries; these two sections are the
+   ones this skill rewrites, because a filled gap and an adopted candidate are not history
+   worth keeping.)
 9. **Verify the contract.** Confirm: every `RESOURCES.md` entry's `Cached:` path exists; every
    file in `research/` is linked from some entry; the number of entries carrying a `Cached:`
    line equals the number of files in `research/` — two entries pointing at one digest is a

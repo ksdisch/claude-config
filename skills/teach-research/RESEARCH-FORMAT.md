@@ -46,7 +46,9 @@ cite "chapter 4" without re-fetching.}
 - **Every digest is linked.** Its `RESOURCES.md` entry carries `Cached: ./research/<slug>.md`.
   A digest no entry links to is an orphan: report it; deleting it is the user's call.
 - **Slug collisions.** Two distinct sources can slugify identically, and a top-up run writes
-  into a `research/` earlier runs already filled. Whoever is about to write checks the target
-  path first and never overwrites a file it did not write: on a taken path, append `-2` (then
-  `-3`, …) and report the collision rather than replacing the digest that is there.
+  into a `research/` earlier runs already filled. Collisions are resolved by whoever assigns
+  the paths — one actor holding the whole list at once — by appending `-2` (then `-3`, …) to
+  the later source; parallel writers cannot see each other, so they can never pick a suffix
+  safely. A writer handed a path that turns out to be taken reports it rather than replacing
+  the digest that is there.
 - **One source per file.** A digest that covers two sources should be two files.
