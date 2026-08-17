@@ -40,8 +40,13 @@ cite "chapter 4" without re-fetching.}
 - **Metadata-only digests** (books, paywalls, anything unfetchable): keep the header block
   (including `Covers`), fill in `Where to get it`, and omit `Structure`, `Key concepts`,
   and `Notable quotes` entirely. Never fabricate content for a source that was not fetched.
+  `Fetched` is `not fetched: {reason}` on these — never a date, not even the date the
+  publisher page was looked up: a date asserts the digest reflects the source as of that day,
+  and it is the field a later lesson reads to decide whether the digest can be cited.
 - **Every digest is linked.** Its `RESOURCES.md` entry carries `Cached: ./research/<slug>.md`.
   A digest no entry links to is an orphan: report it; deleting it is the user's call.
-- **Slug collisions.** Two distinct sources can slugify identically; append `-2` (then `-3`,
-  …) to the later one.
+- **Slug collisions.** Two distinct sources can slugify identically, and a top-up run writes
+  into a `research/` earlier runs already filled. Whoever is about to write checks the target
+  path first and never overwrites a file it did not write: on a taken path, append `-2` (then
+  `-3`, …) and report the collision rather than replacing the digest that is there.
 - **One source per file.** A digest that covers two sources should be two files.

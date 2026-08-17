@@ -35,9 +35,11 @@ Referenced by name below. Each invariant holds on every path, whether or not a s
 - **digest-not-dump** — cache files are digests with select attributed quotes, never verbatim
   copies. Unfetchable sources get metadata-only digests; content is never fabricated.
 - **honest-gaps** — every modality no finder could cover, every candidate cut for a reason
-  worth remembering — by the user, or by the skipped gate in auto mode — and every failed
-  fetch lands in the `## Gaps` section of `RESOURCES.md`. Silent omission is the failure
-  mode this invariant exists to prevent.
+  worth remembering, and every failed fetch lands in the `## Gaps` section of `RESOURCES.md`.
+  Candidates the skipped gate cut unseen in auto mode land in `## Deferred candidates`
+  instead: they are verified sources awaiting a decision, not missing coverage, and `## Gaps`
+  is what drives future search. Silent omission is the failure mode this invariant exists to
+  prevent.
 - **gate-only-auto** — `--auto` removes exactly two pauses: the mission confirm (step 3, and
   only when `MISSION.md` already exists) and the curation gate (step 6). It never skips the
   workspace guard, the mission interview, or verification.
@@ -67,49 +69,82 @@ dedicated learning workspace:
    run, stop and report instead).
 2. **Run the Workspace Guard** above.
 3. **Mission.** If `MISSION.md` exists, summarize it back to the user in two sentences and ask
-   for a brief confirm (in auto mode, an existing mission is taken as confirmed). If it does
+   for a brief confirm (in auto mode, an existing mission is taken as confirmed). A topic
+   argument supplied alongside an existing mission is this run's narrowing focus, not a new
+   mission: say so in the summary and carry it into step 5's briefs, so the finders hunt that
+   corner of the mission rather than all of it. If the argument plainly names a different
+   subject than the mission, stop and report instead — one mission per workspace, so a
+   different subject means a different workspace
+   ([../teach/MISSION-FORMAT.md](../teach/MISSION-FORMAT.md)). If `MISSION.md` does
    not exist, run a mission interview in the style the teach skill prescribes — push back on
    vagueness, concrete over abstract, one question at a time — and write `MISSION.md` per
    [../teach/MISSION-FORMAT.md](../teach/MISSION-FORMAT.md). In a truly unattended run
    (subagent, cron, cloud one-shot) with no `MISSION.md`, stop and report instead: a mission
    cannot be invented on the user's behalf (*mission-grounded*).
-4. **Detect top-up mode.** If `RESOURCES.md` exists, this run is a top-up: read every existing
-   entry and the current `## Gaps` section. Finders will receive both, hunt only for what is
-   missing, and results will merge (*never-clobber*).
-5. **Discovery fan-out.** Dispatch six finder subagents in parallel, one per modality:
+4. **Read the workspace.** Read whichever of `RESOURCES.md` and `NOTES.md` exist, both
+   read-only (*teach-untouched* forbids writing `NOTES.md`, not reading it). If either records that the
+   user has opted out of joining communities, skip the communities finder in step 5 and say so
+   in the close: a recorded opt-out is durable, and re-proposing communities every run is the
+   outcome that rule exists to prevent. If `RESOURCES.md` exists, this run is a top-up: read
+   every existing entry, the current `## Gaps` section, and the current `## Deferred
+   candidates` section. Finders receive all three and use them differently — gaps are what to
+   hunt for, entries and deferred candidates are what not to propose again — and results will
+   merge (*never-clobber*).
+5. **Discovery fan-out.** Dispatch one finder subagent per modality in parallel, six in all:
    official docs / primary sources · books · structured courses · video · papers &
-   high-signal blogs · communities. Each finder's brief contains: the mission (verbatim
-   `Why` and `Success looks like` sections), its single modality, the already-held sources to
-   exclude (top-up mode), and the required return shape — for each candidate: title, URL,
-   type, author plus one line on why they are trustworthy, what it covers, one line on
-   mission fit, and whether it is one of the finder's top 2–3 picks. Each finder must fetch
-   every URL it proposes and drop any that does not resolve, returning it as a gap line
-   instead (*verified-links*, *honest-gaps*); it reports a thin modality honestly rather than
-   padding with weak sources (*honest-gaps*).
+   high-signal blogs · communities (dropped when step 4 found a recorded opt-out). Each
+   finder's brief contains: `MISSION.md` verbatim and whole — all four sections, so that
+   `Constraints` and `Out of scope` reach the finder along with `Why` and `Success looks like`
+   (*mission-grounded*); this run's narrowing focus if step 3 established one; its single
+   modality; the already-held sources and deferred candidates to exclude (top-up mode); and
+   the required return shape — for each candidate: title, URL, type, author plus one line on
+   why they are trustworthy, what it covers, one line on mission fit, and whether it is one of
+   the finder's top 2–3 picks. A candidate that breaks a `Constraints` bound — budget, time,
+   equipment, stated learning preference — or falls under `Out of scope` is dropped by the
+   finder, not proposed for the gate to catch. Each finder must fetch every URL it proposes
+   and drop any that does not resolve, returning it as a gap line instead (*verified-links*,
+   *honest-gaps*); it reports a thin modality honestly rather than padding with weak sources
+   (*honest-gaps*).
 6. **Curation gate.** Merge the finders' returns, dedup by URL and by near-identical title,
    and present one table grouped by modality — columns: #, title (linked to the URL), type, why
-   trusted, mission fit, keep/cut recommendation. The user trims, swaps, or says "take all";
-   wait for that answer. In auto mode (*gate-only-auto*): keep exactly the finders' top picks,
-   cut the rest, record the auto-cut candidates (title + URL, one line each) as gaps
-   deferred by the skipped gate — step 8 writes them into `## Gaps` — and record in the
-   closing summary that the gate was skipped.
+   trusted, mission fit, keep/cut recommendation. In top-up mode, anything already sitting in
+   `## Deferred candidates` joins the table marked as deferred by an earlier run, so the user
+   can pull one in — the finders were told not to re-propose it. The user trims, swaps, or says
+   "take all"; wait for that answer. In auto mode (*gate-only-auto*): keep exactly the finders' top picks,
+   cut the rest, record the auto-cut candidates (title + URL, one line each) as candidates
+   deferred by the skipped gate — step 8 writes them into `## Deferred candidates`, never into
+   `## Gaps`, because they are verified sources the user has not yet seen rather than coverage
+   nobody could find — and record in the closing summary that the gate was skipped.
 7. **Caching fan-out.** Batch the kept sources three to four per cacher subagent. Each cacher
    fetches its sources and writes one digest per source at `research/<slug>.md` per
    [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) (*digest-not-dump*). A fetch that fails
    mid-run downgrades that source to a metadata-only digest plus a gap note — it never aborts
-   the run (*honest-gaps*). Each cacher returns, per source: the exact path it wrote, the
-   `Fetched` date (or the not-fetched reason), and any gap note.
+   the run (*honest-gaps*). Cachers run in parallel and in a `research/` earlier runs may
+   already have filled, so no cacher can see another's writes: each one checks its target path
+   first and never overwrites a file it did not write — on a taken path it appends `-2` (then
+   `-3`, …) per [RESEARCH-FORMAT.md](./RESEARCH-FORMAT.md) and reports the collision. Each
+   cacher returns, per source: the exact path it wrote, the `Fetched` value (a date, or the
+   not-fetched reason), any collision it hit, and any gap note.
 8. **Write `RESOURCES.md`** per
-   [../teach/RESOURCES-FORMAT.md](../teach/RESOURCES-FORMAT.md), with two additions this
+   [../teach/RESOURCES-FORMAT.md](../teach/RESOURCES-FORMAT.md), with three additions this
    skill owns: each entry ends with a line `Cached: ./research/<slug>.md` — using the exact
-   path its cacher returned, never a re-derived slug — and a single line sits directly under
-   the title: `Entries marked "Cached:" have local digests in ./research/ — read the digest
-   before searching the web.` Write the `## Gaps` section from everything *honest-gaps*
-   collected. In top-up mode, merge new entries into the existing sections and rewrite
-   `## Gaps` to reflect what is still open (*never-clobber* for entries; Gaps is the one
-   section this skill rewrites wholesale, because a filled gap is not history worth keeping).
+   path its cacher returned, never a re-derived slug; a single line sits directly under the
+   title: `Entries marked "Cached:" have local digests in ./research/ — read the digest
+   before searching the web.`; and, in auto mode, a `## Deferred candidates` section holding
+   the candidates the skipped gate cut unseen, one line each with title and URL, under a
+   sentence saying they were never shown to the user. Write the `## Gaps` section from the
+   genuine absences *honest-gaps* collected — modalities no finder could cover, failed fetches,
+   candidates cut for a reason worth remembering — and nothing else. In top-up mode, merge new
+   entries into the existing sections, rewrite `## Gaps` to reflect what is still missing, and
+   rewrite `## Deferred candidates` to hold only what is still deferred — a candidate the user
+   pulled in at step 6 drops out of it, now that it is an entry (*never-clobber* for entries;
+   those two are the sections this skill rewrites wholesale, because a filled gap and an
+   adopted candidate are not history worth keeping).
 9. **Verify the contract.** Confirm: every `RESOURCES.md` entry's `Cached:` path exists; every
-   file in `research/` is linked from some entry; no file outside `MISSION.md`,
+   file in `research/` is linked from some entry; the number of entries carrying a `Cached:`
+   line equals the number of files in `research/` — two entries pointing at one digest is a
+   slug collision that overwrote a source, which the first two checks both pass; no file
+   outside `MISSION.md`,
    `RESOURCES.md`, `research/` was created or modified (*teach-untouched*). Any check that
    fails is reported in the close, not repaired: never delete a `research/`
    file and never rewrite a pre-existing entry (*never-clobber*). The one exception is a
