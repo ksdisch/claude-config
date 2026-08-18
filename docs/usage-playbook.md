@@ -938,6 +938,26 @@ rows get re-pointed to match.
 - **Notes:** one question at a time, then it stops and waits — a list of questions is an
   interrogation. Don't expect it to hand you an answer; it's built to surface yours.
 
+#### `mock-panel`
+
+- **Run config:** Opus 5 · `high` — in-character questioning plus a judgment-heavy debrief;
+  worth Fable 5 for the final rehearsal before the real panel.
+- **Reach for it when:**
+  - An interview is scheduled, the prep dossier exists, and you want realistic pressure
+    practice instead of re-reading your own STAR stories.
+  - A prior mock's debrief graded answers weak and you want a retake that re-tests exactly
+    those.
+- **Pairs well with:** [`career-coach`](#career-coach) (when the question underneath is
+  whether you even want the role), the vault's `interview-prep` /
+  `generate-interview-prep-dossier` (produce the dossier this skill quizzes from — run one of
+  them first).
+- **Notes:** blocks on your answers by design — never schedule it unattended (an unattended
+  run degrades to writing a prep sheet, per the skill body). Default mode is realistic
+  (in character throughout, feedback held for the debrief); say "graded" for per-answer
+  feedback, or "coach me" mid-session to step out of character. Distinct from
+  [`grilling`](#grilling), which interrogates a *plan*; this one interrogates *you*. Writes
+  session logs to the vault's `30-job-search/mock-sessions/`.
+
 #### `teach`
 
 - **Run config:** Fable 5 · `high` — lesson design is judgment work: choosing what fits the
