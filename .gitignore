@@ -27,6 +27,7 @@ reviews/
 # here still loads normally — it just isn't published. Trade-off: a fresh clone on
 # a new machine won't have it.
 skills/interview-prep/
+skills/mock-panel/
 
 # Python bytecode from skill scripts
 __pycache__/
