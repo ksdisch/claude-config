@@ -172,9 +172,11 @@ Kyle is working.
 
 Two exceptions:
 
-- **Feeding `youtube-breakdown`.** The transcript is an intermediate, not a deliverable.
-  Write it to the session scratchpad and don't leave it in the repo. `youtube-breakdown`
-  calls this skill for URL input and saves its own output separately.
+- **Feeding another skill.** When a skill calls this one for URL input and consumes the
+  transcript as an intermediate — `youtube-breakdown` and `cc-yt-idea-mine` today — the
+  transcript is not a deliverable: run the whole fetch from the session scratchpad, so
+  `title.txt`, the `.vtt`, and the final `.txt` all land there and none of it touches a
+  repo. The calling skill saves its own output separately.
 - **Kyle names a destination.** Then use that.
 
 Never write into a git repo's tracked tree without saying so — a stray 200 KB transcript in
@@ -198,3 +200,5 @@ Never write into a git repo's tracked tree without saying so — a stray 200 KB 
 
 - **`youtube-breakdown`** — the usual consumer. It calls this skill when given a URL, then
   processes the text into structured notes.
+- **`cc-yt-idea-mine`** — the other consumer. Same contract: it calls this skill for URL
+  input, from the scratchpad, and mines the text for Claude Code artifact ideas.

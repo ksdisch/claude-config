@@ -953,7 +953,9 @@ rows get re-pointed to match.
     Critique to pressure-test a contrarian claim, Actionable Insights to leave with a plan.
   - You have a transcript from anywhere and want the same four-mode treatment.
 - **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
-  URL), [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  URL), [`cc-yt-idea-mine`](#cc-yt-idea-mine) (the idea-mining sibling — "mine this video
+  for Claude Code ideas" is its lane, not a fifth mode here),
+  [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
   section leads if the topic deserves a workspace),
   [`notebook-assist`](#notebook-assist) (adds the video to a notebook as a source),
   [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
@@ -963,6 +965,30 @@ rows get re-pointed to match.
   Saving asks for the destination every run: it proposes `~/Learning/youtube-notes/` and
   lists the real teach workspaces under `~/Learning/` as alternatives, since filing a
   breakdown into one puts it where `/teach` will read it. One mode per run.
+
+#### `cc-yt-idea-mine`
+
+- **Run config:** inherits the session · `high` — exhaustive extraction and leverage-ranking
+  carry judgment, but not enough to launch a session for; run it wherever you just watched
+  the video.
+- **Reach for it when:**
+  - A video about Claude Code / AI agents / engineering workflow left you thinking "some of
+    this belongs in my setup" and you want every implementable segment surfaced — not just
+    the memorable ones.
+  - You want idea triage pre-done: each find dedup-tagged against the reference doc,
+    effort-banded, and ranked within its artifact category and overall.
+- **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
+  URL), [`youtube-breakdown`](#youtube-breakdown) (the general four-mode sibling —
+  "analyze this video" is its lane), [`/brainstorm`](#brainstorm) (same capture shape, so
+  video ideas and brainstorm ideas groom identically),
+  [`backlog-hygiene`](#backlog-hygiene) (grooms what this captures), and the
+  `claude-code-guide` agent (harness-provided, no card — verifies picked ideas' capability
+  claims at the gate).
+- **Notes:** the report auto-saves to `~/Learning/youtube-notes/` — fixed home, no prompt.
+  Capture is gated and lands in `~/Projects/claude-config` regardless of cwd, via a
+  docs-only branch + PR. The report ships unverified with a staleness caveat; only picked
+  ideas get their Claude Code claims checked. Proposes only — building a pick is a handoff,
+  never a side effect of the run.
 
 ### Personal Coaching
 

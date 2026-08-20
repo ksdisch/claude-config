@@ -9,7 +9,8 @@ description: >-
   "youtube breakdown", "break down this video", "analyze this video", "summarize this
   transcript", "study notes for this video", "critique this video", "what should I do with
   this video", "transcript breakdown", or any request to turn video content into structured
-  notes.
+  notes about the video's own material. NOT for mining a video for Claude Code / config /
+  automation ideas — that's cc-yt-idea-mine.
 ---
 
 # YouTube Breakdown
