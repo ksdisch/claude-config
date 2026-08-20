@@ -975,8 +975,9 @@ rows get re-pointed to match.
   - A video about Claude Code / AI agents / engineering workflow left you thinking "some of
     this belongs in my setup" and you want every implementable segment surfaced — not just
     the memorable ones.
-  - You want idea triage pre-done: each find dedup-tagged against the reference doc,
-    effort-banded, and ranked within its artifact category and overall.
+  - You want idea triage pre-done: each find dedup-tagged against your existing inventory
+    (reference doc, CLAUDE.md rules, hooks/settings, memory), effort-banded, and ranked
+    within its artifact category and overall.
 - **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
   URL), [`youtube-breakdown`](#youtube-breakdown) (the general four-mode sibling —
   "analyze this video" is its lane), [`/brainstorm`](#brainstorm) (same capture shape, so
