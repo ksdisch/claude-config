@@ -55,6 +55,8 @@ These hold on every run. Everything else in this file is guidance.
 - **Dedup degrades loudly.** If any category's inventory source is missing, unreadable,
   or readable but empty of entries for that category, the report names the category and
   the reason in its blind-spots line — it never silently presents un-tagged ideas as new.
+  One exception, stated where the source is listed: a file whose absence *means* "none
+  configured" (keybindings) is an answer, not a blind spot.
 - **Stay out of youtube-breakdown's lane.** If the ask is really "analyze / summarize /
   critique this video" or "study notes", hand off to `youtube-breakdown` instead of
   running this skill on a mismatched request.
@@ -100,13 +102,18 @@ sources. Read what actually records each category:
 - **Output styles / statusline** — `~/Projects/claude-config/output-styles/`; for the
   statusline, read `settings.json`'s `statusLine` block — whatever command it names is the
   live statusline, and the repo's `statusline-command.sh` is authoritative only when
-  `statusLine` actually points at it.
+  `statusLine` actually points at it. The command's *name* is not an inventory: when it
+  names `ccstatusline`, the widget list is `~/.config/ccstatusline/settings.json`; when
+  it names a script, read the script. If what it names can't be read, that is a blind
+  spot.
 - **Keybindings** — `~/.claude/keybindings.json`. This file may legitimately not exist:
   absence means no custom keybindings are configured, so keybinding ideas are genuinely
   New — count it as a blind spot only if it exists and can't be read.
-- **MCP servers** — the `mcpServers` block of `~/.claude.json` (not `settings.json`,
-  which has no such key), plus `enabledPlugins` (plugins ship servers too) and the
-  project's `.mcp.json` when one exists.
+- **MCP servers** — three reads: the `mcpServers` block of `~/.claude.json` (not
+  `settings.json`, which has no such key); the enabled plugin list in
+  `~/.claude/settings.json`'s `enabledPlugins` — plugins ship servers and skills too,
+  and that list lives only there; and the project's `.mcp.json` when one exists (its
+  absence is per-project normal, not a blind spot).
 - **Standing lessons** — the memory index at
   `~/.claude/projects/-Users-kyledisch-Projects-claude-config/memory/MEMORY.md`, which
   records adopted conventions that live nowhere else (hooks-over-prompts, the
