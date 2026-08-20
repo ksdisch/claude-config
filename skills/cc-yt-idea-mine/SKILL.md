@@ -55,8 +55,8 @@ These hold on every run. Everything else in this file is guidance.
 - **Dedup degrades loudly.** If any category's inventory source is missing, unreadable,
   or readable but empty of entries for that category, the report names the category and
   the reason in its blind-spots line — it never silently presents un-tagged ideas as new.
-  One exception, stated where the source is listed: a file whose absence *means* "none
-  configured" (keybindings) is an answer, not a blind spot.
+  Exceptions are stated where the source is listed: a file whose absence *means* "none
+  configured" (keybindings, a project `.mcp.json`) is an answer, not a blind spot.
 - **Stay out of youtube-breakdown's lane.** If the ask is really "analyze / summarize /
   critique this video" or "study notes", hand off to `youtube-breakdown` instead of
   running this skill on a mismatched request.
@@ -93,8 +93,16 @@ Dedup needs an inventory per artifact category, and no single file covers all te
 real run was structurally blind for rule-shaped ideas until it hand-checked the other
 sources. Read what actually records each category:
 
+- **Enabled plugins (feeds several categories)** — the `enabledPlugins` map in
+  `~/.claude/settings.json`. It maps plugin name to a boolean, so only `true` entries
+  count as installed capability. Plugins ship skills, commands, agents, and MCP servers
+  alike — when an idea might already be plugin-provided, check the `true` plugins' own
+  directories under `~/.claude/plugins/`.
 - **Skills, slash commands, subagents** —
-  `~/Projects/claude-config/docs/command-skill-reference.md`.
+  `~/Projects/claude-config/docs/command-skill-reference.md` for custom items, plus the
+  enabled plugins' `skills/` directories: the reference doc indexes only what lives in
+  the config repo — plugin-shipped skills come with their plugin and are invisible to
+  it by its own charter.
 - **CLAUDE.md rules / workflow conventions** — `~/.claude/CLAUDE.md` and
   `~/.claude/operating-constraints.md`.
 - **Hooks and settings.json** — the `hooks` block of `~/.claude/settings.json` and
@@ -109,11 +117,10 @@ sources. Read what actually records each category:
 - **Keybindings** — `~/.claude/keybindings.json`. This file may legitimately not exist:
   absence means no custom keybindings are configured, so keybinding ideas are genuinely
   New — count it as a blind spot only if it exists and can't be read.
-- **MCP servers** — three reads: the `mcpServers` block of `~/.claude.json` (not
-  `settings.json`, which has no such key); the enabled plugin list in
-  `~/.claude/settings.json`'s `enabledPlugins` — plugins ship servers and skills too,
-  and that list lives only there; and the project's `.mcp.json` when one exists (its
-  absence is per-project normal, not a blind spot).
+- **MCP servers** — the `mcpServers` block of `~/.claude.json` (not `settings.json`,
+  which has no such key), the enabled-plugins read above (plugins ship servers), and
+  the project's `.mcp.json` when one exists (its absence is per-project normal, not a
+  blind spot).
 - **Standing lessons** — the memory index at
   `~/.claude/projects/-Users-kyledisch-Projects-claude-config/memory/MEMORY.md`, which
   records adopted conventions that live nowhere else (hooks-over-prompts, the
@@ -136,9 +143,10 @@ Every idea carries one of **four** tags:
 A category is a blind spot when its source is missing, unreadable, **or readable but
 carrying no entries for that category** — a config file that parses fine while holding no
 relevant block dedups nothing, and that silent success is exactly what the invariant
-forbids. (Exception: a source whose absence *means* "none configured" — keybindings
-above — is an answer, not a blind spot.) Continue without dedup for a blind-spotted
-category and name it, with the reason, in the Snapshot's dedup blind-spots line.
+forbids. (Exceptions: a source whose absence *means* "none configured" — keybindings
+above, a project `.mcp.json` — is an answer, not a blind spot.) Continue without dedup
+for a blind-spotted category and name it, with the reason, in the Snapshot's dedup
+blind-spots line.
 
 ### 3. Extraction pass
 
