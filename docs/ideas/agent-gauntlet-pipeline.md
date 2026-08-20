@@ -22,6 +22,12 @@ the merge gate.
 
 ## Decisions / open questions
 
+**Settled 2026-08-20** — all four questions below are decided and recorded in
+[`../plans/agent-gauntlet-pipeline.md`](../plans/agent-gauntlet-pipeline.md) (D1–D4):
+skill chaining `Agent` dispatches with orchestrator-run gates; purpose-build the three
+skeleton agents; inline Stage-0 probe with loud degradation; human at the scorecard with
+`adversarial-review` unchanged as the merge gate.
+
 - Orchestration surface: Workflow tool script vs. a skill that chains `Agent` dispatches
   vs. `/autonomous-milestone` integration. The Workflow tool's pipeline() is the natural
   fit; decide whether the gauntlet is its own skill or a mode of autonomous-milestone.
