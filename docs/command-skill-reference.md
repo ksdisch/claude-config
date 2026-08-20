@@ -87,6 +87,8 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`project-wiki`](../skills/project-wiki/SKILL.md) | Maintain an evidence-controlled project wiki — three modes: INIT (idempotently create PROJECT.md, HANDOFF.md, and topic pages that synthesize across sources; never overwrites, never leaves a `Wiki/` holding only an index), MAINTAIN (surgical updates when integrating sources, recording decisions, updating status, or appending History.md milestones), and BACKFILL (mine merged-PR and git history into an append-only Wiki/History.md evolution narrative). Auto-invoked in any project that has wiki sentinel files. · [config →](usage-playbook.md#project-wiki) |
 | [`grill-me`](../skills/grill-me/SKILL.md) | Typed-only entry point (`/grill-me`) that starts a `grilling` session — a relentless interview to sharpen a plan or design before acting on it. · [config →](usage-playbook.md#grill-me) |
 | [`grilling`](../skills/grilling/SKILL.md) | Interviews you relentlessly about a plan, decision, or idea until shared understanding — works the design tree in rounds of numbered questions, each with a recommended answer, until no branch is left silently assumed. · [config →](usage-playbook.md#grilling) |
+| [`wayfinder`](../skills/wayfinder/SKILL.md) | Charts an effort too big for one session as a shared map of **decision tickets** on the repo's issue tracker (GitHub Issues, or local markdown as a fallback), then resolves them one at a time — destination first, fog of war for what isn't sharp enough to ticket yet, a visible frontier of what's takeable now. Plans only: a cleared map collapses into a spec and routes the next move, never into a pull request. Typed-only (`/wayfinder`). · [config →](usage-playbook.md#wayfinder) |
+| [`domain-modeling`](../skills/domain-modeling/SKILL.md) | Actively sharpens a project's domain model while you design — challenges terms against the glossary, invents edge-case scenarios that force precision, cross-references claims with the code, and writes resolved vocabulary into `CONTEXT.md` as it happens. Routes decisions to whichever ledger the repo already has (`Decisions.md` via `project-wiki`, an existing `docs/adr/`, or a new one) rather than opening a second. · [config →](usage-playbook.md#domain-modeling) |
 
 ### Session & Context Management
 
@@ -132,6 +134,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`paper-figures`](../skills/paper-figures/SKILL.md) | Retrofits the real figure images into an already-generated `paper-eli5` output — re-finds the original source, harvests the figures (direct download or browser screenshot), and fills the `[Figure N]` placeholders in both the markdown and the glossed HTML, with one contact-sheet approval gate. Web sources only. Run after `/paper-eli5` or `/paper-gloss`. · [config →](usage-playbook.md#paper-figures) |
 | [`project-guide`](../skills/project-guide/SKILL.md) | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. · [config →](usage-playbook.md#project-guide) |
 | [`narrate`](../skills/narrate/SKILL.md) | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. · [config →](usage-playbook.md#narrate) |
+| [`research`](../skills/research/SKILL.md) | Delegates reading legwork to a background agent so it never lands in your session — investigates a question against primary sources only, then captures the findings as a single Markdown file with a citation on every claim, a version, and a checked-on date. An untraceable fact is written down as "not established", never as a plausible citation. · [config →](usage-playbook.md#research) |
 
 ### Personal Coaching
 
@@ -146,6 +149,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | Skill | What it does |
 |---|---|
 | [`match-the-mock`](../skills/match-the-mock/SKILL.md) | Implements a UI against a visual target using see-and-correct iteration — screenshot → compare → fix → repeat. The auto-triggering sibling of `/screenshot-iterate`. · [config →](usage-playbook.md#match-the-mock) |
+| [`prototype`](../skills/prototype/SKILL.md) | Builds throwaway code that answers a design question — either several radically different UI variations switchable on one route via `?variant=`, or a single self-contained HTML demo that drives a state model through its awkward cases. Builds the options and recommends; **never picks the winner** — the verdict is yours. · [config →](usage-playbook.md#prototype) |
 
 ---
 
