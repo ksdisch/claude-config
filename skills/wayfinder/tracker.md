@@ -15,6 +15,12 @@ Decide **once, at charting time**, and record the choice in the map's Notes so l
 
 **Invariant `one-backend`:** a map lives entirely on one backend. Never create the map on GitHub and its tickets locally, or migrate a live map mid-effort; a half-migrated map has two frontiers and neither is right.
 
+## Cross-backend rules
+
+These hold whichever backend is in play, so they live above the split rather than inside either section.
+
+**Invariant `status-and-claim-are-independent`:** whether a ticket's question is still live, and whether someone is currently on it, are **two axes** and never collapse into one. A ticket is **open** until it is resolved or ruled out of scope — claiming does not change that, so a claimed ticket is still an open ticket, and SKILL.md's "open ticket" always means exactly this, including in the map-clear test. Each backend expresses the two axes with its own primitives (GitHub: issue state + assignee; local markdown: a `Status:` line + a `Claimed by:` line), and neither field name is the rule. Collapsing them would let an abandoned ticket read as not-open, and a map holding one of those would pass "no open tickets and no fog" and get collapsed into a spec with a decision missing.
+
 ---
 
 ## Backend A — GitHub Issues (preferred)
@@ -70,7 +76,7 @@ The map is a directory of files under `docs/wayfinder/<effort-slug>/`, tracked i
 - **Release:** set `Claimed by:` back to `—`. See `claims-are-released` in SKILL.md.
 - **Out of scope:** set `Status: out-of-scope` rather than deleting the file, so the record of the scoping call survives.
 
-**Invariant `status-and-claim-are-independent`:** `Status:` says whether the question is still live; `Claimed by:` says whether someone is on it. They are two axes and never collapse into one field — SKILL.md's "open ticket" always means `Status: open` regardless of who holds it, including in the map-clear test. Folding claimed into the status enum would make an abandoned ticket read as not-open, and a map with one of those in it would pass "no open tickets and no fog" and get collapsed into a spec with a decision missing.
+These two lines are this backend's expression of `status-and-claim-are-independent` above: `Status:` is the open/resolved axis, `Claimed by:` is the who's-on-it axis, and neither is ever folded into the other.
 
 **Invariant `out-of-scope-unblocks`:** a blocker that leaves scope stops blocking, exactly as a closed issue does on GitHub. Ruling a ticket out of scope is therefore never a way to strand its dependents. Revisit each dependent in the same edit: with its premise gone, it is usually itself out of scope, or its question has changed and the ticket needs rewriting.
 

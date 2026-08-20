@@ -75,7 +75,7 @@ Each ticket is a **child** of the map; the tracker's id is its identity. Its bod
 
 Each ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task`.
 
-A session **claims** a ticket before any work, so concurrent sessions skip it (invariant `claim-first` in tracker.md). Claiming does not close a ticket — open/closed and claimed/unclaimed are two independent axes on both backends (`status-and-claim-are-independent`). A ticket is **unblocked** when every ticket blocking it is closed or out of scope (`out-of-scope-unblocks`); the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
+A session **claims** a ticket before any work, so concurrent sessions skip it (invariant `claim-first` in tracker.md). Claiming never resolves a ticket — open-or-resolved and claimed-or-not are two independent axes, whichever backend is in play (`status-and-claim-are-independent`). A ticket is **unblocked** when every ticket blocking it is closed or out of scope (`out-of-scope-unblocks`); the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
 
 The answer isn't part of the body; it's recorded on resolution. Assets created while resolving a ticket are linked from the ticket, not pasted into it.
 
@@ -135,7 +135,9 @@ Kyle invokes with a loose idea.
    **Invariant `subagents-do-not-touch-git`:** the research subagents run in parallel against **one shared working tree**, and a branch checkout is process-global to a tree — concurrent subagents switching branches fight each other and drag this session off its own branch. So they perform no git operations at all. Each one writes its own findings file (a path nobody else is writing) and returns that path, its one-line gist, and the answer; **this session** does the committing.
 
    **Invariant `only-the-parent-appends`:** nor do those subagents append to the **map**. Every other resolution write touches a resource that is the ticket's alone, but Decisions-so-far is shared, and N agents appending to it at once is the one genuinely concurrent write in the whole skill. Each returns its gist instead, and this session appends all N serially and commits — which is also what keeps `map-append-is-last-write`'s local backstop workable, since the agents that cannot commit are no longer the ones editing the map.
-7. **Stop.** Charting is one session's work; it hand-resolves nothing. Report the map by name with its link, and name the frontier tickets Kyle could take next.
+7. **Release what didn't land, then stop.** Charting is the only place this skill takes a claim it doesn't discharge itself, so before stopping, **release the claim on every research ticket whose subagent didn't come back resolved** — errored, timed out, returned nothing. A claim taken on a subagent's behalf and never released is `claims-are-released` broken at the one site that isn't a session ending: the ticket sits claimed forever, off the frontier, and no later session surfaces it.
+
+   Charting hand-resolves nothing else. Report the map by name with its link, name the frontier tickets Kyle could take next, and say plainly which research tickets came back unresolved and were released.
 
 ### Work through the map
 
@@ -166,7 +168,7 @@ Say so plainly rather than designing around it — the reflex to route the map p
 
 ## When the map clears
 
-No open tickets and no fog means the way is clear. **Open means `Status: open` regardless of who holds the claim** (`status-and-claim-are-independent` in [tracker.md](tracker.md)) — a claimed-but-unresolved ticket is still open and still blocks the clear test, so an abandoned or handed-over ticket can never let a map be declared clear with a decision missing. Check for those before concluding anything.
+No open tickets and no fog means the way is clear. **A ticket is open until it is resolved or ruled out of scope, whoever holds the claim** (`status-and-claim-are-independent` in [tracker.md](tracker.md), which also says how each backend expresses that) — so a claimed-but-unresolved ticket still blocks the clear test, and an abandoned or handed-over one can never let a map be declared clear with a decision missing. Check for those before concluding anything.
 
 **The map does not build the thing.** What's left is a set of linked decisions, which is not a build plan, so:
 
