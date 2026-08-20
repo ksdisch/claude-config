@@ -50,8 +50,13 @@ import re
 import sys
 from pathlib import Path
 
-# `00:00:01.234 --> 00:00:03.456` with optional trailing cue settings.
-TIMING = re.compile(r"^\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s")
+# A cue timing line, with optional trailing cue settings:
+#   00:00:01.234 --> 00:00:03.456        yt-dlp
+#   00:01.234 --> 00:03.456              Whisper, on anything under an hour
+# The hours field is optional per the WebVTT spec and Whisper's WriteVTT omits
+# it (`always_include_hours = False`), so requiring it silently yields zero cues
+# on the one path this skill treats as expensive. Hours may exceed two digits.
+TIMING = re.compile(r"^(?:\d{2,}:)?\d{1,2}:\d{2}[.,]\d{3}\s*-->\s")
 # Inline caption markup: `<c>`, `</c.colorE5E5E5>`, `<00:00:02.480>`, `<v Bob>`.
 TAG = re.compile(r"<[^>]*>")
 # No pattern for `WEBVTT`/`Kind:`/`NOTE`/`STYLE`: those are recognized by position
