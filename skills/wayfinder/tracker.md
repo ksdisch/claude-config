@@ -28,12 +28,14 @@ Create one issue carrying the map body, labelled `wayfinder:map`. Create the lab
 ### Create a child ticket
 
 1. Create the issue with the question as its body and a `wayfinder:<type>` label — one of `research`, `prototype`, `grilling`, `task`.
-2. Attach it to the map as a **sub-issue**. The REST surface is a POST to `repos/{owner}/{repo}/issues/{map-number}/sub_issues`, whose body field is the child's numeric **database id** — not its `#number`, not its `node_id`. Read that id off the child issue's `id` field.
+2. Attach it to the map as a **sub-issue**. The REST surface is a POST to `repos/{owner}/{repo}/issues/{map-number}/sub_issues`, whose body field is the child's numeric **database id** — not its `#number`, not its `node_id`. Get that id from **`gh api repos/{owner}/{repo}/issues/{number}`**, whose `.id` is the numeric database id.
+
+   **Trap `node-id-not-database-id`:** `gh issue view <n> --json id` looks like the right source and is not — its `id` is the GraphQL **node id** (`I_kwDO…`, or `PR_kwDO…` when the number is a PR). It is the only id-shaped field `gh issue view` offers, so the wrong value is also the convenient one. Posting it fails the call. Use the `gh api` REST path above; this trap applies everywhere on this page that asks for a database id.
 3. **Fallback `no-sub-issues`:** if that call is rejected because sub-issues aren't available on this repo or plan, add the child to a task list in the map body and put a `Part of #<map>` line at the top of the child's body. Say once, in the session, that the fallback is in force — a map whose parentage is a text convention needs closer reading than one whose isn't.
 
 ### Record a blocking edge
 
-1. Prefer GitHub's **native issue dependencies**: a POST to `repos/{owner}/{repo}/issues/{blocked-number}/dependencies/blocked_by`, whose body field is again the blocker's numeric **database id**. Native is strongly preferred because it is what renders the frontier in GitHub's own UI — Kyle can see what's takeable without opening the map, which is most of why the tracker is worth the ceremony.
+1. Prefer GitHub's **native issue dependencies**: a POST to `repos/{owner}/{repo}/issues/{blocked-number}/dependencies/blocked_by`, whose body field is again the blocker's numeric **database id** — read the same way, and subject to the same trap `node-id-not-database-id`. Native is strongly preferred because it is what renders the frontier in GitHub's own UI — Kyle can see what's takeable without opening the map, which is most of why the tracker is worth the ceremony.
 2. Read the edges back from the `issue_dependencies_summary.blocked_by` count on an issue, which counts **open** blockers only and is therefore the live gate.
 3. **Fallback `no-dependencies`:** if the endpoint isn't available, put a `Blocked by: #<n>, #<n>` line at the top of the blocked issue's body, and say once in the session that blocking is text-inferred and needs manual review.
 
@@ -47,9 +49,11 @@ Take the map's open children, then drop any that has an open blocker and any tha
 
 Assign the ticket to Kyle's account (`--add-assignee @me` where the session runs as him). **Invariant `claim-first`:** the claim is the session's first write to the tracker, before any work on the question. An open, unassigned ticket is unclaimed, so a session that works first and claims later can be duplicated by a concurrent session.
 
+**Release** by removing the assignee (`--remove-assignee`). Claiming never changes open/closed state — an assigned issue is still an open issue. See `claims-are-released` in SKILL.md.
+
 ### Resolve
 
-In order: post the answer as a comment on the ticket, close the ticket, then append one line to the map's **Decisions so far**. See `resolve-order` in SKILL.md.
+In order: post the answer as a comment on the ticket, close the ticket, then append one line to the map's **Decisions so far**, obeying `map-append-is-last-write` below. See `resolve-order` in SKILL.md.
 
 ---
 
@@ -58,12 +62,19 @@ In order: post the answer as a comment on the ticket, close the ticket, then app
 The map is a directory of files under `docs/wayfinder/<effort-slug>/`, tracked in git alongside everything else Kyle keeps in `docs/`.
 
 - **Map:** `docs/wayfinder/<effort-slug>/map.md`, holding the same Destination / Notes / Decisions-so-far / Not-yet-specified / Out-of-scope body.
-- **Ticket:** `docs/wayfinder/<effort-slug>/tickets/NN-<slug>.md`, numbered from `01`, the question in the body. Near the top it carries three lines: `Type:` (`research` / `prototype` / `grilling` / `task`), `Status:` (`open` / `claimed` / `resolved` / `out-of-scope`), and `Blocked by:` listing ticket numbers.
-- **Blocking:** the `Blocked by:` line. A ticket is unblocked when every ticket it lists is `resolved`.
-- **Frontier:** the tickets whose `Status:` is `open` and whose blockers are all `resolved`; lowest number first.
-- **Claim:** set `Status: claimed` and save the file before any work — same `claim-first` invariant as GitHub.
-- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far.
+- **Ticket:** `docs/wayfinder/<effort-slug>/tickets/NN-<slug>.md`, numbered from `01`, the question in the body. Near the top it carries four lines: `Type:` (`research` / `prototype` / `grilling` / `task`), `Status:` (`open` / `resolved` / `out-of-scope`), `Claimed by:` (a name, or `—` for unclaimed), and `Blocked by:` listing ticket numbers.
+- **Blocking:** the `Blocked by:` line. A ticket is unblocked when every ticket it lists is `resolved` **or** `out-of-scope` — see `out-of-scope-unblocks` below.
+- **Frontier:** the tickets that are `open`, unblocked, and whose `Claimed by:` is `—`; lowest number first.
+- **Claim:** set `Claimed by:` to the driving dev and save the file before any work — same `claim-first` invariant as GitHub. **Leave `Status: open`.** Claiming is not closing; a claimed ticket is still an open ticket.
+- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far, obeying `map-append-is-last-write` below.
+- **Release:** set `Claimed by:` back to `—`. See `claims-are-released` in SKILL.md.
 - **Out of scope:** set `Status: out-of-scope` rather than deleting the file, so the record of the scoping call survives.
+
+**Invariant `status-and-claim-are-independent`:** `Status:` says whether the question is still live; `Claimed by:` says whether someone is on it. They are two axes and never collapse into one field — SKILL.md's "open ticket" always means `Status: open` regardless of who holds it, including in the map-clear test. Folding claimed into the status enum would make an abandoned ticket read as not-open, and a map with one of those in it would pass "no open tickets and no fog" and get collapsed into a spec with a decision missing.
+
+**Invariant `out-of-scope-unblocks`:** a blocker that leaves scope stops blocking, exactly as a closed issue does on GitHub. Ruling a ticket out of scope is therefore never a way to strand its dependents. Revisit each dependent in the same edit: with its premise gone, it is usually itself out of scope, or its question has changed and the ticket needs rewriting.
+
+**Invariant `map-append-is-last-write`:** on both backends, appending to Decisions-so-far is read-modify-write on a resource other sessions also write, so **re-read the map body immediately before appending** — not the copy loaded at the start of the session — and if it changed since load, re-apply your line on top of the current text. Locally, make the map edit the session's last write and commit it on its own, so a clobber is visible in `git log` instead of silent. Losing the line is not cosmetic: the ticket keeps the decision, but the map is the only index anyone loads.
 
 **Invariant `local-visible`:** the map directory is committed, not gitignored. A local map that isn't in git is invisible to every other session and to Kyle on another machine, which defeats the "shared map" the skill is named for.
 

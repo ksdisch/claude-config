@@ -33,8 +33,14 @@ So: present every variant, name what each one trades away, say which you'd pick 
 
 ## When a wayfinder map dispatched this
 
-A `wayfinder:prototype` ticket is **HITL**: it resolves through Kyle's reaction to the artifact and no other way. Build the prototype, link it from the ticket as an asset, hand it over, and **stop** — the ticket stays open and claimed until he's actually looked. Closing it on your own read of your own prototype is the single most-reported way this ticket type goes wrong.
+A `wayfinder:prototype` ticket is **HITL**: it resolves through Kyle's reaction to the artifact and no other way. Build the prototype, link it from the ticket as an asset, hand it over, and **stop** — the ticket stays open and still claimed until he's actually looked. Closing it on your own read of your own prototype is the single most-reported way this ticket type goes wrong.
+
+This is wayfinder's **handed-over** session ending, one of the three it defines, not a failure to follow its `resolve-order` invariant — that invariant governs sessions that produce an answer, and this one deliberately doesn't. No map line is written either: the decision hasn't been made yet.
 
 ## Unattended runs
 
 Nobody is there to react, so the artifact is the entire deliverable. Build it, write the question it's asking at the top of it, list the variants and their tradeoffs, and stop. Never record a verdict, close a prototype ticket, or fold a variant into real code from an unattended run.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.

@@ -75,7 +75,7 @@ Each ticket is a **child** of the map; the tracker's id is its identity. Its bod
 
 Each ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task`.
 
-A session **claims** a ticket before any work, so concurrent sessions skip it (invariant `claim-first` in tracker.md). A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
+A session **claims** a ticket before any work, so concurrent sessions skip it (invariant `claim-first` in tracker.md). Claiming does not close a ticket — open/closed and claimed/unclaimed are two independent axes on both backends (`status-and-claim-are-independent`). A ticket is **unblocked** when every ticket blocking it is closed or out of scope (`out-of-scope-unblocks`); the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
 
 The answer isn't part of the body; it's recorded on resolution. Assets created while resolving a ticket are linked from the ticket, not pasted into it.
 
@@ -89,7 +89,7 @@ Every ticket is either **HITL** (human in the loop, worked *with* a human who sp
 |---|---|---|---|
 | `grilling` | HITL | The default. The question can be settled by talking it through. | Call the Skill tool twice — `grilling` and `domain-modeling` — in a fresh session |
 | `prototype` | HITL | "How should this look" or "how should this behave" — a question talking cannot settle. | Call the Skill tool with `prototype`; link the artifact from the ticket as an asset |
-| `research` | AFK | A fact outside the working directory is blocking a decision. | A subagent that calls the Skill tool with `research`, on a throwaway `research/<name>` branch |
+| `research` | AFK | A fact outside the working directory is blocking a decision. | A subagent that calls the Skill tool with `research` and returns its report; the dispatching session commits it (invariant `subagents-do-not-touch-git`) |
 | `task` | Either | Nothing to decide, but manual work blocks a decision — provisioning access, signing up for a service so its API can be judged, moving data so its shape can be seen. | The agent alone where it can (AFK); otherwise a precise checklist for Kyle (HITL) |
 
 `task` is the one type that *does* rather than decides, and it earns its place by unblocking a decision, never by delivering a piece of the destination (invariant `task-is-not-a-slice`). Resolve it by recording what was done plus any facts later tickets depend on — where credentials live, new URLs, row counts.
@@ -130,7 +130,9 @@ Kyle invokes with a loose idea.
 3. **Pick the tracker backend** per [tracker.md](tracker.md) and record the choice in the map's Notes.
 4. **Create the map**: Destination and Notes filled in, Decisions-so-far empty, the fog sketched into Not yet specified.
 5. **Create the tickets you can specify now** as children, then wire blocking edges in a second pass (invariant `wire-second`). Everything you can't yet specify stays in the fog.
-6. **Fire the research subagents.** For each `research` ticket just created, dispatch a subagent that calls the Skill tool with `research` to resolve it in parallel.
+6. **Fire the research subagents.** For each **unblocked** `research` ticket just created — one whose blockers, if any, are already closed — claim it (invariant `claim-first`), then dispatch a subagent that calls the Skill tool with `research` to resolve it in parallel. **Blocked research tickets wait their turn**: step 5 wired the blocking graph precisely so it gates work, and a research answer produced on an unsettled premise still lands on the map's Decisions-so-far as though it were a decision on the route, where nothing reopens it when the blocker resolves differently.
+
+   **Invariant `subagents-do-not-touch-git`:** the research subagents run in parallel against **one shared working tree**, and a branch checkout is process-global to a tree — concurrent subagents switching branches fight each other and drag this session off its own branch. So they perform no git operations at all: each returns its report, and **this session** writes and commits them serially once they're all back.
 7. **Stop.** Charting is one session's work; it hand-resolves nothing. Report the map by name with its link, and name the frontier tickets Kyle could take next.
 
 ### Work through the map
@@ -141,11 +143,20 @@ Kyle invokes with a map (URL or number). A ticket argument is **optional**: with
 2. **Read the Notes** before anything else, especially on a map you didn't chart. Apply invariant `no-self-licence` to whatever they claim.
 3. Choose the ticket. If Kyle named one, use it. Otherwise take the first frontier ticket in order. **Claim it** before any work (invariant `claim-first`).
 4. Resolve it. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the Notes name. If in doubt, call the Skill tool twice, for `grilling` and `domain-modeling`.
-5. **Invariant `resolve-order`:** post the answer as a resolution comment, *then* close the ticket, *then* append the one-line gist to the map's Decisions-so-far. All three, in that order, in the same session. A closed ticket with no comment has lost the decision; a comment with no map line has hidden it.
-6. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer made specifiable (invariant `fog-shrinks`). If the answer reveals a ticket sits beyond the destination, rule it out of scope rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
+5. **The session ends one of three ways.** Pick before writing anything to the tracker:
+   - **Resolved** — you have an answer. Follow `resolve-order` below.
+   - **Handed over** — a HITL ticket whose artifact or questions are now in front of Kyle and which only *he* can settle. Link the asset, leave the ticket **open and still claimed**, write **no** map line, and say plainly what you're waiting on. This is a complete, correct session; it is the normal ending for a `prototype` ticket, and closing one on your own read of your own artifact is the failure `hitl-needs-a-human` names.
+   - **Released** — you got nowhere, or you're stopping for an unrelated reason. Release the claim (see `claims-are-released`) so the ticket returns to the frontier.
+
+   **Invariant `resolve-order`** *(applies to the resolved ending only — it is not a demand that every session produce an answer)*: post the answer as a resolution comment, *then* close the ticket, *then* append the one-line gist to the map's Decisions-so-far. All three, in that order, in the same session. A closed ticket with no comment has lost the decision; a comment with no map line has hidden it.
+
+   **Invariant `claims-are-released`:** a claim is a lease, not a deed. Nothing else in this skill unclaims a ticket, so a session that ends without resolving must either hand over explicitly or release — otherwise the ticket sits claimed forever, permanently off the frontier, and no later session ever surfaces it. A handed-over ticket keeps its claim on purpose (it's waiting on Kyle, not available to take); every other non-resolving ending releases.
+
+   When appending to the map, obey `map-append-is-last-write` in [tracker.md](tracker.md): re-read the map body immediately before you append rather than trusting the copy you loaded at step 1, because a concurrent session may have written to it since.
+6. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer made specifiable (invariant `fog-shrinks`). If the answer reveals a ticket sits beyond the destination, rule it out of scope rather than resolving it on the route (on the local backend that also unblocks its dependents — `out-of-scope-unblocks`). If the decision invalidates other parts of the map, update or delete those tickets.
 7. **Stop.** One ticket, one session.
 
-Kyle may run unblocked tickets in parallel, so expect other sessions to be editing the tracker concurrently. Warn him once if he asks to parallelize two `grilling` tickets: sessions share no context, so the second one will re-ask what the first just settled.
+Kyle may run unblocked tickets in parallel, so expect other sessions to be editing the tracker concurrently — both the tickets and, more easily lost, the map body. Warn him once if he asks to parallelize two `grilling` tickets: sessions share no context, so the second one will re-ask what the first just settled.
 
 ### A decision turns out to be wrong
 
@@ -153,7 +164,9 @@ Say so plainly rather than designing around it — the reflex to route the map p
 
 ## When the map clears
 
-No open tickets and no fog means the way is clear. **The map does not build the thing.** What's left is a set of linked decisions, which is not a build plan, so:
+No open tickets and no fog means the way is clear. **Open means `Status: open` regardless of who holds the claim** (`status-and-claim-are-independent` in [tracker.md](tracker.md)) — a claimed-but-unresolved ticket is still open and still blocks the clear test, so an abandoned or handed-over ticket can never let a map be declared clear with a decision missing. Check for those before concluding anything.
+
+**The map does not build the thing.** What's left is a set of linked decisions, which is not a build plan, so:
 
 1. **Collapse the decisions into one spec.** Walk Decisions-so-far, zoom each ticket for its detail, and write a single document that states what is to be built and why — the decisions, not their transcripts. Put it where the repo already keeps specs; absent a convention, `docs/specs/<effort-slug>.md`. Link it from the map.
 2. **Close the map** with a comment pointing at the spec.
@@ -175,6 +188,10 @@ Only `research` and AFK `task` tickets are resolvable with nobody there; `grilli
 - The destination is written down and agreed before a single ticket exists.
 - Every open ticket reads as a **question**. Any ticket that reads "build the X" is mis-typed or belongs downstream of the map.
 - Kyle can look at the tracker and see which tickets are takeable without opening the map.
-- A session resolves one ticket, comments, closes, leaves one line on the map — then stops.
+- A session resolves one ticket, comments, closes, leaves one line on the map — then stops. Or it hands one over and stops with the ticket open, which is equally correct; what never happens is a session inventing an answer so it has something to close.
 - **Not yet specified** shrinks over time.
 - When the opening breadth-first grill turns up no fog, the session says the effort is small enough to skip the map, and stops.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.

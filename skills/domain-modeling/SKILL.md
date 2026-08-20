@@ -63,3 +63,7 @@ One thing to watch. A wayfinder ticket resolves into a **resolution comment on t
 ## Unattended runs
 
 The challenges are questions, and questions need an answer. With nobody there: write the glossary entries you can settle from the code alone (a term the code already names unambiguously), and collect every genuine ambiguity as a list of open questions with your recommended reading of each — marked as unconfirmed. Never resolve a contested term or record an ADR on your own authority.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.

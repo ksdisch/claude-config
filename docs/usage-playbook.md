@@ -994,9 +994,10 @@ rows get re-pointed to match.
 - **Notes:** **primary sources only** — official docs, source, specs, first-party APIs, not a
   secondary write-up. Every claim carries a citation, a version, and a checked-on date; a fact
   that can't be traced is written down as *"not established"* with what was searched, never as
-  a plausible-looking citation to a page nobody opened. Dispatched from a wayfinder map it
-  captures onto a throwaway `research/<name>` branch and leaves a context pointer on the
-  ticket. Already AFK by design, so it has no unattended gate. Imported from
+  a plausible-looking citation to a page nobody opened. The agent does **no git operations** —
+  several run in parallel against one working tree and a checkout is process-global, so each
+  returns its report and the dispatching session commits them serially. Already AFK by design,
+  so it has no unattended gate. Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for
   citation discipline and the wayfinder contract.
 

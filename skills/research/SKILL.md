@@ -21,7 +21,7 @@ Version and date matter: record which version of the library, API, or spec the f
 
 A `wayfinder:research` ticket is AFK by construction, so the whole thing runs without Kyle. Two extra obligations:
 
-- Capture the findings on a throwaway `research/<name>` branch rather than the working branch, and leave a context pointer (the branch name plus the file path) on the ticket.
+- **Do no git operations.** Research tickets are dispatched several at a time into one shared working tree, and a branch checkout is process-global to a tree — parallel agents switching branches collide with each other and pull the dispatching session off its own branch. Write the findings file and **return** its path and the answer; the dispatching session commits the reports serially once they're all back. This is invariant `subagents-do-not-touch-git` in the wayfinder skill.
 - Resolve the ticket with the **answer to its question**, not a link to the file. The map's Decisions-so-far gets a one-line gist; the detail stays in the ticket and the file.
 
 Research is the one wayfinder ticket type that may be resolved several to a session, because none of them costs Kyle a conversation.
@@ -29,3 +29,7 @@ Research is the one wayfinder ticket type that may be resolved several to a sess
 ## Unattended runs
 
 This skill is already AFK by design — no gate, nothing to wait for. Run it end to end and report where the file landed.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.
