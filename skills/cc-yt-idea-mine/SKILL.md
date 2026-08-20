@@ -46,6 +46,9 @@ These hold on every run. Everything else in this file is guidance.
   verification cost scales with what he keeps.
 - **Capture is gated.** Nothing is written to any repo before Kyle picks at the gate. The
   report file under `~/Learning` is the only thing written without asking.
+- **The report path is derived, never composed.** The filename slug follows step 6's
+  character rule — the video title is third-party text — and the resolved path must sit
+  inside `~/Learning/youtube-notes/`. Anything else stops the run.
 - **Fixed capture home.** Approved globally-useful picks land in
   `~/Projects/claude-config` regardless of where the skill runs — that is where the
   artifact would be built.
@@ -66,7 +69,7 @@ These hold on every run. Everything else in this file is guidance.
 
 | Input | How to handle |
 |---|---|
-| **YouTube URL** | Invoke the **`youtube-transcript`** skill. The transcript is an intermediate, not a deliverable — have it written to the session scratchpad, never into a repo. While the URL is in hand, also ask yt-dlp to print the video's `upload_date`; it feeds the staleness caveat. |
+| **YouTube URL** | Invoke the **`youtube-transcript`** skill, running the whole fetch from the session scratchpad — the transcript and its intermediates (`title.txt`, the `.vtt`) are not deliverables and never touch a repo; the producer's own "Where the file goes" section names this contract. While the URL is in hand, make one extra yt-dlp print call for the video's `upload_date`, reformatting its `YYYYMMDD` value to `YYYY-MM-DD` for the frontmatter; it feeds the staleness caveat. |
 | **File path** | Read it directly. Upload date: unknown unless Kyle supplies it. |
 | **Pasted text** | Use directly. Upload date: unknown unless Kyle supplies it. |
 
@@ -153,7 +156,14 @@ Write the report to `~/Learning/youtube-notes/` (create the directory if it does
 exist), then display it inline in full. **No save prompt** — the location was fixed by
 design, so there is no per-run choice to ask about. Tell Kyle the path.
 
-Filename: `YYYY-MM-DD-<kebab-case-video-title>-idea-mine.md`. Frontmatter:
+Filename: `YYYY-MM-DD-<title-slug>-idea-mine.md`. The slug comes from the video title by
+an explicit rule: lowercase; every run of characters outside `a–z 0–9` collapsed to a
+single `-`; leading and trailing `-` stripped; truncated to 60 characters. The title is
+third-party text — the sibling skill's warning about stranger-controlled titles applies
+on this side too — so never paste it raw into a path, and confirm the resolved path sits
+inside `~/Learning/youtube-notes/` before writing; if it doesn't, stop and say so.
+
+Frontmatter:
 
 ```yaml
 ---
@@ -195,8 +205,10 @@ type, one line each. This is the scan-first view.]
    - **Depends on:** [staleness flags, or "nothing version-sensitive"]
 
 ## Long tail
-[One line per idea: title — artifact type · reach · dedup tag. Full recall
-lives here; nothing found is omitted.]
+[One line per idea: title — artifact type · effort · reach · dedup tag ·
+"short quote anchor". Full recall lives here; nothing found is omitted, and
+a tail pick at the capture gate carries the same anchor and effort band a
+top-tier pick does.]
 ```
 
 ### 7. Capture gate
@@ -221,8 +233,12 @@ current Claude Code docs. Outcomes:
 
 **Then land, in `~/Projects/claude-config`** (global picks):
 
-1. Fetch and branch from up-to-date `origin/main` — never from whatever happens to be
-   checked out; concurrent sessions leave state there. Branch prefix `docs/`.
+1. Never switch the primary checkout. `~/Projects/claude-config`'s working tree **is**
+   the machine's live global config — `~/.claude` symlinks into it — so changing its
+   branch changes every running session's skills mid-flight. Instead: fetch, then add a
+   **temporary git worktree** (under the session scratchpad) on a fresh `docs/`-prefixed
+   branch cut from `origin/main`, and do all capture writes there. Concurrent sessions'
+   state in the primary checkout is never touched.
 2. For each landed idea, write a vision doc `docs/ideas/<kebab-title>.md`. Mirror the
    existing ideas-doc shape: `# <Title>` · **Status:** Idea — not committed. Mined from
    "<video title>" (<source>) by `cc-yt-idea-mine` on <date>. · **Premise** · **The bet**
@@ -239,6 +255,10 @@ current Claude Code docs. Outcomes:
    The diff is docs-only and non-behavioral, so the adversarial-review skip applies:
    **state the skip and the reason in the merge brief**, never silently. Report the PR
    link and merge SHA.
+5. End state: remove the temporary worktree and delete the merged branch. If the primary
+   checkout sits on `main`, pull it so the machine runs the just-merged config live; if
+   it sits on any other branch (a concurrent session's work), leave it exactly where it
+   is and say so in the brief.
 
 **Project picks:** confirm the project's path with Kyle if it isn't obvious, then append a
 self-contained stub (the full why inline — don't link into `~/Learning`) to that repo's

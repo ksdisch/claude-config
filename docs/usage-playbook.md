@@ -953,7 +953,9 @@ rows get re-pointed to match.
     Critique to pressure-test a contrarian claim, Actionable Insights to leave with a plan.
   - You have a transcript from anywhere and want the same four-mode treatment.
 - **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
-  URL), [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  URL), [`cc-yt-idea-mine`](#cc-yt-idea-mine) (the idea-mining sibling — "mine this video
+  for Claude Code ideas" is its lane, not a fifth mode here),
+  [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
   section leads if the topic deserves a workspace),
   [`notebook-assist`](#notebook-assist) (adds the video to a notebook as a source),
   [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
