@@ -59,3 +59,147 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Acceptance:** Create `CONVENTIONS.md` (contract + stub + omit-rules), link it from README, and add it to `install.sh` DENY; confirm a stub copy reproduces `smoke-test.md`'s field order and `begin`/`wrap`/`handoff` are documented as the intentional argument-less case.
 - **Size:** M
 - **Added:** 2026-06-23
+
+### [Feature] Agent gauntlet pipeline: specifier → coder → cleaner → hardener → QA
+- **Why:** Uncle Bob's working relay of five narrow-context agents, each stage gated by a deterministic tool — quality from loops between focused agents, not steering one long-context agent. Full write-up in [`docs/ideas/agent-gauntlet-pipeline.md`](docs/ideas/agent-gauntlet-pipeline.md).
+- **Acceptance:** The three-stage skeleton (specifier → coder → hardener) runs end-to-end on one real repo with deterministic gates, measured against a plain single-session build of the same story.
+- **Size:** L
+- **Added:** 2026-08-20
+
+### [Exploration] Values, not disciplines: stop imposing human TDD ritual on agents
+- **Why:** Bob no longer imposes line-by-line TDD on agents (they revert to function-then-test anyway) — enforce the *values* via outcome gates instead. **Contradicts `/tdd` and `superpowers:test-driven-development`**; the capture's job is to force that call. Full write-up in [`docs/ideas/values-not-disciplines-for-agents.md`](docs/ideas/values-not-disciplines-for-agents.md).
+- **Acceptance:** The A/B experiment in the doc run once, and a recorded adopt/reject/scope decision on the two conflicting items.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Exploration] Anti-plan-maxing: fiddle-until-right over heavy upfront planning
+- **Why:** Bob calls plan-first agent runs "always a disaster" and argues the collapsed cost of change favors build-look-reorganize. **Contradicts the planner/builder protocol and plan-first skills**; likely outcome is scoping *when* plan-first applies, recorded deliberately. Full write-up in [`docs/ideas/anti-plan-maxing.md`](docs/ideas/anti-plan-maxing.md).
+- **Acceptance:** A one-paragraph plan-first/iterate-first boundary written into CLAUDE.md (or a recorded rejection), after a two-week trial.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Mutation-testing "hardener" subagent
+- **Why:** Nothing in the config measures test-suite strength — the hardener kills surviving mutants, the one signal coverage can't give. Full write-up in [`docs/ideas/mutation-testing-hardener.md`](docs/ideas/mutation-testing-hardener.md).
+- **Acceptance:** `agents/mutation-hardener.md` (read-only auditor first, modeled on `silent-failure-hunter`) dispatched over one Stryker-equipped repo with a useful graded report.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Feature] CRAP-score gate: coverage × complexity as a deterministic quality loop
+- **Why:** The config's hooks gate git behavior; nothing gates the code. A CRAP score is hooks-over-prompts applied to code quality. Verified 2026-08-20: the loop must anchor on the Stop hook — PostToolUse cannot block. Full write-up in [`docs/ideas/crap-score-gate.md`](docs/ideas/crap-score-gate.md).
+- **Acceptance:** Report-only `/crap-check` on one coverage-wired repo, ranked worst-function output; promotion to a Stop-hook loop decided from its noise level.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Feature] Module dependency-rules checker: a spec file the agents cannot violate
+- **Why:** Architecture is what agents erode and no test catches — a declared dependency graph plus a checker turns the design layer deterministic. Full write-up in [`docs/ideas/module-dependency-rules-checker.md`](docs/ideas/module-dependency-rules-checker.md).
+- **Acceptance:** `deps.yml` + checker run by hand on one pilot repo, finding (or proving absent) real violations, before any hook wiring.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Exploration] Ephemeral specs: the end result is the specification
+- **Why:** Bob persists checks (Gherkin, QA scripts), never spec prose — "there is no equivalent to source code." **Contradicts `spec-miner`'s** durable-spec premise; resolve whether its outputs are living documents or point-in-time mining aids. Full write-up in [`docs/ideas/ephemeral-specs.md`](docs/ideas/ephemeral-specs.md).
+- **Acceptance:** A one-paragraph charter amendment on `spec-miner` recording the chosen reading.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Architecture viewer: clickable module/dependency map of a repo
+- **Why:** Strategic review needs a structural surface; nothing in the inventory provides one, and the HTML-artifact rendering muscle already exists in-house. Full write-up in [`docs/ideas/architecture-viewer.md`](docs/ideas/architecture-viewer.md).
+- **Acceptance:** One repo rendered as a self-contained HTML map (nodes, dependency arrows, one level of click-to-expand) that changes at least one real review.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Feature] Agent-tuned thresholds: widen human lint limits for agents
+- **Why:** Bob runs CRAP 4 for humans, 6–8 for agents — numeric gates need per-audience thresholds, stated once where every future gate can cite it. Full write-up in [`docs/ideas/agent-tuned-thresholds.md`](docs/ideas/agent-tuned-thresholds.md).
+- **Acceptance:** The principle landed as one CLAUDE.md sentence in the same PR as the first shipped numeric gate.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Specifier subagent: human doc → Gherkin + QA procedure
+- **Why:** Converts vague intent into deterministic acceptance criteria before code exists; standalone it sharpens backlog `Acceptance:` lines. Full write-up in [`docs/ideas/specifier-subagent.md`](docs/ideas/specifier-subagent.md).
+- **Acceptance:** `agents/specifier.md` run on one real backlog stub, output compared against the hand-written acceptance.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Exploration] Deterministic tools over steering instructions — coverage confirmation
+- **Why:** Bob's "guidelines, not rules" observation is the already-adopted `hooks-over-prompts` convention; captured per capture-all instruction. The only delta: the convention lives in an auto-memory, not a durable tracked file. Full write-up in [`docs/ideas/deterministic-tools-over-steering.md`](docs/ideas/deterministic-tools-over-steering.md).
+- **Acceptance:** Either hooks-over-prompts graduated to a CLAUDE.md paragraph, or this stub closed as confirmed-covered.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Improvement] Minimal initial prompt: salience audit for always-loaded instructions
+- **Why:** Lost-in-the-middle means long CLAUDE.md files silently lose their middle; `/trim-context` audits size — this adds the positional-salience and hook-convertibility criteria. Full write-up in [`docs/ideas/minimal-initial-prompt.md`](docs/ideas/minimal-initial-prompt.md).
+- **Acceptance:** One hand-run audit of the global CLAUDE.md (must-hold vs guidance + ranked hook-conversion list) and a decision on folding the pass into `/trim-context`.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Exploration] Loop-until-the-tool-says-okay as the core agent contract
+- **Why:** Gates as loop conditions, not reports — the connective framing for the CRAP gate and dependency checker, with Bob's escape-valve warning attached. Likely absorbed by whichever gate ships first. Full write-up in [`docs/ideas/loop-until-tool-passes.md`](docs/ideas/loop-until-tool-passes.md).
+- **Acceptance:** The first shipped gate implements loop-until-green with a max-iteration escape valve; then close this stub.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Improvement] Cleaner agent as an automatic between-tasks stage
+- **Why:** `/simplify` + `code-simplifier` exist but only on demand; Bob runs cleaning as a standing stage because implementer mess is expected, not exceptional. Full write-up in [`docs/ideas/cleaner-agent-auto-stage.md`](docs/ideas/cleaner-agent-auto-stage.md).
+- **Acceptance:** A `/simplify` offer wired into `ship-and-route`'s pre-review flow, trialed for a few merges.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Improvement] QA agent: compile the `/smoke-test` checklist into an executable script
+- **Why:** `/smoke-test` ends at a checklist Kyle walks himself — the written procedure is already the input; the missing half is compilation to a Playwright script (pattern proven by Constellation's `/verify-planet`). Full write-up in [`docs/ideas/qa-doc-to-executable-script.md`](docs/ideas/qa-doc-to-executable-script.md).
+- **Acceptance:** One existing checklist hand-compiled to a Playwright script that runs and yields a credible pass/fail before touching the skill.
+- **Size:** M
+- **Added:** 2026-08-20
+
+### [Exploration] Born-do-die agent lifecycle — coverage confirmation
+- **Why:** Fresh context per task is the planner/builder protocol's existing rule; captured per capture-all instruction. Residual: Bob's startup-cost caveat as a decomposition floor. Full write-up in [`docs/ideas/born-do-die-agent-lifecycle.md`](docs/ideas/born-do-die-agent-lifecycle.md).
+- **Acceptance:** One protocol sentence added ("split only when the stage outlives its startup cost") or the stub closed as covered.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Exploration] Trajectory management — coverage confirmation + party-line delta
+- **Why:** Clear-context-to-clear-trajectory is already why builder sessions start fresh; captured per capture-all instruction. Residual: trajectory contamination as a possible fourth `auto-handoff` trigger (party-line). Full write-up in [`docs/ideas/trajectory-context-clearing.md`](docs/ideas/trajectory-context-clearing.md).
+- **Acceptance:** A decision on whether drift-detection is mechanizable enough to be a party-line exploration, or the stub closed as covered.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Concentrate steering density in narrow-scope subagents
+- **Why:** Rules keep salience in small contexts — allocate steering budget inversely to task breadth. Implicit in existing agent files, stated nowhere. Full write-up in [`docs/ideas/steering-density-in-subagents.md`](docs/ideas/steering-density-in-subagents.md).
+- **Acceptance:** One paragraph wherever agent-authoring guidance lives, citing `adversarial-reviewer` and `silent-failure-hunter` as worked examples.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Improvement] Interrogate-the-agent architecture review
+- **Why:** Bob's post-build ritual — make the agent explain the structure it just created, then redesign from the answer; a cadence `feature-dev:code-explorer` and `/project-guide` don't provide. Full write-up in [`docs/ideas/interrogate-agent-architecture-review.md`](docs/ideas/interrogate-agent-architecture-review.md).
+- **Acceptance:** The raw-prompt version tried after one multi-file build; a decision from the answer on whether it earns a durable home.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Prefer deep modules (small interface, deep implementation) for agent legibility
+- **Why:** Narrow interfaces let agents work against a module without loading its guts into context — Ousterhout's idea re-justified as context economy, worth one stated rule. Full write-up in [`docs/ideas/deep-modules-for-agent-legibility.md`](docs/ideas/deep-modules-for-agent-legibility.md).
+- **Acceptance:** One CLAUDE.md sentence, optionally plus an adversarial-reviewer checklist line.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Tests as agent documentation: keep tests readable as the behavioral spec
+- **Why:** Agents read tests to learn the system — test readability is a functional interface for every future session, not a nicety. Full write-up in [`docs/ideas/tests-as-agent-documentation.md`](docs/ideas/tests-as-agent-documentation.md).
+- **Acceptance:** One global CLAUDE.md paragraph; applied opportunistically in review.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Exploration] Study-and-rebuild tool adoption ("point your agents at my tools")
+- **Why:** Treat external tools as specifications of essence — agents study them and build a customized house version, trading cheap build cost for zero dependency surface. Needs a rebuild-vs-install boundary. Full write-up in [`docs/ideas/point-agents-at-tools.md`](docs/ideas/point-agents-at-tools.md).
+- **Acceptance:** The pattern applied deliberately once (the CRAP gate is the candidate) and a judgment on whether it deserves a written rule.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Feature] Spot-check dashboard: monitor scores instead of reading code
+- **Why:** Bob's supervision posture — watch the scores, sample the code, never full-review. Almost certainly ships as the CRAP gate's report mode; stubbed so the posture half isn't lost in the enforcement half. Full write-up in [`docs/ideas/crap-spot-check-dashboard.md`](docs/ideas/crap-spot-check-dashboard.md).
+- **Acceptance:** `/crap-check`'s report-only output serves as the v0 dashboard.
+- **Size:** S
+- **Added:** 2026-08-20
+
+### [Exploration] Parallel coders — coverage confirmation
+- **Why:** Parallel implementation agents are already the Workflow tool / ultracode substrate; captured per capture-all instruction with no identified residual delta. Full write-up in [`docs/ideas/parallel-coders-convention.md`](docs/ideas/parallel-coders-convention.md).
+- **Acceptance:** Close as confirmed-covered unless practice surfaces a gap.
+- **Size:** S
+- **Added:** 2026-08-20
