@@ -206,9 +206,10 @@ type, one line each. This is the scan-first view.]
 
 ## Long tail
 [One line per idea: title — artifact type · effort · reach · dedup tag ·
-"short quote anchor". Full recall lives here; nothing found is omitted, and
-a tail pick at the capture gate carries the same anchor and effort band a
-top-tier pick does.]
+deps (staleness flags, or "—") · "short quote anchor". Full recall lives
+here; nothing found is omitted, and a tail pick at the capture gate carries
+the same anchor, effort band, and staleness flags a top-tier pick does — so
+step 8 can verify it from the saved report alone.]
 ```
 
 ### 7. Capture gate
