@@ -134,6 +134,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`narrate`](../skills/narrate/SKILL.md) | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. · [config →](usage-playbook.md#narrate) |
 | [`youtube-transcript`](../skills/youtube-transcript/SKILL.md) | Downloads a YouTube video's transcript with yt-dlp — manual captions, then auto-generated, with local Whisper as a gated last resort — and converts it to deduplicated plain text. · [config →](usage-playbook.md#youtube-transcript) |
 | [`youtube-breakdown`](../skills/youtube-breakdown/SKILL.md) | Turns a transcript or YouTube URL into a structured breakdown in one of four modes — Study Notes, Quick Reference, Critique, or Actionable Insights — then offers to save it under `~/Learning`. Always asks which mode first. · [config →](usage-playbook.md#youtube-breakdown) |
+| [`cc-yt-idea-mine`](../skills/cc-yt-idea-mine/SKILL.md) | Exhaustively mines a video transcript for every segment implementable in your Claude Code setup — a tiered, dedup-tagged, leverage-ranked report saved under `~/Learning`, then a gated, verified capture of picked ideas into claude-config's backlog. Proposes only; never builds. · [config →](usage-playbook.md#cc-yt-idea-mine) |
 
 ### Personal Coaching
 
