@@ -52,8 +52,11 @@ These hold on every run. Everything else in this file is guidance.
 - **Fixed capture home.** Approved globally-useful picks land in
   `~/Projects/claude-config` regardless of where the skill runs — that is where the
   artifact would be built.
-- **Dedup degrades loudly.** If the inventory doc can't be read, the report says dedup was
-  skipped and why — it never silently presents un-tagged ideas as new.
+- **Dedup degrades loudly.** If any category's inventory source is missing, unreadable,
+  or readable but empty of entries for that category, the report names the category and
+  the reason in its blind-spots line — it never silently presents un-tagged ideas as new.
+  Exceptions are stated where the source is listed: a file whose absence *means* "none
+  configured" (keybindings, a project `.mcp.json`) is an answer, not a blind spot.
 - **Stay out of youtube-breakdown's lane.** If the ask is really "analyze / summarize /
   critique this video" or "study notes", hand off to `youtube-breakdown` instead of
   running this skill on a mismatched request.
@@ -69,7 +72,7 @@ These hold on every run. Everything else in this file is guidance.
 
 | Input | How to handle |
 |---|---|
-| **YouTube URL** | Invoke the **`youtube-transcript`** skill, running the whole fetch from the session scratchpad — the transcript and its intermediates (`title.txt`, the `.vtt`) are not deliverables and never touch a repo; the producer's own "Where the file goes" section names this contract. While the URL is in hand, make one extra yt-dlp print call for the video's `upload_date`, reformatting its `YYYYMMDD` value to `YYYY-MM-DD` for the frontmatter; it feeds the staleness caveat. |
+| **YouTube URL** | Invoke the **`youtube-transcript`** skill, running the whole fetch from the session scratchpad — the transcript and its intermediates (`title.txt`, the `.vtt`) are not deliverables and never touch a repo; the producer's own "Where the file goes" section names this contract. Add `%(upload_date)s` and `%(uploader)s` to the producer's step-2 `%(duration)s|%(id)s` print — never to the print redirected into `title.txt`, which must stay title-only because the converter reads that whole file as the filename stem. Reformat `upload_date`'s `YYYYMMDD` to `YYYY-MM-DD` for the frontmatter (it feeds the staleness caveat); `uploader` feeds `speaker:` per step 6's sourcing order. When the conversion finishes, note the transcript's **absolute** path — the converter prints a relative name and the shell cwd resets between calls, so carry the path explicitly rather than as implicit state. |
 | **File path** | Read it directly. Upload date: unknown unless Kyle supplies it. |
 | **Pasted text** | Use directly. Upload date: unknown unless Kyle supplies it. |
 
@@ -85,17 +88,65 @@ own run.
 
 ### 2. Read the inventory
 
-Read `~/Projects/claude-config/docs/command-skill-reference.md` — the index of everything
-Kyle already has. It powers the dedup tag every idea carries:
+Dedup needs an inventory per artifact category, and no single file covers all ten.
+`docs/command-skill-reference.md` indexes only skills, commands, and agents — the first
+real run was structurally blind for rule-shaped ideas until it hand-checked the other
+sources. Read what actually records each category:
+
+- **Enabled plugins (feeds several categories)** — the `enabledPlugins` map in
+  `~/.claude/settings.json`. It maps plugin name to a boolean, so only `true` entries
+  count as installed capability. Plugins ship skills, commands, agents, and MCP servers
+  alike — when an idea might already be plugin-provided, check the `true` plugins' own
+  directories under `~/.claude/plugins/`.
+- **Skills, slash commands, subagents** —
+  `~/Projects/claude-config/docs/command-skill-reference.md` for custom items, plus the
+  enabled plugins' `skills/` directories: the reference doc indexes only what lives in
+  the config repo — plugin-shipped skills come with their plugin and are invisible to
+  it by its own charter.
+- **CLAUDE.md rules / workflow conventions** — `~/.claude/CLAUDE.md` and
+  `~/.claude/operating-constraints.md`.
+- **Hooks and settings.json** — the `hooks` block of `~/.claude/settings.json` and
+  `~/.claude/hooks/`.
+- **Output styles / statusline** — `~/Projects/claude-config/output-styles/`; for the
+  statusline, read `settings.json`'s `statusLine` block — whatever command it names is the
+  live statusline, and the repo's `statusline-command.sh` is authoritative only when
+  `statusLine` actually points at it. The command's *name* is not an inventory: when it
+  names `ccstatusline`, the widget list is `~/.config/ccstatusline/settings.json`; when
+  it names a script, read the script. If what it names can't be read, that is a blind
+  spot.
+- **Keybindings** — `~/.claude/keybindings.json`. This file may legitimately not exist:
+  absence means no custom keybindings are configured, so keybinding ideas are genuinely
+  New — count it as a blind spot only if it exists and can't be read.
+- **MCP servers** — the `mcpServers` block of `~/.claude.json` (not `settings.json`,
+  which has no such key), the enabled-plugins read above (plugins ship servers), and
+  the project's `.mcp.json` when one exists (its absence is per-project normal, not a
+  blind spot).
+- **Standing lessons** — the memory index at
+  `~/.claude/projects/-Users-kyledisch-Projects-claude-config/memory/MEMORY.md`, which
+  records adopted conventions that live nowhere else (hooks-over-prompts, the
+  bare-identifier rule's ancestors). Memory is per-project, so the ambiently-loaded
+  session memory belongs to whatever project the skill runs from — a supplement, never
+  the source.
+
+Every idea carries one of **four** tags:
 
 - **New** — nothing in the inventory does this.
 - **Overlaps `<item>`** — an existing item covers part of it; the idea may really be an
   improvement to that item. Overlaps stay in the report for exactly that reason.
 - **Already covered by `<item>`** — the inventory already does this; the idea is listed in
   the long tail so Kyle knows the video pitched it, tagged so he doesn't re-read it as new.
+- **Contradicts `<item>`** — the idea conflicts with an existing item or convention rather
+  than duplicating it: adopting it means changing or retiring what exists. Often the most
+  valuable tag in a report, because it forces a decision. Never soften a genuine conflict
+  into Overlaps with a parenthetical.
 
-If the file is missing or unreadable (different machine, moved repo), continue without
-dedup and state that prominently in the report — see the invariant.
+A category is a blind spot when its source is missing, unreadable, **or readable but
+carrying no entries for that category** — a config file that parses fine while holding no
+relevant block dedups nothing, and that silent success is exactly what the invariant
+forbids. (Exceptions: a source whose absence *means* "none configured" — keybindings
+above, a project `.mcp.json` — is an answer, not a blind spot.) Continue without dedup
+for a blind-spotted category and name it, with the reason, in the Snapshot's dedup
+blind-spots line.
 
 ### 3. Extraction pass
 
@@ -149,6 +200,10 @@ Add what this pass finds, then move on. One critic pass, not a loop.
   group, and also ranked overall across categories. The overall rank rides in parens after
   the title: `1. Block force-push via a PreToolUse hook (4)` reads "#1 among hooks, #4
   overall."
+- **Decision-forcing counts as leverage.** An idea tagged Contradicts, whose payoff is
+  forcing a call on an existing convention rather than building something, may earn top
+  tier on that basis — its Why line says so plainly instead of dressing it up as
+  buildability.
 
 ### 6. Write and show the report
 
@@ -181,6 +236,14 @@ The three free-text fields are quoted — talk titles are full of colons, and a 
 `title:` with a colon in the value is a YAML parse error that silently voids the whole
 block. Escape any `"` inside a value as `\"`.
 
+`speaker:` is sourced, in order of trust: the transcript's own self-identification (an
+intro, a "my name is…"), then the video title, then the `uploader` from step 1's metadata
+print. The uploader is the *channel*, not necessarily who's talking — an interview posted
+on the interviewer's channel mis-attributes by default. When the sources conflict or none
+is clear, write the literal quoted value — `speaker: "unknown"` or
+`speaker: "uploader: <name>"` — rather than guessing; it's a value, not a new frontmatter
+key, and the quoting matters for exactly the colon reason above.
+
 Report body:
 
 ```markdown
@@ -189,7 +252,8 @@ Report body:
 - **Published:** [date or unknown] · **Processed:** [date]
 - **Staleness caveat:** [e.g. "Published 7 months ago. Claude Code moves fast —
   every capability claim below is unverified until the capture gate checks the
-  ones you pick." If dedup was skipped, say so here too.]
+  ones you pick."]
+- **Dedup blind spots:** [category — reason; semicolon-separated, or "none"]
 
 ## Overall top picks
 [Ordered list of the strongest ideas across all categories — title + artifact
@@ -200,16 +264,26 @@ type, one line each. This is the scan-first view.]
    - **What:** …
    - **Why:** …
    - **Effort:** S|M|L · **Reach:** Global | Project(<name>) · **Dedup:** New |
-     Overlaps <item> | Already covered by <item>
+     Overlaps <item> | Already covered by <item> | Contradicts <item>
    - **Anchor:** "<short verbatim quote>"
    - **Depends on:** [staleness flags, or "nothing version-sensitive"]
 
 ## Long tail
-[One line per idea: title — artifact type · effort · reach · dedup tag ·
-deps (staleness flags, or "—") · "short quote anchor". Full recall lives
-here; nothing found is omitted, and a tail pick at the capture gate carries
-the same anchor, effort band, and staleness flags a top-tier pick does — so
-step 8 can verify it from the saved report alone.]
+[One real Markdown list item per idea, with the anchor forced onto its own
+rendered line by a hard line break (trailing backslash):
+
+- <title> — <artifact type> · <effort> · <reach> · <dedup tag> ·
+  deps: <staleness flags, or "nothing version-sensitive">\
+  "<short quote anchor>"
+
+List items keep twenty tail ideas as twenty separate bullets when the saved
+report renders; plain indented lines would soft-wrap back into the one wall
+of text this format exists to avoid. The deps sentinel is the top tier's
+own wording — it asserts the extractor looked and found nothing, which a
+bare dash doesn't. Full recall lives here; nothing found is omitted, and a
+tail pick at the capture gate carries the same anchor, effort band, and
+staleness flags a top-tier pick does — so step 8 can verify it from the
+saved report alone.]
 ```
 
 ### 7. Capture gate
@@ -250,7 +324,9 @@ current Claude Code docs. Outcomes:
    house stub shape: `### [Type] <Title>` with **Why** (one sentence + link to the vision
    doc), **Acceptance**, **Size** (from the effort band), **Added** (today). Type: an
    Overlaps-tagged idea that improves an existing item is `[Improvement]`; a concrete new
-   artifact is `[Feature]`; an uncertain bet is `[Exploration]`.
+   artifact is `[Feature]`; an uncertain bet is `[Exploration]`. A Contradicts-tagged pick
+   is `[Exploration]` whose vision doc names the conflicting item under **Decisions / open
+   questions** — the capture's job is to force that decision, not to pre-decide it.
 4. Stage the specific files (never `git add -A` — concurrent sessions leave untracked
    state), commit, push, open the PR, and merge — this is Kyle's standing git workflow.
    The diff is docs-only and non-behavioral, so the adversarial-review skip applies:
