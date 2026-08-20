@@ -6,7 +6,9 @@ cover the imported material below, which stays under its own licence and copyrig
 
 Each imported skill also carries a one-line attribution at the bottom of its own `SKILL.md`,
 because `install.sh` symlinks `skills/` into `~/.claude` and those files get read in
-isolation from this one.
+isolation from this one. **One footer covers its whole skill directory**, supporting files
+included — `SKILL.md` is the entry point every reader arrives through, and a notice repeated
+on each `*-FORMAT.md` would add noise without adding reach.
 
 ## mattpocock/skills — MIT
 
@@ -16,6 +18,7 @@ Source: <https://github.com/mattpocock/skills>
 |---|---|---|
 | [`grilling`](skills/grilling/SKILL.md) | `skills/productivity/grilling` | trigger conditions, unattended runs |
 | [`grill-me`](skills/grill-me/SKILL.md) | `skills/productivity/grill-me` | — |
+| [`teach`](skills/teach/SKILL.md) | `skills/productivity/teach` | house-edited description; a workspace-location guard before the first write; `GLOSSARY.md` wired into the workspace list. The four `*-FORMAT.md` files are kept verbatim. |
 | [`wayfinder`](skills/wayfinder/SKILL.md) | `skills/engineering/wayfinder` | self-contained tracker doc with a local-markdown fallback; clear-map handoff writes a spec and routes instead of calling `/to-spec`; named invariants hardening the upstream-documented failure modes; unattended runs |
 | [`prototype`](skills/prototype/SKILL.md) | `skills/engineering/prototype` | the verdict is never the agent's; unattended runs |
 | [`research`](skills/research/SKILL.md) | `skills/engineering/research` | citation and "not established" discipline; no git operations in the subagent |

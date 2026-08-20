@@ -146,3 +146,7 @@ Glossaries, in particular, are an essential reference. The workspace's glossary 
 ## `NOTES.md`
 
 The user will sometimes express preferences of how they want to be taught, or things you should keep in mind. This is the place to record those preferences, so you can refer back to them when designing lessons or working with the user.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Covers this skill directory, supporting files included. Full notice: `THIRD-PARTY.md` in the claude-config repo.

@@ -74,7 +74,9 @@ The map is a directory of files under `docs/wayfinder/<effort-slug>/`, tracked i
 
 **Invariant `out-of-scope-unblocks`:** a blocker that leaves scope stops blocking, exactly as a closed issue does on GitHub. Ruling a ticket out of scope is therefore never a way to strand its dependents. Revisit each dependent in the same edit: with its premise gone, it is usually itself out of scope, or its question has changed and the ticket needs rewriting.
 
-**Invariant `map-append-is-last-write`:** on both backends, appending to Decisions-so-far is read-modify-write on a resource other sessions also write, so **re-read the map body immediately before appending** — not the copy loaded at the start of the session — and if it changed since load, re-apply your line on top of the current text. Locally, make the map edit the session's last write and commit it on its own, so a clobber is visible in `git log` instead of silent. Losing the line is not cosmetic: the ticket keeps the decision, but the map is the only index anyone loads.
+**Invariant `map-append-is-last-write`:** on both backends, appending to Decisions-so-far is read-modify-write on a resource other sessions also write, so **re-read the map body immediately before appending** — not the copy loaded at the start of the session — and if it changed since load, re-apply your line on top of the current text. Locally, make the map edit the session's last write and commit it on its own, so a clobber is visible in `git log` instead of silent.
+
+This is a backstop against *other sessions*, which the tracker can't serialize. Within one session it is not the defence: `only-the-parent-appends` keeps parallel research subagents off the map entirely, so the writer that has to obey this invariant is always one that can also commit. Losing the line is not cosmetic — the ticket keeps the decision, but the map is the only index anyone loads.
 
 **Invariant `local-visible`:** the map directory is committed, not gitignored. A local map that isn't in git is invisible to every other session and to Kyle on another machine, which defeats the "shared map" the skill is named for.
 
