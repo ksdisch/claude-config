@@ -127,28 +127,34 @@ cost, and `tiny` is noticeably worse on technical vocabulary.
 ### 5. Convert to plain text
 
 ```
-python3 scripts/vtt-to-text.py <the .vtt from step 3 or 4> --title-file title.txt
+python3 ~/.claude/skills/youtube-transcript/scripts/vtt-to-text.py \
+  <the .vtt from step 3 or 4> --title-file title.txt
 ```
 
-Run it from the skill's own directory, or give the script's full path. The input is
-whichever VTT actually got written — `transcript.en.vtt` on the caption paths,
+**Stay in the working directory from steps 2–4** and give the script by absolute path. The
+VTT and `title.txt` are both relative to where you've been working, so `cd`-ing to the
+skill's own directory breaks both arguments — and `--dir` defaults to the current
+directory, which would write the transcript into `~/.claude/skills/`, a symlink into the
+config repo.
+
+The input is whichever VTT actually got written — `transcript.en.vtt` on the caption paths,
 `audio_<id>.vtt` on the Whisper path.
 
 `--title-file` names the output after the video and sanitizes the title in Python, so you
-never construct a filename in the shell. Add `--dir <path>` to place it somewhere other
-than the current directory. Use `-o <path>` instead only when the name comes from Kyle
-rather than from the video.
+never construct a filename in the shell. Add `--dir <path>` to place it elsewhere. Use
+`-o <path>` instead only when the name comes from Kyle rather than from the video.
 
 The script strips the WEBVTT header, cue timings, `NOTE`/`STYLE` blocks, karaoke `<c>`
 tags, and HTML entities, then removes the scroll overlap that makes auto-captions read
 every phrase two or three times.
 
-Its deduplication is **adjacent-only** by default (`--window 1`), because scroll overlap is
-adjacent by construction — cue N's tail reappears in cue N+1 and nowhere else. Resist
-widening it. A wider window starts eating real speech: short utterances ("Yeah.", "Right.",
-"Exactly.") recur within a few lines of each other constantly in interviews and Q&A, and
-because step 6 deletes the VTT, anything dropped here is gone for good. `--window 0`
-disables dedup entirely, which is the right call for manual captions.
+Deduplication is **cue-aware**: a line is dropped only when the cue immediately before it
+already contained that line, which is exactly how rollup captions repeat. Don't reach for a
+line-count window instead — a rollup cue carries several lines, so the repeat can sit two
+or three lines back, and any window wide enough to catch it also eats the short utterances
+("Yeah.", "Right.") that legitimately recur a few lines apart in interviews. Since step 6
+deletes the VTT, anything dropped here is gone for good. `--no-dedup` turns it off, which
+is the right call for manual captions.
 
 ### 6. Clean up and report
 
@@ -181,7 +187,7 @@ Never write into a git repo's tracked tree without saying so — a stray 200 KB 
 | Symptom | What's actually wrong |
 |---|---|
 | `--list-subs` shows tracks, download writes nothing | Language mismatch — `--sub-langs en` on a video with only `es` tracks silently writes no file. Re-run with the language that's actually listed. |
-| Output text is one-third repeated phrases | The VTT was converted with something other than the script (or `--window 0`). Re-run the conversion. |
+| Output text is one-third repeated phrases | The VTT was converted with something other than the script, or with `--no-dedup`. Re-run the conversion without it. |
 | `HTTP Error 403` / "Sign in to confirm you're not a bot" | yt-dlp is out of date, or YouTube wants a session. Update first (`brew upgrade yt-dlp`); mention `--cookies-from-browser chrome` as the next option but don't run it without asking — it reads Kyle's browser cookies. |
 | Whisper fails on start | Missing `ffmpeg` (`brew install ffmpeg`) or insufficient disk for the model. |
 | Transcript ends early | Some videos have partial captions. Compare the last timestamp in the VTT against the duration from step 2 before assuming the file is fine. |

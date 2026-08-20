@@ -936,11 +936,12 @@ rows get re-pointed to match.
 - **Notes:** needs `yt-dlp`, which is **not currently installed** — first run will offer
   `brew install yt-dlp`. Whisper is gated behind an explicit yes with the duration and
   audio size quoted, because it's the only step that costs real bandwidth and CPU.
-  Conversion runs through `scripts/vtt-to-text.py`, whose deduplication is adjacent-only by
-  default — scroll overlap is adjacent by construction, and any wider window starts eating
-  the short utterances ("Yeah.", "Right.") that recur legitimately all through an
-  interview. The video title reaches the script through `--title-file` rather than the
-  command line, because a title containing `$` or a backtick would otherwise execute.
+  Conversion runs through `scripts/vtt-to-text.py`, which dedupes **per cue** rather than
+  over a window of output lines — rollup captions repeat whatever is still on screen, so
+  the overlap is a cue-boundary property, and any line-count window either misses it or
+  eats the short utterances ("Yeah.", "Right.") that recur legitimately in interviews. The
+  video title reaches the script through `--title-file` rather than the command line,
+  because a title containing `$` or a backtick would otherwise execute.
 
 #### `youtube-breakdown`
 

@@ -12,19 +12,28 @@ two or three times. This strips the caption machinery (header, cue timings,
 NOTE/STYLE blocks, karaoke `<c>` tags, HTML entities) and then removes that
 overlap.
 
-Deduplication is deliberately **local** — a line is dropped only when it repeats
-one of the last `--window` emitted lines (default 1, i.e. adjacent only), not
-when it repeats anything anywhere in the file. Whole-file deduplication is the
-obvious approach and it is wrong: a speaker who says "so that's the tradeoff" in
-minute 3 and again in minute 40 loses the second one, silently, and the
-transcript stops matching the video.
+Deduplication is **cue-aware**, not a sliding window over output lines: a line is
+dropped only when the cue immediately before it already contained that same
+line. That is exactly the shape rollup captions have — YouTube re-sends the
+lines still on screen with each new cue — so it removes the overlap completely
+while leaving everything else alone.
 
-The window is 1 because scroll overlap is *adjacent* by construction — cue N's
-tail reappears in cue N+1 and nowhere else. A wider window buys nothing and
-costs real speech: short utterances ("Yeah.", "Right.", "Exactly.") legitimately
-recur within a few lines of each other all through any interview or Q&A, which
-is the format this is most often pointed at. Widen it only against a file you
-have inspected.
+Both of the obvious alternatives are wrong, and each fails in a way that is
+invisible in the output:
+
+- **Whole-file dedup** removes the overlap but also deletes genuine repetition.
+  A speaker who says "so that's the tradeoff" in minute 3 and again in minute 40
+  loses the second one, and the transcript stops matching the video.
+- **A fixed window over emitted lines** cannot be tuned to fit. A rollup cue
+  carries several lines, so a repeat can sit two or three emitted lines back —
+  window 1 leaves every phrase duplicated. Widen it to cover that and it starts
+  eating the short utterances ("Yeah.", "Right.", "Exactly.") that legitimately
+  recur a few lines apart all through any interview.
+
+Cue boundaries sidestep the tradeoff because they are the structure the
+duplication actually comes from.
+
+`--no-dedup` turns it off for manual captions, which have no overlap to remove.
 
 `--title-file` exists so a video title never has to become shell command text.
 Titles are third-party-controlled and routinely contain `$`, backticks, and
@@ -45,8 +54,9 @@ from pathlib import Path
 TIMING = re.compile(r"^\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s")
 # Inline caption markup: `<c>`, `</c.colorE5E5E5>`, `<00:00:02.480>`, `<v Bob>`.
 TAG = re.compile(r"<[^>]*>")
-# `WEBVTT`, `Kind: captions`, `Language: en`, and the `NOTE`/`STYLE` block heads.
-HEADER = re.compile(r"^(WEBVTT|Kind:|Language:|NOTE\b|STYLE\b|REGION\b)")
+# No pattern for `WEBVTT`/`Kind:`/`NOTE`/`STYLE`: those are recognized by position
+# (before any timing line) rather than by text. Matching them by text is what let
+# an ALL-CAPS caption cue beginning "NOTE THE DIFFERENCE" be swallowed whole.
 
 
 def clean(line: str) -> str:
@@ -54,58 +64,82 @@ def clean(line: str) -> str:
     return html.unescape(TAG.sub("", line)).strip()
 
 
+# Everything hazardous in a filename, a shell word, or both. Filesystem: `/`,
+# `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`. Shell: backtick and `$` (execute inside
+# double quotes), `'` (escapes single quotes), and `;&()[]{}!#~` (metacharacters
+# if the name is ever left unquoted). Keeping the title off the command line is
+# the real defence, but the output filename gets echoed into later commands, so
+# it must be inert on its own.
+UNSAFE = re.compile(r"""[/\\:*?"<>|`$'!#~;&(){}\[\]]""")
+
+
 def safe_filename(title: str, fallback: str = "transcript") -> str:
-    """A video title reduced to a filename stem.
-
-    Handles path separators and the characters Windows/macOS reject, collapses
-    whitespace, and caps the length so the result survives any filesystem. This
-    is filesystem hygiene only — the shell-injection defence is that the title
-    reaches this program through a file rather than through a command line.
-    """
+    """A video title reduced to a filename stem that is inert in a shell word."""
     stem = re.sub(r"[\x00-\x1f\x7f]", "", title)
-    stem = re.sub(r'[/\\:*?"<>|]', "-", stem)
+    stem = UNSAFE.sub("-", stem)
+    stem = re.sub(r"-{2,}", "-", stem)
     stem = re.sub(r"\s+", " ", stem).strip(" .-")
-    return stem[:120].strip() or fallback
+    return stem[:120].strip(" .-") or fallback
 
 
-def to_text(vtt: str, window: int = 1) -> list[str]:
-    """The spoken lines of a VTT file, in order, with scroll overlap removed."""
-    out: list[str] = []
-    in_block = False  # inside a NOTE/STYLE block, which runs to a blank line
+def cues(vtt: str) -> list[list[str]]:
+    """The VTT's cues, each as its list of cleaned payload lines.
+
+    Cue boundaries are what deduplication keys on, so they are parsed rather
+    than inferred: a cue opens on a timing line and runs to the next blank line.
+    Anything before the first timing line is header and is dropped.
+    """
+    blocks: list[list[str]] = []
+    current: list[str] | None = None
 
     for raw in vtt.splitlines():
         line = raw.strip()
 
         if not line:
-            in_block = False
+            if current is not None:
+                blocks.append(current)
+                current = None
             continue
-        if in_block:
+
+        if TIMING.match(line):
+            # A new timing line inside an unterminated block still starts a cue.
+            if current is not None:
+                blocks.append(current)
+            current = []
             continue
-        if HEADER.match(line):
-            in_block = True
-            continue
-        if TIMING.match(line) or "-->" in line:
-            continue
-        # A bare integer on its own line is a cue number, not speech.
-        if line.isdigit():
-            continue
+
+        if current is None:
+            continue  # header region, NOTE/STYLE block, or a stray cue number
 
         text = clean(line)
-        if not text:
-            continue
+        if text:
+            current.append(text)
 
-        recent = out[-window:] if window > 0 else []
-        if text in recent:
-            continue
-        # The scrolling window also emits strict prefixes of the next cue
-        # ("so the thing" then "so the thing is"). Keep the longer one.
-        if recent and recent[-1] and text.startswith(recent[-1]):
-            out[-1] = text
-            continue
-        if recent and recent[-1].startswith(text):
-            continue
+    if current is not None:
+        blocks.append(current)
 
-        out.append(text)
+    return [b for b in blocks if b]
+
+
+def to_text(vtt: str, dedup: bool = True) -> list[str]:
+    """The spoken lines of a VTT file, in order, with scroll overlap removed."""
+    out: list[str] = []
+    previous: set[str] = set()
+
+    for cue in cues(vtt):
+        for text in cue:
+            if dedup and text in previous:
+                continue
+            # A partial line settling into its full form ("so the thing" then
+            # "so the thing is we keep shipping") is the same utterance twice.
+            # Keep the longer one rather than emitting both.
+            if dedup and out and text.startswith(out[-1]):
+                out[-1] = text
+                continue
+            if dedup and out and out[-1].startswith(text):
+                continue
+            out.append(text)
+        previous = set(cue)
 
     return out
 
@@ -132,11 +166,10 @@ def main(argv: list[str] | None = None) -> int:
         help="directory for the --title-file output (default: current directory)",
     )
     parser.add_argument(
-        "--window",
-        type=int,
-        default=1,
-        help="how many recent lines to dedupe against (0 disables; default 1, "
-        "adjacent-only, which is where scroll overlap lives)",
+        "--no-dedup",
+        action="store_true",
+        help="emit every caption line. Right for manual captions, which have no "
+        "scroll overlap to remove.",
     )
     args = parser.parse_args(argv)
 
@@ -159,7 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         title = args.title_file.read_text(encoding="utf-8", errors="replace").strip()
         destination = args.dir / (safe_filename(title) + ".txt")
 
-    lines = to_text(args.input.read_text(encoding="utf-8", errors="replace"), args.window)
+    lines = to_text(
+        args.input.read_text(encoding="utf-8", errors="replace"),
+        dedup=not args.no_dedup,
+    )
 
     if not lines:
         print(
