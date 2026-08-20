@@ -18,7 +18,7 @@ Source: <https://github.com/mattpocock/skills>
 |---|---|---|
 | [`grilling`](skills/grilling/SKILL.md) | `skills/productivity/grilling` | trigger conditions, unattended runs |
 | [`grill-me`](skills/grill-me/SKILL.md) | `skills/productivity/grill-me` | — |
-| [`teach`](skills/teach/SKILL.md) | `skills/productivity/teach` | house-edited description; a workspace-location guard before the first write; `GLOSSARY.md` wired into the workspace list. The four `*-FORMAT.md` files are kept verbatim. |
+| [`teach`](skills/teach/SKILL.md) | `skills/productivity/teach` | house-edited description; a workspace-location guard before the first write; `GLOSSARY.md` wired into the workspace list. The four `*-FORMAT.md` files were taken verbatim at import and have never been edited here — upstream has moved since, so don't read that as "identical to upstream today". |
 | [`wayfinder`](skills/wayfinder/SKILL.md) | `skills/engineering/wayfinder` | self-contained tracker doc with a local-markdown fallback; clear-map handoff writes a spec and routes instead of calling `/to-spec`; named invariants hardening the upstream-documented failure modes; unattended runs |
 | [`prototype`](skills/prototype/SKILL.md) | `skills/engineering/prototype` | the verdict is never the agent's; unattended runs |
 | [`research`](skills/research/SKILL.md) | `skills/engineering/research` | citation and "not established" discipline; no git operations in the subagent |

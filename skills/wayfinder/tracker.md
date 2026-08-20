@@ -61,6 +61,8 @@ Assign the ticket to Kyle's account (`--add-assignee @me` where the session runs
 
 In order: post the answer as a comment on the ticket, close the ticket, then append one line to the map's **Decisions so far**, obeying `map-append-is-last-write` below. See `resolve-order` in SKILL.md.
 
+**If you are a research subagent, stop after closing the ticket** — return your one-line gist and let the dispatching session append it (`only-the-parent-appends` in SKILL.md). The third step is not yours; performing it anyway is the race that invariant exists to remove.
+
 ---
 
 ## Backend B — Local markdown (fallback)
@@ -72,7 +74,7 @@ The map is a directory of files under `docs/wayfinder/<effort-slug>/`, tracked i
 - **Blocking:** the `Blocked by:` line. A ticket is unblocked when every ticket it lists is `resolved` **or** `out-of-scope` — see `out-of-scope-unblocks` below.
 - **Frontier:** the tickets that are `open`, unblocked, and whose `Claimed by:` is `—`; lowest number first.
 - **Claim:** set `Claimed by:` to the driving dev and save the file before any work — same `claim-first` invariant as GitHub. **Leave `Status: open`.** Claiming is not closing; a claimed ticket is still an open ticket.
-- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far, obeying `map-append-is-last-write` below.
+- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far, obeying `map-append-is-last-write` below. **A research subagent stops after `Status: resolved`** and returns its gist for the dispatching session to append (`only-the-parent-appends` in SKILL.md) — it never edits `map.md`, which is the one file its siblings are also writing.
 - **Release:** set `Claimed by:` back to `—`. See `claims-are-released` in SKILL.md.
 - **Out of scope:** set `Status: out-of-scope` rather than deleting the file, so the record of the scoping call survives.
 
