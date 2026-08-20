@@ -936,9 +936,11 @@ rows get re-pointed to match.
 - **Notes:** needs `yt-dlp`, which is **not currently installed** — first run will offer
   `brew install yt-dlp`. Whisper is gated behind an explicit yes with the duration and
   audio size quoted, because it's the only step that costs real bandwidth and CPU.
-  Conversion runs through `scripts/vtt-to-text.py`, whose deduplication is deliberately
-  local (last 10 lines) — whole-file dedup silently deletes genuine repetition when a
-  speaker returns to a phrase later in the talk.
+  Conversion runs through `scripts/vtt-to-text.py`, whose deduplication is adjacent-only by
+  default — scroll overlap is adjacent by construction, and any wider window starts eating
+  the short utterances ("Yeah.", "Right.") that recur legitimately all through an
+  interview. The video title reaches the script through `--title-file` rather than the
+  command line, because a title containing `$` or a backtick would otherwise execute.
 
 #### `youtube-breakdown`
 

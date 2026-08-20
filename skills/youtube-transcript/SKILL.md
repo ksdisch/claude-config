@@ -63,12 +63,21 @@ If the install fails, stop and point at
 ### 2. Read the video's metadata and caption inventory
 
 ```
-yt-dlp --print "%(title)s|%(duration)s|%(id)s" "<URL>"
+yt-dlp --print "%(title)s" "<URL>" > title.txt
+yt-dlp --print "%(duration)s|%(id)s" "<URL>"
 yt-dlp --list-subs "<URL>"
 ```
 
-The first gives the title for the output filename and the duration for the Whisper cost
-estimate. The second says which of the three paths below you're on.
+The duration feeds the Whisper cost estimate; `--list-subs` says which of the three paths
+below you're on.
+
+**The title goes to a file and stays there.** A video title is the one input to this skill
+that a stranger controls, and it reaches you as text you are about to compose a shell
+command out of. `$`, `` ` ``, and `$(…)` all expand inside double quotes — a video called
+``How `id` works`` or `Understanding $(whoami)` executes at the moment you run the command
+you wrote. Redirecting to `title.txt` and passing the *path* in step 5 means the title
+crosses as data and never becomes command text. Read `title.txt` if you need the title for
+your own narration; just never paste it into a command line.
 
 If either errors, report yt-dlp's own message. The common causes — private, members-only,
 age-restricted, geo-blocked, or a bad URL — are all things Kyle needs to know about rather
@@ -118,21 +127,28 @@ cost, and `tiny` is noticeably worse on technical vocabulary.
 ### 5. Convert to plain text
 
 ```
-python3 <skill>/scripts/vtt-to-text.py transcript.en.vtt -o "<Video Title>.txt"
+python3 scripts/vtt-to-text.py <the .vtt from step 3 or 4> --title-file title.txt
 ```
+
+Run it from the skill's own directory, or give the script's full path. The input is
+whichever VTT actually got written — `transcript.en.vtt` on the caption paths,
+`audio_<id>.vtt` on the Whisper path.
+
+`--title-file` names the output after the video and sanitizes the title in Python, so you
+never construct a filename in the shell. Add `--dir <path>` to place it somewhere other
+than the current directory. Use `-o <path>` instead only when the name comes from Kyle
+rather than from the video.
 
 The script strips the WEBVTT header, cue timings, `NOTE`/`STYLE` blocks, karaoke `<c>`
 tags, and HTML entities, then removes the scroll overlap that makes auto-captions read
 every phrase two or three times.
 
-Its deduplication is **local** — a line is dropped only when it repeats one of the last 10
-emitted lines. That matters: whole-file deduplication is the obvious approach and it
-silently loses genuine repetition, so a speaker who returns to a phrase 30 minutes later
-has that moment deleted from the transcript. Pass `--window 0` to disable dedup entirely
-when working with manual captions, which have no overlap to remove.
-
-Sanitize the title for the filename — replace `/` and `:`, drop `?` and quotes. The script
-creates the output's parent directory if needed and refuses to write an empty file.
+Its deduplication is **adjacent-only** by default (`--window 1`), because scroll overlap is
+adjacent by construction — cue N's tail reappears in cue N+1 and nowhere else. Resist
+widening it. A wider window starts eating real speech: short utterances ("Yeah.", "Right.",
+"Exactly.") recur within a few lines of each other constantly in interviews and Q&A, and
+because step 6 deletes the VTT, anything dropped here is gone for good. `--window 0`
+disables dedup entirely, which is the right call for manual captions.
 
 ### 6. Clean up and report
 

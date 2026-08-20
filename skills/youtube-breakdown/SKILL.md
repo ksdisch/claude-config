@@ -73,8 +73,10 @@ out toward the end.
 1. **Display the breakdown inline.** Full output, properly formatted. This always happens
    and works anywhere, including cloud sessions with no filesystem.
 
-2. **Append the mode's handoff line** (each mode below names its own). It's an offer — stop
-   and wait. Never chain into the next thing unprompted.
+2. **Append the mode's handoff line** (each mode below names its own). It is an offer:
+   never *act* on it without a yes. "Don't act on it" is not "end the turn" — keep going to
+   step 3 in the same turn, and let Kyle answer both the handoff and the save question
+   together.
 
 3. **Offer to save, and ask where.** Kyle wants the choice every time, so propose a default
    and list the alternatives in one turn:
@@ -98,14 +100,20 @@ Slug: `YYYY-MM-DD-{kebab-case-video-title}-{mode}.md` — e.g.
 
 ```yaml
 ---
-title: [video title]
-source: [URL if available, else "pasted transcript"]
-speaker: [if identifiable, else "unknown"]
+title: "[video title]"
+source: "[URL if available, else: pasted transcript]"
+speaker: "[if identifiable, else: unknown]"
 date_processed: [today, YYYY-MM-DD]
 mode: study-notes | quick-reference | critique | actionable-insights
 tags: [youtube, breakdown, {mode}]
 ---
 ```
+
+**The three free-text fields are quoted, and that is not cosmetic.** Talk titles are full
+of colons — "Andrej Karpathy: Software Is Changing Again" — and a bare `title: Andrej
+Karpathy: Software Is Changing Again` is a YAML parse error, not a quirk. The whole
+frontmatter block then reads as nothing to every parser that touches it. Any `"` inside the
+value gets escaped as `\"`.
 
 The `mode` value is one of those four kebab-case strings exactly — not capitalized, not
 pluralized. It's what makes a folder of breakdowns sortable later, and a folder where half
@@ -403,9 +411,10 @@ task into six he has to triage.
 2. **Get the transcript** — paste, `youtube-transcript` for a URL, or read a file path.
 3. **Run that mode's prompt** against it.
 4. **Display the breakdown inline**, in full.
-5. **Append the mode's handoff line** and stop.
-6. **Offer to save**, proposing `~/Learning/youtube-notes/{slug}.md` and listing the real
-   teach workspaces under `~/Learning/` as alternatives.
+5. **Append the mode's handoff line** — an offer, never acted on unprompted.
+6. **Offer to save** in the same turn, proposing `~/Learning/youtube-notes/{slug}.md` and
+   listing the real teach workspaces under `~/Learning/` as alternatives. This step runs on
+   every mode, including Mode 2, which has no handoff line.
 7. **If saved**, confirm the path and offer to open it.
 
 ---
@@ -420,8 +429,9 @@ task into six he has to triage.
   general note pile versus a teach workspace that `/teach` will read.
 - **One mode per run.** For the same transcript in multiple modes, run them sequentially
   with separate save prompts. Don't batch outputs into one file.
-- **Handoffs are offers.** Append the line, then wait. Never chain into `/teach-research`,
-  `notebook-assist`, or Todoist without an explicit yes.
+- **Handoffs are offers.** Append the line and carry on to the save offer in the same turn.
+  Never *chain into* `/teach-research`, `notebook-assist`, or Todoist without an explicit
+  yes — that's what the offer is protecting against, not the save prompt.
 - **Frontmatter precision** — the four kebab-case `mode` values exactly.
 
 ---

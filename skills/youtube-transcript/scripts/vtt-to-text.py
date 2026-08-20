@@ -2,8 +2,9 @@
 """Convert a WebVTT subtitle file into readable plain text.
 
     python3 vtt-to-text.py INPUT.vtt [-o OUTPUT.txt]
+    python3 vtt-to-text.py INPUT.vtt --title-file TITLE.txt [--dir DIR]
 
-With no `-o`, the text goes to stdout.
+With no `-o` and no `--title-file`, the text goes to stdout.
 
 YouTube's auto-generated captions scroll: each cue repeats the tail of the cue
 before it and appends a few new words, so a naive line dump reads every phrase
@@ -12,12 +13,24 @@ NOTE/STYLE blocks, karaoke `<c>` tags, HTML entities) and then removes that
 overlap.
 
 Deduplication is deliberately **local** — a line is dropped only when it repeats
-something in the last `--window` emitted lines (default 10), not when it repeats
-anything anywhere in the file. Whole-file deduplication is the obvious approach
-and it is wrong: a speaker who says "so that's the tradeoff" in minute 3 and
-again in minute 40 loses the second one, silently, and the transcript stops
-matching the video. Overlap duplicates are always adjacent, so a short window
-catches them without touching genuine repetition.
+one of the last `--window` emitted lines (default 1, i.e. adjacent only), not
+when it repeats anything anywhere in the file. Whole-file deduplication is the
+obvious approach and it is wrong: a speaker who says "so that's the tradeoff" in
+minute 3 and again in minute 40 loses the second one, silently, and the
+transcript stops matching the video.
+
+The window is 1 because scroll overlap is *adjacent* by construction — cue N's
+tail reappears in cue N+1 and nowhere else. A wider window buys nothing and
+costs real speech: short utterances ("Yeah.", "Right.", "Exactly.") legitimately
+recur within a few lines of each other all through any interview or Q&A, which
+is the format this is most often pointed at. Widen it only against a file you
+have inspected.
+
+`--title-file` exists so a video title never has to become shell command text.
+Titles are third-party-controlled and routinely contain `$`, backticks, and
+quotes; passing one as a command-line literal is an injection waiting to happen.
+Write it to a file (`yt-dlp --print "%(title)s" URL > title.txt`) and pass the
+path — the title crosses as data, and the sanitizing happens here in Python.
 """
 
 from __future__ import annotations
@@ -41,7 +54,21 @@ def clean(line: str) -> str:
     return html.unescape(TAG.sub("", line)).strip()
 
 
-def to_text(vtt: str, window: int = 10) -> list[str]:
+def safe_filename(title: str, fallback: str = "transcript") -> str:
+    """A video title reduced to a filename stem.
+
+    Handles path separators and the characters Windows/macOS reject, collapses
+    whitespace, and caps the length so the result survives any filesystem. This
+    is filesystem hygiene only — the shell-injection defence is that the title
+    reaches this program through a file rather than through a command line.
+    """
+    stem = re.sub(r"[\x00-\x1f\x7f]", "", title)
+    stem = re.sub(r'[/\\:*?"<>|]', "-", stem)
+    stem = re.sub(r"\s+", " ", stem).strip(" .-")
+    return stem[:120].strip() or fallback
+
+
+def to_text(vtt: str, window: int = 1) -> list[str]:
     """The spoken lines of a VTT file, in order, with scroll overlap removed."""
     out: list[str] = []
     in_block = False  # inside a NOTE/STYLE block, which runs to a blank line
@@ -93,16 +120,44 @@ def main(argv: list[str] | None = None) -> int:
         help="write here instead of stdout",
     )
     parser.add_argument(
+        "--title-file",
+        type=Path,
+        help="file holding the video title; the output is named after it. Keeps the "
+        "title off the command line, where a `$` or backtick in it would execute.",
+    )
+    parser.add_argument(
+        "--dir",
+        type=Path,
+        default=Path("."),
+        help="directory for the --title-file output (default: current directory)",
+    )
+    parser.add_argument(
         "--window",
         type=int,
-        default=10,
-        help="how many recent lines to dedupe against (0 disables; default 10)",
+        default=1,
+        help="how many recent lines to dedupe against (0 disables; default 1, "
+        "adjacent-only, which is where scroll overlap lives)",
     )
     args = parser.parse_args(argv)
 
     if not args.input.is_file():
         print(f"vtt-to-text: no such file: {args.input}", file=sys.stderr)
         return 1
+
+    if args.title_file and args.output:
+        print(
+            "vtt-to-text: pass either -o or --title-file, not both.",
+            file=sys.stderr,
+        )
+        return 1
+
+    destination = args.output
+    if args.title_file:
+        if not args.title_file.is_file():
+            print(f"vtt-to-text: no such title file: {args.title_file}", file=sys.stderr)
+            return 1
+        title = args.title_file.read_text(encoding="utf-8", errors="replace").strip()
+        destination = args.dir / (safe_filename(title) + ".txt")
 
     lines = to_text(args.input.read_text(encoding="utf-8", errors="replace"), args.window)
 
@@ -115,10 +170,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     body = "\n".join(lines) + "\n"
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(body, encoding="utf-8")
-        print(f"{args.output}  ({len(lines)} lines)")
+    if destination:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(body, encoding="utf-8")
+        print(f"{destination}  ({len(lines)} lines)")
     else:
         sys.stdout.write(body)
     return 0
