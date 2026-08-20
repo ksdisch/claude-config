@@ -923,6 +923,44 @@ rows get re-pointed to match.
   and keep the written artifact — nothing ever claims an MP3 that doesn't exist. Paths and
   code blocks get spoken as names, not character by character.
 
+#### `youtube-transcript`
+
+- **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
+  decision (is Whisper worth it?) is Kyle's, not the model's.
+- **Reach for it when:**
+  - You have a YouTube URL and want the text — to read, to grep, or to feed something else.
+  - A video has no captions at all and you're willing to spend CPU on local Whisper.
+- **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (the usual consumer — it
+  calls this skill automatically for URL input, so you rarely invoke this one directly),
+  [`teach-research`](#teach-research) (a talk's transcript is a legitimate source).
+- **Notes:** needs `yt-dlp`, which is **not currently installed** — first run will offer
+  `brew install yt-dlp`. Whisper is gated behind an explicit yes with the duration and
+  audio size quoted, because it's the only step that costs real bandwidth and CPU.
+  Conversion runs through `scripts/vtt-to-text.py`, whose deduplication is deliberately
+  local (last 10 lines) — whole-file dedup silently deletes genuine repetition when a
+  speaker returns to a phrase later in the talk.
+
+#### `youtube-breakdown`
+
+- **Run config:** Opus 5 · `high` — the four mode prompts are synthesis-heavy writing, and
+  Critique mode in particular is real analytical work rather than summarization.
+- **Reach for it when:**
+  - You watched (or want to triage) a video and want structured notes rather than a
+    summary — Study Notes to retain it, Quick Reference to decide if it's worth the time,
+    Critique to pressure-test a contrarian claim, Actionable Insights to leave with a plan.
+  - You have a transcript from anywhere and want the same four-mode treatment.
+- **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
+  URL), [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  section leads if the topic deserves a workspace),
+  [`notebook-assist`](#notebook-assist) (adds the video to a notebook as a source),
+  [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
+  which writes to the hub's own stores instead).
+- **Notes:** always asks which mode before generating — the four modes are different tools,
+  not lengths, and the auto-router that would pick for you is specced but deliberately off.
+  Saving asks for the destination every run: it proposes `~/Learning/youtube-notes/` and
+  lists the real teach workspaces under `~/Learning/` as alternatives, since filing a
+  breakdown into one puts it where `/teach` will read it. One mode per run.
+
 ### Personal Coaching
 
 #### `career-coach`
@@ -1241,7 +1279,7 @@ session *in that repo*.
 - **Pairs well with:** [`/build-course`](#build-course) (the thin entry point),
   [`episode-review`](#episode-review) (quizzes the material afterward),
   [`review-next`](#review-next) (ranks what to revisit),
-  [`youtube-breakdown`](#youtube-breakdown) (its notes are usable course input).
+  [`youtube-breakdown`](#youtube-breakdown-home-base) (its notes are usable course input).
 - **Notes:** the syllabus approval is the **single** human checkpoint — nothing is authored
   before it, and any deviation from the approved syllabus is reported at the end. NotebookLM
   enrichment is separately gated. Every subagent gets a copy-paste-complete payload so it
@@ -1272,7 +1310,7 @@ session *in that repo*.
 - **Notes:** read-only — SELECTs only, never a write to the store. It prefers the backend
   engine when it's running and falls back to raw queries offline.
 
-#### `youtube-breakdown`
+#### `youtube-breakdown` (home-base)
 
 - **Run config:** Sonnet 5 · `medium` — a transcript into one of four fixed output formats.
 - **Reach for it when:**
