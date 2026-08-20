@@ -132,6 +132,8 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`paper-figures`](../skills/paper-figures/SKILL.md) | Retrofits the real figure images into an already-generated `paper-eli5` output — re-finds the original source, harvests the figures (direct download or browser screenshot), and fills the `[Figure N]` placeholders in both the markdown and the glossed HTML, with one contact-sheet approval gate. Web sources only. Run after `/paper-eli5` or `/paper-gloss`. · [config →](usage-playbook.md#paper-figures) |
 | [`project-guide`](../skills/project-guide/SKILL.md) | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. · [config →](usage-playbook.md#project-guide) |
 | [`narrate`](../skills/narrate/SKILL.md) | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. · [config →](usage-playbook.md#narrate) |
+| [`youtube-transcript`](../skills/youtube-transcript/SKILL.md) | Downloads a YouTube video's transcript with yt-dlp — manual captions, then auto-generated, with local Whisper as a gated last resort — and converts it to deduplicated plain text. · [config →](usage-playbook.md#youtube-transcript) |
+| [`youtube-breakdown`](../skills/youtube-breakdown/SKILL.md) | Turns a transcript or YouTube URL into a structured breakdown in one of four modes — Study Notes, Quick Reference, Critique, or Actionable Insights — then offers to save it under `~/Learning`. Always asks which mode first. · [config →](usage-playbook.md#youtube-breakdown) |
 
 ### Personal Coaching
 
@@ -236,7 +238,7 @@ A personal learning hub — NotebookLM-backed course catalog with audio/video ep
 | `course-builder` | Builds a full multi-format course for any topic — interviews for syllabus, gets one approval, then autonomously authors every material: lessons, exercises, visualizations, flashcards, quizzes, reading. · [config →](usage-playbook.md#course-builder) |
 | `episode-review` | Post-episode review-and-quiz workflow — runs reflection, quizzes you, and logs score + listened status to the progress store. · [config →](usage-playbook.md#episode-review) |
 | `review-next` | Read-only "what to review next" planner — reads the local progress store and ranks the shakiest material by mastery. · [config →](usage-playbook.md#review-next) |
-| `youtube-breakdown` | Converts a YouTube transcript or URL into one of four formats: Study Notes, Quick Reference, Critique, or Actionable Insights. Saves the output and integrates with the hub catalog. · [config →](usage-playbook.md#youtube-breakdown) |
+| `youtube-breakdown` | Converts a YouTube transcript or URL into one of four formats: Study Notes, Quick Reference, Critique, or Actionable Insights. Saves the output and integrates with the hub catalog. The hub-native fork of the global [`youtube-breakdown`](#research--writing). · [config →](usage-playbook.md#youtube-breakdown-home-base) |
 | `catalog-doctor` | Health-checks the topic catalog — reconciles what the hub parsed against live `nlm studio status` and reports drift. Read-only. · [config →](usage-playbook.md#catalog-doctor) |
 | `api-types-sync` | Reconciles the frontend TypeScript API types (`frontend/src/api/types.ts`) with the backend Pydantic models after schema changes. · [config →](usage-playbook.md#api-types-sync) |
 
