@@ -45,9 +45,8 @@ degraded and quiet.
   Separately, and for a different reason: **never open the dispatch's raw transcript file** — the
   returned report is the summary you need, while the transcript behind it is large enough to displace
   the run's own context, and it tells you nothing the report doesn't.
-  **Stage paths by name — never `git add -A` or `git add .`.**
-  The names are the ones the stage's dispatch
-  specified plus the ones the agent reports touching; new files are staged the same way, since
+  **Stage paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's
+  dispatch specified plus the ones the agent reports touching; new files are staged the same way, since
   everything the relay produces is untracked at the moment you commit it. Naming paths, not
   restricting yourself to tracked ones, is what keeps the probe's permitted scratch files out of the
   story's diff.
@@ -62,21 +61,27 @@ Run before any dispatch. Its job is to find out whether this repo can be gated a
 **Precondition — the three agents must resolve in *this* session.** Claude Code loads the agent
 registry at session start, so `specifier`, `gauntlet-coder` and `mutation-hardener` are dispatchable
 only if their files were on disk before this session began. A session that just wrote or merged them
-gets `Agent type 'specifier' not found` at the first dispatch. This is checked before the repo probe
-because it is about the session, not the repo, and because failing it invalidates every stage.
+gets `Agent type 'specifier' not found` at the first dispatch. Reading the roster comes before the
+repo probe, because it is about the session rather than the repo and because failing it invalidates
+every stage; the dispatch fallback below, if you need it, comes after step 1.
 
 **The check is the session's own agent roster, and `agents/` on disk is not it.** That distinction
 *is* the defect: the pilot's three files were on disk and merged to `main`, and all three dispatches
 still failed. So a `ls`, a `grep`, or a glance at the checkout returns a pass in precisely the case
 that fails, and it is the check you will reach for by reflex. Confirm instead that all three names
 appear in the list of available agent types **this session** was given. If you cannot see that list,
-or are unsure whether what you are reading is the live roster, settle it by dispatching: one
-throwaway one-line task to each of the three types, before any repo work. `Agent type '<name>' not
-found` is the definitive answer, and three cheap dispatches are worth less than a wasted run.
+or are unsure whether what you are reading is the live roster, settle it by dispatching. `Agent
+type '<name>' not found` is the definitive answer, and three cheap dispatches are worth less than a
+wasted run — but **two of the three types can write** (`gauntlet-coder` holds `Write` and `Edit`,
+`specifier` holds `Write`), and their briefs tell them to produce files. So the probe task is
+*"reply with the single word OK and change nothing"*, never a vague one-liner they can read as their
+real job, and the probes run **after step 1's clean-tree check**, not before it. Re-assert a clean
+tree once they return: a probe that dirtied the repo is a probe that just manufactured the exact
+mis-attribution step 1 exists to prevent.
 
 Any that do not resolve → **stop and tell Kyle to re-run from a fresh session.** Do not fall back to
-`general-purpose` with the agent's
-brief pasted in: that fallback silently drops the two things the agent files exist to guarantee —
+`general-purpose` with the agent's brief pasted in: that fallback silently drops the two things the
+agent files exist to guarantee —
 `tools:` restrictions are not enforced (the specifier's deliberate lack of `Bash` is what backs its
 promise never to claim a test passed, and under the fallback it is prose), and `effort:` cannot be
 passed through the `Agent` tool at all, so the subagent inherits this session's. A relay run on that
@@ -227,30 +232,46 @@ aimed it at whatever small file the probe used, and left pointing there it would
 touch none of the story's code, killing nothing and reporting every mutant a survivor. The
 `--mutate` list still comes from the command line, so the config never carries the story's files.
 
-**Derive that test list from coverage, not by inspection, and then make it prove itself.** Stage 0
-step 4 already established a coverage mechanism; use it — run the suite under coverage and take the
-test files that execute the scope's changed lines. Reading the diff and guessing which tests look
-related is how you get a *partially* correct list, and that is the dangerous failure rather than the
-obvious one: pointing at plainly wrong tests kills nothing and is unmissable, while a list missing
-one covering file returns mutants the full suite would have killed. Those come back as survivors,
-go out as `SURVIVORS`, and spend both HARDENER-CAP laps writing duplicate tests for behaviour that
-was already pinned — ending in a false G3 failure, the same outcome defect the changed-line fix
-above exists to prevent, reached through the config instead of through file scope. So apply Stage 0's
-own discipline to Stage 3's edit of Stage 0's config: **after re-pointing, re-probe** — trial-mutate
-a handful of mutants inside the changed lines and confirm they die `Killed`. They don't → the list is
-wrong or incomplete; fix it before the first hardener dispatch, not after the caps are spent. No
-coverage mechanism (step 4 recorded it absent) → say so in the run log, fall back to the repo's full
-test command rather than a hand-picked subset, and accept the slower run as the named cost of not
-having one.
+**The narrowed test list is a performance trick, not a source of truth — so nothing rests on getting
+it right.** Say plainly what it is: a heuristic that makes the run affordable. Build it from the
+repo's own test-to-source convention (`notify.mjs` → `test/notify.test.mjs`) plus a grep of the test
+tree for files importing the scope's modules, and record the list in the run log. Do not reach for
+the coverage mechanism to derive it — Stage 0 step 4's tools report coverage *per source file*, not
+which test file executed which line, so they cannot answer this question.
+
+What makes a heuristic safe is that its failure mode is caught downstream rather than assumed away.
+The dangerous failure is not a plainly wrong list — that kills nothing and is unmissable — but a
+*partially* correct one, missing a single covering file, which returns mutants the full suite would
+have killed. So: **before any survivor becomes `SURVIVORS`, confirm it against the repo's full test
+command.** Re-run that one mutant alone — a single-mutant run at concurrency 1, full suite as the
+runner — and read which way it goes:
+
+- **It dies.** The narrowed list was incomplete. Add the tests that killed it, re-run the scoped
+  pass, and do not send it to the hardener. Nothing was a survivor here; the instrument was.
+- **It survives.** It is genuine, and it is exactly what Stage 3 exists to hand over.
+
+That confirmation is what a re-probe of the re-pointed config cannot do, and the reason is worth
+stating so nobody re-adds one: a changed-line mutant that fails to die `Killed` is indistinguishable
+from the survivor the hardener is dispatched to receive. Only the comparison against the full suite
+separates the two.
+
+The cost is bounded by the survivor count, not the mutant count — one suite run per survivor, and
+survivors are the rare case. And it is affordable for the same reason Stage 0's failure was not: the
+pilot's timeouts came from many full-suite runs racing at once, not from the full suite itself, so a
+single run at concurrency 1 with the timeout set above the suite's measured duration is a correct
+instrument. That combination is also the honest fallback when no narrowing is available at all —
+full test command, concurrency 1, raised timeout, recorded in the run log as a named slow path.
+Stage 0's trial mutation still gates it: if mutants do not die `Killed` even there, G3 cannot gate
+this repo and Stage 0 has already said so.
 
 **The gate is changed *lines*, not touched *files*.** Two different units are in play here and the
 run turns on keeping them apart: **`SCOPE` is a file list** — what you hand the tool, what the
-`SCOPE` dispatch parameter carries — while **G3's unit is a line range**. Everything the tool mutates
-is inside `SCOPE` by construction, so "in scope" can never mean "counts against the gate"; the phrase
-for that is *inside the changed lines*, and this skill uses no other. The scope above is what you
-hand the tool. It is not what G3 counts. Mutating a whole file drags in every mutant that file already carried before
-this story existed, and on a story that edits 100 lines of a 500-line module that debt is most of
-what comes back. In the pilot it was the entire difference between outcomes: **39 survivors at file
+`SCOPE` dispatch parameter carries, and what you hand the tool — while **G3's unit is a line
+range**. Everything the tool mutates is inside `SCOPE` by construction, so "in scope" can never mean
+"counts against the gate"; the phrase for that is *inside the changed lines*, and this skill uses no
+other. Mutating a whole file drags in every mutant that file already carried before this story
+existed, and on a story that edits 100 lines of a 500-line module that debt is most of what comes
+back. In the pilot it was the entire difference between outcomes: **39 survivors at file
 level, 0 inside the story's own changed lines**, all 39 in functions the story never touched. Read
 at file level, the orchestrator dispatches the hardener against a module's accumulated debt, burns
 both HARDENER-CAP laps on it, and records a false G3 failure against a change that is in fact fully
