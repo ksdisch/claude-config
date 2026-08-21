@@ -13,7 +13,7 @@ so the gates live here, in Bash, in this session, and nowhere else.
 |---|---|---|
 | 1 Specify | `specifier` (opus/high) | **G1** — spec files exist and are shaped like Gherkin |
 | 2 Code | `gauntlet-coder` (opus/high) | **G2** — suite exit 0 **and** the diff touches a test file |
-| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors **in the story's changed lines** (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)`) |
+| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors **in the story's changed lines** (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)` vs `NOT-APPLICABLE`) |
 
 The run produces a branch and a scorecard. It does **not** merge. Merging is the normal git
 workflow plus `adversarial-review`, outside this skill — one gate per merge, and the gauntlet's
@@ -153,8 +153,20 @@ it established.
    configuration the pilot actually got a clean run out of, and it must be tried before the exit
    below, not after. **Only if that also dies by timeout → G3 cannot gate this repo**: treat it
    exactly as "not installable" above (stop, or ask Kyle), and record the timing evidence rather than
-   a bare "probe failed". Record either way in the run log: the trial's killed/timeout split, whether
-   the escape was taken, and the absolute path of the out-of-repo config, since Stage 3 reuses it.
+   a bare "probe failed".
+
+   **If the escape got the probe through, put `commandRunner.command` back to the full test command
+   before leaving Stage 0.** The narrowed list it used names tests covering *the probe's* file — an
+   existing file chosen before Stage 2 writes a line — so the story's own tests cannot be in it.
+   Carried into Stage 3 unnoticed, that config measures the story's changed lines against tests that
+   execute none of them: mutants come back `NoCoverage` and `Survived` wholesale, both HARDENER-CAP
+   laps burn on an artefact of the config, and G3 records a failure against a change that may be
+   fully hardened. Leave the config in the state Stage 3 expects, and record **"narrowing escape
+   needed at Stage 0"** in the run log as a *prediction*: Stage 3 will likely need its own escape, and
+   must pick that list against the story's scope rather than inherit this one.
+
+   Record either way in the run log: the trial's killed/timeout split, whether the escape was needed,
+   and the absolute path of the out-of-repo config, since Stage 3 reuses it.
 6. **Open the run log.** Create `~/.claude/gauntlet/<repo-name>/<date>-<slug>/` — outside the repo,
    mirroring the review-mailbox pattern, so the relay's bookkeeping never lands in the story's diff.
    Record the start timestamp, the language, the test/coverage/mutation commands, and every probe
@@ -267,8 +279,11 @@ discards the rest** — its argument coercion takes a single value, so commander
 accumulating. The dropped ranges generate no mutants, contribute no survivors, and the gate passes on
 lines nobody measured. Multi-hunk is the normal shape of a real story, so this is the common path,
 and it fails silently in the direction of a false `G3: PASSED`. Two things make it visible instead:
-record **the ranges passed and the mutant count attributed to each** in the run log, and treat a
-range that produced zero mutants as a fact to explain before you accept any result from that run.
+record **the ranges passed and the mutants attributed to each** in the run log, and treat a range
+that produced no mutants as a fact to explain before you accept any result from that run. Per-range
+attribution means intersecting the JSON report's mutant locations with the ranges — the tool's own
+stdout counts by *file*, so two ranges in one file share one number and a dropped range hides
+inside it.
 
 Why it matters, in the pilot's own numbers: the story touched 104 lines of a ~500-line module.
 Mutated by file that is **385 mutants and 39 survivors**, every one of the 39 in a function the story
@@ -285,6 +300,12 @@ exist; they are a finding about the repo's existing suite, recorded in the score
 file, and **never put in the hardener's `SURVIVORS` list** — a lap spent on pre-existing debt is a
 lap the story's own survivors don't get, and the hardener has only two. If they look worth acting
 on, the instrument is a standalone `mutation-hardener` `AUDIT` dispatch, outside this run.
+
+**Before the first run, read the config you are about to reuse.** `commandRunner.command` should be
+the repo's full test command. If it is a narrowed list, Stage 0's escape was taken and not restored:
+you are on the escape path, not the normal one — re-pick the list against *this story's* scope files
+and treat *The narrowing escape*'s confirmation rule as in force. Never run Stage 3 on a test command
+selected before the story existed.
 
 **One out-of-repo config, and it runs the whole test suite.** Narrowing at the tool is what makes
 this affordable, and affordability is what lets the config be simple. Stage 0 established that
@@ -305,8 +326,10 @@ mutants each re-running a full suite four to eight at a time, thrashing the mach
 has run the full suite at concurrency 1**, so treat that as the working hypothesis it is. Before the
 first run: multiply the suite's measured duration by the mutant count the ranges generate, compare it
 to what this run can spend. **Get that count without spending the run** — `--dryRunOnly` over the
-same ranges instruments and reports the mutant count without executing any of them, which is the
-same cheap-read-before-a-full-run habit Stage 0's probe already uses. Three runs of that size is the
+same ranges instruments and counts the mutants without executing any of them. It **writes no JSON
+report**: the executor returns before the reporters run, so the number is the stdout line
+`Instrumented N source file(s) with M mutant(s)` and nowhere else. Read it there, not in a report
+file that was never created. Three runs of that size is the
 realistic total (one pre-dispatch, one per hardener lap). A seconds-fast suite makes this minutes; a
 minute-long suite makes it hours, and that is a decision, not a detail.
 
@@ -328,9 +351,16 @@ stated rather than absorbed:
 - **Therefore a `Survived` under the narrowed runner is not a survivor yet.** `Killed` is still
   evidence — a test caught it, and a smaller test set catching it is a stronger result, not a weaker
   one. But before any `Survived` mutant becomes a lap's work in `SURVIVORS`, re-run *that mutant's
-  range* under the full command. Dies → the list was incomplete; widen it and re-run the scoped pass.
-  Survives → genuine. This is a handful of mutants on a degraded path, not a pass over every run,
-  which is the whole reason it is affordable here and was not affordable as a general mechanism.
+  range* under the full command. **Three outcomes, not two.** Killed → the list was incomplete; widen
+  it and re-run the scoped pass. Survived → genuine. **`Timeout`, or any unmeasured status → the
+  confirmation did not run, and that is not a kill.** Keep the mutant in `SURVIVORS`, labelled
+  *unconfirmed* in the scorecard. Fail toward the loud direction: a false failure costs two laps, a
+false pass costs the gate its meaning. This outcome is *expected* on one of the two routes in —
+"mutants still dying `Timeout` at concurrency 1" means the full command has already been seen to
+time out here. And reaching this escape a second time from inside itself is the exit, not a loop:
+there is nothing left to narrow. This is a handful of mutants on a degraded path, not a pass over
+every run, which is the whole reason it is affordable here and was not affordable as a general
+mechanism.
 - The scorecard says which kind of run produced the result, because "measured against the whole
   suite" and "measured against four files somebody picked" are not the same claim.
 
@@ -369,6 +399,8 @@ yourself over the scope. Two things fall out of this and neither is optional:
 
 - **Zero survivors *inside the changed lines* here ends Stage 3 immediately** — gate passed, no
   dispatch spent, and the scorecard says so, naming any count outside those lines it is passing over.
+  **Check the mutant count before reading this as a pass:** zero survivors out of zero mutants is
+  `G3: NOT-APPLICABLE`, not `G3: PASSED`.
   On the range-scoped path the two numbers are the same; on the whole-file fallback they are not, and
   it is the changed-line one that decides. A well-hardened change is a common outcome, not a
   suspicious one.
@@ -385,9 +417,15 @@ edit implementation files.
 a mutation run* above — the status split is the gate, not the tool's bare survivor number. That
 matters most here: this run follows a hardener lap that lengthened the suite, which is when timeouts
 are likeliest and when a zero looks most like success. An agent reporting "all mutants killed" is
-not the gate. G3 has **two passing outcomes and they are never recorded as the same one**:
+not the gate. G3 has **two passing outcomes plus one that is neither, and no two of them are ever
+recorded as the same one**:
 
-- **`G3: PASSED`** — suite green, changed-line survivor count zero. Fully deterministic.
+- **`G3: NOT-APPLICABLE (no mutable changed lines)`** — the scope produced **zero mutants**, because
+  every hunk was a deletion. Neither passing nor failing: no hardener dispatch, the run proceeds to
+  Stage 4, and it is recorded under LOUD-DEGRADATION as a gate that did not apply. Never quietly
+  counted as a pass — zero survivors out of zero mutants is not a measurement.
+- **`G3: PASSED`** — suite green, changed-line survivor count zero, **out of a nonzero mutant
+  count**. Fully deterministic.
 - **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only changed-line survivors left are `n`
   you have explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
 
@@ -438,6 +476,9 @@ Write `scorecard.md` into the run-log directory:
   standing at the cap, likewise. On a whole-file run, the mutants outside the changed lines go in as
   a count per file, labelled a standing finding about the repo's existing suite rather than anything
   this run produced or failed.
+- **The G3 outcome verbatim** — `PASSED`, `PASSED-WITH-ACCEPTED(n)`, `NOT-APPLICABLE (no mutable
+  changed lines)`, or the failure with its standing survivors. A gate that did not apply is not a
+  gate that passed, and the scorecard is where that distinction has to survive.
 - Any **implementation findings** the hardener raised — mutants that point at dead code or an
   unreachable branch rather than a test gap.
 - Files touched, and the diff size.
