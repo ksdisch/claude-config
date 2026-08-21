@@ -613,10 +613,13 @@ rows get re-pointed to match.
   [`backlog-hygiene`](#backlog-hygiene) (picks the story it relays).
 - **Notes:** it **never merges** — the branch leaves the run unmerged and goes through the repo's
   normal git workflow. Hard caps: 3 coder laps, 2 hardener laps; a cap is never raised mid-run and
-  always lands in the scorecard by name. A red baseline suite stops the run at Stage 0 rather than
-  gating on nonsense. Coverage is measured, not gated — the only gates are suite-green and
-  survivors-zero. Needs a reachable mutation runner (Stryker / mutmut); if it can't be installed,
-  the run stops rather than silently dropping a stage.
+  always lands in the scorecard by name. A dirty tree or a red baseline suite stops the run at
+  Stage 0 rather than gating on nonsense. Coverage is measured, not gated — the gates are
+  spec-shape, suite-green-plus-a-test-file-touched, and zero *unaccepted* mutation survivors. A
+  survivor no honest test can kill (equivalent, or killable only by changing implementation) can be
+  accepted, but only named, assessed, and reported as `PASSED-WITH-ACCEPTED(n)` — never as a clean
+  pass. Needs a reachable mutation runner (Stryker / mutmut); if it can't be installed, the run
+  stops rather than silently dropping a stage.
 
 #### `bug-hunt`
 
@@ -1724,8 +1727,8 @@ choose: the cards state what's pinned and who dispatches them.
   (the `silent-failure-hunter` precedent). Worth revisiting to Opus if survivors routinely
   persist to the lap cap.
 - **Dispatched by:** [`gauntlet`](#gauntlet), Stage 3, in `HARDEN` mode with `REPO_PATH`, `SCOPE`,
-  and — on re-laps — `SURVIVORS` from the orchestrator's own run. Dispatch it yourself in `AUDIT`
-  mode for a read-only look at a suite.
+  and `SURVIVORS` from the orchestrator's own run — **required**, and it stops rather than guess
+  without one. Dispatch it yourself in `AUDIT` mode for a read-only look at a suite.
 - **Reach for it when:**
   - You want to know what your tests *aren't* actually checking — coverage says a line ran,
     a killed mutant says its behavior is pinned (`AUDIT`).

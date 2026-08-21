@@ -26,7 +26,10 @@ degraded and quiet.
 
 - **GATES-ARE-LOCAL** — every gate is a command *you* run and read the exit code of. An agent's
   claim that its tests pass is input to your next dispatch, never a substitute for running them.
-  If you did not run it this lap, it did not pass.
+  If you did not run it this lap, it did not pass. **G3's accepted-survivor path is the one
+  documented exception**, and it exists because a mutant no honest test can kill would otherwise
+  make that gate unsatisfiable. It is fenced accordingly — see Stage 3 — and it reports under its
+  own outcome name, so it can never be counted as a clean pass.
 - **LOUD-DEGRADATION** — a missing tool, a skipped check, or a hit cap is named in the scorecard
   by name and reason. Never absorb a degradation to keep the relay moving.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
@@ -151,18 +154,30 @@ Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SU
 line, mutator, what it changed). It adds or strengthens tests; it may not edit implementation files.
 
 **Gate G3.** You re-run the mutation tool yourself and read the survivor count out of its JSON
-report. The gate passes when the suite is still green **and** every remaining survivor is one you
-have explicitly accepted (below) — in the ordinary case, when there are none left at all. An agent
-reporting "all mutants killed" is not the gate.
+report. An agent reporting "all mutants killed" is not the gate. G3 has **two passing outcomes and
+they are never recorded as the same one**:
+
+- **`G3: PASSED`** — suite green, survivor count zero. Fully deterministic.
+- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only survivors left are `n` you have
+  explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
 
 **Accepted survivors — the named exit, not a silent one.** Some mutants cannot be killed by any
 honest test: an *equivalent* mutant (semantically identical to the original), or one killable only
 by changing implementation. The hardener reports these rather than working around them, and it is
 right to. Without an exit for them G3 would be unsatisfiable in a case Stage 3 itself guarantees
-will occur, and a fully-hardened change would burn both laps and record a false failure. So:
-accepting one is an **explicit, recorded act** — you name the mutant, the reason it cannot be
-killed, and your assessment of the hardener's claim, in the scorecard, under LOUD-DEGRADATION. An
-accepted survivor never silently disappears into a zero, and it never re-laps.
+will occur, and a fully-hardened change would burn both laps and record a false failure.
+
+**But be clear-eyed about what accepting one costs.** "This mutant is equivalent" is not an exit
+code — it is your judgment about the hardener's claim, and it is the single place in this relay
+where a gate turns on a judgment rather than a command's result. That is why it is fenced:
+
+- Accepting is an **explicit, recorded act**. Name the mutant, the reason it cannot be killed, and
+  your own assessment of the hardener's claim — not a restatement of it — in the scorecard, under
+  LOUD-DEGRADATION.
+- The outcome is `PASSED-WITH-ACCEPTED(n)`, never `PASSED`. A run that accepted four survivors and
+  a run that killed everything must never produce the same line, least of all in a scorecard being
+  used as evidence about the pipeline itself.
+- An accepted survivor never silently disappears into a zero, and it never re-laps.
 
 An implementation-only survivor is a **finding about the implementation** — dead code, an
 unreachable branch, a defensive check nothing can trigger. Carry it into the scorecard as a finding
@@ -201,8 +216,9 @@ read code mid-run, and never asks him to adjudicate a gate — gates are exit co
 
 - ✅ **Without asking:** the probe, creating the story branch and run log, installing the mutation
   runner as a dev dependency **onto the already-created story branch**, all dispatches, all gate
-  runs, all stage commits, accepting a survivor on the recorded terms above, writing and presenting
-  the scorecard.
+  runs, all stage commits, accepting a survivor on the recorded terms above — named, assessed, and
+  reported as `PASSED-WITH-ACCEPTED(n)` rather than as a clean pass — writing and presenting the
+  scorecard.
 - ⛔ **Never without Kyle:** raising a cap, running two-stage when the mutation runner is missing
   (unattended: stop instead), proceeding past a dirty tree in the target repo, merging the story
   branch, or reporting a gate as passed on an agent's word.
