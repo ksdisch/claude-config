@@ -242,8 +242,11 @@ which test file executed which line, so they cannot answer this question.
 What makes a heuristic safe is that its failure mode is caught downstream rather than assumed away.
 The dangerous failure is not a plainly wrong list — that kills nothing and is unmissable — but a
 *partially* correct one, missing a single covering file, which returns mutants the full suite would
-have killed. So: **before any survivor becomes `SURVIVORS`, confirm it against the repo's full test
-command.** Re-run that one mutant alone — a single-mutant run at concurrency 1, full suite as the
+have killed. So, in two steps: **first discard by status.** A mutant the tool reports `Timeout` or
+`NoCoverage` is not a survivor at all — it is a measurement that did not happen, and the only honest
+response is to fix the instrument (raise the timeout, widen the test list) and re-run, never to send
+it onward as if a test had been given the chance to catch it. **Then, before any remaining survivor
+becomes `SURVIVORS`, confirm it against the repo's full test command.** Re-run that one mutant alone — a single-mutant run at concurrency 1, full suite as the
 runner — and read which way it goes:
 
 - **It dies.** The narrowed list was incomplete. Add the tests that killed it, re-run the scoped
