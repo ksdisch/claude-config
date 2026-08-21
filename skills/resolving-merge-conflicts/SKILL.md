@@ -5,7 +5,7 @@ description: "Use when you need to resolve an in-progress git merge/rebase confl
 
 # Resolving merge conflicts
 
-1. **See the current state** of the merge/rebase. Check git history, and the conflicting files.
+1. **See the current state** of the merge/rebase. Check git history, and the conflicting files. Confirm which operation is in flight (`git status` says merging or rebasing) — during a **rebase** the sides are swapped relative to a merge: `HEAD`/"ours" is the branch being replayed *onto*, and the incoming side is your own commit being replayed. Attribute intent to each side accordingly.
 
 2. **Find the primary sources** for each conflict. Understand deeply why each change was made, and what the original intent was. Read the commit messages, check the PRs, check original issues/tickets.
 

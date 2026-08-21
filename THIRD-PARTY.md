@@ -25,7 +25,7 @@ Source: <https://github.com/mattpocock/skills>
 | [`domain-modeling`](skills/domain-modeling/SKILL.md) | `skills/engineering/domain-modeling` | decisions route to the repo's existing ledger rather than a second one; unattended runs |
 | [`codebase-design`](skills/codebase-design/SKILL.md) | `skills/engineering/codebase-design` | NOT-for routing clause in the description; `DEEPENING.md` and `DESIGN-IT-TWICE.md` kept verbatim |
 | [`wait-what`](skills/wait-what/SKILL.md) | `skills/productivity/wait-what` | — |
-| [`wizard`](skills/wizard/SKILL.md) | `skills/engineering/wizard` | upstream `template.sh` not shipped — re-expressed as a named-invariant UX contract in `SKILL.md` (house rule: no copy-paste shell in skill files) |
+| [`wizard`](skills/wizard/SKILL.md) | `skills/engineering/wizard` | upstream `template.sh` not shipped — re-expressed as a named-invariant UX contract in `SKILL.md` (house rule: no copy-paste shell in skill files); unattended runs |
 | [`resolving-merge-conflicts`](skills/resolving-merge-conflicts/SKILL.md) | `skills/engineering/resolving-merge-conflicts` | heading added; otherwise verbatim |
 | [`to-spec`](skills/to-spec/SKILL.md) | `skills/engineering/to-spec` | self-contained (no `/setup-matt-pocock-skills`); spec lands in-repo at `docs/specs/` with an optional guarded tracker publish; codebase-design seam vocabulary cited; routes onward to `to-tickets` |
 | [`to-tickets`](skills/to-tickets/SKILL.md) | `skills/engineering/to-tickets` | self-contained backend choice with the public-repo guard; local tickets under `docs/tickets/` (upstream: `.scratch/`); GitHub blocking edges via wayfinder tracker.md's Backend A procedures |
