@@ -598,6 +598,29 @@ rows get re-pointed to match.
 
 ### Quality & Debugging
 
+#### `gauntlet`
+
+- **Run config:** Opus 5 · `high` — you are the orchestrator, and the judgment that stays with you
+  is reading gate output and deciding what the next lap needs. The three stage agents are already
+  config-pinned in their own frontmatter, so effort here buys your side of the relay.
+- **Reach for it when:**
+  - You have one well-bounded story and want it built through the staged relay — specified,
+    coded, and mutation-hardened — with a scorecard at the end instead of a "looks good to me."
+  - You want the quality bar enforced by exit codes rather than by an agent's account of itself.
+- **Pairs well with:** [`specifier`](#specifier), [`gauntlet-coder`](#gauntlet-coder), and
+  [`mutation-hardener`](#mutation-hardener) (the three stages),
+  [`adversarial-review`](#adversarial-review) (the gate the resulting branch still has to pass),
+  [`backlog-hygiene`](#backlog-hygiene) (picks the story it relays).
+- **Notes:** it **never merges** — the branch leaves the run unmerged and goes through the repo's
+  normal git workflow. Hard caps: 3 coder laps, 2 hardener laps; a cap is never raised mid-run and
+  always lands in the scorecard by name. A dirty tree or a red baseline suite stops the run at
+  Stage 0 rather than gating on nonsense. Coverage is measured, not gated — the gates are
+  spec-shape, suite-green-plus-a-test-file-touched, and zero *unaccepted* mutation survivors. A
+  survivor no honest test can kill (equivalent, or killable only by changing implementation) can be
+  accepted, but only named, assessed, and reported as `PASSED-WITH-ACCEPTED(n)` — never as a clean
+  pass. Needs a reachable mutation runner (Stryker / mutmut); if it can't be installed, the run
+  stops rather than silently dropping a stage.
+
 #### `bug-hunt`
 
 - **Run config:** Opus 5 · dialable from `medium` to `ultracode` — the skill exists to be
@@ -1688,3 +1711,62 @@ choose: the cards state what's pinned and who dispatches them.
   behavior (unclear contracts become `uncertainty` comments), never guesses cross-module or
   async links, and flags code inconsistencies rather than fixing them. Repo-read-only except
   the single spec file.
+
+### `specifier`
+
+- **Pinned config:** `model: opus`, `effort: high` — the wrong-thing catcher is the highest-leverage
+  stage, and pinning down what "done" means is judgment work.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 1, with `STORY`, `REPO_PATH`, `OUT_FEATURE`,
+  and `OUT_QA` — or directly, when you want a vague backlog stub's acceptance line sharpened.
+- **Reach for it when:**
+  - A story is about to be built and you want "done" pinned down first, in a form a coder can
+    build to and a human can verify.
+  - A backlog stub's `Acceptance:` line is mush and you want it turned into concrete scenarios.
+- **Pairs well with:** [`gauntlet`](#gauntlet) (the relay that owns it),
+  [`gauntlet-coder`](#gauntlet-coder) (builds to its `.feature` file),
+  [`/tdd`](#tdd) (the Gherkin makes a natural test list),
+  [`spec-miner`](#spec-miner) (the brownfield counterpart — mines specs from code that exists,
+  where this one writes them for code that doesn't yet).
+- **Notes:** writes **exactly two files** and has no Bash, so it can never claim anything about
+  tests passing. It deliberately does not propose an implementation approach — that biases the
+  coder. A story too vague to specify is a real result: it names the ambiguity in the files
+  rather than papering over it with generic scenarios.
+
+### `gauntlet-coder`
+
+- **Pinned config:** `model: opus`, `effort: high` — a well-specified build, which is exactly what
+  Opus is for under the planner/builder protocol.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 2, with `STORY`, `FEATURE_PATH`, `REPO_PATH`,
+  and — on re-laps — `GATE_OUTPUT`, the failing gate's raw output.
+- **Reach for it when:** you're running the relay. It expects a Gherkin contract to build against
+  and stops without one, so it isn't a general-purpose coding dispatch.
+- **Pairs well with:** [`specifier`](#specifier) (writes the contract it builds to),
+  [`mutation-hardener`](#mutation-hardener) (hardens what it wrote),
+  [`gauntlet`](#gauntlet).
+- **Notes:** leaves the tree **dirty** by design — the orchestrator owns every commit, so laps stay
+  reproducible and diffable. Never weakens, skips, or deletes an existing test to reach green: a
+  genuine conflict between spec and existing test is reported and the run stops, because deleting
+  the test destroys the only evidence there was a conflict. Never edits the `.feature` file it's
+  measured against. Not a TDD-ritual agent — the gates enforce the outcome, not the ceremony.
+
+### `mutation-hardener`
+
+- **Pinned config:** `model: sonnet`, `effort: high` — killing survivors is grind-shaped work
+  (the `silent-failure-hunter` precedent). Worth revisiting to Opus if survivors routinely
+  persist to the lap cap.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 3, in `HARDEN` mode with `REPO_PATH`, `SCOPE`,
+  and `SURVIVORS` from the orchestrator's own run — **required**, and it stops rather than guess
+  without one. Dispatch it yourself in `AUDIT` mode for a read-only look at a suite.
+- **Reach for it when:**
+  - You want to know what your tests *aren't* actually checking — coverage says a line ran,
+    a killed mutant says its behavior is pinned (`AUDIT`).
+  - Surviving mutants need killing on a change in flight (`HARDEN`).
+- **Pairs well with:** [`gauntlet`](#gauntlet) (the relay that owns it),
+  [`bug-hunt`](#bug-hunt) (whose rubric grades its `AUDIT` findings),
+  [`gauntlet-coder`](#gauntlet-coder) (writes the suite it hardens).
+- **Notes:** `MODE` is required — the two modes have opposite write permissions and it refuses to
+  guess. **Implementation files are read-only in both modes**: a mutant killable only by changing
+  implementation is a finding *about the implementation*, reported rather than worked around. It
+  won't write a contrived mutant-specific test either — that pins the implementation instead of the
+  behavior and breaks on the next honest refactor. Zero survivors is a valid result; it won't widen
+  `SCOPE` looking for work.
