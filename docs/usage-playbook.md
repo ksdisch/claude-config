@@ -598,7 +598,8 @@ rows get re-pointed to match.
 - **Reach for it when:**
   - A grilling, a wayfinder map, or a long design conversation has settled the decisions and
     you want them as one document instead of a transcript.
-  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff follows this skill's process and template by path — typed-only skills can't be tool-invoked mid-session).
+  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff follows this
+    skill's process and template by path — typed-only skills can't be tool-invoked mid-session).
 - **Pairs well with:** [`wayfinder`](#wayfinder) (cleared maps collapse through it),
   [`grilling`](#grilling) (the interview that precedes it), [`to-tickets`](#to-tickets) (the
   next link), [`codebase-design`](#codebase-design) (the seam vocabulary its step 2 uses),
@@ -782,8 +783,8 @@ rows get re-pointed to match.
   ones), [`to-tickets`](#to-tickets) (slices what triage accepts).
 - **Notes:** typed-only (`/triage`). Every tracker write starts with the AI-generated
   disclaimer. Canonical role names are the label strings by default; the first run in a repo
-  maps them against existing labels and records the mapping in
-  `docs/triage-labels.md` — external PRs are in scope only when that file says so. Asks before the
+  maps them against existing labels and records the mapping in `docs/triage-labels.md` —
+  external PRs are in scope only when that file says so. Asks before the
   first write on a public repo's tracker. Rejected enhancements go to the `docs/out-of-scope/`
   knowledge base (`AGENT-BRIEF.md` and `OUT-OF-SCOPE.md` ship with the skill). Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in

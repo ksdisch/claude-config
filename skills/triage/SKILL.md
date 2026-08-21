@@ -44,7 +44,7 @@ State transitions: an unlabeled issue normally goes to `needs-triage` first; fro
 
 ## Labels and scope
 
-The canonical role names above are the label strings, verbatim, by default. On the **first triage in a repo**:
+The canonical role names above are the label strings, verbatim, by default. Read `docs/triage-labels.md` first: if it exists, this is not the first triage — its mapping and external-PR flag govern, and the steps below are already done. Otherwise, on the **first triage in a repo**:
 
 1. List the tracker's existing labels. Where one already means a canonical role (GitHub's default `bug`, `enhancement`, and `wontfix` usually do), map to it rather than creating a duplicate.
 2. Create the missing state labels with Kyle's approval. On a **public** repo, ask before the first tracker write of any kind — labels, comments, closes are all visible to everyone watching (the same guard as wayfinder's tracker.md). Unattended with no answer available: read and recommend, write nothing.

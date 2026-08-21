@@ -66,7 +66,7 @@ Decide once per breakdown. The tickets are the same either way; only the shape o
 
 **GitHub Issues** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Wire the edges with GitHub's **native issue dependencies**; the mechanics — the `dependencies/blocked_by` endpoint, the numeric database id it wants, and trap `node-id-not-database-id` (`gh issue view --json id` returns the wrong id) — are documented in wayfinder's [tracker.md](../wayfinder/tracker.md), Backend A; follow its "Record a blocking edge" procedure, including creating every issue first and wiring edges in a second pass. Apply the `ready-for-agent` label (the triage skill's vocabulary) unless instructed otherwise — **create the label first if the repo doesn't have it**, the same clause as tracker.md's map label; the tickets are agent-grabbable by construction.
 
-Publishing never closes or modifies any parent issue. Working the tickets afterward is the consumer's job — `implement` owns the frontier rule.
+Do NOT close or modify any parent issue while publishing. Working the tickets afterward is the consumer's job — `implement` owns the frontier rule.
 
 <local-ticket-template>
 
