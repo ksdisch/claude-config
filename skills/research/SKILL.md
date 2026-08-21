@@ -19,13 +19,13 @@ Version and date matter: record which version of the library, API, or spec the f
 
 ## When a wayfinder map dispatched this
 
-A `wayfinder:research` ticket is AFK by construction, so the whole thing runs without Kyle. Two extra obligations:
+A `wayfinder:research` ticket is AFK by construction, so the whole thing runs without Kyle. One obligation, and it is a boundary rather than a checklist:
 
-- **Do no git operations.** Research tickets are dispatched several at a time into one shared working tree, and a branch checkout is process-global to a tree — parallel agents switching branches collide with each other and pull the dispatching session off its own branch. Write the findings file as usual, then **return** its path, a one-line gist, and the answer. The dispatching session does the committing. This is invariant `subagents-do-not-touch-git` in the wayfinder skill.
-- **Do not append to the map.** Resolve the ticket itself — comment and close, that part is yours — but the map's Decisions-so-far is shared with every other agent running beside you, and N concurrent appends to it lose lines. Return the gist instead; the dispatching session appends it as soon as you return. This is invariant `only-the-parent-appends`, and it is the one step of `resolve-order` a research subagent does not perform — including in the Resolve procedures in the wayfinder skill's `tracker.md`, whose third step is your parent's, not yours.
-- Resolve the ticket with the **answer to its question**, not a link to the file. The detail stays in the ticket and the file; the gist you return is what reaches the map.
+**Investigate only.** Read, and write your own findings file. Touch nothing else — **no git operations, and no writes to the tracker at all**: no resolution comment, no closing the ticket, no line on the map. Then **return** three things: the findings file's path, a one-line gist of the answer, and the answer itself. The dispatching session resolves the ticket and commits your file. This is invariant `subagents-investigate-only` in the wayfinder skill, and it overrides that skill's Resolve procedures — those describe what your *parent* does with what you return.
 
-Research is the one wayfinder ticket type that may be resolved several to a session, because none of them costs Kyle a conversation.
+Why the line sits there: several of you run at once inside **one shared working tree**. A branch checkout is process-global, so a subagent doing git drags its siblings and its parent off their branch. The map's Decisions-so-far is a single shared file, so concurrent appends lose lines. And a subagent that closed its ticket and then died before returning would leave a decision recorded on a closed ticket that never reaches the map — invisible, because the map is the only index anyone loads. Investigate-only removes all three: a subagent that dies has changed nothing, and its ticket is simply still open.
+
+Research is the one wayfinder ticket type that may be worked several to a session, because none of them costs Kyle a conversation.
 
 ## Unattended runs
 

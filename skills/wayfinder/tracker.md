@@ -59,9 +59,9 @@ Assign the ticket to Kyle's account (`--add-assignee @me` where the session runs
 
 ### Resolve
 
-In order: post the answer as a comment on the ticket, close the ticket, then append one line to the map's **Decisions so far**, obeying `map-append-is-last-write` below. See `resolve-order` in SKILL.md.
+In order: post the answer as a comment on the ticket, close the ticket, then append one line to the map's **Decisions so far**, obeying `map-append-is-last-write` below. All three are one session's work — see `resolve-order` in SKILL.md.
 
-**If you are a research subagent, stop after closing the ticket** — return your one-line gist and let the dispatching session append it (`only-the-parent-appends` in SKILL.md). The third step is not yours; performing it anyway is the race that invariant exists to remove.
+**The resolver is always a session, never a dispatched research subagent.** Those investigate and return; their parent runs this procedure on what comes back (`subagents-investigate-only` in SKILL.md).
 
 ---
 
@@ -74,7 +74,7 @@ The map is a directory of files under `docs/wayfinder/<effort-slug>/`, tracked i
 - **Blocking:** the `Blocked by:` line. A ticket is unblocked when every ticket it lists is `resolved` **or** `out-of-scope` — see `out-of-scope-unblocks` below.
 - **Frontier:** the tickets that are `open`, unblocked, and whose `Claimed by:` is `—`; lowest number first.
 - **Claim:** set `Claimed by:` to the driving dev and save the file before any work — same `claim-first` invariant as GitHub. **Leave `Status: open`.** Claiming is not closing; a claimed ticket is still an open ticket.
-- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far, obeying `map-append-is-last-write` below. **A research subagent stops after `Status: resolved`** and returns its gist for the dispatching session to append (`only-the-parent-appends` in SKILL.md) — it never edits `map.md`, which is the one file its siblings are also writing.
+- **Resolve:** append the answer under an `## Answer` heading, set `Status: resolved`, then append the one-line gist and a relative link to the map's Decisions-so-far, obeying `map-append-is-last-write` below. As on Backend A, the resolver is always a session — a dispatched research subagent never edits a ticket file or `map.md` (`subagents-investigate-only` in SKILL.md).
 - **Release:** set `Claimed by:` back to `—`. See `claims-are-released` in SKILL.md.
 - **Out of scope:** set `Status: out-of-scope` rather than deleting the file, so the record of the scoping call survives.
 
@@ -87,9 +87,9 @@ These two lines are this backend's expression of `status-and-claim-are-independe
 1. **Re-read then append** *(both backends, every append)* — re-read the map body immediately before appending, not the copy loaded at the start of the session, and if it changed since load, re-apply your line on top of the current text.
 2. **Commit each map edit on its own** *(local backend, every append)* — never folded in with ticket files or anything else, so a clobber is visible in `git log` instead of silent. This is the half that actually *detects* a lost line, and a session appending N times satisfies it N times, one commit each.
 
-The name is about a session that appends **once** — for that shape, make the map edit the session's last write, so nothing after it can disturb the map. **Charting is the exception**: it appends once per returning research subagent, mid-step-6, with step 7 still to come, so ordering it last is impossible. Obligation 2 is what carries the guarantee there; do not defer the appends to the end of the session to satisfy the name, because batching them is what reopens the window `only-the-parent-appends` and `resolve-order` were scoped to close.
+The name is about a session that appends **once** — for that shape, make the map edit the session's last write, so nothing after it can disturb the map. **Charting is the exception**: it appends once per returning research subagent, mid-step-6, with step 7 still to come, so ordering it last is impossible. Obligation 2 is what carries the guarantee there; do not defer the appends to the end of the session to satisfy the name, because batching them separates each resolution's third step from its first two, which is exactly what `resolve-order` forbids.
 
-This is a backstop against *other sessions*, which the tracker can't serialize. Within one session it is not the defence: `only-the-parent-appends` keeps parallel research subagents off the map entirely, so the writer that has to obey this invariant is always one that can also commit. Losing the line is not cosmetic — the ticket keeps the decision, but the map is the only index anyone loads.
+This is a backstop against *other sessions*, which the tracker can't serialize. It is not what protects a single session's own parallelism: `subagents-investigate-only` keeps dispatched research subagents off the map and off git entirely, so every writer that has to obey this invariant is a session that can also commit. Losing the line is not cosmetic — the ticket keeps the decision, but the map is the only index anyone loads.
 
 **Invariant `local-visible`:** the map directory is committed, not gitignored. A local map that isn't in git is invisible to every other session and to Kyle on another machine, which defeats the "shared map" the skill is named for.
 
