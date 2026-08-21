@@ -1,12 +1,12 @@
 ---
 name: narrate
-description: Turn a short written brief into a single-voice audio narration (MP3) you can listen to on a walk or commute, using the local Kokoro TTS from the voicemode plugin. Reusable engine — given already-condensed spoken text, it renders the MP3, saves it, and delivers it to the phone/desktop. Use when a command wants an audio version of an explanation (e.g. /handoff --audio, /wrap --audio) or when the user asks to "listen to" / "make audio of" a summary, brief, or recap. Triggers on "narrate", "audio version", "read it to me", "make an MP3 of this".
+description: Turn a short written brief into a single-voice audio narration (MP3) you can listen to on a walk or commute, using the local Kokoro TTS from the voicemode plugin. Reusable engine — given already-condensed spoken text, it renders the MP3, saves it, and delivers it to the phone/desktop. Use when a command wants an audio version of an explanation (e.g. /handoff-session --audio, /wrap --audio) or when the user asks to "listen to" / "make audio of" a summary, brief, or recap. Triggers on "narrate", "audio version", "read it to me", "make an MP3 of this".
 allowed-tools: Bash, Read, Write, ToolSearch, SendUserFile, mcp__plugin_voicemode_voicemode__service
 ---
 
 # narrate — written brief → single-voice MP3 (local Kokoro)
 
-The reusable audio engine behind `/handoff --audio`, `/wrap --audio`, and any
+The reusable audio engine behind `/handoff-session --audio`, `/wrap --audio`, and any
 future command that wants a listenable explanation. **Local Kokoro only** (via
 the `voicemode` plugin): free, repeatable, no quota, no network. Single voice,
 narration — not a NotebookLM two-host podcast. NotebookLM cannot perform a

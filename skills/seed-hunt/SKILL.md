@@ -1,6 +1,6 @@
 ---
 name: seed-hunt
-description: End-of-project seed hunt for Kyle's reproduce-and-measure research projects (the forge-gap / decay-pin lineage). Verifies the just-finished repo is truly closed, harvests its hard-won lessons into the living selection bar (references/selection-bar.md), sweeps arXiv for candidate papers, scores a 3–5 item shortlist against the bar, presents a decision brief for Kyle's pick, and closes with a /handoff prompt routed toward /kickoff. Builds NOTHING. Use whenever Kyle types /seed-hunt, says "seed hunt", "find my next paper", "what should I reproduce next", "ready for the next project", or wraps up a research-reproduction project and asks what to build next — even if he doesn't name the skill.
+description: End-of-project seed hunt for Kyle's reproduce-and-measure research projects (the forge-gap / decay-pin lineage). Verifies the just-finished repo is truly closed, harvests its hard-won lessons into the living selection bar (references/selection-bar.md), sweeps arXiv for candidate papers, scores a 3–5 item shortlist against the bar, presents a decision brief for Kyle's pick, and closes with a /handoff-session prompt routed toward /kickoff. Builds NOTHING. Use whenever Kyle types /seed-hunt, says "seed hunt", "find my next paper", "what should I reproduce next", "ready for the next project", or wraps up a research-reproduction project and asks what to build next — even if he doesn't name the skill.
 ---
 
 # Seed Hunt — find the paper the next project reproduces
@@ -12,7 +12,7 @@ honestly under pre-committed statistical gates. The recipe's track record lives 
 `references/selection-bar.md`, alongside the selection bar itself.
 
 **You BUILD NOTHING in this skill.** The deliverables are: (1) an updated selection bar,
-(2) a vetted shortlist, (3) Kyle's sign-off on one pick, (4) a closing `/handoff` prompt
+(2) a vetted shortlist, (3) Kyle's sign-off on one pick, (4) a closing `/handoff-session` prompt
 for the planning session. Design, thesis, and stage-ladder belong to the NEXT session,
 routed through `/kickoff`.
 
@@ -108,7 +108,7 @@ PENDING-KYLE: the pick. Don't proceed past this gate without it.
 
 ## Phase 4 — hand off
 
-After sign-off, run `/handoff` to produce the prompt for the NEXT session. That session's
+After sign-off, run `/handoff-session` to produce the prompt for the NEXT session. That session's
 job is the new project's skeleton, thesis, and stage-ladder — likely routed through
 Kyle's `/kickoff` skill (deep interview, then scaffolds `~/Projects/<slug>` + private
 GitHub repo). The handoff prompt should carry: the chosen paper(s) with arXiv IDs and

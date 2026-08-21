@@ -120,7 +120,7 @@ One file: `openspec/specs/<capability>/spec.md`, containing only `### Requiremen
 
 ## Intended integration (not yet wired)
 
-Fully self-sufficient — requires no other agent to run first. Nothing in the house reads `openspec/specs/` today; the seams below are the intent, not existing wiring. Downstream, once wired: `/tdd` could turn `#### Scenario:` blocks into test skeletons; `/explore-plan` and `project-guide` could read specs as orientation; a reviewer could grep `<!-- enforced: -->` anchors to check changed code against its spec.
+Fully self-sufficient — requires no other agent to run first. Nothing in the house reads `openspec/specs/` today; the seams below are the intent, not existing wiring. Downstream, once wired: `/tdd-loop` could turn `#### Scenario:` blocks into test skeletons; `/explore-plan` and `project-guide` could read specs as orientation; a reviewer could grep `<!-- enforced: -->` anchors to check changed code against its spec.
 
 ## Anti-patterns
 

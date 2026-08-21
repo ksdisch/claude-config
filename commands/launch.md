@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Write
 
 Launch a fresh Claude Code session in a new terminal window.
 
-This is the last mile of `/handoff`, `/ship-and-route`, `/prompt-optimize`, and
+This is the last mile of `/handoff-session`, `/ship-and-route`, `/prompt-optimize`, and
 `/backlog-hygiene` — each ends with a paste-able prompt plus a recommended model
 and effort. This command turns that into an open window with the session running
 and the prompt one ⌘V away.

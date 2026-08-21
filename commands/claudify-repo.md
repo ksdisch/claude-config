@@ -46,7 +46,7 @@ Unless I named one in the argument above, ask me (AskUserQuestion) which to do:
      → `.claude/operating-constraints.md` (overwrite if present, to refresh a stale
      copy), so cloud/web sessions get the operating constraints too. Copy
      `~/.claude/opus5-builder-notes.md` → `.claude/opus5-builder-notes.md` the same
-     way, so vendored `/handoff` and `/prompt-optimize` can resolve the builder
+     way, so vendored `/handoff-session` and `/prompt-optimize` can resolve the builder
      notes in cloud sessions.
 3. **Update CLAUDE.md.** Add or update a single section titled
    `## Claude tooling for this repo` listing the repo-local commands/skills with their
