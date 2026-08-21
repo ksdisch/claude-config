@@ -42,3 +42,45 @@ __pycache__/
 # row/card) if the trial earns it; delete the dir and this block if not.
 skills/adhd/
 .claude/
+
+# Matt Pocock's skills — raw upstream (mattpocock/skills, MIT), installed via
+# `npx skills` at user scope, deliberately untracked (see THIRD-PARTY.md).
+# find-skills is skills.sh's own helper, same treatment.
+skills/find-skills/
+skills/find-skills
+skills/ask-matt/
+skills/claude-handoff/
+skills/code-review/
+skills/codebase-design/
+skills/diagnosing-bugs/
+skills/domain-modeling/
+skills/git-guardrails-claude-code/
+skills/grill-me/
+skills/grill-with-docs/
+skills/grilling/
+skills/handoff/
+skills/implement/
+skills/implement-spec/
+skills/improve-codebase-architecture/
+skills/loop-me/
+skills/migrate-to-shoehorn/
+skills/prototype/
+skills/research/
+skills/resolving-merge-conflicts/
+skills/scaffold-exercises/
+skills/setup-matt-pocock-skills/
+skills/setup-pre-commit/
+skills/setup-ts-deep-modules/
+skills/tdd/
+skills/teach/
+skills/to-questionnaire/
+skills/to-spec/
+skills/to-tickets/
+skills/triage/
+skills/wait-what/
+skills/wayfinder/
+skills/wizard/
+skills/writing-beats/
+skills/writing-for-agents/
+skills/writing-fragments/
+skills/writing-shape/
