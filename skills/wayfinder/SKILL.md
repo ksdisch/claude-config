@@ -138,9 +138,11 @@ Kyle invokes with a loose idea.
 
    **You perform the whole of `resolve-order` for each ticket, as its subagent returns** — and **you do its git, since the subagent did none**. One ticket at a time, in this session:
 
-   1. **Commit the returned findings file** (and, on the local backend, the ticket file you're about to edit). This comes first so the map line is never committed ahead of the thing it points at — a map entry linking a file that exists only in your working tree is the invisibility `local-visible` exists to prevent.
-   2. Post the answer as the resolution comment, then close the ticket.
-   3. Re-read the map body, append that one gist, and commit that map edit by itself — separate from step 1's commit, per `map-append-protocol` obligation 2.
+   1. **Commit the returned findings file.**
+   2. Post the answer as the resolution comment, then close the ticket. On the local backend both of those *are* edits to the ticket file, so **commit it here, once they're written** — not earlier, since before this step there is nothing in it to commit.
+   3. Re-read the map body, append that one gist, and commit that map edit by itself — separate from the commits above, per `map-append-protocol` obligation 2.
+
+   The order is the point: everything the map line will point at is committed before the line itself. A committed map entry linking a findings file that exists only in your working tree, or a ticket that git still shows as open and unanswered, is the invisibility `local-visible` exists to prevent.
 
    Then move to the next return. That keeps `resolve-order` atomic in one process (which is what it was always for), keeps the appends serialized, and discharges `map-append-protocol`'s two obligations once per ticket. Do **not** batch the resolutions to the end: this session is holding N research reports and is exactly where context runs out, and a ticket resolved but unrecorded is invisible — it passes the map-clear test, and the spec is written by walking Decisions-so-far.
 7. **Release what never landed, then stop.** A subagent that errored, timed out, or returned nothing has left its ticket exactly as step 6 created it — open, with a claim this session took on its behalf. **Release that claim** so the ticket returns to the frontier; nothing else in this skill unclaims it, and `claims-are-released` is otherwise broken at the one site that isn't a session ending. There is no closed-but-unrecorded case to reconcile, because a research subagent never closes anything (`subagents-investigate-only`).
