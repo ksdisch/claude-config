@@ -235,11 +235,29 @@ scorecard, and revert it before the branch leaves the run.
 **Narrow at the tool, by line range — not in the report afterwards.** Stryker's `--mutate` takes a
 mutation range, not just a path: `file:startLine[:startColumn]-endLine[:endColumn]`. That is the
 whole fix for the pilot's load-bearing defect, and it is a command-line flag, so it needs no config
-file. Derive the ranges once and keep them for the stage: `git diff -U0` against the merge-base,
-restricted to the scope files, taking the **new-side** range from each hunk header. Pass one
-`--mutate` entry per range. Nothing moves those ranges while Stage 3 runs — the hardener may not edit
-implementation files, and test files are already out of the scope — so one derivation holds for every
-lap.
+file. Nothing moves those ranges while Stage 3 runs — the hardener may not edit implementation
+files, and test files are already out of the scope — so one derivation holds for every lap.
+
+**Deriving the ranges.** `git diff -U0` against the merge-base, restricted to the scope files, taking
+the **new-side** range from each hunk header. Two cases the plain rule gets wrong, both ordinary
+rather than exotic:
+
+- **A hunk whose new-side length is 0 is a pure deletion — skip it.** `@@ -1340,19 +1364,0 @@` reads
+  as start 1364, end 1363, and Stryker's validator *throws* on `start > end`, killing the run before
+  a single mutant is generated. A deletion adds no line for the tool to mutate, so there is nothing
+  to pass. Do not "repair" it to `1364-1364`: that mutates an unchanged line, which is the file-level
+  contamination this whole section exists to prevent, in miniature.
+- **`@@ -a,b +c @@` with no comma on the new side means length 1**, not length 0 — a single-line
+  addition. Deriving it as zero-length silently drops the line from the gate.
+
+**Pass every range in ONE comma-separated `--mutate` flag.** `--mutate 'f.mjs:10-20,f.mjs:40-55'`,
+never `--mutate f.mjs:10-20 --mutate f.mjs:40-55`. **Repeating the flag keeps only the last value and
+discards the rest** — its argument coercion takes a single value, so commander overwrites instead of
+accumulating. The dropped ranges generate no mutants, contribute no survivors, and the gate passes on
+lines nobody measured. Multi-hunk is the normal shape of a real story, so this is the common path,
+and it fails silently in the direction of a false `G3: PASSED`. Two things make it visible instead:
+record **the ranges passed and the mutant count attributed to each** in the run log, and treat a
+range that produced zero mutants as a fact to explain before you accept any result from that run.
 
 Why it matters, in the pilot's own numbers: the story touched 104 lines of a ~500-line module.
 Mutated by file that is **385 mutants and 39 survivors**, every one of the 39 in a function the story
@@ -263,14 +281,30 @@ this affordable, and affordability is what lets the config be simple. Stage 0 es
 with the repo's **full test command**, **concurrency 1**, and a timeout above the suite's measured
 duration. Record its absolute path in the run log.
 
-The arithmetic is the argument. The pilot's disaster was 385 mutants each re-running a full suite,
-four to eight at a time — the machine thrashed and every mutant died on the clock. Ranges cut the
-mutant count to the tens, and party-line's suite is 7.5 seconds, so tens of mutants run sequentially
-in minutes. Once the full suite is affordable there is **no narrowed test list, no second config, and
-nothing to confirm**: the tests each mutant faces are simply all of them, which is both the strongest
-set available and the only set G3 should be claiming anything about. Every mechanism this stage used
-to need for picking, checking and re-checking a subset of tests is deleted rather than fixed, because
-the question it answered no longer arises.
+While the full suite is affordable there is **no narrowed test list, no second config, and nothing to
+confirm** on the normal path: the tests each mutant faces are simply all of them, which is both the
+strongest set available and the only set G3 should be claiming anything about. The machinery this
+stage used to need for picking, checking and re-checking a subset of tests is deleted rather than
+fixed, because on that path the question it answered does not arise. Narrowing survives only as the
+recorded degradation below, never as the default.
+
+**"Affordable" is a number to check, not an assumption.** Ranges cut the mutant count from a module's
+worth to the changed lines' worth, and the pilot's timeouts are *attributed* to concurrency — 385
+mutants each re-running a full suite four to eight at a time, thrashing the machine — but **nobody
+has run the full suite at concurrency 1**, so treat that as the working hypothesis it is. Before the
+first run: multiply the suite's measured duration by the mutant count the ranges generate, compare it
+to what this run can spend. Three runs of that size is the realistic total (one pre-dispatch, one per
+hardener lap). A seconds-fast suite makes this minutes; a minute-long suite makes it hours, and that
+is a decision, not a detail.
+
+**Two escapes, in order, and neither is silent.** Over budget, or mutants still dying `Timeout` at
+concurrency 1: **first** narrow `commandRunner.command` to the tests covering the scope and record it
+in the scorecard as a named degradation — that is the configuration the pilot actually got a clean
+385-mutant run out of, so it has evidence behind it, and the cost of taking it is honest rather than
+hidden: survivors measured against a subset of the suite are weaker evidence than survivors measured
+against all of it, and the scorecard says which kind it got. **Only then**, if that also fails, is
+this Stage 0's "G3 cannot gate this repo" exit arriving late. Reaching for the second before the
+first would declare a repo ungateable while a configuration known to measure it sits unused.
 
 ### Reading a mutation run
 
@@ -290,13 +324,22 @@ a false pass gets recorded:
   record a clean pass, and G2 does not stop that: it requires only that the diff touch a test file,
   never that the changed lines are covered.
 
+- **Anything else** — `CompileError`, `RuntimeError`, `Ignored`, `Pending`. The tool's schema defines
+  eight statuses, not three, and a mutant that never ran is not a mutant that was caught. Record the
+  count by status and treat any of these on a changed line exactly as `Timeout`: unmeasured, so
+  neither a survivor nor a pass. Leaving them unruled is the same arithmetic as counting them
+  `Killed`, which is the conflation this list exists to stop.
+
 A raw survivor count read straight off the tool's report, without the status split, is never the gate.
 
 **Run the mutation tool first, then dispatch.** Before the first hardener dispatch, run it
 yourself over the scope. Two things fall out of this and neither is optional:
 
-- **Zero survivors here ends Stage 3 immediately** — gate passed, no dispatch spent, and the
-  scorecard says so. A well-hardened change is a common outcome, not a suspicious one.
+- **Zero survivors *inside the changed lines* here ends Stage 3 immediately** — gate passed, no
+  dispatch spent, and the scorecard says so, naming any count outside those lines it is passing over.
+  On the range-scoped path the two numbers are the same; on the whole-file fallback they are not, and
+  it is the changed-line one that decides. A well-hardened change is a common outcome, not a
+  suspicious one.
 - **The hardener is never dispatched without `SURVIVORS`.** Its `HARDEN` mode is written entirely
   against a list; dispatched blind it has nothing to work from and the lap is a no-op, which turns
   the 2-lap budget into 1.
