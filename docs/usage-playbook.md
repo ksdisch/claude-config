@@ -546,6 +546,47 @@ rows get re-pointed to match.
   Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
   edits for ledger routing and unattended runs.
 
+#### `codebase-design`
+
+- **Run config:** inherits the session · `high` — it's vocabulary and principles applied mid-design,
+  not a standalone run.
+- **Reach for it when:**
+  - You're designing or reshaping a module's interface, or deciding where a seam goes.
+  - You want code testable *through* its interface rather than past it.
+  - Another skill or discussion needs the deep-module vocabulary (module / interface / seam /
+    adapter / depth / leverage / locality) used consistently.
+- **Pairs well with:** [`domain-modeling`](#domain-modeling) (domain language; this owns the
+  architecture language), [`grilling`](#grilling) (design interviews cite it),
+  [`prototype`](#prototype) (flushes out the interface a design argues for).
+- **Notes:** model-invocable. The glossary is the point — use its terms exactly and avoid
+  "component / service / API / boundary". Carries the deletion test and the
+  one-adapter-means-a-hypothetical-seam rule; `DEEPENING.md` adds dependency categories and
+  replace-don't-layer testing, `DESIGN-IT-TWICE.md` the parallel-subagent interface
+  exploration. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT),
+  near-verbatim with a house NOT-for routing clause.
+
+#### `wizard`
+
+- **Run config:** inherits the session · `high` to scope the stages, `medium` to author the
+  script — the judgment is in the stage map, not the shell.
+- **Reach for it when:**
+  - Provisioning infrastructure or setting up credentials / CI secrets involves steps only a
+    human can perform in a browser.
+  - You're walking someone through an unfamiliar third-party dashboard, or running a one-off
+    migration/cutover with irreversible moments.
+- **Pairs well with:** [`/envsetup`](#envsetup) (the agent-performable side of setup; wizard
+  covers the human-only remainder), [`kickoff`](#kickoff) (new projects that need third-party
+  services wired).
+- **Notes:** model-invocable, but never for steps the agent can perform itself. Upstream ships a
+  copy-paste `template.sh`; this repo deliberately doesn't — the UX is re-expressed as a
+  **named-invariant contract** (`one-stage-on-screen`, `open-before-ask`, `secrets-stay-hidden`,
+  `reruns-resume`, `env-writes-upsert`, `ci-writes-degrade`, `confirm-irreversible`,
+  `closing-summary`) and the script is authored fresh each run, per the house rule that shell
+  snippets in skill files are a defect generator. Wizards are ephemeral by default; verify with
+  `bash -n` + shellcheck + a static trace checked off by invariant name. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with that conversion as the
+  house edit.
+
 ### Session & Context Management
 
 #### `reorient`
@@ -650,6 +691,21 @@ rows get re-pointed to match.
   only the combination. One combined steering round (compressible, never deletable) plus one
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
   Cross-lane dedup happens on the *move* axis — Harden ↔ bug-hunt is a known seam.
+
+#### `wait-what`
+
+- **Run config:** inherits the session · any effort — it's a one-paragraph re-pitch prompt, not a
+  workflow.
+- **Reach for it when:**
+  - The last message didn't land and you want it re-pitched simpler, with the context you're
+    missing, instead of asking three follow-ups.
+- **Pairs well with:** [`domain-modeling`](#domain-modeling) (owns the `CONTEXT.md` vocabulary
+  the re-pitch must use), [`reweave`](#reweave) (splices a follow-up answer back into the
+  original response; wait-what re-pitches the explanation instead).
+- **Notes:** typed-only (`/wait-what`) — it never auto-fires. The re-pitch talks ASD-STE100
+  Simplified Technical English and follows `CONTEXT-MAP.md` to the right glossary when a repo
+  has more than one. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), body verbatim.
 
 ### Quality & Debugging
 
@@ -783,6 +839,23 @@ rows get re-pointed to match.
 - **Notes:** Phase 0 verifies the repo is genuinely closed and STOPs if it isn't — offering
   [`ship-and-route`](#ship-and-route) to land the remainder. The shortlist ends at a
   `PENDING-KYLE` gate; it never picks for you. `--audio` narrates the decision brief.
+
+#### `resolving-merge-conflicts`
+
+- **Run config:** inherits the session · `high` — each hunk is intent archaeology, not text
+  splicing.
+- **Reach for it when:**
+  - A merge or rebase is sitting mid-flight with conflict markers.
+  - A long rebase keeps stopping and each stop needs both sides' original intent understood
+    before choosing.
+- **Pairs well with:** [`ship-and-route`](#ship-and-route) (landing outstanding work that turns
+  out to conflict), [`/tdd`](#tdd) (the checks it reruns after resolving).
+- **Notes:** model-invocable. Traces primary sources (commit messages, PRs, original tickets)
+  before touching a hunk; preserves both intents where possible and never invents new
+  behaviour; discovers and runs the project's automated checks afterward. Always resolves —
+  never `--abort`. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), near-verbatim (heading
+  added).
 
 ### NotebookLM
 
