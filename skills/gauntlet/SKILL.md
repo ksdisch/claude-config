@@ -147,11 +147,14 @@ it established.
    see Stage 3. A config written *inside* the repo is the tracked-config degradation Stage 3 refuses:
    same file, wrong side of the boundary.
 
-   Re-probe after configuring. Still dying by timeout rather than detection → **G3 cannot gate this
-   repo**: treat it exactly as "not installable" above (stop, or ask Kyle), and record the timing
-   evidence rather than a bare "probe failed". Record either way in the run log: the trial's
-   killed/timeout split, and the absolute path of the out-of-repo config, since Stage 3 reuses it
-   unchanged.
+   Re-probe after configuring. Still dying by timeout rather than detection → **take the narrowing
+   escape before you declare anything ungateable** (Stage 3, *The narrowing escape*): point
+   `commandRunner.command` at the tests covering the probe's file and re-probe once more. That is the
+   configuration the pilot actually got a clean run out of, and it must be tried before the exit
+   below, not after. **Only if that also dies by timeout → G3 cannot gate this repo**: treat it
+   exactly as "not installable" above (stop, or ask Kyle), and record the timing evidence rather than
+   a bare "probe failed". Record either way in the run log: the trial's killed/timeout split, whether
+   the escape was taken, and the absolute path of the out-of-repo config, since Stage 3 reuses it.
 6. **Open the run log.** Create `~/.claude/gauntlet/<repo-name>/<date>-<slug>/` — outside the repo,
    mirroring the review-mailbox pattern, so the relay's bookkeeping never lands in the story's diff.
    Record the start timestamp, the language, the test/coverage/mutation commands, and every probe
@@ -249,6 +252,14 @@ rather than exotic:
   contamination this whole section exists to prevent, in miniature.
 - **`@@ -a,b +c @@` with no comma on the new side means length 1**, not length 0 — a single-line
   addition. Deriving it as zero-length silently drops the line from the gate.
+- **If skipping leaves no ranges at all, do not run the tool.** A scope whose every hunk is a
+  deletion ("remove the dead branch") changed no line anything can mutate, and both ways of passing
+  an empty list are wrong: omitting `--mutate` falls back to Stryker's default `{src,lib}/**` globs —
+  whole-repo mutation — while `--mutate ''` sets the list to empty, which warns rather than errors
+  and produces a report with zero mutants, zero survivors, and a clean-looking pass. Record
+  **`G3: NOT-APPLICABLE (no mutable changed lines)`** in the scorecard and say so in as many words.
+  The invariant behind this, which holds everywhere: **a run that reports zero mutants generated is
+  never a pass.** Zero survivors out of zero mutants is not a measurement.
 
 **Pass every range in ONE comma-separated `--mutate` flag.** `--mutate 'f.mjs:10-20,f.mjs:40-55'`,
 never `--mutate f.mjs:10-20 --mutate f.mjs:40-55`. **Repeating the flag keeps only the last value and
@@ -293,39 +304,60 @@ worth to the changed lines' worth, and the pilot's timeouts are *attributed* to 
 mutants each re-running a full suite four to eight at a time, thrashing the machine — but **nobody
 has run the full suite at concurrency 1**, so treat that as the working hypothesis it is. Before the
 first run: multiply the suite's measured duration by the mutant count the ranges generate, compare it
-to what this run can spend. Three runs of that size is the realistic total (one pre-dispatch, one per
-hardener lap). A seconds-fast suite makes this minutes; a minute-long suite makes it hours, and that
+to what this run can spend. **Get that count without spending the run** — `--dryRunOnly` over the
+same ranges instruments and reports the mutant count without executing any of them, which is the
+same cheap-read-before-a-full-run habit Stage 0's probe already uses. Three runs of that size is the
+realistic total (one pre-dispatch, one per hardener lap). A seconds-fast suite makes this minutes; a minute-long suite makes it hours, and that
 is a decision, not a detail.
 
-**Two escapes, in order, and neither is silent.** Over budget, or mutants still dying `Timeout` at
-concurrency 1: **first** narrow `commandRunner.command` to the tests covering the scope and record it
-in the scorecard as a named degradation — that is the configuration the pilot actually got a clean
-385-mutant run out of, so it has evidence behind it, and the cost of taking it is honest rather than
-hidden: survivors measured against a subset of the suite are weaker evidence than survivors measured
-against all of it, and the scorecard says which kind it got. **Only then**, if that also fails, is
-this Stage 0's "G3 cannot gate this repo" exit arriving late. Reaching for the second before the
-first would declare a repo ungateable while a configuration known to measure it sits unused.
+#### The narrowing escape
+
+**Two escapes, in order, and neither is silent.** This is the one place narrowing is permitted, and
+both Stage 0's failed re-probe and the `Timeout` bullet below route here rather than straight to the
+exit. Over budget, or mutants still dying `Timeout` at concurrency 1:
+
+**First, narrow `commandRunner.command` to the tests covering the scope**, and record it in the
+scorecard as a named degradation. That is the configuration the pilot got a clean 385-mutant run out
+of, so it has evidence behind it — but it also carries the defect that evidence hid, and the cost is
+stated rather than absorbed:
+
+- **The test list is picked by inspection, and there is no better way.** The pilot chose its three
+  files by hand. Coverage tooling cannot help: it reports coverage per *source* file and never
+  attributes a line to the test that executed it. So this list will sometimes be incomplete, and an
+  incomplete list returns mutants the full suite would have killed.
+- **Therefore a `Survived` under the narrowed runner is not a survivor yet.** `Killed` is still
+  evidence — a test caught it, and a smaller test set catching it is a stronger result, not a weaker
+  one. But before any `Survived` mutant becomes a lap's work in `SURVIVORS`, re-run *that mutant's
+  range* under the full command. Dies → the list was incomplete; widen it and re-run the scoped pass.
+  Survives → genuine. This is a handful of mutants on a degraded path, not a pass over every run,
+  which is the whole reason it is affordable here and was not affordable as a general mechanism.
+- The scorecard says which kind of run produced the result, because "measured against the whole
+  suite" and "measured against four files somebody picked" are not the same claim.
+
+**Only then**, if that also fails, is this Stage 0's "G3 cannot gate this repo" exit arriving late.
+Reaching for the second before the first would declare a repo ungateable while a configuration known
+to measure it sits unused.
 
 ### Reading a mutation run
 
 **This applies to every mutation run the stage makes, G3's re-run after each hardener lap included.**
 That re-run is where it matters most: the hardener has just added tests, so the suite each mutant
 re-executes is longer than the one the first run measured, and that is exactly when mutants start
-dying on the clock instead of on an assertion. Three statuses, and conflating any two of them is how
-a false pass gets recorded:
+dying on the clock instead of on an assertion. **Four buckets** — the tool emits more statuses than
+that, and every one of them lands in exactly one bucket. Conflating any two is how a false pass gets
+recorded:
 
 - **`Killed`** — a test caught the mutant. This is the only status that is evidence of anything good.
 - **`Timeout`** — the instrument failed. The clock expired before any assertion ran, so it is
   **never a survivor and never a pass**. Raise the timeout, confirm concurrency is 1, re-run. If it
-  persists, that is Stage 0's "G3 cannot gate this repo" exit arriving late — not a result.
+  persists, take *The narrowing escape* above — in that order, and only then the exit it ends in.
 - **`Survived` or `NoCoverage`** — a survivor, and both go to the hardener. Under the full suite
   `NoCoverage` means *no test in the repo executes that line*, which is the harshest finding this
   stage can produce, not a gap in the measurement. Discarding it would let wholly untested new code
   record a clean pass, and G2 does not stop that: it requires only that the diff touch a test file,
   never that the changed lines are covered.
-
-- **Anything else** — `CompileError`, `RuntimeError`, `Ignored`, `Pending`. The tool's schema defines
-  eight statuses, not three, and a mutant that never ran is not a mutant that was caught. Record the
+- **Anything else** — `CompileError`, `RuntimeError`, `Ignored`, `Pending`. The schema defines eight
+  statuses, and a mutant that never ran is not a mutant that was caught. Record the
   count by status and treat any of these on a changed line exactly as `Timeout`: unmeasured, so
   neither a survivor nor a pass. Leaving them unruled is the same arithmetic as counting them
   `Killed`, which is the conflation this list exists to stop.
