@@ -89,6 +89,8 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`grilling`](../skills/grilling/SKILL.md) | Interviews you relentlessly about a plan, decision, or idea until shared understanding — works the design tree in rounds of numbered questions, each with a recommended answer, until no branch is left silently assumed. · [config →](usage-playbook.md#grilling) |
 | [`wayfinder`](../skills/wayfinder/SKILL.md) | Charts an effort too big for one session as a shared map of **decision tickets** on the repo's issue tracker (GitHub Issues, or local markdown as a fallback), then resolves them one at a time — destination first, fog of war for what isn't sharp enough to ticket yet, a visible frontier of what's takeable now. Plans only: a cleared map collapses into a spec and routes the next move, never into a pull request. Typed-only (`/wayfinder`). · [config →](usage-playbook.md#wayfinder) |
 | [`domain-modeling`](../skills/domain-modeling/SKILL.md) | Actively sharpens a project's domain model while you design — challenges terms against the glossary, invents edge-case scenarios that force precision, cross-references claims with the code, and writes resolved vocabulary into `CONTEXT.md` as it happens. Routes decisions to whichever ledger the repo already has (`Decisions.md` via `project-wiki`, an existing `docs/adr/`, or a new one) rather than opening a second. · [config →](usage-playbook.md#domain-modeling) |
+| [`codebase-design`](../skills/codebase-design/SKILL.md) | Shared vocabulary and principles for designing deep modules — lots of behaviour behind a small interface, seams, adapters, leverage/locality — plus dependency-category deepening guidance (DEEPENING.md) and a design-it-twice parallel-subagent interface exploration (DESIGN-IT-TWICE.md). · [config →](usage-playbook.md#codebase-design) |
+| [`wizard`](../skills/wizard/SKILL.md) | Generates an interactive bash wizard that walks a human through steps only they can perform (credentials, CI secrets, third-party dashboards, one-off cutovers) — authored fresh each run against a named-invariant UX contract (stage progress, idempotent `.env` upserts, hidden secret entry, graceful `gh` fallback, closing summary). · [config →](usage-playbook.md#wizard) |
 
 ### Session & Context Management
 
@@ -100,6 +102,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
 | [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
+| [`wait-what`](../skills/wait-what/SKILL.md) | Typed-only reset (`/wait-what`) for when an explanation didn't land — re-pitches the last message with context, in ASD-STE100 simplified English, using the repo's `CONTEXT.md` vocabulary. · [config →](usage-playbook.md#wait-what) |
 
 ### Quality & Debugging
 
@@ -112,6 +115,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`artifacts-audit`](../skills/artifacts-audit/SKILL.md) | Audits a codebase against a canonical artifact taxonomy, then produces a concrete generation + maintenance plan. Plans only; does not write artifacts. · [config →](usage-playbook.md#artifacts-audit) |
 | [`artifacts-generate`](../skills/artifacts-generate/SKILL.md) | Implements an artifact plan produced by `artifacts-audit`. Supports one-at-a-time (maximum oversight) or batch generation of READMEs, ADRs, design docs, diagrams, runbooks, etc. · [config →](usage-playbook.md#artifacts-generate) |
 | [`seed-hunt`](../skills/seed-hunt/SKILL.md) | Post-research-project workflow — verifies the repo is truly closed, harvests lessons into the selection bar, sweeps arXiv for candidate papers, scores a shortlist, and presents a decision brief. · [config →](usage-playbook.md#seed-hunt) |
+| [`resolving-merge-conflicts`](../skills/resolving-merge-conflicts/SKILL.md) | Resolves an in-progress merge/rebase conflict hunk by hunk — traces each side's original intent, preserves both where possible, runs the project's checks, and finishes the merge; never aborts, never invents behaviour. · [config →](usage-playbook.md#resolving-merge-conflicts) |
 
 ### NotebookLM
 
