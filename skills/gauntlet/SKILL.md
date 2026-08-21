@@ -34,7 +34,9 @@ degraded and quiet.
   by name and reason. Never absorb a degradation to keep the relay moving.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
   (`stage-1: …`, `stage-2 lap 2: …`), *before* its gate runs. Agents leave the tree dirty and
-  report; commit authorship stays in one place so every lap is reproducible and diffable.
+  report; commit authorship stays in one place so every lap is reproducible and diffable. **Stage
+  tracked paths explicitly, never `-A`** — the probe permits untracked scratch files to exist, and
+  this is what keeps them out of the story's diff.
 - **BRANCH-PINNED** — before and after every dispatch, assert you are still on the story branch.
   Stage agents edit files, so a clean-tree check proves nothing here; the branch name is the
   thing to assert. A stray checkout ends the run.
@@ -46,11 +48,15 @@ Run before any dispatch. Its job is to find out whether this repo can be gated a
 **The steps are ordered, and the order is load-bearing** — each one acts on state the one before
 it established.
 
-1. **Clean tree.** The target repo's working tree must be clean before anything else. Dirty →
-   name what is uncommitted and **stop**. Every later stage commits whatever it finds dirty and
-   attributes it to an agent, so pre-existing work would be swept into a `stage-N:` commit
-   unreviewed, on a branch headed for `adversarial-review`. This is the one check BRANCH-PINNED
-   deliberately does *not* make later, so it has to be made here.
+1. **Clean tree.** No **tracked** file in the target repo may be modified or staged. Any that are →
+   name them and **stop**. Every later stage commits whatever it finds dirty and attributes it to an
+   agent, so pre-existing work would be swept into a `stage-N:` commit unreviewed, on a branch
+   headed for `adversarial-review`. This is the one check BRANCH-PINNED deliberately does *not* make
+   later, so it has to be made here.
+   **Untracked paths do not stop the run** — real repos carry scratch directories, and refusing to
+   start on one would be its own failure. Name them in the run log and leave them alone. What makes
+   that safe is the other half of the rule: **every stage commit stages tracked paths explicitly,
+   never `-A`**, so an untracked file cannot be swept into a stage commit either.
 2. **Baseline suite green.** Run the repo's test command on the pre-branch state. Red baseline →
    name the failing tests and **stop**. The gauntlet builds on green; it does not rescue red repos,
    because a red baseline makes every downstream gate meaningless.
@@ -64,10 +70,13 @@ it established.
    and **continue**: the scorecard's coverage line becomes "no mechanism available" rather than a
    number. Coverage gates nothing, so its absence never stops the run.
 5. **Mutation runner reachable.** Stryker for JS/TS, mutmut for Python. Absent → install it as a
-   dev dependency, which lands on the story branch created in step 3 and is therefore visible,
-   committed, and revertable. Not installable → the hardener stage cannot gate: name the missing
-   tool and stop (unattended), or ask Kyle whether to run two-stage with G3 recorded as unavailable
-   (attended). **Never silently skip a stage.**
+   dev dependency, which lands on the story branch created in step 3. **Commit the install here,
+   tagged `stage-0`**, rather than leaving it dirty: that is what makes it visible, committed, and
+   revertable, and it is what keeps the manifest and lockfile out of Stage 1's `stage-1:` commit —
+   where they would be attributed to the specifier, the exact mis-attribution step 1 stops the run
+   to prevent. Not installable → the hardener stage cannot gate: name the missing tool and stop
+   (unattended), or ask Kyle whether to run two-stage with G3 recorded as unavailable (attended).
+   **Never silently skip a stage.**
 6. **Open the run log.** Create `~/.claude/gauntlet/<repo-name>/<date>-<slug>/` — outside the repo,
    mirroring the review-mailbox pattern, so the relay's bookkeeping never lands in the story's diff.
    Record the start timestamp, the language, the test/coverage/mutation commands, and every probe
@@ -131,8 +140,12 @@ fourth lap is never taken, and the cap is never raised mid-run.
 ## Stage 3 — Harden
 
 **Scope the run on the command line, never in a tracked config file.** The scope is the source
-files the story branch touched (diff versus merge-base, excluding test files); whole-repo mutation
-is unaffordable and mostly irrelevant to this story. Pass it per run — Stryker takes `--mutate`,
+files the story branch touched — the diff versus merge-base, minus test files (G2's predicate) **and
+minus everything under `docs/`**. That second exclusion is not redundant: G2 rules in as many words
+that `.feature` and QA files are specifications rather than test files, so "excluding test files"
+alone leaves Stage 1's own output in the scope, where Stryker reports noise on it and mutmut is
+likelier to error than to shrug. Whole-repo mutation is unaffordable and mostly irrelevant to this
+story. Pass it per run — Stryker takes `--mutate`,
 mutmut takes paths. A `stryker.conf.json` carrying a three-file `mutate` list would be stage-3 work
 under STAGE-COMMITS, would ride the branch through the merge, and would leave the target repo with
 a mutation setup whose near-empty runs look like passes forever after. That is the silent
@@ -185,8 +198,10 @@ for Kyle, not as a gate failure.
 
 Any other failure → redispatch with the surviving mutants listed.
 
-**Invariant HARDENER-CAP: 2 laps.** Cap hit → stop and report the standing survivors by name in
-the scorecard.
+**Invariant HARDENER-CAP: 2 laps.** Here a lap is **one hardener dispatch plus the gate run after
+it** — the pre-dispatch run above is not a lap and never consumes budget, which is the whole point
+of moving it ahead of the first dispatch. Cap hit → stop and report the standing survivors by name
+in the scorecard.
 
 ## Stage 4 — Scorecard
 
