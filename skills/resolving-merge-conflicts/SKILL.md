@@ -17,4 +17,4 @@ description: "Use when you need to resolve an in-progress git merge/rebase confl
 
 ---
 
-Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock). Full notice: `THIRD-PARTY.md` in the claude-config repo.
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.

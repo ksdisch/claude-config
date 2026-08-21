@@ -48,7 +48,7 @@ The canonical role names above are the label strings, verbatim, by default. On t
 
 1. List the tracker's existing labels. Where one already means a canonical role (GitHub's default `bug`, `enhancement`, and `wontfix` usually do), map to it rather than creating a duplicate.
 2. Create the missing state labels with Kyle's approval. On a **public** repo, ask before the first tracker write of any kind — labels, comments, closes are all visible to everyone watching (the same guard as wayfinder's tracker.md). Unattended with no answer available: read and recommend, write nothing.
-3. Record the outcome as a short "Triage labels:" note in the repo's `CLAUDE.md` — the mapping, plus whether **external PRs are in scope** as a request surface (default: **not** in scope until that note says so). Later sessions read the note instead of re-deriving it.
+3. Record the outcome in `docs/triage-labels.md`, committed — the mapping, plus whether **external PRs are in scope** as a request surface (default: **not** in scope until that file says so). Later sessions read that file instead of re-deriving it. Not the repo's `CLAUDE.md`: the mapping is per-repo state, not behaviour — and in a config repo (this one included) `CLAUDE.md` can be symlinked into `~/.claude/` and load into every session globally.
 
 ## Invocation
 

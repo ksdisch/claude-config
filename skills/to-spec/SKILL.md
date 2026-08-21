@@ -16,7 +16,7 @@ This skill takes the current conversation context and codebase understanding and
 
 3. Write the spec using the template below, and put it **where the repo already keeps specs** — absent a convention, `docs/specs/<slug>.md` (the same convention wayfinder's cleared maps collapse into). Commit it; a spec that isn't in git is invisible to every other session.
 
-4. **Publish to the tracker only if Kyle wants it there** — as one issue carrying the spec body, labelled `ready-for-agent` per the triage skill's vocabulary, so agents can grab it. On a **public** repo's tracker, ask before the first write: everyone watching the repo receives what lands there (the same guard as wayfinder's tracker.md).
+4. **Publish to the tracker only if Kyle wants it there** — as one issue carrying the spec body, labelled `ready-for-agent` per the triage skill's vocabulary (create the label first if the repo doesn't have it), so agents can grab it. On a **public** repo's tracker, ask before the first write: everyone watching the repo receives what lands there (the same guard as wayfinder's tracker.md).
 
 5. Name the natural next move and stop: `to-tickets` breaks the spec into tracer-bullet tickets with blocking edges; a well-specified chunk can go straight to a builder session.
 

@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 Implement the work described by Kyle in the spec or tickets.
 
+When the work is a ticket set, work the **frontier**: take a ticket whose blockers are all done — for a purely linear chain, top to bottom — never a blocked one. Do not close or modify any parent issue while working.
+
 Call the Skill tool with `tdd` where possible, at pre-agreed seams ("seam" in the codebase-design skill's sense).
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
