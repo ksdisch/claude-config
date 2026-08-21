@@ -35,15 +35,18 @@ degraded and quiet.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
   (`stage-1: …`, `stage-2 lap 2: …`), *before* its gate runs. Agents leave the tree dirty and
   report; commit authorship stays in one place so every lap is reproducible and diffable.
-  **Wait for the agent's completion report before you commit, and never infer completion from
-  anything else.** A tree that has stopped changing is not a finished agent — an agent reading files,
-  composing a report, or between two edits leaves exactly the same still tree as one that is done.
-  Committing on that heuristic captures half a lap, sends a partial diff into the gate, and makes the
-  gate's result a statement about a state no agent ever produced. The dispatch's completion
-  notification is the only signal; if you are tempted to check the tree instead, that is the tell that
-  you are about to commit early. **Do not read the agent's task output to find out whether it is
-  done** — a stage agent's transcript is large enough to displace the run's own context, and the
-  notification already carries the report. **Stage paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's dispatch
+  **Never commit while a dispatch is still outstanding. The dispatch returning is the completion
+  signal, and it is the only one.** Read the report it returns — that is where the touched paths come
+  from, and you need them below. What you must not do is go looking for a completion signal anywhere
+  else while the call is in flight: **a tree that has stopped changing is not a finished agent.** An
+  agent reading files, composing its report, or sitting between two edits leaves exactly the same
+  still tree as one that is done. Committing on that heuristic captures half a lap, sends a partial
+  diff into the gate, and makes the gate's result a statement about a state no agent ever produced.
+  Separately, and for a different reason: **never open the dispatch's raw transcript file** — the
+  returned report is the summary you need, while the transcript behind it is large enough to displace
+  the run's own context, and it tells you nothing the report doesn't.
+  **Stage paths by name — never `git add -A` or `git add .`.**
+  The names are the ones the stage's dispatch
   specified plus the ones the agent reports touching; new files are staged the same way, since
   everything the relay produces is untracked at the moment you commit it. Naming paths, not
   restricting yourself to tracked ones, is what keeps the probe's permitted scratch files out of the
@@ -62,8 +65,17 @@ only if their files were on disk before this session began. A session that just 
 gets `Agent type 'specifier' not found` at the first dispatch. This is checked before the repo probe
 because it is about the session, not the repo, and because failing it invalidates every stage.
 
-Confirm all three names appear in this session's available agent types. Any that do not → **stop and
-tell Kyle to re-run from a fresh session.** Do not fall back to `general-purpose` with the agent's
+**The check is the session's own agent roster, and `agents/` on disk is not it.** That distinction
+*is* the defect: the pilot's three files were on disk and merged to `main`, and all three dispatches
+still failed. So a `ls`, a `grep`, or a glance at the checkout returns a pass in precisely the case
+that fails, and it is the check you will reach for by reflex. Confirm instead that all three names
+appear in the list of available agent types **this session** was given. If you cannot see that list,
+or are unsure whether what you are reading is the live roster, settle it by dispatching: one
+throwaway one-line task to each of the three types, before any repo work. `Agent type '<name>' not
+found` is the definitive answer, and three cheap dispatches are worth less than a wasted run.
+
+Any that do not resolve → **stop and tell Kyle to re-run from a fresh session.** Do not fall back to
+`general-purpose` with the agent's
 brief pasted in: that fallback silently drops the two things the agent files exist to guarantee —
 `tools:` restrictions are not enforced (the specifier's deliberate lack of `Bash` is what backs its
 promise never to claim a test passed, and under the fallback it is prose), and `effort:` cannot be
@@ -215,8 +227,28 @@ aimed it at whatever small file the probe used, and left pointing there it would
 touch none of the story's code, killing nothing and reporting every mutant a survivor. The
 `--mutate` list still comes from the command line, so the config never carries the story's files.
 
-**The gate is changed *lines*, not touched *files*.** The scope above is what you hand the tool. It
-is not what G3 counts. Mutating a whole file drags in every mutant that file already carried before
+**Derive that test list from coverage, not by inspection, and then make it prove itself.** Stage 0
+step 4 already established a coverage mechanism; use it — run the suite under coverage and take the
+test files that execute the scope's changed lines. Reading the diff and guessing which tests look
+related is how you get a *partially* correct list, and that is the dangerous failure rather than the
+obvious one: pointing at plainly wrong tests kills nothing and is unmissable, while a list missing
+one covering file returns mutants the full suite would have killed. Those come back as survivors,
+go out as `SURVIVORS`, and spend both HARDENER-CAP laps writing duplicate tests for behaviour that
+was already pinned — ending in a false G3 failure, the same outcome defect the changed-line fix
+above exists to prevent, reached through the config instead of through file scope. So apply Stage 0's
+own discipline to Stage 3's edit of Stage 0's config: **after re-pointing, re-probe** — trial-mutate
+a handful of mutants inside the changed lines and confirm they die `Killed`. They don't → the list is
+wrong or incomplete; fix it before the first hardener dispatch, not after the caps are spent. No
+coverage mechanism (step 4 recorded it absent) → say so in the run log, fall back to the repo's full
+test command rather than a hand-picked subset, and accept the slower run as the named cost of not
+having one.
+
+**The gate is changed *lines*, not touched *files*.** Two different units are in play here and the
+run turns on keeping them apart: **`SCOPE` is a file list** — what you hand the tool, what the
+`SCOPE` dispatch parameter carries — while **G3's unit is a line range**. Everything the tool mutates
+is inside `SCOPE` by construction, so "in scope" can never mean "counts against the gate"; the phrase
+for that is *inside the changed lines*, and this skill uses no other. The scope above is what you
+hand the tool. It is not what G3 counts. Mutating a whole file drags in every mutant that file already carried before
 this story existed, and on a story that edits 100 lines of a 500-line module that debt is most of
 what comes back. In the pilot it was the entire difference between outcomes: **39 survivors at file
 level, 0 inside the story's own changed lines**, all 39 in functions the story never touched. Read
@@ -231,7 +263,7 @@ those ranges.** Intersecting the tool's JSON report with those ranges is a few l
 and cheap enough to redo each lap rather than cache — and doing it fresh each lap is what keeps it
 correct after the hardener adds tests and the line numbers move.
 
-**Out-of-scope survivors are a finding, never a gate failure.** They are real — they say the repo's
+**Survivors outside the changed lines are a finding, never a gate failure.** They are real — they say the repo's
 existing suite executes that code without pinning it — but they are not this story's work and G3 has
 no claim on them. Record them in the scorecard by count and file, as a standing finding for Kyle.
 **Never put them in the hardener's `SURVIVORS` list:** a lap spent on pre-existing debt is a lap the
@@ -241,23 +273,24 @@ instrument for that is a standalone `mutation-hardener` `AUDIT` dispatch, outsid
 **Run the mutation tool first, then dispatch.** Before the first hardener dispatch, run it
 yourself over the scope. Two things fall out of this and neither is optional:
 
-- **Zero in-scope survivors here ends Stage 3 immediately** — gate passed, no dispatch spent, and
-  the scorecard says so, including the out-of-scope count it is passing over. A well-hardened change
+- **Zero changed-line survivors here ends Stage 3 immediately** — gate passed, no dispatch spent,
+  and the scorecard says so, including the count outside those lines that it is passing over. A well-hardened change
   is a common outcome, not a suspicious one.
 - **The hardener is never dispatched without `SURVIVORS`.** Its `HARDEN` mode is written entirely
   against a list; dispatched blind it has nothing to work from and the lap is a no-op, which turns
   the 2-lap budget into 1.
 
-Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS` — the
-**in-scope** survivors only (file, line, mutator, what it changed). It adds or strengthens tests; it
-may not edit implementation files.
+Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS`. `SCOPE` is
+the file list; `SURVIVORS` is **only the survivors inside the changed lines** (file, line, mutator,
+what it changed), never every survivor those files produced. It adds or strengthens tests; it may not
+edit implementation files.
 
 **Gate G3.** You re-run the mutation tool yourself, intersect its JSON report with the changed-line
-ranges, and read the in-scope survivor count off that. An agent reporting "all mutants killed" is
+ranges, and read the changed-line survivor count off that. An agent reporting "all mutants killed" is
 not the gate. G3 has **two passing outcomes and they are never recorded as the same one**:
 
-- **`G3: PASSED`** — suite green, in-scope survivor count zero. Fully deterministic.
-- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only in-scope survivors left are `n` you
+- **`G3: PASSED`** — suite green, changed-line survivor count zero. Fully deterministic.
+- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only changed-line survivors left are `n` you
   have explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
 
 **Accepted survivors — the named exit, not a silent one.** Some mutants cannot be killed by any
@@ -282,7 +315,7 @@ An implementation-only survivor is a **finding about the implementation** — de
 unreachable branch, a defensive check nothing can trigger. Carry it into the scorecard as a finding
 for Kyle, not as a gate failure.
 
-Any other failure → redispatch with the in-scope surviving mutants listed.
+Any other failure → redispatch with the surviving mutants inside the changed lines listed.
 
 **Invariant HARDENER-CAP: 2 laps.** Here a lap is **one hardener dispatch plus the gate run after
 it** — the pre-dispatch run above is not a lap and never consumes budget, which is the whole point
@@ -301,7 +334,8 @@ Write `scorecard.md` into the run-log directory:
 - Mutants generated / killed / survived, **split into the story's changed lines and everything
   else** — those are two different claims and a single number hides which one G3 ruled on. Every
   **accepted survivor** by name, with the reason it cannot be killed and your assessment of that
-  reason; every in-scope survivor still standing at the cap, likewise. Out-of-scope survivors go in
+  reason; every changed-line survivor still standing at the cap, likewise. Survivors outside those
+  lines go in
   as a count per file, labelled a standing finding about the repo's existing suite rather than
   anything this run produced or failed.
 - Any **implementation findings** the hardener raised — mutants that point at dead code or an
