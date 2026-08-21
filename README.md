@@ -167,6 +167,14 @@ model: opus
 Branch + PR for every change, and run [`adversarial-review`](skills/adversarial-review/SKILL.md)
 before merging — the same rule this repo ships everywhere else.
 
+## Third-party content
+
+A few skills are vendored from other people's open-source work and adapted to house
+conventions. [`LICENSE`](LICENSE) does not cover those; [`THIRD-PARTY.md`](THIRD-PARTY.md)
+lists each one with its upstream source, licence, and the house edits made to it. Each such
+skill also carries a one-line attribution at the bottom of its own `SKILL.md`, since
+`install.sh` links `skills/` into `~/.claude` where those files are read on their own.
+
 ## What's intentionally NOT here
 
 Everything machine-specific or sensitive stays out of git (see [`.gitignore`](.gitignore)):

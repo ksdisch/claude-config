@@ -24,7 +24,7 @@ fi
 # the set from `git ls-tree` (not a raw `ls`) means anything untracked or
 # gitignored — secrets, *.bak backups, machine-local files — can NEVER be linked
 # into ~/.claude. Add new top-level docs/meta files to DENY so they aren't linked.
-DENY=(.gitignore README.md install.sh BACKLOG.md docs scripts .githooks)
+DENY=(.gitignore README.md THIRD-PARTY.md install.sh BACKLOG.md docs scripts .githooks)
 LINKS=()
 while IFS= read -r name; do
   for d in "${DENY[@]}"; do [ "$name" = "$d" ] && continue 2; done

@@ -491,6 +491,61 @@ rows get re-pointed to match.
   Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
   edits for trigger conditions and unattended runs.
 
+#### `wayfinder`
+
+- **Run config:** Fable 5 · `xhigh` to **chart** — naming the destination fixes the scope of
+  everything downstream, which is the single highest-leverage judgment call in the effort.
+  Drop to `high` (or `medium`) to **work** a grilling ticket: field reports on this skill are
+  consistent that high effort turns each question into three paragraphs and the verbosity
+  itself causes decision exhaustion over a long map.
+- **Reach for it when:**
+  - The effort is genuinely larger than one agent session can hold *and* the route to the
+    destination is foggy — the test is **session count, not project size**.
+  - You're on a half-built or legacy codebase where much of the fog is "what is already true
+    here" rather than "what should we do".
+  - A session has outgrown itself and you want it parked as a map instead of a handoff.
+- **Pairs well with:** [`grilling`](#grilling) + [`domain-modeling`](#domain-modeling) (resolve
+  the default ticket type), [`prototype`](#prototype) and [`research`](#research) (the other
+  two), [`kickoff`](#kickoff) (the single-session front door for a *new* project — wayfinder
+  is for a big effort inside an existing one), [`backlog-hygiene`](#backlog-hygiene) /
+  [`/autonomous-milestone`](#autonomous-milestone) (where a cleared map routes),
+  [`/launch`](#launch) (starts the session its Run-config note recommends).
+- **Notes:** typed-only (`disable-model-invocation: true`) — it never auto-fires. **One ticket
+  per session**, `research` excepted. Tracker backend is chosen once at charting time and
+  recorded in the map's Notes — GitHub Issues preferred because native sub-issues and blocking
+  render the frontier in GitHub's own UI; local markdown under `docs/wayfinder/` otherwise.
+  It asks before putting a map on a **public** repo's tracker. Three house hardenings against
+  documented failure modes: the map's Notes **cannot grant themselves an execution licence**
+  (only you can, in the invoking message), a HITL ticket is never resolved by the agent
+  answering its own question, and any `wayfinder:task` that reads like a slice of the build is
+  treated as mis-typed. Scope a map to **one bounded destination**, not "implement V1" — that's
+  the waterfall trap. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for the
+  tracker fallback, the clear-map handoff, unattended runs, and the hardenings above.
+
+#### `domain-modeling`
+
+- **Run config:** inherits the session · `high` — it fires mid-design and its value is in the
+  challenges it raises while a decision is still soft.
+- **Reach for it when:**
+  - Two names are circulating for one concept, or a term in the discussion contradicts what
+    the code does.
+  - You're writing or editing a `CONTEXT.md`, or a hard-to-reverse decision just got made and
+    ought to be recorded.
+- **Pairs well with:** [`grilling`](#grilling) (the pair that resolves a wayfinder `grilling`
+  ticket — grilling works the question, this keeps the vocabulary honest),
+  [`wayfinder`](#wayfinder) (calls both), [`project-wiki`](#project-wiki) (owns `Decisions.md`
+  where a wiki exists; this skill defers to it), [`artifacts-generate`](#artifacts-generate)
+  (generates a documentation set from a plan — this writes single entries as they crystallize).
+- **Notes:** `CONTEXT.md` is a **glossary and nothing else** — no implementation details, no
+  spec, no scratch pad. Decisions route to whatever ledger the repo already has rather than a
+  parallel one; two ledgers for one project is the failure the routing table exists to
+  prevent. ADRs are offered only when the decision is hard to reverse **and** surprising
+  without context **and** the result of a real trade-off — all three, or skip it. Unattended,
+  it writes only what the code settles unambiguously and lists the rest as open questions.
+  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
+  edits for ledger routing and unattended runs.
+
 ### Session & Context Management
 
 #### `reorient`
@@ -974,6 +1029,29 @@ rows get re-pointed to match.
   and keep the written artifact — nothing ever claims an MP3 that doesn't exist. Paths and
   code blocks get spoken as names, not character by character.
 
+#### `research`
+
+- **Run config:** inherits the session · `medium` — the session only frames the question and
+  dispatches; the actual reading happens in a background agent and never enters your context.
+- **Reach for it when:**
+  - A decision is blocked on a fact that lives **outside** the working directory — third-party
+    API behavior, a spec, a standard, a limits or pricing table.
+  - You want the reading done without paying for it in the session you're in.
+- **Pairs well with:** [`wayfinder`](#wayfinder) (its `research` tickets are the one type
+  resolvable several to a session), [`teach-research`](#teach-research) (the learning-workspace
+  counterpart — source discovery for `/teach`, not a blocked decision),
+  [`seed-hunt`](#seed-hunt) (arXiv sweeps for a next project),
+  [`bug-hunt`](#bug-hunt) (facts about *this* repo's code instead).
+- **Notes:** **primary sources only** — official docs, source, specs, first-party APIs, not a
+  secondary write-up. Every claim carries a citation, a version, and a checked-on date; a fact
+  that can't be traced is written down as *"not established"* with what was searched, never as
+  a plausible-looking citation to a page nobody opened. Dispatched from a wayfinder map it
+  **investigates only** — no git, no tracker writes, no closing its own ticket — and returns
+  the file path, a gist, and the answer for the dispatching session to resolve and commit;
+  several run in parallel against one working tree, where a checkout is process-global and the
+  map is a single shared file. Already AFK by design, so it has no unattended gate. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for
+  citation discipline and the wayfinder contract.
 #### `youtube-transcript`
 
 - **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
@@ -1112,6 +1190,32 @@ rows get re-pointed to match.
   `frontend-design` plugin skill (styling judgment).
 - **Notes:** auto-triggers when you share a visual target, so you rarely type it. Needs a
   browser tool available to navigate and capture.
+
+#### `prototype`
+
+- **Run config:** Opus 5 · `high` — throwaway build work, but the variants have to disagree
+  *structurally* to be worth flipping through, and that's the part effort buys.
+- **Reach for it when:**
+  - "What should this look like?" — you want a few real options on the actual route, with the
+    real header, real data, real density, rather than three vague mockups in your head.
+  - "Does this state model feel right?" — you want to click an idea through its awkward cases
+    before any of it is load-bearing.
+  - A wayfinder ticket is a question talking can't settle.
+- **Pairs well with:** [`wayfinder`](#wayfinder) (its `prototype` ticket type — prototypemaxxing,
+  not planmaxxing), [`match-the-mock`](#match-the-mock) (the opposite direction: implements
+  against a target you've already chosen — prototype *produces* the candidates),
+  [`/boot_server`](#boot_server) (get the app up to flip through variants),
+  [`grilling`](#grilling) (what you reach for when talking *would* settle it).
+- **Notes:** **it does not pick the winner.** It builds the options, names what each trades
+  away, recommends one, and stops — an agent reacting to its own artifact has learned nothing
+  talking wouldn't have produced cheaper, and self-closing a prototype ticket is the
+  most-reported way this goes wrong. Two branches with different shapes: `LOGIC.md` → one
+  self-contained HTML file a non-developer can double-click and drive; `UI.md` → N variants
+  (default 3, cap 5) on one route behind `?variant=`, with a dev-only floating switcher.
+  Prototypes are throwaway from day one — no tests, no persistence, and the losing variants
+  land on a throwaway branch as a primary source rather than in `main`. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for the
+  verdict rule and unattended runs.
 
 ---
 

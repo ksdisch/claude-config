@@ -22,3 +22,7 @@ Finding _facts_ is your job, never the user's. When a frontier question needs a 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
 
 **Unattended runs** (subagent, cron/Routine, cloud one-shot, autonomous flow — nobody can answer): do not park on a question. Compute round 1's frontier, write out every question with its recommended answer marked as an unconfirmed working assumption, and stop — that frontier report is the deliverable. Never act on the plan from an unattended run; the interview resumes when a human answers.
+
+---
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT, Copyright (c) 2026 Matt Pocock), adapted to house conventions. Full notice: `THIRD-PARTY.md` in the claude-config repo.
