@@ -52,10 +52,12 @@ Run before any dispatch. Its job is to find out whether this repo can be gated a
 it established.
 
 1. **Clean tree.** No **tracked** file in the target repo may be modified or staged. Any that are →
-   name them and **stop**. Every later stage commits whatever it finds dirty and attributes it to an
-   agent, so pre-existing work would be swept into a `stage-N:` commit unreviewed, on a branch
-   headed for `adversarial-review`. This is the one check BRANCH-PINNED deliberately does *not* make
-   later, so it has to be made here.
+   name them and **stop**. A tracked file that is already modified is one an agent may also touch,
+   and once it does you cannot tell the two edits apart: the pre-existing work goes into a
+   `stage-N:` commit unreviewed, attributed to an agent, on a branch headed for
+   `adversarial-review`. Starting clean is what makes every later "the agent changed this" claim
+   true. This is the one check BRANCH-PINNED deliberately does *not* make later, so it has to be
+   made here.
    **Untracked paths do not stop the run** — real repos carry scratch directories, and refusing to
    start on one would be its own failure. Name them in the run log and leave them alone. What makes
    that safe is the other half of the rule (STAGE-COMMITS): **every stage commit stages paths by

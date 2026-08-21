@@ -82,6 +82,11 @@ over by inventing tests.
 
 Return a short report: mutants generated / killed / survived, what you did (in `HARDEN`: the tests
 you added and the survivors each one kills), any survivor still standing and why, and any
-implementation findings. In `AUDIT` mode the graded survivor list is the report. Your report is
+implementation findings.
+
+**In `HARDEN` mode, list every file path you created or edited, explicitly.** The orchestrator
+commits your work by staging paths *by name* — it never uses `git add -A` — so a new test file you
+don't name is a file that never reaches the branch. It would still make the gate pass, because the
+gate re-runs over the working tree; you would have hardened nothing that survives the run. In `AUDIT` mode the graded survivor list is the report. Your report is
 never the gate — the orchestrator re-runs the tool itself — so report what you observed, not what
 you expect it to find.
