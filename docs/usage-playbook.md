@@ -586,9 +586,10 @@ rows get re-pointed to match.
   `reruns-resume`, `env-writes-upsert`, `ci-writes-degrade`, `confirm-irreversible`,
   `closing-summary`) and the script is authored fresh each run, per the house rule that shell
   snippets in skill files are a defect generator. Wizards are ephemeral by default; verify with
-  `bash -n` + shellcheck + a static trace checked off by invariant name. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with that conversion as the
-  house edit.
+  `bash -n` + shellcheck + a static trace checked off by invariant name. Unattended, it surveys
+  and drafts the stage map only — stopping before authoring — and never executes a wizard.
+  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
+  edits for that conversion and unattended runs.
 
 #### `to-spec`
 
@@ -597,7 +598,8 @@ rows get re-pointed to match.
 - **Reach for it when:**
   - A grilling, a wayfinder map, or a long design conversation has settled the decisions and
     you want them as one document instead of a transcript.
-  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff calls this).
+  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff follows this
+    skill's process and template by path — typed-only skills can't be tool-invoked mid-session).
 - **Pairs well with:** [`wayfinder`](#wayfinder) (cleared maps collapse through it),
   [`grilling`](#grilling) (the interview that precedes it), [`to-tickets`](#to-tickets) (the
   next link), [`codebase-design`](#codebase-design) (the seam vocabulary its step 2 uses),
@@ -781,8 +783,8 @@ rows get re-pointed to match.
   ones), [`to-tickets`](#to-tickets) (slices what triage accepts).
 - **Notes:** typed-only (`/triage`). Every tracker write starts with the AI-generated
   disclaimer. Canonical role names are the label strings by default; the first run in a repo
-  maps them against existing labels and records the mapping as a "Triage labels:" note in that
-  repo's `CLAUDE.md` — external PRs are in scope only when that note says so. Asks before the
+  maps them against existing labels and records the mapping in `docs/triage-labels.md` —
+  external PRs are in scope only when that file says so. Asks before the
   first write on a public repo's tracker. Rejected enhancements go to the `docs/out-of-scope/`
   knowledge base (`AGENT-BRIEF.md` and `OUT-OF-SCOPE.md` ship with the skill). Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in
@@ -935,8 +937,8 @@ rows get re-pointed to match.
   before touching a hunk; preserves both intents where possible and never invents new
   behaviour; discovers and runs the project's automated checks afterward. Always resolves —
   never `--abort`. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), near-verbatim (heading
-  added).
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with a house edit naming the
+  rebase ours/theirs orientation in step 1 (plus an added heading).
 
 ### NotebookLM
 
