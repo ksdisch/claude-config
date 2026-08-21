@@ -453,202 +453,6 @@ rows get re-pointed to match.
   bug. Decisions tables and History are append-only. Broad changes (3+ pages) get their
   scope reported first.
 
-#### `grill-me`
-
-- **Run config:** Fable 5 · `high` — a pressure-test interview is judgment-first work; bump
-  to `xhigh` when the plan hangs on one genuinely hard design call.
-- **Reach for it when:**
-  - You have a plan or design that *feels* done and you want its weak branches found before
-    you commit to building.
-  - You're about to hand work to a builder session and want every silent assumption
-    surfaced first.
-- **Pairs well with:** [`grilling`](#grilling) (the method this invokes),
-  [`kickoff`](#kickoff) (grill the brief a kickoff produced), [`/explore-plan`](#explore-plan)
-  (grill the winning approach before approving it), [`/handoff`](#handoff) (turn the
-  sharpened plan into a builder handoff).
-- **Notes:** deliberately a thin wrapper (`disable-model-invocation: true`) — it only fires
-  when you type `/grill-me`; the auto-trigger surface lives on `grilling`. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
-
-#### `grilling`
-
-- **Run config:** inherits the session · `high` — it auto-fires mid-session on "grill me"
-  phrasing, interrogating whatever plan that session already holds.
-- **Reach for it when:**
-  - You say "grill me on this" about a plan, decision, or idea mid-session.
-  - A decision has branches you haven't consciously visited and you want them enumerated
-    rather than assumed.
-- **Pairs well with:** [`grill-me`](#grill-me) (the typed entry point),
-  [`adversarial-review`](#adversarial-review) (the post-code sibling — grilling
-  stress-tests the plan, the review loop stress-tests the diff),
-  [`backlog-hygiene`](#backlog-hygiene) (grill the "what's next" pick it produces).
-- **Notes:** works in rounds — the whole frontier of askable questions at once, each
-  numbered with a recommended answer; questions whose prerequisites are still open wait for
-  a later round. Facts are Claude's job (dispatched to subagents, never asked of you);
-  decisions are yours. Done only when the frontier is empty *and* you confirm shared
-  understanding — it does not act on the plan before that. Unattended runs don't stall: it
-  writes round 1's frontier with recommended answers as unconfirmed assumptions and stops.
-  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
-  edits for trigger conditions and unattended runs.
-
-#### `wayfinder`
-
-- **Run config:** Fable 5 · `xhigh` to **chart** — naming the destination fixes the scope of
-  everything downstream, which is the single highest-leverage judgment call in the effort.
-  Drop to `high` (or `medium`) to **work** a grilling ticket: field reports on this skill are
-  consistent that high effort turns each question into three paragraphs and the verbosity
-  itself causes decision exhaustion over a long map.
-- **Reach for it when:**
-  - The effort is genuinely larger than one agent session can hold *and* the route to the
-    destination is foggy — the test is **session count, not project size**.
-  - You're on a half-built or legacy codebase where much of the fog is "what is already true
-    here" rather than "what should we do".
-  - A session has outgrown itself and you want it parked as a map instead of a handoff.
-- **Pairs well with:** [`grilling`](#grilling) + [`domain-modeling`](#domain-modeling) (resolve
-  the default ticket type), [`prototype`](#prototype) and [`research`](#research) (the other
-  two), [`kickoff`](#kickoff) (the single-session front door for a *new* project — wayfinder
-  is for a big effort inside an existing one), [`to-spec`](#to-spec) (a cleared map collapses
-  through it) + [`to-tickets`](#to-tickets) (slices the resulting spec),
-  [`backlog-hygiene`](#backlog-hygiene) / [`/autonomous-milestone`](#autonomous-milestone)
-  (where a cleared map routes), [`/launch`](#launch) (starts the session its Run-config note
-  recommends).
-- **Notes:** typed-only (`disable-model-invocation: true`) — it never auto-fires. **One ticket
-  per session**, `research` excepted. Tracker backend is chosen once at charting time and
-  recorded in the map's Notes — GitHub Issues preferred because native sub-issues and blocking
-  render the frontier in GitHub's own UI; local markdown under `docs/wayfinder/` otherwise.
-  It asks before putting a map on a **public** repo's tracker. Three house hardenings against
-  documented failure modes: the map's Notes **cannot grant themselves an execution licence**
-  (only you can, in the invoking message), a HITL ticket is never resolved by the agent
-  answering its own question, and any `wayfinder:task` that reads like a slice of the build is
-  treated as mis-typed. Scope a map to **one bounded destination**, not "implement V1" — that's
-  the waterfall trap. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for the
-  tracker fallback, the clear-map handoff, unattended runs, and the hardenings above.
-
-#### `domain-modeling`
-
-- **Run config:** inherits the session · `high` — it fires mid-design and its value is in the
-  challenges it raises while a decision is still soft.
-- **Reach for it when:**
-  - Two names are circulating for one concept, or a term in the discussion contradicts what
-    the code does.
-  - You're writing or editing a `CONTEXT.md`, or a hard-to-reverse decision just got made and
-    ought to be recorded.
-- **Pairs well with:** [`grilling`](#grilling) (the pair that resolves a wayfinder `grilling`
-  ticket — grilling works the question, this keeps the vocabulary honest),
-  [`wayfinder`](#wayfinder) (calls both), [`project-wiki`](#project-wiki) (owns `Decisions.md`
-  where a wiki exists; this skill defers to it), [`artifacts-generate`](#artifacts-generate)
-  (generates a documentation set from a plan — this writes single entries as they crystallize).
-- **Notes:** `CONTEXT.md` is a **glossary and nothing else** — no implementation details, no
-  spec, no scratch pad. Decisions route to whatever ledger the repo already has rather than a
-  parallel one; two ledgers for one project is the failure the routing table exists to
-  prevent. ADRs are offered only when the decision is hard to reverse **and** surprising
-  without context **and** the result of a real trade-off — all three, or skip it. Unattended,
-  it writes only what the code settles unambiguously and lists the rest as open questions.
-  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
-  edits for ledger routing and unattended runs.
-
-#### `codebase-design`
-
-- **Run config:** inherits the session · `high` — it's vocabulary and principles applied mid-design,
-  not a standalone run.
-- **Reach for it when:**
-  - You're designing or reshaping a module's interface, or deciding where a seam goes.
-  - You want code testable *through* its interface rather than past it.
-  - Another skill or discussion needs the deep-module vocabulary (module / interface / seam /
-    adapter / depth / leverage / locality) used consistently.
-- **Pairs well with:** [`domain-modeling`](#domain-modeling) (domain language; this owns the
-  architecture language), [`grilling`](#grilling) (design interviews cite it),
-  [`prototype`](#prototype) (flushes out the interface a design argues for).
-- **Notes:** model-invocable. The glossary is the point — use its terms exactly and avoid
-  "component / service / API / boundary". Carries the deletion test and the
-  one-adapter-means-a-hypothetical-seam rule; `DEEPENING.md` adds dependency categories and
-  replace-don't-layer testing, `DESIGN-IT-TWICE.md` the parallel-subagent interface
-  exploration. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT),
-  near-verbatim with a house NOT-for routing clause.
-
-#### `wizard`
-
-- **Run config:** inherits the session · `high` to scope the stages, `medium` to author the
-  script — the judgment is in the stage map, not the shell.
-- **Reach for it when:**
-  - Provisioning infrastructure or setting up credentials / CI secrets involves steps only a
-    human can perform in a browser.
-  - You're walking someone through an unfamiliar third-party dashboard, or running a one-off
-    migration/cutover with irreversible moments.
-- **Pairs well with:** [`/envsetup`](#envsetup) (the agent-performable side of setup; wizard
-  covers the human-only remainder), [`kickoff`](#kickoff) (new projects that need third-party
-  services wired).
-- **Notes:** model-invocable, but never for steps the agent can perform itself. Upstream ships a
-  copy-paste `template.sh`; this repo deliberately doesn't — the UX is re-expressed as a
-  **named-invariant contract** (all ten checked off by name at verification: `fail-fast`,
-  `one-stage-on-screen`, `progress-visible`, `open-before-ask`, `secrets-stay-hidden`,
-  `reruns-resume`, `env-writes-upsert`, `ci-writes-degrade`, `confirm-irreversible`,
-  `closing-summary`) and the script is authored fresh each run, per the house rule that shell
-  snippets in skill files are a defect generator. Wizards are ephemeral by default; verify with
-  `bash -n` + shellcheck + a static trace checked off by invariant name. Unattended, it surveys
-  and drafts the stage map only — stopping before authoring — and never executes a wizard.
-  Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house
-  edits for that conversion and unattended runs.
-
-#### `to-spec`
-
-- **Run config:** inherits the session · `high` — pure synthesis; the judgment already happened
-  in the conversation it's condensing.
-- **Reach for it when:**
-  - A grilling, a wayfinder map, or a long design conversation has settled the decisions and
-    you want them as one document instead of a transcript.
-  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff follows this
-    skill's process and template by path — typed-only skills can't be tool-invoked mid-session).
-- **Pairs well with:** [`wayfinder`](#wayfinder) (cleared maps collapse through it),
-  [`grilling`](#grilling) (the interview that precedes it), [`to-tickets`](#to-tickets) (the
-  next link), [`codebase-design`](#codebase-design) (the seam vocabulary its step 2 uses),
-  [`implement`](#implement) (the link after that).
-- **Notes:** typed-only (`/to-spec`) — and **no interview by design**: it synthesizes what's
-  already known and won't re-ask. Spec lands where the repo keeps specs (`docs/specs/<slug>.md`
-  absent a convention) and is committed; tracker publish is optional and asks first on a
-  public repo. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT);
-  house edits: self-contained (no setup skill), in-repo spec landing, guarded optional tracker
-  publish.
-
-#### `to-tickets`
-
-- **Run config:** inherits the session · `high` — slicing and edge-wiring judgment; the quiz
-  gate is the point, not ceremony.
-- **Reach for it when:**
-  - An approved spec or plan needs breaking into agent-sized tracer-bullet vertical slices
-    with explicit blocking edges.
-  - A wide mechanical refactor needs expand–contract sequencing instead of vertical slices.
-- **Pairs well with:** [`to-spec`](#to-spec) (the link before it), [`wayfinder`](#wayfinder)
-  (its tracker.md Backend A mechanics are reused for GitHub edges),
-  [`/autonomous-milestone`](#autonomous-milestone) (builds a ticket),
-  [`backlog-hygiene`](#backlog-hygiene) (sequencing against the wider backlog),
-  [`implement`](#implement) (works the frontier).
-- **Notes:** typed-only (`/to-tickets`). Backend decided per breakdown — GitHub Issues with
-  native dependencies (following wayfinder tracker.md's procedures, including trap
-  `node-id-not-database-id`), or one committed file per ticket under
-  `docs/tickets/<feature-slug>/`; asks before writing to a public repo's tracker. Presents the
-  breakdown and iterates until you approve before publishing anything. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in
-  `THIRD-PARTY.md`.
-
-#### `implement`
-
-- **Run config:** Opus 5 · `high` — well-specified build work, per the Planner/Builder
-  protocol.
-- **Reach for it when:**
-  - A spec or ticket set is ready to build and you want the standard build discipline without
-    re-deciding it: TDD at the agreed seams, typechecks as you go, full suite at the end.
-- **Pairs well with:** [`/tdd`](#tdd) (called at pre-agreed seams), [`to-spec`](#to-spec) /
-  [`to-tickets`](#to-tickets) (the links before it), [`adversarial-review`](#adversarial-review)
-  (the gate it routes to), [`/autonomous-milestone`](#autonomous-milestone) (the heavier
-  full-milestone alternative).
-- **Notes:** typed-only (`/implement`). Works on a feature branch and opens a PR per the global
-  git workflow — never straight to the default branch; the adversarial-review loop is the
-  standing pre-merge gate. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits: git workflow +
-  review gate replace upstream's `/code-review` + commit-to-current-branch.
-
 ### Session & Context Management
 
 #### `reorient`
@@ -753,42 +557,6 @@ rows get re-pointed to match.
   only the combination. One combined steering round (compressible, never deletable) plus one
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
   Cross-lane dedup happens on the *move* axis — Harden ↔ bug-hunt is a known seam.
-
-#### `wait-what`
-
-- **Run config:** inherits the session · any effort — it's a one-paragraph re-pitch prompt, not a
-  workflow.
-- **Reach for it when:**
-  - The last message didn't land and you want it re-pitched simpler, with the context you're
-    missing, instead of asking three follow-ups.
-- **Pairs well with:** [`domain-modeling`](#domain-modeling) (owns the `CONTEXT.md` vocabulary
-  the re-pitch must use), [`reweave`](#reweave) (splices a follow-up answer back into the
-  original response; wait-what re-pitches the explanation instead).
-- **Notes:** typed-only (`/wait-what`) — it never auto-fires. The re-pitch talks ASD-STE100
-  Simplified Technical English and follows `CONTEXT-MAP.md` to the right glossary when a repo
-  has more than one. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), body verbatim.
-
-#### `triage`
-
-- **Run config:** inherits the session · `high` per issue — verification and brief-writing are
-  judgment work; `medium` for mechanical label-application passes.
-- **Reach for it when:**
-  - The tracker's intake needs working: unlabeled issues, `needs-triage` evaluations,
-    `needs-info` threads where the reporter has replied.
-  - An external PR needs a verdict, or a `ready-for-agent` issue needs a durable agent brief.
-- **Pairs well with:** [`grilling`](#grilling) + [`domain-modeling`](#domain-modeling) (its
-  grill step calls both), [`backlog-hygiene`](#backlog-hygiene) (grooms the accepted backlog;
-  triage manages intake), [`bug-hunt`](#bug-hunt) (finds unknown bugs; triage handles reported
-  ones), [`to-tickets`](#to-tickets) (slices what triage accepts).
-- **Notes:** typed-only (`/triage`). Every tracker write starts with the AI-generated
-  disclaimer. Canonical role names are the label strings by default; the first run in a repo
-  maps them against existing labels and records the mapping in `docs/triage-labels.md` —
-  external PRs are in scope only when that file says so. Asks before the
-  first write on a public repo's tracker. Rejected enhancements go to the `docs/out-of-scope/`
-  knowledge base (`AGENT-BRIEF.md` and `OUT-OF-SCOPE.md` ship with the skill). Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in
-  `THIRD-PARTY.md`.
 
 ### Quality & Debugging
 
@@ -922,23 +690,6 @@ rows get re-pointed to match.
 - **Notes:** Phase 0 verifies the repo is genuinely closed and STOPs if it isn't — offering
   [`ship-and-route`](#ship-and-route) to land the remainder. The shortlist ends at a
   `PENDING-KYLE` gate; it never picks for you. `--audio` narrates the decision brief.
-
-#### `resolving-merge-conflicts`
-
-- **Run config:** inherits the session · `high` — each hunk is intent archaeology, not text
-  splicing.
-- **Reach for it when:**
-  - A merge or rebase is sitting mid-flight with conflict markers.
-  - A long rebase keeps stopping and each stop needs both sides' original intent understood
-    before choosing.
-- **Pairs well with:** [`ship-and-route`](#ship-and-route) (landing outstanding work that turns
-  out to conflict), [`/tdd`](#tdd) (the checks it reruns after resolving).
-- **Notes:** model-invocable. Traces primary sources (commit messages, PRs, original tickets)
-  before touching a hunk; preserves both intents where possible and never invents new
-  behaviour; discovers and runs the project's automated checks afterward. Always resolves —
-  never `--abort`. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with a house edit naming the
-  rebase ours/theirs orientation in step 1 (plus an added heading).
 
 ### NotebookLM
 
@@ -1185,29 +936,6 @@ rows get re-pointed to match.
   and keep the written artifact — nothing ever claims an MP3 that doesn't exist. Paths and
   code blocks get spoken as names, not character by character.
 
-#### `research`
-
-- **Run config:** inherits the session · `medium` — the session only frames the question and
-  dispatches; the actual reading happens in a background agent and never enters your context.
-- **Reach for it when:**
-  - A decision is blocked on a fact that lives **outside** the working directory — third-party
-    API behavior, a spec, a standard, a limits or pricing table.
-  - You want the reading done without paying for it in the session you're in.
-- **Pairs well with:** [`wayfinder`](#wayfinder) (its `research` tickets are the one type
-  resolvable several to a session), [`teach-research`](#teach-research) (the learning-workspace
-  counterpart — source discovery for `/teach`, not a blocked decision),
-  [`seed-hunt`](#seed-hunt) (arXiv sweeps for a next project),
-  [`bug-hunt`](#bug-hunt) (facts about *this* repo's code instead).
-- **Notes:** **primary sources only** — official docs, source, specs, first-party APIs, not a
-  secondary write-up. Every claim carries a citation, a version, and a checked-on date; a fact
-  that can't be traced is written down as *"not established"* with what was searched, never as
-  a plausible-looking citation to a page nobody opened. Dispatched from a wayfinder map it
-  **investigates only** — no git, no tracker writes, no closing its own ticket — and returns
-  the file path, a gist, and the answer for the dispatching session to resolve and commit;
-  several run in parallel against one working tree, where a checkout is process-global and the
-  map is a single shared file. Already AFK by design, so it has no unattended gate. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for
-  citation discipline and the wayfinder contract.
 #### `youtube-transcript`
 
 - **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
@@ -1291,29 +1019,6 @@ rows get re-pointed to match.
 - **Notes:** one question at a time, then it stops and waits — a list of questions is an
   interrogation. Don't expect it to hand you an answer; it's built to surface yours.
 
-#### `teach`
-
-- **Run config:** Fable 5 · `high` — lesson design is judgment work: choosing what fits the
-  zone of proximal development matters more than producing HTML.
-- **Reach for it when:**
-  - You want to learn a topic over multiple sessions — programming or not (yoga, physics,
-    fitness all fit) — with your progress tracked on disk instead of in chat scrollback.
-  - You want lessons grounded in *why* you're learning (the mission), not a generic course.
-- **Pairs well with:** [`teach-research`](#teach-research) (stocks the workspace with
-  vetted, cached sources before lesson one), [`curriculum-sync`](#curriculum-sync) (the
-  NotebookLM/home-base learning chain — separate system, same goal), [`/wrap`](#wrap)
-  (active-recall quizzing at session end), [`career-coach`](#career-coach) (when the
-  question is *what* to learn, not how).
-- **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach`. Run it
-  from a dedicated learning directory (e.g. `~/Learning/<topic>/`), one mission per
-  workspace; it writes `MISSION.md`, `lessons/`, `reference/`, `learning-records/`,
-  `RESOURCES.md`, and `NOTES.md` at the root of wherever it runs, so don't start it inside a
-  project repo. First session interviews you into a concrete mission before teaching
-  anything. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT),
-  with a house-edited description; format docs kept verbatim upstream, body carries two
-  house edits from the pre-merge review — a workspace-location guard before the first write,
-  and `GLOSSARY.md` wired into the workspace list.
-
 #### `teach-research`
 
 - **Run config:** Opus 5 · `high` — the skill's own finder/cacher fan-out does the parallel
@@ -1346,34 +1051,6 @@ rows get re-pointed to match.
   `frontend-design` plugin skill (styling judgment).
 - **Notes:** auto-triggers when you share a visual target, so you rarely type it. Needs a
   browser tool available to navigate and capture.
-
-#### `prototype`
-
-- **Run config:** Opus 5 · `high` — throwaway build work, but the variants have to disagree
-  *structurally* to be worth flipping through, and that's the part effort buys.
-- **Reach for it when:**
-  - "What should this look like?" — you want a few real options on the actual route, with the
-    real header, real data, real density, rather than three vague mockups in your head.
-  - "Does this state model feel right?" — you want to click an idea through its awkward cases
-    before any of it is load-bearing.
-  - A wayfinder ticket is a question talking can't settle.
-- **Pairs well with:** [`wayfinder`](#wayfinder) (its `prototype` ticket type — prototypemaxxing,
-  not planmaxxing), [`match-the-mock`](#match-the-mock) (the opposite direction: implements
-  against a target you've already chosen — prototype *produces* the candidates),
-  [`/boot_server`](#boot_server) (get the app up to flip through variants),
-  [`grilling`](#grilling) (what you reach for when talking *would* settle it).
-- **Notes:** **it does not pick the winner.** It builds the options, names what each trades
-  away, recommends one, and stops — an agent reacting to its own artifact has learned nothing
-  talking wouldn't have produced cheaper, and self-closing a prototype ticket is the
-  most-reported way this goes wrong. Two branches with different shapes: `LOGIC.md` → one
-  self-contained HTML file a non-developer can double-click and drive; `UI.md` → N variants
-  (default 3, cap 5) on one route behind `?variant=`, with a dev-only floating switcher.
-  Prototypes are throwaway from day one — no tests, no persistence, and the losing variants
-  land on a throwaway branch as a primary source rather than in `main`. Imported from
-  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for the
-  verdict rule and unattended runs.
-
----
 
 ## Project-Specific Items
 
