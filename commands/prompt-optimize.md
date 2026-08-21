@@ -92,16 +92,16 @@ The archetype shapes the prompt's body — its phases, whether it runs as one li
 |-----------|-----------|----------|----------------------|
 | **Single-agent linear build** | One Claude, sequential steps, you review as it goes. | Well-scoped features, fixes, refactors where you want tight control. | Plain session. Small explicit steps + a definition of done. Optionally `/explore-plan` first. |
 | **Explore → plan → confirm → build** | Reconnaissance + ranked approaches before any edit; nothing written until you approve a plan. | MEDIUM tasks with an uncertain or risky approach; avoiding the wrong path. | `/explore-plan`. Prompt forbids edits until the plan is chosen. |
-| **TDD loop** | Failing tests first, then code to green without touching the tests. | Clear acceptance criteria; regression-prone or library code. | `/tdd`. Prompt states the behavior to specify + the green bar. |
+| **TDD loop** | Failing tests first, then code to green without touching the tests. | Clear acceptance criteria; regression-prone or library code. | `/tdd-loop`. Prompt states the behavior to specify + the green bar. |
 | **Subagent-assisted (single orchestrator)** | One main thread that delegates fan-out search / investigation to `Explore` / `Plan` / `general-purpose` subagents but synthesizes the result itself. | HIGH tasks needing broad search or parallel investigation, but one coherent author. Lighter than a full Workflow. | Plain session + Agent tool. Prompt says when to spawn which subagent and what each returns. |
 | **Parallel worktree batch** (`/batch`) | Built-in: researches the repo → decomposes into 5–30 **independent** units → you approve a plan → one worktree-isolated subagent per unit, each runs tests and opens its **own PR**. No inter-agent coordination. | Repo-wide *mechanical* changes that split cleanly into independent units: framework/library migrations, lib swaps, codemod-style edits, mass annotation. | `/batch <instruction>`. **Must be in a git repo.** Before recommending, verify the task is genuinely parallelizable — shared/cross-unit changes (e.g. rename a shared symbol *and* its call sites) will collide across worktrees; split those into a shared-change-first step, then batch the rest. Give a per-unit done/test bar, not a global one. |
 | **Multi-agent parallel (ultracode / Workflow)** | A custom fleet fanned out over slices via the Workflow tool — pipeline/parallel stages, adversarial verification, then synthesis. Cost not a constraint. | EPIC/HIGH *non-migration* fan-out: broad audits, exhaustive bug hunts, multi-dimension reviews, research sweeps — where you need custom phases + verification rather than PR-per-unit edits. (For repo-wide mechanical edits, prefer `/batch` above.) | Include **"ultracode"** in the prompt and/or ask for a Workflow. Prompt defines the phases (e.g. find → verify → synthesize), the fan-out unit, and the verification votes. |
 | **Autonomous milestone (hands-off)** | Give a target; it plans, builds, tests, verifies, and reports with minimal check-ins. Uses ultracode orchestration under the hood. | Well-specified work you trust it to run while you're away. | `/autonomous-milestone <target>`. Prompt front-loads acceptance criteria + scope boundaries since you won't be steering. |
 | **Visual iteration loop** | Implement → screenshot the running app → compare to the mock → fix diffs → repeat. | Building UI against a mock / design / Figma. | `/match-the-mock` or `/screenshot-iterate` with the mock attached. |
 | **Research & synthesis** | Fan-out searches, fetch sources, adversarially verify claims, cited report. | Questions needing real, fact-checked sources. | `/deep-research <refined question>`. |
-| **Review / audit (read-only)** | Inspect a diff/PR/branch without building anything. | Code review, security pass, quality cleanup. | `/code-review` (low→**ultra**; ultra = multi-agent cloud review), `/security-review`, `/simplify`. |
+| **Review / audit (read-only)** | Inspect a diff/PR/branch without building anything. | Code review, security pass, quality cleanup. | `/code-review:code-review` (low→**ultra**; ultra = multi-agent cloud review), `/security-review`, `/simplify`. |
 | **Recurring / scheduled** | Run a prompt on an interval or cron. | Polling, status checks, repeated maintenance. | `/loop <interval> <prompt>` (in-session) or `/schedule` (remote cron routine). |
-| **Long-running multi-session relay** | Work too big for one context, handed off cleanly across sessions. Layers on top of any archetype above. | Epics, multi-day builds. | `/handoff` to emit a resume prompt; `/begin` + `/wrap` to bookend sessions. |
+| **Long-running multi-session relay** | Work too big for one context, handed off cleanly across sessions. Layers on top of any archetype above. | Epics, multi-day builds. | `/handoff-session` to emit a resume prompt; `/begin` + `/wrap` to bookend sessions. |
 
 When the chosen archetype is **multi-agent / ultracode**, the optimized prompt should sketch the orchestration explicitly: the phases, what fans out (the per-item unit of work), how findings are verified (how many independent votes, refute-by-default), and what the final synthesis returns. When it's **single-agent linear**, keep the prompt lean and sequential — don't bolt on orchestration the task doesn't need.
 
@@ -114,14 +114,14 @@ Recommend from these. If something genuinely useful isn't here, describe the *ac
 | Need | Use |
 |------|-----|
 | Explore code + plan before any edits, with ranked approaches | `/explore-plan` |
-| Test-first loop (write failing tests, then code to green) | `/tdd` |
-| Review the current diff for bugs (low→ultra effort) | `/code-review` |
+| Test-first loop (write failing tests, then code to green) | `/tdd-loop` |
+| Review the current diff for bugs (low→ultra effort) | `/code-review:code-review` |
 | Quality cleanup (reuse/simplify/efficiency, no bug hunt) | `/simplify` |
 | Run the app / confirm a change works in reality | `/run`, `/verify` |
 | UI built against a mock, iterate to match | `/match-the-mock`, `/screenshot-iterate` |
 | Multi-source, fact-checked research report | `/deep-research` |
 | Security review of pending changes | `/security-review` |
-| Start a session / wrap a session / hand off to a fresh session | `/begin`, `/wrap`, `/handoff` |
+| Start a session / wrap a session / hand off to a fresh session | `/begin`, `/wrap`, `/handoff-session` |
 | Recurring or scheduled runs | `/loop`, `/schedule` |
 | Reduce token bloat in a repo | `/trim-context` |
 | Initialize a `CLAUDE.md` | `/init` |

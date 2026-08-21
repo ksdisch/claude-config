@@ -41,7 +41,7 @@ skill and the subagent it dispatches — which is the clearest look at how the p
 | [`adversarial-reviewer`](agents/adversarial-reviewer.md) | The zero-context subagent that review loop dispatches |
 | [`/autonomous-milestone`](commands/autonomous-milestone.md) | Plan, build, test, verify, report — unattended |
 | [`kickoff`](skills/kickoff/SKILL.md) | Half-baked idea → interviewed → scaffolded repo |
-| [`/handoff`](commands/handoff.md) | Portable prompt to continue in a fresh session |
+| [`/handoff-session`](commands/handoff-session.md) | Portable prompt to continue in a fresh session |
 | [`/claudify-repo`](commands/claudify-repo.md) | Vendors these into any other repo |
 
 ## How it works
@@ -63,7 +63,7 @@ flowchart TD
     PROJ --> ELSE
 ```
 
-- **Symlinked, not copied.** `~/.claude/commands/tdd.md` and `commands/tdd.md` are the same
+- **Symlinked, not copied.** `~/.claude/commands/tdd-loop.md` and `commands/tdd-loop.md` are the same
   inode. Edit either one; commit from here.
 - **Whole directories are linked**, so a new skill goes live on `git pull` with no
   re-install.
@@ -95,12 +95,12 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 
 | Path | What | Linked into `~/.claude/`? |
 |---|---|---|
-| [`commands/`](commands/) | Global slash commands — [`/tdd`](commands/tdd.md), [`/begin`](commands/begin.md), [`/wrap`](commands/wrap.md), [`/brainstorm`](commands/brainstorm.md), … | ✅ |
+| [`commands/`](commands/) | Global slash commands — [`/tdd-loop`](commands/tdd-loop.md), [`/begin`](commands/begin.md), [`/wrap`](commands/wrap.md), [`/brainstorm`](commands/brainstorm.md), … | ✅ |
 | [`skills/`](skills/) | Global skills — [`kickoff`](skills/kickoff/SKILL.md), [`bug-hunt`](skills/bug-hunt/SKILL.md), [`ship-and-route`](skills/ship-and-route/SKILL.md), … | ✅ |
 | [`agents/`](agents/) | Global subagents — [`adversarial-reviewer`](agents/adversarial-reviewer.md), [`review-judge`](agents/review-judge.md), [`silent-failure-hunter`](agents/silent-failure-hunter.md), [`spec-miner`](agents/spec-miner.md) | ✅ |
 | [`CLAUDE.md`](CLAUDE.md) | Global instructions loaded into every session | ✅ |
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
-| [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules folded into generated builder prompts by `/handoff` and `/prompt-optimize`. Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
+| [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules folded into generated builder prompts by `/handoff-session` and `/prompt-optimize`. Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
 | [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 | ❌ `DENY` |

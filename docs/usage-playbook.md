@@ -112,7 +112,7 @@ rows get re-pointed to match.
   - You're closing out real work and want the *why* recorded, not just the diff.
   - You want the next move written down while it's still obvious to you.
 - **Pairs well with:** [`/begin`](#begin) (reads the dated log this writes),
-  [`/handoff`](#handoff) (when the next session is a fresh one, not tomorrow's),
+  [`/handoff-session`](#handoff-session) (when the next session is a fresh one, not tomorrow's),
   [`/learn`](#learn) (mines the same session for what's worth keeping as a skill),
   [`narrate`](#narrate) (the `--audio` engine).
 - **Notes:** with `--audio` it never claims an MP3 exists if Kokoro was down — the written
@@ -129,7 +129,7 @@ rows get re-pointed to match.
 - **Pairs well with:** [`narrate`](#narrate) (the TTS engine it calls),
   [`/wrap`](#wrap) (the endgame sibling — `/catchup` explicitly does *not* end the session).
 
-#### `/handoff`
+#### `/handoff-session`
 
 - **Run config:** inherits the session · `medium` — mostly summarization, but it ends on a
   real run-config judgment for the next session.
@@ -149,10 +149,10 @@ rows get re-pointed to match.
 - **Run config:** inherits the session · `low` — it opens a window and starts a process;
   the judgment already happened in the run-config note it reads.
 - **Reach for it when:**
-  - You've just run `/handoff` (or `/ship-and-route`, `/prompt-optimize`,
+  - You've just run `/handoff-session` (or `/ship-and-route`, `/prompt-optimize`,
     `/backlog-hygiene`) and want the fresh session open rather than assembled by hand.
   - Pass `--send` when you want it working immediately instead of pausing on your ⌘V.
-- **Pairs well with:** [`/handoff`](#handoff) (the usual caller — `/launch` consumes its
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (the usual caller — `/launch` consumes its
   paste-able block and run-config note), [`/begin`](#begin) (what the launched session
   often runs first).
 - **Notes:** the prompt lands on the clipboard on **every** path, including failures, so a
@@ -203,7 +203,7 @@ rows get re-pointed to match.
   - The task is medium-sized and the *approach* is uncertain or risky enough that guessing
     wrong costs a rewrite.
   - You want reconnaissance across unfamiliar code before committing to a shape.
-- **Pairs well with:** [`/tdd`](#tdd) (executes the approach you pick),
+- **Pairs well with:** [`/tdd-loop`](#tdd-loop) (executes the approach you pick),
   [`/autonomous-milestone`](#autonomous-milestone) (hand it a settled plan),
   [`reweave`](#reweave) (fold a follow-up decision back into the plan it belongs in).
 - **Notes:** writes and edits nothing until you approve a plan — it presents approaches and
@@ -250,7 +250,7 @@ rows get re-pointed to match.
     effort settled before you spend the tokens.
   - You're unsure whether something wants a linear session, a subagent fan-out, or a full
     ultracode Workflow.
-- **Pairs well with:** [`/handoff`](#handoff) (the same model/effort vocabulary),
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (the same model/effort vocabulary),
   [`kickoff`](#kickoff) (shape the idea first, then the prompt),
   [`/explore-plan`](#explore-plan) (one of the archetypes it recommends).
 - **Notes:** advisory only — it never executes the task. It gates on your accept/override
@@ -272,7 +272,7 @@ rows get re-pointed to match.
 
 ### Development Workflows
 
-#### `/tdd`
+#### `/tdd-loop`
 
 - **Run config:** Opus 5 · `high` — ordinary build work with a discipline attached.
 - **Reach for it when:**
@@ -501,7 +501,7 @@ rows get re-pointed to match.
   - A plan or design doc on disk needs a decision threaded through every dependent section,
     not appended as an addendum.
 - **Pairs well with:** [`/explore-plan`](#explore-plan) (reweave its plans when an approach
-  changes), [`/handoff`](#handoff) (a reweaved plan hands off cleanly).
+  changes), [`/handoff-session`](#handoff-session) (a reweaved plan hands off cleanly).
 - **Notes:** output lands where the target lived — a chat answer returns to chat, a file gets
   rewritten in place. It never re-architects functional source code; a behavior change is an
   ordinary edit.
@@ -518,7 +518,7 @@ rows get re-pointed to match.
     vague "we could…".
 - **Pairs well with:** [`adversarial-review`](#adversarial-review) (its §1.3 gate for
   substantial diffs), [`backlog-hygiene`](#backlog-hygiene) (when the routing needs the whole
-  corpus groomed), [`/handoff`](#handoff) (Act 3 is a starter prompt for a fresh session).
+  corpus groomed), [`/handoff-session`](#handoff-session) (Act 3 is a starter prompt for a fresh session).
 - **Notes:** invoking it **is** your per-action go-ahead to commit/push/PR/merge what's ready
   — but conditional on the review finding no issues; a blocker it can't safely resolve stops
   the flow. Never direct-pushes `main`. It blocks on the review workflow rather than
@@ -686,7 +686,7 @@ rows get re-pointed to match.
   - You want this project's hard-won lessons folded into the selection bar before they fade.
 - **Pairs well with:** [`research-paper`](#research-paper) (the write-up that closes the
   project first), [`kickoff`](#kickoff) (where the pick goes),
-  [`/handoff`](#handoff) (how it hands the pick to a fresh session).
+  [`/handoff-session`](#handoff-session) (how it hands the pick to a fresh session).
 - **Notes:** Phase 0 verifies the repo is genuinely closed and STOPs if it isn't — offering
   [`ship-and-route`](#ship-and-route) to land the remainder. The shortlist ends at a
   `PENDING-KYLE` gate; it never picks for you. `--audio` narrates the decision brief.
@@ -928,9 +928,9 @@ rows get re-pointed to match.
 - **Reach for it when:**
   - You want an MP3 of something already written and condensed, for a walk or a commute.
   - Usually you don't invoke it directly — `/catchup`, `/wrap --audio`,
-    `/handoff --audio`, `seed-hunt --audio`, and `project-guide --audio` all route through
+    `/handoff-session --audio`, `seed-hunt --audio`, and `project-guide --audio` all route through
     it.
-- **Pairs well with:** [`/catchup`](#catchup), [`/wrap`](#wrap), [`/handoff`](#handoff),
+- **Pairs well with:** [`/catchup`](#catchup), [`/wrap`](#wrap), [`/handoff-session`](#handoff-session),
   [`project-guide`](#project-guide) (its callers).
 - **Notes:** needs local Kokoro up (from the voicemode plugin); if it's down, callers say so
   and keep the written artifact — nothing ever claims an MP3 that doesn't exist. Paths and
@@ -1121,7 +1121,7 @@ session *in that repo*.
     layers it touches.
   - The source introduces a new analytical subject and may need its own star schema.
 - **Pairs well with:** [`new-dbt-model`](#new-dbt-model) (the smaller downstream scaffold),
-  [`/tdd`](#tdd) (the tests step),
+  [`/tdd-loop`](#tdd-loop) (the tests step),
   [`spec-miner`](#spec-miner) (if the pipeline's contracts need writing down).
 - **Notes:** ingestion is idempotent by design — a re-run is a no-op and existing rows aren't
   overwritten.
@@ -1390,7 +1390,7 @@ session *in that repo*.
     asking its predecessor something the predecessor can still answer itself.
   - You want an idle session to be woken by traffic rather than polled by hand.
 - **Pairs well with:** [`ghost`](#ghost) (the dead-predecessor case — the two compose rather
-  than compete), [`/handoff`](#handoff) (the note is the async channel, this is the live one).
+  than compete), [`/handoff-session`](#handoff-session) (the note is the async channel, this is the live one).
 - **Notes:** `watch` is a doorbell that marks nothing seen; `poll` is the only thing that
   delivers, and a watcher fires once — re-arm it or the session silently stops receiving.
   **Trust boundary:** anything that can write the channel directory can speak on the
@@ -1408,7 +1408,7 @@ session *in that repo*.
     with nothing already queued (T2), or when the Stop gate blocks at `PARTY_LINE_WATCH_AT`
     percent of context (T3).
   - You want to ask for one anyway: "should we hand off", "propose a handoff".
-- **Pairs well with:** [`/handoff`](#handoff) (whose composition spec it follows — it calls the
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (whose composition spec it follows — it calls the
   writer itself rather than invoking the command, and where this flow lands at M4),
   [`/launch`](#launch) (step 4a, on yes), [`ghost`](#ghost) (what the successor reaches for
   when the note leaves a gap).
@@ -1464,7 +1464,7 @@ session *in that repo*.
   - You want testimony from the predecessor's transcript rather than your own reconstruction
     of what it probably did.
 - **Pairs well with:** [`party-line`](#party-line) (use that instead if the predecessor is
-  still running), [`/handoff`](#handoff) (the note names the transcript this reads).
+  still running), [`/handoff-session`](#handoff-session) (the note names the transcript this reads).
 - **Notes:** expect it to be strong on *what happened* and weak on *why* — measured on CLI
   2.1.220, thinking blocks persist with no text, so reasoning that never reached a reply is
   not recoverable. The rendering says so at the top when it applies; absence of a recorded
@@ -1482,7 +1482,7 @@ session *in that repo*.
   - You want to know where you stand — the number in force, which layer set it, and the current
     reading with the window size it is a percentage *of*.
 - **Pairs well with:** [`auto-handoff`](#auto-handoff) (this sets the number that fires its T3
-  trigger), [`/handoff`](#handoff) (what a firing eventually produces).
+  trigger), [`/handoff-session`](#handoff-session) (what a firing eventually produces).
 - **Notes:** project-scoped and stored, resolved *explicit `PARTY_LINE_WATCH_AT` > the project's
   setting > 85*. The gate is a fresh process per turn boundary, so a change is honoured at the
   very next turn with nothing restarted — and **a change re-arms a gate that already fired**, so
@@ -1641,7 +1641,7 @@ choose: the cards state what's pinned and who dispatches them.
   - You want flat Requirement/Invariant blocks with stable ids that future deltas can match
     on.
 - **Pairs well with:** [`kickoff`](#kickoff) (brownfield onboarding),
-  [`/tdd`](#tdd) (mined specs become the tests),
+  [`/tdd-loop`](#tdd-loop) (mined specs become the tests),
   [`add-source`](#add-source) (pipeline contracts worth pinning down).
 - **Notes:** **never overwrites** an existing spec unless dispatched with `OVERWRITE=yes` —
   otherwise it reports what a re-mine would change and writes nothing. It never invents
@@ -1661,7 +1661,7 @@ choose: the cards state what's pinned and who dispatches them.
   - A backlog stub's `Acceptance:` line is mush and you want it turned into concrete scenarios.
 - **Pairs well with:** [`gauntlet`](#gauntlet) (the relay that owns it),
   [`gauntlet-coder`](#gauntlet-coder) (builds to its `.feature` file),
-  [`/tdd`](#tdd) (the Gherkin makes a natural test list),
+  [`/tdd-loop`](#tdd-loop) (the Gherkin makes a natural test list),
   [`spec-miner`](#spec-miner) (the brownfield counterpart — mines specs from code that exists,
   where this one writes them for code that doesn't yet).
 - **Notes:** writes **exactly two files** and has no Bash, so it can never claim anything about

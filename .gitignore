@@ -41,3 +41,4 @@ __pycache__/
 # despite being unpublished. Promote to tracked (PR + adversarial review + doc
 # row/card) if the trial earns it; delete the dir and this block if not.
 skills/adhd/
+.claude/

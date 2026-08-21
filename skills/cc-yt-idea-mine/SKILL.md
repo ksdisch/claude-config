@@ -347,7 +347,7 @@ has no backlog file, say so and leave the idea in the report.
 End with an offer, never an action:
 
 > Want me to build one of these now, or set up a builder session for it
-> (`/handoff` / `/launch` per the planner/builder protocol)? Building a skill or command
+> (`/handoff-session` / `/launch` per the planner/builder protocol)? Building a skill or command
 > gets its own branch, review loop, and doc-sync — it doesn't ride on this run.
 
 If Kyle declines, the run is complete — the report and any captured stubs are the
