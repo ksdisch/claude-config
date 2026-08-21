@@ -30,7 +30,7 @@ Source: <https://github.com/mattpocock/skills>
 | [`to-spec`](skills/to-spec/SKILL.md) | `skills/engineering/to-spec` | self-contained (no `/setup-matt-pocock-skills`); spec lands in-repo at `docs/specs/` with an optional guarded tracker publish; codebase-design seam vocabulary cited; routes onward to `to-tickets` |
 | [`to-tickets`](skills/to-tickets/SKILL.md) | `skills/engineering/to-tickets` | self-contained backend choice with the public-repo guard; local tickets under `docs/tickets/` (upstream: `.scratch/`); GitHub blocking edges via wayfinder tracker.md's Backend A procedures |
 | [`triage`](skills/triage/SKILL.md) | `skills/engineering/triage` | self-contained label mapping recorded in `docs/triage-labels.md`; external-PR surface opt-in; public-repo write guard; out-of-scope KB at `docs/out-of-scope/` (upstream: `.out-of-scope/`) |
-| [`implement`](skills/implement/SKILL.md) | `skills/engineering/implement` | house git workflow (feature branch + PR) and the adversarial-review gate replace `/code-review`; `tdd` invoked via the Skill tool |
+| [`implement`](skills/implement/SKILL.md) | `skills/engineering/implement` | house git workflow (feature branch + PR) and the adversarial-review gate replace `/code-review`; `tdd` invoked via the Skill tool; frontier rule over the house ticket locations (`docs/tickets/` or tracker issues) with a `done` marker, one frontier ticket per invocation |
 
 ```
 MIT License

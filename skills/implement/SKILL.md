@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 Implement the work described by Kyle in the spec or tickets.
 
-When the work is a ticket set, find it where the producer put it — one file per ticket under `docs/tickets/<feature-slug>/` on the local backend, or the tracker's issues — and work the **frontier**: take the next ticket whose blockers are all done, finish it, then take the next; never a blocked one. Mark each finished ticket so the frontier stays readable: check its acceptance boxes and set its `**Status:**` line to `done` (local), or close its issue (tracker) — that marker is what "blockers are all done" reads. Do not close or modify any parent issue while working.
+When the work is a ticket set, find it where the producer put it — one file per ticket under `docs/tickets/<feature-slug>/` on the local backend, or the tracker's issues — and work the **frontier**: take the next ticket whose blockers are all done, finish it, then take the next; never a blocked one. Mark each finished ticket so the frontier stays readable: check its acceptance boxes and set its `**Status:**` line to `done` (local), or close its issue (tracker) — that marker is what "blockers are all done" reads. Do not close or modify any parent issue while working. **One frontier ticket per invocation** — one branch, one PR, the full suite green before it; re-run `/implement` for the next ticket. Everything below ("the end", "once done") reads per ticket, not per set.
 
 Call the Skill tool with `tdd` where possible, at pre-agreed seams ("seam" in the codebase-design skill's sense).
 
