@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from render_map import (  # noqa: E402
+    STYLED_KINDS,
     back_edges,
     build_views,
     edge_classes,
@@ -403,17 +404,30 @@ class TestHtmlOutput(unittest.TestCase):
         """A runtime edge crosses a process boundary — the one kind an import
         parser cannot see. Drawing it identically to a plain import throws away
         the reason extraction is an agent pass at all."""
-        for kind in ("type-only", "runtime"):
+        # Iterates STYLED_KINDS rather than a literal pair: a third styled kind
+        # added without a CSS rule and a legend swatch would otherwise leave the
+        # suite green while re-creating the F5 defect this branch already fixed.
+        for kind in STYLED_KINDS:
             with self.subTest(kind=kind):
                 rule = re.search(r"\.edge\." + re.escape(kind) + r" \{([^}]*)\}", self.html)
                 self.assertIsNotNone(rule, f"no .edge.{kind} rule")
-                self.assertIn("stroke-dasharray", rule.group(1))
-        self.assertIn("runtime (crosses a process boundary)", self.html)
-        self.assertIn("type-only</span>", self.html)
+                dashes = re.search(r"stroke-dasharray: ([^;]+);", rule.group(1))
+                self.assertIsNotNone(dashes, f".edge.{kind} has no dash pattern")
+                # The legend swatch must carry the same dash values as the rule,
+                # or the key in the corner stops describing the lines on the page.
+                self.assertIn(
+                    f'stroke-dasharray="{dashes.group(1).strip()}"',
+                    self.html,
+                    f"no legend swatch matching .edge.{kind}",
+                )
+                self.assertRegex(self.html, r">\s*" + re.escape(kind))
         # Distinct dash patterns, not just distinct class names.
-        patterns = re.findall(r"\.edge\.(type-only|runtime|cycle) \{[^}]*stroke-dasharray: ([^;]+);", self.html)
-        self.assertEqual(len(patterns), 3, patterns)
-        self.assertEqual(len({dashes for _, dashes in patterns}), 3, patterns)
+        styled = "|".join(re.escape(k) for k in STYLED_KINDS)
+        patterns = re.findall(
+            r"\.edge\.(" + styled + r"|cycle) \{[^}]*stroke-dasharray: ([^;]+);", self.html
+        )
+        self.assertEqual(len(patterns), len(STYLED_KINDS) + 1, patterns)
+        self.assertEqual(len({d for _, d in patterns}), len(STYLED_KINDS) + 1, patterns)
 
     def test_edge_classes_are_decided_by_kind_not_by_spelling(self):
         """Asserts the class an edge actually gets. The version this replaced
@@ -436,7 +450,7 @@ class TestHtmlOutput(unittest.TestCase):
     def test_a_cycle_wins_over_the_kind_style(self):
         self.assertEqual(edge_classes("runtime", True), "edge runtime cycle")
         cycle_rule = self.html.index(".edge.cycle {")
-        for kind in ("type-only", "runtime"):
+        for kind in STYLED_KINDS:
             self.assertLess(self.html.index(f".edge.{kind} {{"), cycle_rule, kind)
 
     def test_notes_and_cycle_state_reach_the_findings_banner(self):

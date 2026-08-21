@@ -403,10 +403,27 @@ def validate(doc: object, root: Path, min_coverage: float) -> tuple[Problems, di
             else:
                 checked.append(normalized)
         roots = checked
+
     excluded = doc.get("excluded", [])
     if not isinstance(excluded, list) or not all(isinstance(p, str) for p in excluded):
         problems.error("`excluded` must be a list of glob patterns")
         excluded = []
+
+    # `"."` is the right answer for a flat repo and the wrong one on its own: it
+    # sweeps README, config, docs and — once this skill has run — the map it wrote
+    # into `docs/architecture/` into the coverage denominator, so the documented
+    # flat-repo path fails the floor on first use. Warn here, where the author
+    # still has the fix in front of them. Placed after `excluded` is parsed, since
+    # it reads it.
+    if "." in roots and not excluded:
+        problems.warn(
+            "`roots` is the whole repo (`\".\"`) with an empty `excluded` list — README, "
+            "config files, docs and this skill's own output under `docs/architecture/` "
+            "all count against coverage that way. Exclude the non-source ones (note "
+            "that `*.md` matches only the top level; use `**/*.md` for every depth) and "
+            "say why in `notes`."
+        )
+
     notes = doc.get("notes", [])
     if not isinstance(notes, list) or not all(isinstance(n, str) for n in notes):
         problems.error("`notes` must be a list of strings")

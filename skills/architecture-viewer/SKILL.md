@@ -97,7 +97,11 @@ pass that nothing mechanical can check.
    outside the roots is out of the graph by construction, so a root you forget is
    a whole tree that silently doesn't count against coverage. **A repo whose
    source sits at the top level uses `"."`** — the whole repo — rather than
-   listing files; the schema's *Accepted `roots` shapes* table has the rest.
+   listing files. `"."` is never used alone: it counts README, manifests, `docs/`
+   and this skill's own output under `docs/architecture/` as source, so it always
+   ships with an `excluded` list, and `*.md` there matches **only the top level**
+   (`**/*.md` is what covers every depth). The schema's *Accepted `roots` shapes*
+   section has a starting list.
 4. **Propose the top-level modules.** A module is a directory that owns one
    coherent responsibility. Start from the repo's own top-level source
    directories, then adjust: split a directory that plainly holds two unrelated

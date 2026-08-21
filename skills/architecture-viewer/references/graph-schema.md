@@ -188,10 +188,26 @@ more loosely than a module `id` — these are normalized rather than rejected:
 |---|---|
 | `src` | that directory |
 | `src/` · `./src` · `src//lib` | the same as `src` / `src/lib` — trailing, leading and doubled separators collapse |
-| `.` (or `./`) | **the whole repo is source** — the only way to say it, and what a flat repo needs. Without it, a repo with `main.py` at the top level would have to list its top-level *files*, and every file added afterwards would fall outside the coverage denominator unnoticed |
+| `.` (or `./`) | **the whole repo is source** — the only way to say it, and what a flat repo needs. Without it, a repo with `main.py` at the top level would have to list its top-level *files*, and every file added afterwards would fall outside the coverage denominator unnoticed. **Never use it with an empty `excluded`** — see below |
 
 Rejected, because a root must not escape the repo: a leading `/`, any `..`
 segment, a backslash separator, and the empty string.
+
+**A `"."` root always needs an `excluded` list.** `source_files` counts every
+file under a root regardless of extension, so `"."` sweeps `README.md`, the
+package manifest, `docs/`, and — once the viewer has run once — the map it
+wrote into `docs/architecture/`, all into the coverage denominator. With the
+default 0.9 floor a flat repo fails on its first run, and the generated map
+degrades its own repo's coverage every time it is regenerated. The validator
+warns when it sees `"."` with nothing excluded. A workable starting list:
+
+```json
+"excluded": ["**/*.md", "docs/architecture/**", "*.toml", "*.json", "*.lock"]
+```
+
+Mind the glob semantics above when writing it: **`*.md` matches only top-level
+files** — `docs/notes.md` needs `**/*.md`. That is the single easiest mistake to
+make here, because the pattern looks like it works.
 
 ---
 

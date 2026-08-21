@@ -375,6 +375,61 @@ class TestCoverage(GraphCase):
         self.assertEqual(summary["scanned_files"], 2)
         self.assertEqual(summary["coverage"], 1.0)
 
+    def test_a_realistic_flat_repo_needs_an_excluded_list_with_a_dot_root(self):
+        """The documented flat-repo path, with the files a real repo actually
+        has. Without `excluded` it fails the floor; the two-file fixture above
+        never saw this, which is how the recommendation shipped unqualified."""
+        self.write("main.py")
+        self.write("helper.py")
+        self.write("README.md")
+        self.write("pyproject.toml")
+        self.write("docs/notes.md")
+        self.write("docs/architecture/flat-map.html")
+        modules = [self.module("main.py"), self.module("helper.py")]
+
+        bare = self.doc(modules, [], roots=["."])
+        problems, summary = self.run_validate(bare)
+        self.assertTrue(any("coverage is" in e for e in problems.errors), problems.errors)
+        self.assertTrue(
+            any("empty `excluded` list" in w for w in problems.warnings), problems.warnings
+        )
+
+        # The list the schema documents, including the skill's own output path.
+        guarded = self.doc(
+            modules,
+            [],
+            roots=["."],
+            excluded=["**/*.md", "docs/architecture/**", "*.toml"],
+        )
+        problems, summary = self.run_validate(guarded)
+        self.assertEqual(problems.errors, [], problems.errors)
+        self.assertEqual(summary["coverage"], 1.0)
+
+    def test_the_documented_md_glob_is_the_one_that_actually_works(self):
+        """`*.md` looks right and covers only the top level — the easiest
+        mistake to make when writing the `excluded` list `"."` requires."""
+        self.write("main.py")
+        self.write("README.md")
+        self.write("docs/notes.md")
+        modules = [self.module("main.py")]
+        naive = self.doc(modules, [], roots=["."], excluded=["*.md"])
+        problems, summary = self.run_validate(naive)
+        self.assertIn("docs/notes.md", summary["uncovered_files"])
+        working = self.doc(modules, [], roots=["."], excluded=["**/*.md"])
+        problems, summary = self.run_validate(working)
+        self.assertEqual(problems.errors, [])
+        self.assertEqual(summary["coverage"], 1.0)
+
+    def test_a_dot_root_with_exclusions_does_not_warn(self):
+        self.write("main.py")
+        self.write("README.md")
+        problems, _ = self.run_validate(
+            self.doc([self.module("main.py")], [], roots=["."], excluded=["**/*.md"])
+        )
+        self.assertFalse(
+            any("empty `excluded` list" in w for w in problems.warnings), problems.warnings
+        )
+
     def test_equivalent_root_spellings_all_work(self):
         modules, edges = self.two_module_repo()
         for spelling in ("src", "src/", "./src", "src//"):
