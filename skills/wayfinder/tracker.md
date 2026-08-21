@@ -82,7 +82,12 @@ These two lines are this backend's expression of `status-and-claim-are-independe
 
 **Invariant `out-of-scope-unblocks`:** a blocker that leaves scope stops blocking, exactly as a closed issue does on GitHub. Ruling a ticket out of scope is therefore never a way to strand its dependents. Revisit each dependent in the same edit: with its premise gone, it is usually itself out of scope, or its question has changed and the ticket needs rewriting.
 
-**Invariant `map-append-is-last-write`:** on both backends, appending to Decisions-so-far is read-modify-write on a resource other sessions also write, so **re-read the map body immediately before appending** — not the copy loaded at the start of the session — and if it changed since load, re-apply your line on top of the current text. Locally, make the map edit the session's last write and commit it on its own, so a clobber is visible in `git log` instead of silent.
+**Invariant `map-append-is-last-write`:** appending to Decisions-so-far is read-modify-write on a resource other sessions also write. Two obligations, and they are separate:
+
+1. **Re-read then append** *(both backends, every append)* — re-read the map body immediately before appending, not the copy loaded at the start of the session, and if it changed since load, re-apply your line on top of the current text.
+2. **Commit each map edit on its own** *(local backend, every append)* — never folded in with ticket files or anything else, so a clobber is visible in `git log` instead of silent. This is the half that actually *detects* a lost line, and a session appending N times satisfies it N times, one commit each.
+
+The name is about a session that appends **once** — for that shape, make the map edit the session's last write, so nothing after it can disturb the map. **Charting is the exception**: it appends once per returning research subagent, mid-step-6, with step 7 still to come, so ordering it last is impossible. Obligation 2 is what carries the guarantee there; do not defer the appends to the end of the session to satisfy the name, because batching them is what reopens the window `only-the-parent-appends` and `resolve-order` were scoped to close.
 
 This is a backstop against *other sessions*, which the tracker can't serialize. Within one session it is not the defence: `only-the-parent-appends` keeps parallel research subagents off the map entirely, so the writer that has to obey this invariant is always one that can also commit. Losing the line is not cosmetic — the ticket keeps the decision, but the map is the only index anyone loads.
 
