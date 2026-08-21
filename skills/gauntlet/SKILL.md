@@ -307,8 +307,8 @@ first run: multiply the suite's measured duration by the mutant count the ranges
 to what this run can spend. **Get that count without spending the run** — `--dryRunOnly` over the
 same ranges instruments and reports the mutant count without executing any of them, which is the
 same cheap-read-before-a-full-run habit Stage 0's probe already uses. Three runs of that size is the
-realistic total (one pre-dispatch, one per hardener lap). A seconds-fast suite makes this minutes; a minute-long suite makes it hours, and that
-is a decision, not a detail.
+realistic total (one pre-dispatch, one per hardener lap). A seconds-fast suite makes this minutes; a
+minute-long suite makes it hours, and that is a decision, not a detail.
 
 #### The narrowing escape
 
