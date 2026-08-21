@@ -579,7 +579,8 @@ rows get re-pointed to match.
   services wired).
 - **Notes:** model-invocable, but never for steps the agent can perform itself. Upstream ships a
   copy-paste `template.sh`; this repo deliberately doesn't — the UX is re-expressed as a
-  **named-invariant contract** (`one-stage-on-screen`, `open-before-ask`, `secrets-stay-hidden`,
+  **named-invariant contract** (all ten checked off by name at verification: `fail-fast`,
+  `one-stage-on-screen`, `progress-visible`, `open-before-ask`, `secrets-stay-hidden`,
   `reruns-resume`, `env-writes-upsert`, `ci-writes-degrade`, `confirm-irreversible`,
   `closing-summary`) and the script is authored fresh each run, per the house rule that shell
   snippets in skill files are a defect generator. Wizards are ephemeral by default; verify with

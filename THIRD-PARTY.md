@@ -25,7 +25,7 @@ Source: <https://github.com/mattpocock/skills>
 | [`domain-modeling`](skills/domain-modeling/SKILL.md) | `skills/engineering/domain-modeling` | decisions route to the repo's existing ledger rather than a second one; unattended runs |
 | [`codebase-design`](skills/codebase-design/SKILL.md) | `skills/engineering/codebase-design` | NOT-for routing clause in the description; `DEEPENING.md` and `DESIGN-IT-TWICE.md` kept verbatim |
 | [`wait-what`](skills/wait-what/SKILL.md) | `skills/productivity/wait-what` | — |
-| [`wizard`](skills/wizard/SKILL.md) | `skills/engineering/wizard` | upstream `template.sh` not shipped — re-expressed as a named-invariant UX contract in `SKILL.md` (house rule: no copy-paste shell in skill files) |
+| [`wizard`](skills/wizard/SKILL.md) | `skills/engineering/wizard` | upstream `template.sh` not shipped — re-expressed as a named-invariant UX contract in `SKILL.md` (house rule: no copy-paste shell in skill files); unattended runs |
 | [`resolving-merge-conflicts`](skills/resolving-merge-conflicts/SKILL.md) | `skills/engineering/resolving-merge-conflicts` | heading added; otherwise verbatim |
 
 ```

@@ -15,7 +15,7 @@ A wizard is ephemeral by default: built for one run, saved to a scratch or `scri
 
 Each invariant is named so it can be cited during authoring and verification.
 
-- **`fail-fast`** — the script runs under strict shell modes (`set -euo pipefail`), so a failed command halts the wizard instead of plowing on with unset values. Decorations (color, bold) are used only when the terminal supports them.
+- **`fail-fast`** — the script runs under strict shell modes (`set -euo pipefail`), so a failed command halts the wizard instead of plowing on with unset values. Decorations (color, bold) are used only when the terminal supports them. Strict mode turns an *answer* into an error if you let it: every interactive `read` is guarded so EOF can't kill the run, and any helper that returns non-zero as its answer — a y/N gate, an env lookup that finds nothing — is only ever called in a conditional context, never bare.
 - **`one-stage-on-screen`** — each stage begins by clearing the terminal so only the current step is visible; clearing is a no-op when stdout isn't a terminal, so piped logs stay readable. Keep a stage to one focused task, so nothing the human needs scrolls away.
 - **`progress-visible`** — an opening banner says what the wizard does and how many stages it has; every stage header shows "Stage N of TOTAL". The total is declared once and must equal the number of stages authored.
 - **`open-before-ask`** — open a page in the human's browser *before* asking for any value found on it. URL opening works cross-platform, WSL included: try the platform openers in order (`wslview`, `explorer.exe`, `xdg-open`, `open`), and when none works, print the URL and tell the human to visit it manually — never fail the run over a browser.
@@ -23,7 +23,7 @@ Each invariant is named so it can be cited during authoring and verification.
 - **`reruns-resume`** — before prompting for a value, look up its current entry in the env file and offer it as the default (Enter keeps it). Ctrl-C and re-running therefore resumes from where the human left off instead of restarting, and the banner says so.
 - **`env-writes-upsert`** — persisting `KEY=VALUE` creates the env file if missing and *replaces* any existing `KEY` line rather than appending a duplicate. Idempotent by construction.
 - **`ci-writes-degrade`** — GitHub secret/variable writes first check that `gh` exists and is authenticated; on any failure they record the skip, print the exact manual command to run later, and the wizard continues. A missing `gh` never aborts the run.
-- **`confirm-irreversible`** — any irreversible action sits behind an explicit yes/no gate that defaults to **no**.
+- **`confirm-irreversible`** — any irreversible action sits behind an explicit yes/no gate that defaults to **no**. Declining skips that action and continues to the closing summary; it never exits the wizard.
 - **`closing-summary`** — the wizard ends with a summary frame: every env key written, every CI secret/variable set, and everything skipped that the human still has to do by hand.
 
 ## Process
@@ -59,6 +59,10 @@ Hold the bar the contract sets, per stage: open the URL before asking for its va
 - `bash -n <script>`; run `shellcheck` if available. `chmod +x <script>`.
 - Don't run it end-to-end yourself: it opens browsers and blocks on human input. Trace it statically instead: every value from step 1 is captured and lands where step 1 said, every CI secret name exactly matches a `secrets.*` reference in CI, and every invariant in the contract holds — check them off **by name**.
 - Tell Kyle how to run it. If it's a repeatable setup path, commit it and link it from the README so the next person runs the script instead of asking an AI.
+
+## Unattended runs
+
+A wizard is scoped *with* Kyle and run *by* a human, so both halves block on one. Unattended, do only the read-only half: survey the repo, draft the ordered stage map and each stage's journey with every unverified UI path marked as an unconfirmed assumption, and stop before step 3, reporting the draft for Kyle to confirm. Never author the script against an unconfirmed stage list (step 1's gate), never invent UI paths to fill a gap (step 2's rule), and never *execute* a wizard unattended — it blocks on human input and captures live credentials.
 
 ---
 
