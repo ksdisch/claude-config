@@ -103,6 +103,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Feature] Architecture viewer: clickable module/dependency map of a repo
+- **Status:** **Shipped 2026-08-20** as [`skills/architecture-viewer/`](skills/architecture-viewer/SKILL.md) (PR #101). Acceptance met: `constellation` rendered at 18 modules / 31 edges / 100% coverage, and the map showed that `CLAUDE.md`'s "a `protocol.ts` change must be matched in `src/game/` and `src/phone/`" names two of five dependents — `server` and `scripts` are downstream of it too.
 - **Why:** Strategic review needs a structural surface; nothing in the inventory provides one, and the HTML-artifact rendering muscle already exists in-house. Full write-up in [`docs/ideas/architecture-viewer.md`](docs/ideas/architecture-viewer.md).
 - **Acceptance:** One repo rendered as a self-contained HTML map (nodes, dependency arrows, one level of click-to-expand) that changes at least one real review.
 - **Size:** M

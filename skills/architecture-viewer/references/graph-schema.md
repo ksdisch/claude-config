@@ -34,7 +34,7 @@ bottom for the four guarantees it depends on. Changing any of them is a `v2`.
 | `excluded` | no | Glob patterns *inside* `roots` deliberately left unmapped (tests, generated code, vendored trees). Coverage subtracts these. An empty/absent list means nothing was excluded. |
 | `modules` | yes | The nodes. At least one. |
 | `edges` | yes | The directed dependencies. May be empty (a repo of independent modules is a legitimate finding, not an error). |
-| `notes` | no | Free-text observations from the extraction pass — ambiguities, judgment calls, things a reader should distrust. Rendered verbatim in the map's *Notes* section. |
+| `notes` | no | Free-text observations from the extraction pass — ambiguities, judgment calls, things a reader should distrust. Rendered in the map's findings banner, under *Extraction notes*. |
 
 ### `repo`
 
@@ -71,7 +71,7 @@ bottom for the four guarantees it depends on. Changing any of them is a `v2`.
 | `name` | yes | Short display label. Need not be unique; `id` disambiguates. |
 | `parent` | yes | `id` of the containing module, or `null` for a top-level module. |
 | `path` | yes | Repo-relative path that must exist on disk. Normally equal to `id`; they differ only for a synthetic grouping node, which is not supported in v1 (`path` and `id` are required to match — the field exists so v2 can relax it without moving anything). |
-| `layer` | no | Free-text grouping hint (`"ui"`, `"domain"`, `"contract"`, `"infra"`). The viewer tints by it; the checker will phrase rules over it. Absent means ungrouped. |
+| `layer` | no | Free-text grouping hint (`"ui"`, `"domain"`, `"contract"`, `"infra"`). The viewer shows it on the node and as a pill in the panel; the checker will phrase rules over it. Absent means ungrouped. |
 | `summary` | yes | One sentence: what this module is responsible for. The single most valuable field for the "read the structure instead of the code" purpose, so it is required even though nothing mechanical depends on it. |
 | `file_count` | no | Source files attributed to this module *including* its descendants. Displayed as a size cue. |
 | `anchors` | no | Where to look first — see *Anchors and evidence*. |
@@ -161,6 +161,23 @@ fails below a floor (default 0.90, `--min-coverage`).
 Coverage is a property of the extraction, not of the repo: excluding tests
 raises it honestly, and both `roots` and `excluded` are in the document so the
 number can be audited rather than trusted.
+
+**Glob semantics for `excluded`** are fixed by this contract, not inherited from
+whichever library happens to run it: matching is segment-by-segment, `*` and `?`
+match within one path segment and never cross a `/`, and a whole segment of `**`
+matches zero or more segments. So `src/generated/*` excludes
+`src/generated/api.ts` but not `src/generated/deep/api.ts`, and `**/*.test.ts`
+excludes at every depth including the top. Since `excluded` is subtracted from
+the coverage denominator, a semantics that varied by interpreter would make the
+same graph's coverage — and whether it cleared the floor — depend on where it
+ran.
+
+Two things make coverage a real gate rather than a number:
+
+- **A `roots` entry that does not exist on disk is an error**, not a skip. A
+  typo'd root scans nothing, and "nothing" would otherwise divide out to a clean
+  100%.
+- **Scanning zero files is an error.** Coverage of nothing is not coverage.
 
 ---
 

@@ -10,8 +10,7 @@
   --bg: #f7f7f5; --surface: #ffffff; --surface-2: #f0efec; --border: #d9d7d1;
   --text: #23211d; --muted: #6d6a63; --accent: #2f6f5e; --accent-soft: #dbeae4;
   --edge: #8d8a82; --edge-strong: #2f6f5e; --cycle: #b4462f; --cycle-soft: #f6e2dc;
-  --shadow: 0 1px 2px rgba(20,18,15,.10), 0 6px 18px rgba(20,18,15,.06);
-  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -19,20 +18,17 @@
     --bg: #16181a; --surface: #1e2124; --surface-2: #272b2f; --border: #383d42;
     --text: #e6e3dd; --muted: #9aa0a6; --accent: #6fd0ad; --accent-soft: #24413a;
     --edge: #6d747b; --edge-strong: #6fd0ad; --cycle: #f08a70; --cycle-soft: #452a24;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
   }
 }
 :root[data-theme="light"] {
   --bg: #f7f7f5; --surface: #ffffff; --surface-2: #f0efec; --border: #d9d7d1;
   --text: #23211d; --muted: #6d6a63; --accent: #2f6f5e; --accent-soft: #dbeae4;
   --edge: #8d8a82; --edge-strong: #2f6f5e; --cycle: #b4462f; --cycle-soft: #f6e2dc;
-  --shadow: 0 1px 2px rgba(20,18,15,.10), 0 6px 18px rgba(20,18,15,.06);
 }
 :root[data-theme="dark"] {
   --bg: #16181a; --surface: #1e2124; --surface-2: #272b2f; --border: #383d42;
   --text: #e6e3dd; --muted: #9aa0a6; --accent: #6fd0ad; --accent-soft: #24413a;
   --edge: #6d747b; --edge-strong: #6fd0ad; --cycle: #f08a70; --cycle-soft: #452a24;
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
 }
 * { box-sizing: border-box; }
 body {
@@ -79,6 +75,10 @@ svg { display: block; }
 .node.dim { opacity: .28; }
 .edge { fill: none; stroke: var(--edge); stroke-width: 1.6; }
 .edge.type-only { stroke-dasharray: 2 4; }
+/* Dash-dot, and heavier: a runtime edge crosses a process boundary, which is
+   the one kind an import parser cannot see and the most consequential kind to
+   mistake for a plain import. */
+.edge.runtime { stroke-dasharray: 10 3 2 3; stroke-width: 2; }
 .edge.cycle { stroke: var(--cycle); stroke-width: 2.2; stroke-dasharray: 7 4; }
 .edge.lit { stroke: var(--edge-strong); stroke-width: 2.6; }
 .edge.cycle.lit { stroke: var(--cycle); }
@@ -148,7 +148,7 @@ ul.plain li:last-child { border-bottom: none; }
   <div id="canvas-wrap"></div>
   <aside id="panel" aria-live="polite"></aside>
 </main>
-<div class="legend"><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="1.6"/></svg> depends on (arrow points at the dependency)</span><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="1.6" stroke-dasharray="2 4"/></svg> type-only</span><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--cycle)" stroke-width="2.2" stroke-dasharray="7 4"/></svg> part of a cycle</span><span>▸ has submodules — click it twice, or use <em>Look inside</em></span><span class="scroll-note">Esc clears the selection, then steps back up a level.</span></div>
+<div class="legend"><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="1.6"/></svg> depends on (arrow points at the dependency)</span><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="1.6" stroke-dasharray="2 4"/></svg> type-only</span><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="2" stroke-dasharray="10 3 2 3"/></svg> runtime (crosses a process boundary)</span><span><svg width="34" height="10" aria-hidden="true"><line x1="0" y1="5" x2="30" y2="5" stroke="var(--cycle)" stroke-width="2.2" stroke-dasharray="7 4"/></svg> part of a cycle</span><span>▸ has submodules — click it twice, or use <em>Look inside</em></span><span class="scroll-note">Esc clears the selection, then steps back up a level.</span></div>
 <script>
 const GRAPH = {"excluded":["src/vite-env.d.ts"],"repo":{"commit":"604a42211f8d6b933adcfd6a006494c779e82aef","extractor":"architecture-viewer agent pass","generated":"2026-08-20","name":"constellation","root":"/Users/kyledisch/Projects/constellation"},"roots":["src","server","scripts"]};
 const VIEWS = {"":{"edges":[{"count":1,"cycle":false,"d":"M 168.6,102 C 168.6,161.0 398.0,161.0 398.0,220","from":"scripts","kind":"runtime","to":"server","via":[]},{"count":1,"cycle":false,"d":"M 168.6,102 C 128.6,251.0 358.0,251.0 398.0,400","from":"scripts","kind":"type-only","to":"src/shared","via":[]},{"count":2,"cycle":false,"d":"M 398.0,282 C 398.0,341.0 398.0,341.0 398.0,400","from":"server","kind":"type-only","to":"src/shared","via":[]},{"count":1,"cycle":false,"d":"M 393.9,102 C 393.9,161.0 398.0,161.0 398.0,220","from":"src/game","kind":"runtime","to":"server","via":[{"from":"src/game/net","to":"server"}]},{"count":6,"cycle":false,"d":"M 393.9,102 C 353.9,251.0 358.0,251.0 398.0,400","from":"src/game","kind":"type-only","to":"src/shared","via":[{"from":"src/game/net","to":"src/shared"},{"from":"src/game/planets","to":"src/shared"},{"from":"src/game/progression","to":"src/shared"},{"from":"src/game/scenes","to":"src/shared"},{"from":"src/game/testBridge.ts","to":"src/shared"}]},{"count":1,"cycle":false,"d":"M 623.3,102 C 623.3,161.0 398.0,161.0 398.0,220","from":"src/phone","kind":"runtime","to":"server","via":[{"from":"src/phone/net","to":"server"}]},{"count":9,"cycle":false,"d":"M 623.3,102 C 663.3,251.0 438.0,251.0 398.0,400","from":"src/phone","kind":"type-only","to":"src/shared","via":[{"from":"src/phone/App.tsx","to":"src/shared"},{"from":"src/phone/components","to":"src/shared"},{"from":"src/phone/net","to":"src/shared"},{"from":"src/phone/puzzleThemes.ts","to":"src/shared"},{"from":"src/phone/talents","to":"src/shared"}]}],"height":502,"nodes":[{"h":62,"has_children":false,"id":"scripts","label":"scripts","layer":"tooling","rank":0,"sublabel":"tooling \u00b7 1 file","w":177.2,"x":80.0,"y":40},{"h":62,"has_children":false,"id":"server","label":"server","layer":"relay","rank":1,"sublabel":"relay \u00b7 5 files","w":169.0,"x":313.5,"y":220},{"h":62,"has_children":true,"id":"src/game","label":"game","layer":"client","rank":0,"sublabel":"client \u00b7 34 files","w":185.4,"x":301.2,"y":40},{"h":62,"has_children":true,"id":"src/phone","label":"phone","layer":"client","rank":0,"sublabel":"client \u00b7 22 files","w":185.4,"x":530.6,"y":40},{"h":62,"has_children":false,"id":"src/shared","label":"shared","layer":"contract","rank":2,"sublabel":"contract \u00b7 1 file","w":185.4,"x":305.3,"y":400}],"parent_of":null,"title":"constellation","width":796.0},"src/game":{"edges":[{"count":1,"cycle":false,"d":"M 132.7,462 C 132.7,521.0 132.7,521.0 132.7,580","from":"src/game/entities","kind":"import","to":"src/game/juice","via":[]},{"count":1,"cycle":false,"d":"M 132.7,462 C 132.7,521.0 353.9,521.0 353.9,580","from":"src/game/entities","kind":"import","to":"src/game/testBridge.ts","via":[]},{"count":4,"cycle":false,"d":"M 239.2,102 C 239.2,161.0 239.2,161.0 239.2,220","from":"src/game/main.ts","kind":"import","to":"src/game/scenes","via":[]},{"count":1,"cycle":false,"d":"M 239.2,822 C 239.2,881.0 239.2,881.0 239.2,940","from":"src/game/progression","kind":"import","to":"src/game/planets","via":[]},{"count":2,"cycle":false,"d":"M 239.2,282 C 239.2,341.0 132.7,341.0 132.7,400","from":"src/game/scenes","kind":"import","to":"src/game/entities","via":[]},{"count":9,"cycle":false,"d":"M 239.2,282 C 279.2,431.0 172.7,431.0 132.7,580","from":"src/game/scenes","kind":"import","to":"src/game/juice","via":[]},{"count":3,"cycle":false,"d":"M 239.2,282 C 239.2,341.0 349.8,341.0 349.8,400","from":"src/game/scenes","kind":"import","to":"src/game/net","via":[]},{"count":4,"cycle":false,"d":"M 239.2,282 C 331.2,611.0 331.2,611.0 239.2,940","from":"src/game/scenes","kind":"import","to":"src/game/planets","via":[]},{"count":6,"cycle":false,"d":"M 239.2,282 C 305.2,521.0 305.2,521.0 239.2,760","from":"src/game/scenes","kind":"import","to":"src/game/progression","via":[]},{"count":3,"cycle":false,"d":"M 239.2,282 C 279.2,431.0 393.9,431.0 353.9,580","from":"src/game/scenes","kind":"import","to":"src/game/testBridge.ts","via":[]},{"count":1,"cycle":false,"d":"M 353.9,642 C 353.9,701.0 239.2,701.0 239.2,760","from":"src/game/testBridge.ts","kind":"type-only","to":"src/game/progression","via":[]}],"height":1042,"nodes":[{"h":62,"has_children":false,"id":"src/game/entities","label":"entities","layer":"client","rank":2,"sublabel":"client \u00b7 2 files","w":177.2,"x":44.1,"y":400},{"h":62,"has_children":false,"id":"src/game/juice","label":"juice","layer":"client","rank":3,"sublabel":"client \u00b7 11 files","w":185.4,"x":40.0,"y":580},{"h":62,"has_children":false,"id":"src/game/main.ts","label":"main.ts","layer":"client","rank":0,"sublabel":"client \u00b7 1 file","w":169.0,"x":154.7,"y":40},{"h":62,"has_children":false,"id":"src/game/net","label":"net","layer":"client","rank":2,"sublabel":"client \u00b7 1 file","w":169.0,"x":265.3,"y":400},{"h":62,"has_children":false,"id":"src/game/planets","label":"planets","layer":"client","rank":5,"sublabel":"client \u00b7 7 files","w":177.2,"x":150.6,"y":940},{"h":62,"has_children":false,"id":"src/game/progression","label":"progression","layer":"client","rank":4,"sublabel":"client \u00b7 6 files","w":177.2,"x":150.6,"y":760},{"h":62,"has_children":false,"id":"src/game/scenes","label":"scenes","layer":"client","rank":1,"sublabel":"client \u00b7 4 files","w":177.2,"x":150.6,"y":220},{"h":62,"has_children":false,"id":"src/game/testBridge.ts","label":"testBridge.ts","layer":"client","rank":3,"sublabel":"client \u00b7 1 file","w":169.0,"x":269.4,"y":580}],"parent_of":"src/game","title":"game","width":570.4},"src/phone":{"edges":[{"count":11,"cycle":false,"d":"M 239.2,102 C 239.2,161.0 132.7,161.0 132.7,220","from":"src/phone/App.tsx","kind":"import","to":"src/phone/components","via":[]},{"count":1,"cycle":false,"d":"M 239.2,102 C 239.2,161.0 353.9,161.0 353.9,220","from":"src/phone/App.tsx","kind":"import","to":"src/phone/net","via":[]},{"count":2,"cycle":false,"d":"M 239.2,102 C 279.2,251.0 385.7,251.0 345.7,400","from":"src/phone/App.tsx","kind":"import","to":"src/phone/talents","via":[]},{"count":4,"cycle":false,"d":"M 132.7,282 C 132.7,341.0 128.6,341.0 128.6,400","from":"src/phone/components","kind":"import","to":"src/phone/puzzleThemes.ts","via":[]},{"count":2,"cycle":false,"d":"M 132.7,282 C 132.7,341.0 345.7,341.0 345.7,400","from":"src/phone/components","kind":"import","to":"src/phone/talents","via":[]}],"height":502,"nodes":[{"h":62,"has_children":false,"id":"src/phone/App.tsx","label":"App.tsx","layer":"client","rank":0,"sublabel":"client \u00b7 1 file","w":169.0,"x":154.7,"y":40},{"h":62,"has_children":false,"id":"src/phone/components","label":"components","layer":"client","rank":1,"sublabel":"client \u00b7 13 files","w":185.4,"x":40.0,"y":220},{"h":62,"has_children":false,"id":"src/phone/net","label":"net","layer":"client","rank":1,"sublabel":"client \u00b7 1 file","w":169.0,"x":269.4,"y":220},{"h":62,"has_children":false,"id":"src/phone/puzzleThemes.ts","label":"puzzleThemes.ts","layer":"client","rank":2,"sublabel":"client \u00b7 1 file","w":169.0,"x":44.1,"y":400},{"h":62,"has_children":false,"id":"src/phone/talents","label":"talents","layer":"client","rank":2,"sublabel":"client \u00b7 4 files","w":177.2,"x":257.1,"y":400}],"parent_of":"src/phone","title":"phone","width":518.4}};
@@ -208,7 +208,11 @@ const PANELS = {"scripts":{"anchors":[{"file":"scripts/smoke-relay.ts","label":"
 
     const edgeLayer = el('g', { class: 'edges' });
     view.edges.forEach((edge, index) => {
-      const classes = ['edge', edge.kind === 'type-only' ? 'type-only' : ''];
+      // Only the kinds the stylesheet knows become classes; anything else keeps
+      // the default stroke, which is what the schema promises for a kind outside
+      // the recommended vocabulary.
+      const STYLED_KINDS = ['type-only', 'runtime'];
+      const classes = ['edge', STYLED_KINDS.indexOf(edge.kind) === -1 ? '' : edge.kind];
       if (edge.cycle) classes.push('cycle');
       const path = el('path', {
         d: edge.d,

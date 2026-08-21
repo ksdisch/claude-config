@@ -463,8 +463,7 @@ CSS = """
   --bg: #f7f7f5; --surface: #ffffff; --surface-2: #f0efec; --border: #d9d7d1;
   --text: #23211d; --muted: #6d6a63; --accent: #2f6f5e; --accent-soft: #dbeae4;
   --edge: #8d8a82; --edge-strong: #2f6f5e; --cycle: #b4462f; --cycle-soft: #f6e2dc;
-  --shadow: 0 1px 2px rgba(20,18,15,.10), 0 6px 18px rgba(20,18,15,.06);
-  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -472,20 +471,17 @@ CSS = """
     --bg: #16181a; --surface: #1e2124; --surface-2: #272b2f; --border: #383d42;
     --text: #e6e3dd; --muted: #9aa0a6; --accent: #6fd0ad; --accent-soft: #24413a;
     --edge: #6d747b; --edge-strong: #6fd0ad; --cycle: #f08a70; --cycle-soft: #452a24;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
   }
 }
 :root[data-theme="light"] {
   --bg: #f7f7f5; --surface: #ffffff; --surface-2: #f0efec; --border: #d9d7d1;
   --text: #23211d; --muted: #6d6a63; --accent: #2f6f5e; --accent-soft: #dbeae4;
   --edge: #8d8a82; --edge-strong: #2f6f5e; --cycle: #b4462f; --cycle-soft: #f6e2dc;
-  --shadow: 0 1px 2px rgba(20,18,15,.10), 0 6px 18px rgba(20,18,15,.06);
 }
 :root[data-theme="dark"] {
   --bg: #16181a; --surface: #1e2124; --surface-2: #272b2f; --border: #383d42;
   --text: #e6e3dd; --muted: #9aa0a6; --accent: #6fd0ad; --accent-soft: #24413a;
   --edge: #6d747b; --edge-strong: #6fd0ad; --cycle: #f08a70; --cycle-soft: #452a24;
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
 }
 * { box-sizing: border-box; }
 body {
@@ -532,6 +528,10 @@ svg { display: block; }
 .node.dim { opacity: .28; }
 .edge { fill: none; stroke: var(--edge); stroke-width: 1.6; }
 .edge.type-only { stroke-dasharray: 2 4; }
+/* Dash-dot, and heavier: a runtime edge crosses a process boundary, which is
+   the one kind an import parser cannot see and the most consequential kind to
+   mistake for a plain import. */
+.edge.runtime { stroke-dasharray: 10 3 2 3; stroke-width: 2; }
 .edge.cycle { stroke: var(--cycle); stroke-width: 2.2; stroke-dasharray: 7 4; }
 .edge.lit { stroke: var(--edge-strong); stroke-width: 2.6; }
 .edge.cycle.lit { stroke: var(--cycle); }
@@ -639,7 +639,11 @@ JS = r"""
 
     const edgeLayer = el('g', { class: 'edges' });
     view.edges.forEach((edge, index) => {
-      const classes = ['edge', edge.kind === 'type-only' ? 'type-only' : ''];
+      // Only the kinds the stylesheet knows become classes; anything else keeps
+      // the default stroke, which is what the schema promises for a kind outside
+      // the recommended vocabulary.
+      const STYLED_KINDS = ['type-only', 'runtime'];
+      const classes = ['edge', STYLED_KINDS.indexOf(edge.kind) === -1 ? '' : edge.kind];
       if (edge.cycle) classes.push('cycle');
       const path = el('path', {
         d: edge.d,
@@ -995,6 +999,9 @@ def render(doc: dict, title: str | None = None) -> str:
         '<line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="1.6" '
         'stroke-dasharray="2 4"/></svg> type-only</span>'
         '<span><svg width="34" height="10" aria-hidden="true">'
+        '<line x1="0" y1="5" x2="30" y2="5" stroke="var(--edge)" stroke-width="2" '
+        'stroke-dasharray="10 3 2 3"/></svg> runtime (crosses a process boundary)</span>'
+        '<span><svg width="34" height="10" aria-hidden="true">'
         '<line x1="0" y1="5" x2="30" y2="5" stroke="var(--cycle)" stroke-width="2.2" '
         'stroke-dasharray="7 4"/></svg> part of a cycle</span>'
         "<span>▸ has submodules — click it twice, or use <em>Look inside</em></span>"
@@ -1061,7 +1068,15 @@ def main(argv: list[str] | None = None) -> int:
         die(f"{args.graph} has no modules to draw.")
 
     html = render(doc, args.title)
-    Path(args.out).write_text(html)
+    try:
+        out = Path(args.out)
+        # The skill's documented default is `docs/architecture/` in the target
+        # repo, which does not exist the first time a repo is mapped. Creating it
+        # is the difference between the happy path working and a traceback.
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(html, encoding="utf-8")
+    except OSError as exc:
+        die(f"cannot write the map to {args.out}: {exc}")
     drillable = len({m.get("parent") for m in doc["modules"] if m.get("parent")})
     edge_count = len(doc.get("edges") or [])
     print(

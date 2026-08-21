@@ -338,20 +338,52 @@ class TestHtmlOutput(unittest.TestCase):
         self.assertNotIn("@import", self.html)
         self.assertEqual(re.findall(r'url\(\s*["\']?https?://', self.html), [])
 
-    def test_every_css_variable_is_defined_in_all_four_theme_blocks(self):
-        used = set(re.findall(r"var\((--[a-z0-9-]+)\)", self.html))
+    # Font stacks are structural, not theming: they are the same in light and
+    # dark by design, so only the base :root defines them. Every *other*
+    # variable the stylesheet uses must appear in all four blocks — naming this
+    # set explicitly is what lets the assertion below apply to all four instead
+    # of being switched off for three of them.
+    STRUCTURAL_VARS = {"--mono", "--sans"}
+
+    def theme_blocks(self):
         blocks = re.findall(
             r"(?::root\s*\{|:root\[data-theme=\"(?:dark|light)\"\]\s*\{|@media \(prefers-color-scheme: dark\) \{\s*:root \{)(.*?)\}",
             self.html,
             re.S,
         )
         self.assertEqual(len(blocks), 4, "expected :root, the dark media query, and both overrides")
-        for index, block in enumerate(blocks):
+        return blocks
+
+    def test_every_css_variable_is_defined_in_all_four_theme_blocks(self):
+        used = set(re.findall(r"var\((--[a-z0-9-]+)\)", self.html))
+        self.assertTrue(used, "no CSS variables found — the extraction regex is wrong")
+        for index, block in enumerate(self.theme_blocks()):
             defined = set(re.findall(r"(--[a-z0-9-]+)\s*:", block))
-            # The base :root also carries structural variables the overrides
-            # need not restate; every *colour* must be in all four.
-            missing = {v for v in used if v not in defined and v.startswith("--")} if index == 0 else set()
-            self.assertEqual(missing, set(), f"block {index} is missing {missing}")
+            expected = used if index == 0 else used - self.STRUCTURAL_VARS
+            missing = expected - defined
+            self.assertEqual(missing, set(), f"theme block {index} is missing {sorted(missing)}")
+
+    def test_the_theme_block_check_can_actually_fail(self):
+        """Guards the guard: the previous version asserted `set() == set()` for
+        three of the four blocks, so deleting a variable from an override block
+        — the exact regression it is named for — did not fail it."""
+        used = set(re.findall(r"var\((--[a-z0-9-]+)\)", self.html))
+        themed = sorted(used - self.STRUCTURAL_VARS)
+        self.assertIn("--cycle", themed)
+        for index, block in enumerate(self.theme_blocks()):
+            defined = set(re.findall(r"(--[a-z0-9-]+)\s*:", block))
+            self.assertIn("--cycle", defined, f"theme block {index}")
+            # Simulate the regression in each block in turn and confirm it is caught.
+            self.assertTrue(set(themed) - (defined - {"--cycle"}))
+
+    def test_structural_vars_really_are_absent_from_the_overrides(self):
+        """If a font stack ever gets themed, STRUCTURAL_VARS is now wrong and the
+        exemption above would be hiding a real gap."""
+        for index, block in enumerate(self.theme_blocks()[1:], start=1):
+            defined = set(re.findall(r"(--[a-z0-9-]+)\s*:", block))
+            self.assertEqual(
+                defined & self.STRUCTURAL_VARS, set(), f"theme block {index} now themes a font stack"
+            )
 
     def test_theme_overrides_follow_the_media_query(self):
         """`[data-theme]` must win over `prefers-color-scheme`, which in a
@@ -365,6 +397,27 @@ class TestHtmlOutput(unittest.TestCase):
         self.assertIn("const PANELS =", self.html)
         self.assertNotIn("fetch(", self.html)
         self.assertNotIn("XMLHttpRequest", self.html)
+
+    def test_each_recognised_edge_kind_has_its_own_stroke_and_a_legend_row(self):
+        """A runtime edge crosses a process boundary — the one kind an import
+        parser cannot see. Drawing it identically to a plain import throws away
+        the reason extraction is an agent pass at all."""
+        for kind in ("type-only", "runtime"):
+            with self.subTest(kind=kind):
+                self.assertIn(f".edge.{kind} {{", self.html)
+                self.assertIn(f"stroke-dasharray", self.html)
+        self.assertIn("runtime (crosses a process boundary)", self.html)
+        self.assertIn("type-only</span>", self.html)
+        # Distinct dash patterns, not just distinct class names.
+        patterns = re.findall(r"\.edge\.(type-only|runtime|cycle) \{[^}]*stroke-dasharray: ([^;]+);", self.html)
+        self.assertEqual(len(patterns), 3, patterns)
+        self.assertEqual(len({dashes for _, dashes in patterns}), 3, patterns)
+
+    def test_an_unrecognised_kind_falls_back_to_the_default_stroke(self):
+        """graph-schema.md promises exactly this for a kind outside the
+        recommended vocabulary."""
+        self.assertIn("STYLED_KINDS", self.html)
+        self.assertNotIn(".edge.grpc", self.html)
 
     def test_notes_and_cycle_state_reach_the_findings_banner(self):
         self.assertIn("No cycles at the top level", self.html)
@@ -418,6 +471,15 @@ class TestCommandLine(unittest.TestCase):
         out = self.dir / "map.html"
         self.assertEqual(render_main([str(graph), "-o", str(out)]), 0)
         self.assertIn("<!doctype html>", out.read_text())
+
+    def test_out_path_gets_its_parent_directory_created(self):
+        """The skill documents `docs/architecture/` as the default output, which
+        does not exist the first time a repo is mapped."""
+        graph = self.dir / "architecture.json"
+        graph.write_text(json.dumps(document([module("src/a")], [])))
+        out = self.dir / "docs" / "architecture" / "map.html"
+        self.assertEqual(render_main([str(graph), "-o", str(out)]), 0)
+        self.assertTrue(out.is_file())
 
     def test_refuses_a_document_of_another_schema(self):
         graph = self.dir / "architecture.json"

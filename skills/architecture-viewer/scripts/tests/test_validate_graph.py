@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import shutil
@@ -335,6 +336,49 @@ class TestCoverage(GraphCase):
         self.assertTrue(any("belong to no module" in w for w in problems.warnings))
         self.assertEqual(summary["uncovered_files"], ["src/stray.ts"])
 
+    def test_a_root_that_does_not_exist_is_an_error_not_a_silent_pass(self):
+        """The whole coverage gate used to switch itself off on a typo: a missing
+        root scans nothing, and nothing divided out to a clean 100%."""
+        modules, edges = self.two_module_repo()
+        doc = self.doc(modules, edges, roots=["srcc"])
+        problems, summary = self.run_validate(doc)
+        self.assertTrue(any("does not exist under" in e for e in problems.errors), problems.errors)
+        self.assertEqual(summary["scanned_files"], 0)
+        self.assertEqual(summary["coverage"], 0.0)
+
+    def test_scanning_zero_files_is_an_error_even_with_a_real_root(self):
+        (self.root / "src").mkdir(parents=True, exist_ok=True)
+        self.write("lib/a.ts")
+        modules = [self.module("lib")]
+        problems, _ = self.run_validate(self.doc(modules, [], roots=["src"]))
+        self.assertTrue(
+            any("coverage of nothing is not coverage" in e for e in problems.errors),
+            problems.errors,
+        )
+
+    def test_everything_excluded_is_also_zero_scanned_and_an_error(self):
+        modules, edges = self.two_module_repo()
+        doc = self.doc(modules, edges, excluded=["**"])
+        problems, _ = self.run_validate(doc)
+        self.assertTrue(any("no source files were scanned" in e for e in problems.errors))
+
+    def test_absolute_and_dotdot_roots_are_rejected_before_they_can_crash(self):
+        """`root / '/etc'` lets the absolute component win outright, and the walk
+        then raised an uncaught ValueError out of `relative_to`."""
+        modules, edges = self.two_module_repo()
+        for bad in ("/etc", "../", "src/../..", "src\\game"):
+            with self.subTest(root=bad):
+                problems, _ = self.run_validate(self.doc(modules, edges, roots=[bad]))
+                self.assertTrue(
+                    any("`roots` entry" in e for e in problems.errors),
+                    f"{bad} should be rejected: {problems.errors}",
+                )
+
+    def test_a_valid_root_alongside_a_bad_one_still_reports_the_bad_one(self):
+        modules, edges = self.two_module_repo()
+        problems, _ = self.run_validate(self.doc(modules, edges, roots=["src", "/etc"]))
+        self.assertTrue(any("/etc" in e for e in problems.errors), problems.errors)
+
     def test_dot_directories_are_skipped(self):
         found = []
         self.write("src/game/main.ts")
@@ -416,6 +460,40 @@ class TestPureHelpers(unittest.TestCase):
         self.assertFalse(matches_glob("src/a/b.ts", "**/*.test.ts"))
         self.assertTrue(matches_glob("src/generated/api.ts", "src/generated/*"))
 
+    def test_a_star_never_crosses_a_path_separator(self):
+        """The bug this replaced: `fnmatch`'s `*` crosses `/`, so these matched on
+        one interpreter and not another — and `excluded` feeds the coverage
+        denominator, so the same graph's coverage depended on where it ran."""
+        self.assertFalse(matches_glob("src/generated/deep/api.ts", "src/generated/*"))
+        self.assertFalse(matches_glob("a/b.md", "*.md"))
+        self.assertTrue(matches_glob("b.md", "*.md"))
+        self.assertTrue(matches_glob("src/generated/deep/api.ts", "src/generated/**"))
+
+    def test_double_star_matches_zero_or_more_segments(self):
+        self.assertTrue(matches_glob("a.ts", "**/a.ts"))
+        self.assertTrue(matches_glob("x/a.ts", "**/a.ts"))
+        self.assertTrue(matches_glob("x/y/z/a.ts", "**/a.ts"))
+        self.assertTrue(matches_glob("src/x/y/tests/a.ts", "src/**/tests/*.ts"))
+        self.assertFalse(matches_glob("src/x/y/tests/deep/a.ts", "src/**/tests/*.ts"))
+
+    def test_question_mark_matches_one_character_within_a_segment(self):
+        self.assertTrue(matches_glob("src/a.ts", "src/?.ts"))
+        self.assertFalse(matches_glob("src/ab.ts", "src/?.ts"))
+
+    def test_matches_glob_is_not_exponential_on_many_double_stars(self):
+        """A memo-free recursive matcher hangs here rather than answering."""
+        rel = "/".join(["a"] * 40) + "/b.ts"
+        pattern = "/".join(["**"] * 20) + "/nope.ts"
+        self.assertFalse(matches_glob(rel, pattern))
+
+    def test_matches_glob_does_not_depend_on_pathlib_full_match(self):
+        """One implementation, one behaviour: nothing here defers to a method
+        whose presence varies by interpreter version."""
+        import validate_graph
+
+        source = inspect.getsource(validate_graph.matches_glob)
+        self.assertNotIn("full_match", source.split('"""')[-1])
+
 
 class TestCommandLine(GraphCase):
     def test_clean_run_exits_zero_and_writes_summary(self):
@@ -439,6 +517,14 @@ class TestCommandLine(GraphCase):
         graph = self.root / "architecture.json"
         graph.write_text("{not json")
         self.assertEqual(validate_main([str(graph)]), 1)
+
+    def test_summary_path_gets_its_parent_directory_created(self):
+        modules, edges = self.two_module_repo()
+        graph = self.root / "architecture.json"
+        graph.write_text(json.dumps(self.doc(modules, edges)))
+        out = self.root / "docs" / "architecture" / "summary.json"
+        self.assertEqual(validate_main([str(graph), "-o", str(out)]), 0)
+        self.assertTrue(out.is_file())
 
     def test_repo_root_override_wins_over_the_document(self):
         modules, edges = self.two_module_repo()

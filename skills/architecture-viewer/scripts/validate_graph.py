@@ -62,21 +62,46 @@ class Problems:
 def matches_glob(rel: str, pattern: str) -> bool:
     """`**`-aware glob match against a repo-relative POSIX path.
 
-    `PurePath.full_match` (3.13+) has the recursive semantics `excluded`
-    patterns are written with. The fallback keeps this usable on older
-    interpreters: fnmatch's `*` crosses `/`, so the only case it gets wrong is a
-    leading `**/` that must also match zero directories, which the second
-    attempt covers.
+    Matching is segment-by-segment: `*` and `?` match within one path segment
+    and never cross a `/`, while a whole segment of `**` matches zero or more
+    segments. `src/generated/*` therefore matches `src/generated/api.ts` but not
+    `src/generated/deep/api.ts`; `**/*.test.ts` matches at any depth including
+    the top.
+
+    Deliberately implemented here rather than delegated to `PurePath.full_match`
+    (3.13+) with an `fnmatch` fallback. Those two disagree — `fnmatch`'s `*`
+    crosses `/`, so `*.md` matched `a/b.md` on one interpreter and not the
+    other — and since `excluded` is subtracted from the coverage denominator,
+    that made a graph's coverage, and whether it cleared the floor, depend on
+    which Python ran it. One implementation is one behaviour, and it is the one
+    the schema documents.
     """
-    path = PurePosixPath(rel)
-    full_match = getattr(path, "full_match", None)
-    if full_match is not None:
-        return full_match(pattern)
-    if fnmatch.fnmatchcase(rel, pattern):
-        return True
-    if pattern.startswith("**/"):
-        return fnmatch.fnmatchcase(rel, pattern[3:])
-    return False
+    return _match_segments(rel.split("/"), pattern.split("/"), 0, 0, {})
+
+
+def _match_segments(
+    parts: list[str], patterns: list[str], part: int, pattern: int, memo: dict
+) -> bool:
+    """Whether `parts[part:]` matches `patterns[pattern:]`, memoized so a path
+    full of `**` can't go exponential."""
+    key = (part, pattern)
+    if key in memo:
+        return memo[key]
+
+    if pattern == len(patterns):
+        result = part == len(parts)
+    elif patterns[pattern] == "**":
+        result = any(
+            _match_segments(parts, patterns, skip, pattern + 1, memo)
+            for skip in range(part, len(parts) + 1)
+        )
+    elif part < len(parts) and fnmatch.fnmatchcase(parts[part], patterns[pattern]):
+        result = _match_segments(parts, patterns, part + 1, pattern + 1, memo)
+    else:
+        result = False
+
+    memo[key] = result
+    return result
 
 
 def line_count(path: Path, cache: dict[Path, int]) -> int:
@@ -321,9 +346,30 @@ def validate(doc: object, root: Path, min_coverage: float) -> tuple[Problems, di
         )
 
     roots = doc.get("roots")
+    roots_ok = True
     if not isinstance(roots, list) or not roots or not all(isinstance(r, str) and r for r in roots):
         problems.error("`roots` must be a non-empty list of repo-relative directories")
-        roots = []
+        roots, roots_ok = [], False
+    else:
+        # Same discipline every other path in the document gets. Without it an
+        # absolute or `..` root escapes the repo root and `relative_to` raises,
+        # so a hard gate exits on a traceback instead of a named problem.
+        checked = []
+        for entry in roots:
+            reason = check_id(entry)
+            if reason:
+                problems.error(f"`roots` entry {entry!r} {reason}")
+                roots_ok = False
+            elif not (root / entry).exists():
+                problems.error(
+                    f"`roots` entry {entry!r} does not exist under {root} — a root that "
+                    f"isn't there scans nothing, and a graph that scans nothing clears the "
+                    f"coverage floor without having checked anything"
+                )
+                roots_ok = False
+            else:
+                checked.append(entry)
+        roots = checked
     excluded = doc.get("excluded", [])
     if not isinstance(excluded, list) or not all(isinstance(p, str) for p in excluded):
         problems.error("`excluded` must be a list of glob patterns")
@@ -536,8 +582,16 @@ def validate(doc: object, root: Path, min_coverage: float) -> tuple[Problems, di
     files = source_files(root, roots, excluded) if roots else []
     module_paths = [m.get("path") for m in by_id.values() if isinstance(m.get("path"), str)]
     uncovered = [f for f in files if not covered_by(f, module_paths)]
-    coverage = 1.0 if not files else (len(files) - len(uncovered)) / len(files)
-    if files and coverage < min_coverage:
+    # Zero files is never "100% covered". Reporting it that way is how the whole
+    # coverage half of this gate switches itself off without saying so.
+    coverage = 0.0 if not files else (len(files) - len(uncovered)) / len(files)
+    if not files and roots_ok:
+        problems.error(
+            "no source files were scanned, so the coverage floor checked nothing — every "
+            "`roots` entry resolved to an empty tree, or `excluded` matched everything in "
+            "them. Fix `roots`/`excluded`; coverage of nothing is not coverage."
+        )
+    elif files and coverage < min_coverage:
         shown = uncovered[:20]
         more = f"\n    …and {len(uncovered) - len(shown)} more" if len(uncovered) > len(shown) else ""
         problems.error(
@@ -627,7 +681,13 @@ def main(argv: list[str] | None = None) -> int:
     summary["repo_root"] = str(root)
 
     if args.out:
-        Path(args.out).write_text(json.dumps(summary, indent=2) + "\n")
+        try:
+            out = Path(args.out)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"cannot write the summary to {args.out}: {exc}", file=sys.stderr)
+            return 1
 
     for warning in problems.warnings:
         print(f"warning — {warning}\n", file=sys.stderr)

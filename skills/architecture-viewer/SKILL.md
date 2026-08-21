@@ -187,6 +187,11 @@ When it fails:
 - **Coverage below the floor** means a directory nobody mapped. Map it, or
   exclude it *and say why in `notes`*. Honour *Coverage floor*: the threshold is
   not the thing to adjust.
+- **A `roots` entry that doesn't exist**, or a scan that found zero files, is an
+  error rather than a clean run. Both are the coverage half of this gate
+  reporting on nothing — fix the root or the `excluded` pattern that swallowed
+  everything. `excluded` globs match segment-by-segment (`*` never crosses `/`,
+  a whole segment of `**` matches any depth); see the schema doc.
 - **A containment edge** means Phase 2 recorded nesting as dependency. Delete the
   edge; `parent` already says it.
 
@@ -213,6 +218,8 @@ as text rather than markup.
 - `docs/architecture/` in the target repo if it has a `docs/` directory,
   otherwise `.claude/architecture/`.
 - Filenames: `<repo-name>-graph.json` and `<repo-name>-map.html`.
+- Both scripts create the output's parent directory, so a repo being mapped for
+  the first time needs no setup step.
 
 ---
 
