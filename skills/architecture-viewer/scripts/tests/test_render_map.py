@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from render_map import (  # noqa: E402
     back_edges,
     build_views,
+    edge_classes,
     embed,
     layout,
     main as render_main,
@@ -404,8 +405,9 @@ class TestHtmlOutput(unittest.TestCase):
         the reason extraction is an agent pass at all."""
         for kind in ("type-only", "runtime"):
             with self.subTest(kind=kind):
-                self.assertIn(f".edge.{kind} {{", self.html)
-                self.assertIn(f"stroke-dasharray", self.html)
+                rule = re.search(r"\.edge\." + re.escape(kind) + r" \{([^}]*)\}", self.html)
+                self.assertIsNotNone(rule, f"no .edge.{kind} rule")
+                self.assertIn("stroke-dasharray", rule.group(1))
         self.assertIn("runtime (crosses a process boundary)", self.html)
         self.assertIn("type-only</span>", self.html)
         # Distinct dash patterns, not just distinct class names.
@@ -413,11 +415,29 @@ class TestHtmlOutput(unittest.TestCase):
         self.assertEqual(len(patterns), 3, patterns)
         self.assertEqual(len({dashes for _, dashes in patterns}), 3, patterns)
 
+    def test_edge_classes_are_decided_by_kind_not_by_spelling(self):
+        """Asserts the class an edge actually gets. The version this replaced
+        checked that the literal `STYLED_KINDS` appeared in the page and that
+        `.edge.grpc` did not — the second could never fail, so breaking the
+        fallback left the test green."""
+        self.assertEqual(edge_classes("import", False), "edge")
+        self.assertEqual(edge_classes("type-only", False), "edge type-only")
+        self.assertEqual(edge_classes("runtime", False), "edge runtime")
+        self.assertEqual(edge_classes(None, False), "edge")
+        self.assertEqual(edge_classes(123, False), "edge")
+
     def test_an_unrecognised_kind_falls_back_to_the_default_stroke(self):
         """graph-schema.md promises exactly this for a kind outside the
         recommended vocabulary."""
-        self.assertIn("STYLED_KINDS", self.html)
-        self.assertNotIn(".edge.grpc", self.html)
+        self.assertEqual(edge_classes("grpc", False), "edge")
+        placed = layout([node("a"), node("b")], [{"from": "a", "to": "b", "kind": "grpc"}])
+        self.assertEqual(placed["edges"][0]["cls"], "edge")
+
+    def test_a_cycle_wins_over_the_kind_style(self):
+        self.assertEqual(edge_classes("runtime", True), "edge runtime cycle")
+        cycle_rule = self.html.index(".edge.cycle {")
+        for kind in ("type-only", "runtime"):
+            self.assertLess(self.html.index(f".edge.{kind} {{"), cycle_rule, kind)
 
     def test_notes_and_cycle_state_reach_the_findings_banner(self):
         self.assertIn("No cycles at the top level", self.html)

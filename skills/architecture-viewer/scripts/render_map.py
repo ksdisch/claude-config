@@ -32,6 +32,13 @@ from pathlib import Path
 
 SCHEMA = "arch-graph/v1"
 
+# Edge kinds the stylesheet draws differently. Anything else keeps the default
+# stroke, which is what the schema promises for a kind outside the recommended
+# vocabulary. Decided here rather than in the page so a test can assert the class
+# an edge actually gets, instead of asserting that a constant is spelled a
+# certain way in the emitted JavaScript.
+STYLED_KINDS = ("type-only", "runtime")
+
 # Layout constants. Node height is fixed so ranks read as clean bands; width
 # grows with the label because a truncated module name is a module you cannot
 # identify.
@@ -270,11 +277,31 @@ def layout(nodes: list[dict], edges: list[dict]) -> dict:
     )
 
     placed = [
-        {**edge, "cycle": cyclic, "d": edge_path(source, target, index, cyclic, bow, side)}
+        {
+            **edge,
+            "cycle": cyclic,
+            "cls": edge_classes(edge.get("kind"), cyclic),
+            "d": edge_path(source, target, index, cyclic, bow, side),
+        }
         for edge, source, target, index, cyclic, bow, side in routed
     ]
 
     return {"nodes": nodes, "edges": placed, "width": width, "height": height}
+
+
+def edge_classes(kind: object, cyclic: bool) -> str:
+    """The `class` attribute an edge is drawn with.
+
+    `cycle` is listed last and its CSS rule comes last at equal specificity, so a
+    runtime edge that also closes a cycle draws as a cycle edge. That is the
+    intended precedence: the cycle is the more urgent thing to see.
+    """
+    classes = ["edge"]
+    if isinstance(kind, str) and kind in STYLED_KINDS:
+        classes.append(kind)
+    if cyclic:
+        classes.append("cycle")
+    return " ".join(classes)
 
 
 def edge_path(
@@ -639,15 +666,9 @@ JS = r"""
 
     const edgeLayer = el('g', { class: 'edges' });
     view.edges.forEach((edge, index) => {
-      // Only the kinds the stylesheet knows become classes; anything else keeps
-      // the default stroke, which is what the schema promises for a kind outside
-      // the recommended vocabulary.
-      const STYLED_KINDS = ['type-only', 'runtime'];
-      const classes = ['edge', STYLED_KINDS.indexOf(edge.kind) === -1 ? '' : edge.kind];
-      if (edge.cycle) classes.push('cycle');
       const path = el('path', {
         d: edge.d,
-        class: classes.filter(Boolean).join(' '),
+        class: edge.cls,
         'marker-end': edge.cycle ? 'url(#arrow-cycle)' : 'url(#arrow)',
         'data-from': edge.from,
         'data-to': edge.to,

@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from validate_graph import (  # noqa: E402
+    check_root,
     covered_by,
     main as validate_main,
     matches_glob,
@@ -361,6 +362,49 @@ class TestCoverage(GraphCase):
         doc = self.doc(modules, edges, excluded=["**"])
         problems, _ = self.run_validate(doc)
         self.assertTrue(any("no source files were scanned" in e for e in problems.errors))
+
+    def test_dot_means_the_whole_repo_is_source(self):
+        """`"."` is the only way to say it, and a flat repo has no substitute:
+        without it the author must enumerate top-level files, and every file
+        added later falls silently outside the coverage denominator."""
+        self.write("main.ts")
+        self.write("helper.ts")
+        modules = [self.module("main.ts"), self.module("helper.ts")]
+        problems, summary = self.run_validate(self.doc(modules, [], roots=["."]))
+        self.assertEqual(problems.errors, [])
+        self.assertEqual(summary["scanned_files"], 2)
+        self.assertEqual(summary["coverage"], 1.0)
+
+    def test_equivalent_root_spellings_all_work(self):
+        modules, edges = self.two_module_repo()
+        for spelling in ("src", "src/", "./src", "src//"):
+            with self.subTest(root=spelling):
+                problems, summary = self.run_validate(
+                    self.doc(modules, edges, roots=[spelling])
+                )
+                self.assertEqual(problems.errors, [], spelling)
+                self.assertEqual(summary["scanned_files"], 2)
+
+    def test_check_root_normalises_rather_than_rejecting(self):
+        for spelling, expected in [
+            ("src", "src"),
+            ("src/", "src"),
+            ("./src", "src"),
+            (".", "."),
+            ("./", "."),
+            ("src//lib", "src/lib"),
+        ]:
+            with self.subTest(root=spelling):
+                normalized, reason = check_root(spelling)
+                self.assertIsNone(reason, spelling)
+                self.assertEqual(normalized, expected)
+
+    def test_check_root_still_refuses_to_leave_the_repo(self):
+        for bad in ("/etc", "../x", "src/../..", "src\\game", "", "   ", None, 3):
+            with self.subTest(root=bad):
+                normalized, reason = check_root(bad)
+                self.assertIsNone(normalized, bad)
+                self.assertIsNotNone(reason, bad)
 
     def test_absolute_and_dotdot_roots_are_rejected_before_they_can_crash(self):
         """`root / '/etc'` lets the absolute component win outright, and the walk

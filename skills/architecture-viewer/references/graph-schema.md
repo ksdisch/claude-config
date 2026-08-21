@@ -30,7 +30,7 @@ bottom for the four guarantees it depends on. Changing any of them is a `v2`.
 |---|---|---|
 | `schema` | yes | Exactly `"arch-graph/v1"`. A consumer that sees anything else must refuse rather than guess. |
 | `repo` | yes | Provenance — see below. |
-| `roots` | yes | Repo-relative directories that were scanned for source. Everything outside them is out of the graph by construction, and the coverage check only counts files inside them. |
+| `roots` | yes | Repo-relative directories that were scanned for source. Everything outside them is out of the graph by construction, and the coverage check only counts files inside them. Accepted shapes are below — looser than a module `id`. |
 | `excluded` | no | Glob patterns *inside* `roots` deliberately left unmapped (tests, generated code, vendored trees). Coverage subtracts these. An empty/absent list means nothing was excluded. |
 | `modules` | yes | The nodes. At least one. |
 | `edges` | yes | The directed dependencies. May be empty (a repo of independent modules is a legitimate finding, not an error). |
@@ -178,6 +178,20 @@ Two things make coverage a real gate rather than a number:
   typo'd root scans nothing, and "nothing" would otherwise divide out to a clean
   100%.
 - **Scanning zero files is an error.** Coverage of nothing is not coverage.
+
+### Accepted `roots` shapes
+
+A `roots` entry is a place to start walking, not an identity, so it is checked
+more loosely than a module `id` — these are normalized rather than rejected:
+
+| Entry | Means |
+|---|---|
+| `src` | that directory |
+| `src/` · `./src` · `src//lib` | the same as `src` / `src/lib` — trailing, leading and doubled separators collapse |
+| `.` (or `./`) | **the whole repo is source** — the only way to say it, and what a flat repo needs. Without it, a repo with `main.py` at the top level would have to list its top-level *files*, and every file added afterwards would fall outside the coverage denominator unnoticed |
+
+Rejected, because a root must not escape the repo: a leading `/`, any `..`
+segment, a backslash separator, and the empty string.
 
 ---
 

@@ -28,7 +28,7 @@ import argparse
 import fnmatch
 import json
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 SCHEMA = "arch-graph/v1"
 MAX_DEPTH = 2  # v1 maps top-level modules and their submodules — see the schema doc.
@@ -136,6 +136,39 @@ def check_id(module_id: str) -> str | None:
     if "." in parts or ".." in parts:
         return "must not contain '.' or '..' segments"
     return None
+
+
+def check_root(entry: object) -> tuple[str | None, str | None]:
+    """`(normalized root, None)` or `(None, why it is unusable)`.
+
+    Deliberately looser than `check_id`. A module `id` is an identity — a future
+    rules file writes it by hand, so it has to be exactly one spelling of one
+    path. A `roots` entry is only a place to start walking, and the spellings an
+    author actually types are `"src"`, `"src/"`, `"./src"` and, for a repo whose
+    source sits at the top level, `"."`.
+
+    Borrowing `check_id` here rejected all four of those but the first, and `"."`
+    is the only way to say *the whole repo is source*. Without it a flat repo has
+    to enumerate its top-level files, and every file added later falls silently
+    outside the coverage denominator — the exact hazard the coverage floor exists
+    to catch.
+
+    What it still refuses is what F2 was actually about: escaping the repo root.
+    """
+    if not isinstance(entry, str) or not entry.strip():
+        return None, "must be a non-empty string"
+    if entry.startswith("/"):
+        return None, "must be repo-relative (no leading '/')"
+    if "\\" in entry:
+        return None, "must use POSIX separators ('/' not '\\')"
+
+    # Empty segments (a trailing or doubled `/`) and `.` segments are no-ops in a
+    # POSIX path; normalizing them away is what makes `src/` and `./src` the same
+    # root as `src`.
+    parts = [part for part in entry.split("/") if part not in ("", ".")]
+    if ".." in parts:
+        return None, "must not contain '..' segments — a root cannot escape the repo"
+    return ("/".join(parts) if parts else "."), None
 
 
 def check_locations(
@@ -356,11 +389,11 @@ def validate(doc: object, root: Path, min_coverage: float) -> tuple[Problems, di
         # so a hard gate exits on a traceback instead of a named problem.
         checked = []
         for entry in roots:
-            reason = check_id(entry)
+            normalized, reason = check_root(entry)
             if reason:
                 problems.error(f"`roots` entry {entry!r} {reason}")
                 roots_ok = False
-            elif not (root / entry).exists():
+            elif not (root / normalized).exists():
                 problems.error(
                     f"`roots` entry {entry!r} does not exist under {root} — a root that "
                     f"isn't there scans nothing, and a graph that scans nothing clears the "
@@ -368,7 +401,7 @@ def validate(doc: object, root: Path, min_coverage: float) -> tuple[Problems, di
                 )
                 roots_ok = False
             else:
-                checked.append(entry)
+                checked.append(normalized)
         roots = checked
     excluded = doc.get("excluded", [])
     if not isinstance(excluded, list) or not all(isinstance(p, str) for p in excluded):
