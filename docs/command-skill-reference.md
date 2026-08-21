@@ -103,7 +103,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 
 | Skill | What it does |
 |---|---|
-| [`gauntlet`](../skills/gauntlet/SKILL.md) | Relays one story through a three-stage agent pipeline — specifier → coder → mutation-hardener — where every stage ends in a deterministic gate the orchestrating session runs itself. Ends in a scorecard, never a merge. · [config →](usage-playbook.md#gauntlet) |
+| [`gauntlet`](../skills/gauntlet/SKILL.md) | Relays one story through a three-stage agent pipeline — specifier → coder → mutation-hardener — where every stage ends in a gate the orchestrating session runs itself rather than takes on an agent's word. Ends in a scorecard, never a merge. · [config →](usage-playbook.md#gauntlet) |
 | [`bug-hunt`](../skills/bug-hunt/SKILL.md) | Proactively hunts for bugs you don't know about — fans out specialized finder agents, adversarially verifies every finding, and presents a ranked triage list. Optionally hands bugs to systematic-debugging. · [config →](usage-playbook.md#bug-hunt) |
 | [`adversarial-review`](../skills/adversarial-review/SKILL.md) | Pre-merge author↔reviewer↔judge loop — a zero-context reviewer files graded findings on the branch diff, the author triages (accept/dispute), a neutral judge rules on disputes, fixes get re-checked (capped review rounds), and the adjudicated summary lands as a PR comment with a CLEAR / NOT-CLEAR merge verdict. · [config →](usage-playbook.md#adversarial-review) |
 | [`artifacts-audit`](../skills/artifacts-audit/SKILL.md) | Audits a codebase against a canonical artifact taxonomy, then produces a concrete generation + maintenance plan. Plans only; does not write artifacts. · [config →](usage-playbook.md#artifacts-audit) |

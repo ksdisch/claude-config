@@ -1,6 +1,6 @@
 ---
 name: gauntlet
-description: Relay one story through a three-stage agent pipeline — specifier → coder → mutation-hardener — where every stage ends in a deterministic gate the orchestrating session runs itself, and the run ends in a scorecard rather than a merge. Use when Kyle types /gauntlet or says "run the gauntlet", "relay this story", "run this story through the pipeline", or asks to build a backlog item through the staged relay instead of a single session. Takes a target repo path plus a story (inline text or a backlog-item pointer). NOT for pre-merge review of a finished branch (adversarial-review owns that gate, and the gauntlet's branch still goes through it), not for proactive defect hunts with no story in play (bug-hunt), not for picking what to build next (backlog-hygiene).
+description: Relay one story through a three-stage agent pipeline — specifier → coder → mutation-hardener — where every stage ends in a gate the orchestrating session runs itself rather than takes on an agent's word, and the run ends in a scorecard rather than a merge. Use when Kyle types /gauntlet or says "run the gauntlet", "relay this story", "run this story through the pipeline", or asks to build a backlog item through the staged relay instead of a single session. Takes a target repo path plus a story (inline text or a backlog-item pointer). NOT for pre-merge review of a finished branch (adversarial-review owns that gate, and the gauntlet's branch still goes through it), not for proactive defect hunts with no story in play (bug-hunt), not for picking what to build next (backlog-hygiene).
 ---
 
 # Gauntlet
@@ -13,7 +13,7 @@ so the gates live here, in Bash, in this session, and nowhere else.
 |---|---|---|
 | 1 Specify | `specifier` (opus/high) | **G1** — spec files exist and are shaped like Gherkin |
 | 2 Code | `gauntlet-coder` (opus/high) | **G2** — suite exit 0 **and** the diff touches a test file |
-| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — mutation survivors = 0 **and** suite still green |
+| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)`) |
 
 The run produces a branch and a scorecard. It does **not** merge. Merging is the normal git
 workflow plus `adversarial-review`, outside this skill — one gate per merge, and the gauntlet's
@@ -35,8 +35,11 @@ degraded and quiet.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
   (`stage-1: …`, `stage-2 lap 2: …`), *before* its gate runs. Agents leave the tree dirty and
   report; commit authorship stays in one place so every lap is reproducible and diffable. **Stage
-  tracked paths explicitly, never `-A`** — the probe permits untracked scratch files to exist, and
-  this is what keeps them out of the story's diff.
+  paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's dispatch
+  specified plus the ones the agent reports touching; new files are staged the same way, since
+  everything the relay produces is untracked at the moment you commit it. Naming paths, not
+  restricting yourself to tracked ones, is what keeps the probe's permitted scratch files out of the
+  story's diff.
 - **BRANCH-PINNED** — before and after every dispatch, assert you are still on the story branch.
   Stage agents edit files, so a clean-tree check proves nothing here; the branch name is the
   thing to assert. A stray checkout ends the run.
@@ -55,8 +58,10 @@ it established.
    later, so it has to be made here.
    **Untracked paths do not stop the run** — real repos carry scratch directories, and refusing to
    start on one would be its own failure. Name them in the run log and leave them alone. What makes
-   that safe is the other half of the rule: **every stage commit stages tracked paths explicitly,
-   never `-A`**, so an untracked file cannot be swept into a stage commit either.
+   that safe is the other half of the rule (STAGE-COMMITS): **every stage commit stages paths by
+   name, never `-A`**. A scratch file nobody named cannot be swept into a stage commit — while the
+   specifier's and coder's brand-new files, which are equally untracked, still get committed because
+   they *are* named.
 2. **Baseline suite green.** Run the repo's test command on the pre-branch state. Red baseline →
    name the failing tests and **stop**. The gauntlet builds on green; it does not rescue red repos,
    because a red baseline makes every downstream gate meaningless.
@@ -140,12 +145,15 @@ fourth lap is never taken, and the cap is never raised mid-run.
 ## Stage 3 — Harden
 
 **Scope the run on the command line, never in a tracked config file.** The scope is the source
-files the story branch touched — the diff versus merge-base, minus test files (G2's predicate) **and
-minus everything under `docs/`**. That second exclusion is not redundant: G2 rules in as many words
-that `.feature` and QA files are specifications rather than test files, so "excluding test files"
-alone leaves Stage 1's own output in the scope, where Stryker reports noise on it and mutmut is
-likelier to error than to shrug. Whole-repo mutation is unaffordable and mostly irrelevant to this
-story. Pass it per run — Stryker takes `--mutate`,
+files the story branch touched — the diff versus merge-base, minus everything that is not source the
+mutation tool can mutate. Concretely, subtract: test files (G2's predicate), everything under
+`docs/`, and the dependency manifest and lockfile that Stage 0 step 5 committed. Those exclusions
+are not redundant with each other — G2 rules in as many words that `.feature` and QA files are
+specifications rather than test files, and a `package.json` is neither a test nor under `docs/` — so
+each one names a real thing that otherwise reaches `--mutate`, where Stryker reports noise and
+mutmut is likelier to error than to shrug. The general rule, if the branch touched something this
+list doesn't name: **the scope is source files the tool can mutate**, and anything else comes out.
+Whole-repo mutation is unaffordable and mostly irrelevant to this story. Pass it per run — Stryker takes `--mutate`,
 mutmut takes paths. A `stryker.conf.json` carrying a three-file `mutate` list would be stage-3 work
 under STAGE-COMMITS, would ride the branch through the merge, and would leave the target repo with
 a mutation setup whose near-empty runs look like passes forever after. That is the silent
@@ -225,7 +233,9 @@ gate called `G2` means nothing on its own — and give him the absolute path to 
 directory plus a copy-pasteable `code <path>` line for the full scorecard.
 
 Kyle's seat is at the scorecard: he reads it and spot-checks. The relay never requires him to
-read code mid-run, and never asks him to adjudicate a gate — gates are exit codes, not opinions.
+read code mid-run. Every gate but one is an exit code rather than an opinion; the exception is G3's
+accepted-survivor path, which is a judgment you make and record — which is why it reports under its
+own outcome name, so what he is reading is never ambiguous about which kind it was.
 
 ## Autonomy boundary
 
