@@ -13,7 +13,7 @@ so the gates live here, in Bash, in this session, and nowhere else.
 |---|---|---|
 | 1 Specify | `specifier` (opus/high) | **G1** — spec files exist and are shaped like Gherkin |
 | 2 Code | `gauntlet-coder` (opus/high) | **G2** — suite exit 0 **and** the diff touches a test file |
-| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)`) |
+| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors **in the story's changed lines** (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)` vs `NOT-APPLICABLE`) |
 
 The run produces a branch and a scorecard. It does **not** merge. Merging is the normal git
 workflow plus `adversarial-review`, outside this skill — one gate per merge, and the gauntlet's
@@ -34,9 +34,19 @@ degraded and quiet.
   by name and reason. Never absorb a degradation to keep the relay moving.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
   (`stage-1: …`, `stage-2 lap 2: …`), *before* its gate runs. Agents leave the tree dirty and
-  report; commit authorship stays in one place so every lap is reproducible and diffable. **Stage
-  paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's dispatch
-  specified plus the ones the agent reports touching; new files are staged the same way, since
+  report; commit authorship stays in one place so every lap is reproducible and diffable.
+  **Never commit while a dispatch is still outstanding. The dispatch returning is the completion
+  signal, and it is the only one.** Read the report it returns — that is where the touched paths come
+  from, and you need them below. What you must not do is go looking for a completion signal anywhere
+  else while the call is in flight: **a tree that has stopped changing is not a finished agent.** An
+  agent reading files, composing its report, or sitting between two edits leaves exactly the same
+  still tree as one that is done. Committing on that heuristic captures half a lap, sends a partial
+  diff into the gate, and makes the gate's result a statement about a state no agent ever produced.
+  Separately, and for a different reason: **never open the dispatch's raw transcript file** — the
+  returned report is the summary you need, while the transcript behind it is large enough to displace
+  the run's own context, and it tells you nothing the report doesn't.
+  **Stage paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's
+  dispatch specified plus the ones the agent reports touching; new files are staged the same way, since
   everything the relay produces is untracked at the moment you commit it. Naming paths, not
   restricting yourself to tracked ones, is what keeps the probe's permitted scratch files out of the
   story's diff.
@@ -47,6 +57,35 @@ degraded and quiet.
 ## Stage 0 — Probe
 
 Run before any dispatch. Its job is to find out whether this repo can be gated at all.
+
+**Precondition — the three agents must resolve in *this* session.** Claude Code loads the agent
+registry at session start, so `specifier`, `gauntlet-coder` and `mutation-hardener` are dispatchable
+only if their files were on disk before this session began. A session that just wrote or merged them
+gets `Agent type 'specifier' not found` at the first dispatch. Reading the roster comes before the
+repo probe, because it is about the session rather than the repo and because failing it invalidates
+every stage; the dispatch fallback below, if you need it, comes after step 1.
+
+**The check is the session's own agent roster, and `agents/` on disk is not it.** That distinction
+*is* the defect: the pilot's three files were on disk and merged to `main`, and all three dispatches
+still failed. So a `ls`, a `grep`, or a glance at the checkout returns a pass in precisely the case
+that fails, and it is the check you will reach for by reflex. Confirm instead that all three names
+appear in the list of available agent types **this session** was given. If you cannot see that list,
+or are unsure whether what you are reading is the live roster, settle it by dispatching. `Agent
+type '<name>' not found` is the definitive answer, and three cheap dispatches are worth less than a
+wasted run — but **two of the three types can write** (`gauntlet-coder` holds `Write` and `Edit`,
+`specifier` holds `Write`), and their briefs tell them to produce files. So the probe task is
+*"reply with the single word OK and change nothing"*, never a vague one-liner they can read as their
+real job, and the probes run **after step 1's clean-tree check**, not before it. Re-assert a clean
+tree once they return: a probe that dirtied the repo is a probe that just manufactured the exact
+mis-attribution step 1 exists to prevent.
+
+Any that do not resolve → **stop and tell Kyle to re-run from a fresh session.** Do not fall back to
+`general-purpose` with the agent's brief pasted in: that fallback silently drops the two things the
+agent files exist to guarantee —
+`tools:` restrictions are not enforced (the specifier's deliberate lack of `Bash` is what backs its
+promise never to claim a test passed, and under the fallback it is prose), and `effort:` cannot be
+passed through the `Agent` tool at all, so the subagent inherits this session's. A relay run on that
+fallback is not a run of this pipeline, and its scorecard cannot be used as evidence about it.
 
 **The steps are ordered, and the order is load-bearing** — each one acts on state the one before
 it established.
@@ -76,14 +115,58 @@ it established.
    in the run log — coverage is **measured, not gated**. Absent → record it as a named degradation
    and **continue**: the scorecard's coverage line becomes "no mechanism available" rather than a
    number. Coverage gates nothing, so its absence never stops the run.
-5. **Mutation runner reachable.** Stryker for JS/TS, mutmut for Python. Absent → install it as a
-   dev dependency, which lands on the story branch created in step 3. **Commit the install here,
-   tagged `stage-0`**, rather than leaving it dirty: that is what makes it visible, committed, and
-   revertable, and it is what keeps the manifest and lockfile out of Stage 1's `stage-1:` commit —
-   where they would be attributed to the specifier, the exact mis-attribution step 1 stops the run
-   to prevent. Not installable → the hardener stage cannot gate: name the missing tool and stop
-   (unattended), or ask Kyle whether to run two-stage with G3 recorded as unavailable (attended).
-   **Never silently skip a stage.**
+5. **Mutation runner can measure this repo.** Stryker for JS/TS, mutmut for Python. Absent →
+   install it as a dev dependency, which lands on the story branch created in step 3. **Commit the
+   install here, tagged `stage-0`**, rather than leaving it dirty: that is what makes it visible,
+   committed, and revertable, and it is what keeps the manifest and lockfile out of Stage 1's
+   `stage-1:` commit — where they would be attributed to the specifier, the exact mis-attribution
+   step 1 stops the run to prevent. Not installable → the hardener stage cannot gate: name the
+   missing tool and stop (unattended), or ask Kyle whether to run two-stage with G3 recorded as
+   unavailable (attended). **Never silently skip a stage.**
+
+   **Then prove it can measure, with a trial mutation — "the binary installed" is not a probe.**
+   Scope a run to one small source file the existing suite already covers, cap it at a handful of
+   mutants, and read the *per-mutant status* out of the JSON report. **The probe passes only when
+   mutants die `Killed`.** A run where they die `Timeout` has measured nothing: a timeout kill is the
+   clock expiring, not a test catching anything, and it produces a survivor count of zero that looks
+   exactly like a well-hardened change. That is a false G3 pass, which is the one failure this whole
+   skill is built to refuse.
+
+   The failure mode to expect, because it is the common one: **Stryker's `command` test runner has
+   no per-test granularity.** Against a `node --test` repo its dry run reports the entire suite as a
+   single test (`Ran 1 tests in …`), after which every mutant re-runs the whole suite. Run several of
+   those at once and the machine thrashes: every mutant dies on the clock rather than on an
+   assertion. The dry-run line is the cheap early tell — read it before you spend a full run.
+
+   **The resolution is one Stryker config written outside the repo** — the escape clause Stage 3
+   grants — carrying the repo's full test command as `commandRunner.command`, **concurrency 1**, and
+   a timeout above the suite's measured duration, passed with `--config-file`. The config is needed
+   because `--commandRunner.command` is not a recognised flag; the command runner's command can only
+   come from a config file. What makes the full suite affordable rather than ruinous is that nothing
+   here runs many of them at once, and that Stage 3 mutates **line ranges** rather than whole files —
+   see Stage 3. A config written *inside* the repo is the tracked-config degradation Stage 3 refuses:
+   same file, wrong side of the boundary.
+
+   Re-probe after configuring. Still dying by timeout rather than detection → **take the narrowing
+   escape before you declare anything ungateable** (Stage 3, *The narrowing escape*): point
+   `commandRunner.command` at the tests covering the probe's file and re-probe once more. That is the
+   configuration the pilot actually got a clean run out of, and it must be tried before the exit
+   below, not after. **Only if that also dies by timeout → G3 cannot gate this repo**: treat it
+   exactly as "not installable" above (stop, or ask Kyle), and record the timing evidence rather than
+   a bare "probe failed".
+
+   **If the escape got the probe through, put `commandRunner.command` back to the full test command
+   before leaving Stage 0.** The narrowed list it used names tests covering *the probe's* file — an
+   existing file chosen before Stage 2 writes a line — so the story's own tests cannot be in it.
+   Carried into Stage 3 unnoticed, that config measures the story's changed lines against tests that
+   execute none of them: mutants come back `NoCoverage` and `Survived` wholesale, both HARDENER-CAP
+   laps burn on an artefact of the config, and G3 records a failure against a change that may be
+   fully hardened. Leave the config in the state Stage 3 expects, and record **"narrowing escape
+   needed at Stage 0"** in the run log as a *prediction*: Stage 3 will likely need its own escape, and
+   must pick that list against the story's scope rather than inherit this one.
+
+   Record either way in the run log: the trial's killed/timeout split, whether the escape was needed,
+   and the absolute path of the out-of-repo config, since Stage 3 reuses it.
 6. **Open the run log.** Create `~/.claude/gauntlet/<repo-name>/<date>-<slug>/` — outside the repo,
    mirroring the review-mailbox pattern, so the relay's bookkeeping never lands in the story's diff.
    Record the start timestamp, the language, the test/coverage/mutation commands, and every probe
@@ -147,42 +230,204 @@ fourth lap is never taken, and the cap is never raised mid-run.
 ## Stage 3 — Harden
 
 **Scope the run on the command line, never in a tracked config file.** The scope is the source
-files the story branch touched — the diff versus merge-base, minus everything that is not source the
-mutation tool can mutate. Concretely, subtract: test files (G2's predicate), everything under
+files the story branch touched — the diff versus merge-base, minus everything that is not source
+the mutation tool can mutate. Concretely, subtract: test files (G2's predicate), everything under
 `docs/`, and the dependency manifest and lockfile that Stage 0 step 5 committed. Those exclusions
 are not redundant with each other — G2 rules in as many words that `.feature` and QA files are
-specifications rather than test files, and a `package.json` is neither a test nor under `docs/` — so
-each one names a real thing that otherwise reaches `--mutate`, where Stryker reports noise and
+specifications rather than test files, and a `package.json` is neither a test nor under `docs/` —
+so each one names a real thing that otherwise reaches `--mutate`, where Stryker reports noise and
 mutmut is likelier to error than to shrug. The general rule, if the branch touched something this
 list doesn't name: **the scope is source files the tool can mutate**, and anything else comes out.
-Whole-repo mutation is unaffordable and mostly irrelevant to this story. Pass it per run — Stryker takes `--mutate`,
-mutmut takes paths. A `stryker.conf.json` carrying a three-file `mutate` list would be stage-3 work
-under STAGE-COMMITS, would ride the branch through the merge, and would leave the target repo with
-a mutation setup whose near-empty runs look like passes forever after. That is the silent
-degradation this skill exists to refuse, arriving by the back door. If some repo genuinely cannot
-be scoped without a config file, write it outside the repo and point the tool at it; if even that
-is impossible, treat the tracked config as a degradation, name it in the scorecard, and revert it
-before the branch leaves the run.
+Whole-repo mutation is unaffordable and mostly irrelevant to this story. Pass it per run — Stryker
+takes `--mutate`, mutmut takes paths. A `stryker.conf.json` carrying a three-file `mutate` list
+would be stage-3 work under STAGE-COMMITS, would ride the branch through the merge, and would
+leave the target repo with a mutation setup whose near-empty runs look like passes forever after.
+That is the silent degradation this skill exists to refuse, arriving by the back door. If some
+repo genuinely cannot be scoped without a config file, write it outside the repo and point the
+tool at it; if even that is impossible, treat the tracked config as a degradation, name it in the
+scorecard, and revert it before the branch leaves the run.
+
+**Narrow at the tool, by line range — not in the report afterwards.** Stryker's `--mutate` takes a
+mutation range, not just a path: `file:startLine[:startColumn]-endLine[:endColumn]`. That is the
+whole fix for the pilot's load-bearing defect, and it is a command-line flag, so it needs no config
+file. Nothing moves those ranges while Stage 3 runs — the hardener may not edit implementation
+files, and test files are already out of the scope — so one derivation holds for every lap.
+
+**Deriving the ranges.** `git diff -U0` against the merge-base, restricted to the scope files, taking
+the **new-side** range from each hunk header. Two cases the plain rule gets wrong, both ordinary
+rather than exotic:
+
+- **A hunk whose new-side length is 0 is a pure deletion — skip it.** `@@ -1340,19 +1364,0 @@` reads
+  as start 1364, end 1363, and Stryker's validator *throws* on `start > end`, killing the run before
+  a single mutant is generated. A deletion adds no line for the tool to mutate, so there is nothing
+  to pass. Do not "repair" it to `1364-1364`: that mutates an unchanged line, which is the file-level
+  contamination this whole section exists to prevent, in miniature.
+- **`@@ -a,b +c @@` with no comma on the new side means length 1**, not length 0 — a single-line
+  addition. Deriving it as zero-length silently drops the line from the gate.
+- **If skipping leaves no ranges at all, do not run the tool.** A scope whose every hunk is a
+  deletion ("remove the dead branch") changed no line anything can mutate, and both ways of passing
+  an empty list are wrong: omitting `--mutate` falls back to Stryker's default `{src,lib}/**` globs —
+  whole-repo mutation — while `--mutate ''` sets the list to empty, which warns rather than errors
+  and produces a report with zero mutants, zero survivors, and a clean-looking pass. Record
+  **`G3: NOT-APPLICABLE (no mutable changed lines)`** in the scorecard and say so in as many words.
+  The invariant behind this, which holds everywhere: **a run that reports zero mutants generated is
+  never a pass.** Zero survivors out of zero mutants is not a measurement.
+
+**Pass every range in ONE comma-separated `--mutate` flag.** `--mutate 'f.mjs:10-20,f.mjs:40-55'`,
+never `--mutate f.mjs:10-20 --mutate f.mjs:40-55`. **Repeating the flag keeps only the last value and
+discards the rest** — its argument coercion takes a single value, so commander overwrites instead of
+accumulating. The dropped ranges generate no mutants, contribute no survivors, and the gate passes on
+lines nobody measured. Multi-hunk is the normal shape of a real story, so this is the common path,
+and it fails silently in the direction of a false `G3: PASSED`. Two things make it visible instead:
+record **the ranges passed and the mutants attributed to each** in the run log, and treat a range
+that produced no mutants as a fact to explain before you accept any result from that run. Per-range
+attribution means intersecting the JSON report's mutant locations with the ranges — the tool's own
+stdout counts by *file*, so two ranges in one file share one number and a dropped range hides
+inside it.
+
+Why it matters, in the pilot's own numbers: the story touched 104 lines of a ~500-line module.
+Mutated by file that is **385 mutants and 39 survivors**, every one of the 39 in a function the story
+never wrote. Mutated by range it is the mutants inside those 104 lines, and **0 survivors**. Read at
+file level the orchestrator dispatches the hardener against a module's accumulated debt, burns both
+HARDENER-CAP laps on it, and records a false G3 failure against a change that is in fact fully
+hardened. Two units are in play and they must not blur: **`SCOPE` is a file list** — what the `SCOPE`
+dispatch parameter carries — while **the gate's unit is a line range**.
+
+A tool with no range support (mutmut) is the fallback path, not the main one: mutate the scope files
+and intersect the report against the ranges yourself, keeping only mutants whose reported line falls
+inside one. Record that you took the fallback. On that path alone, mutants outside the changed lines
+exist; they are a finding about the repo's existing suite, recorded in the scorecard by count and
+file, and **never put in the hardener's `SURVIVORS` list** — a lap spent on pre-existing debt is a
+lap the story's own survivors don't get, and the hardener has only two. If they look worth acting
+on, the instrument is a standalone `mutation-hardener` `AUDIT` dispatch, outside this run.
+
+**Before the first run, read the config you are about to reuse.** `commandRunner.command` should be
+the repo's full test command. If it is a narrowed list, Stage 0's escape was taken and not restored:
+you are on the escape path, not the normal one — re-pick the list against *this story's* scope files
+and treat *The narrowing escape*'s confirmation rule as in force. Never run Stage 3 on a test command
+selected before the story existed.
+
+**One out-of-repo config, and it runs the whole test suite.** Narrowing at the tool is what makes
+this affordable, and affordability is what lets the config be simple. Stage 0 established that
+`commandRunner.command` can only come from a config file; Stage 3 uses that one config, unedited,
+with the repo's **full test command**, **concurrency 1**, and a timeout above the suite's measured
+duration. Record its absolute path in the run log.
+
+While the full suite is affordable there is **no narrowed test list, no second config, and nothing to
+confirm** on the normal path: the tests each mutant faces are simply all of them, which is both the
+strongest set available and the only set G3 should be claiming anything about. The machinery this
+stage used to need for picking, checking and re-checking a subset of tests is deleted rather than
+fixed, because on that path the question it answered does not arise. Narrowing survives only as the
+recorded degradation below, never as the default.
+
+**"Affordable" is a number to check, not an assumption.** Ranges cut the mutant count from a module's
+worth to the changed lines' worth, and the pilot's timeouts are *attributed* to concurrency — 385
+mutants each re-running a full suite four to eight at a time, thrashing the machine — but **nobody
+has run the full suite at concurrency 1**, so treat that as the working hypothesis it is. Before the
+first run: multiply the suite's measured duration by the mutant count the ranges generate, compare it
+to what this run can spend. **Get that count without spending the run** — `--dryRunOnly` over the
+same ranges instruments and counts the mutants without executing any of them. It **writes no JSON
+report**: the executor returns before the reporters run, so the number is the stdout line
+`Instrumented N source file(s) with M mutant(s)` and nowhere else. Read it there, not in a report
+file that was never created. Three runs of that size is the
+realistic total (one pre-dispatch, one per hardener lap). A seconds-fast suite makes this minutes; a
+minute-long suite makes it hours, and that is a decision, not a detail.
+
+#### The narrowing escape
+
+**Two escapes, in order, and neither is silent.** This is the one place narrowing is permitted, and
+both Stage 0's failed re-probe and the `Timeout` bullet below route here rather than straight to the
+exit. Over budget, or mutants still dying `Timeout` at concurrency 1:
+
+**First, narrow `commandRunner.command` to the tests covering the scope**, and record it in the
+scorecard as a named degradation. That is the configuration the pilot got a clean 385-mutant run out
+of, so it has evidence behind it — but it also carries the defect that evidence hid, and the cost is
+stated rather than absorbed:
+
+- **The test list is picked by inspection, and there is no better way.** The pilot chose its three
+  files by hand. Coverage tooling cannot help: it reports coverage per *source* file and never
+  attributes a line to the test that executed it. So this list will sometimes be incomplete, and an
+  incomplete list returns mutants the full suite would have killed.
+- **Therefore a `Survived` under the narrowed runner is not a survivor yet.** `Killed` is still
+  evidence — a test caught it, and a smaller test set catching it is a stronger result, not a weaker
+  one. But before any `Survived` mutant becomes a lap's work in `SURVIVORS`, re-run *that mutant's
+  range* under the full command. **Three outcomes, not two.** Killed → the list was incomplete; widen
+  it and re-run the scoped pass. Survived → genuine. **`Timeout`, or any unmeasured status → the
+  confirmation did not run, and that is not a kill.** Keep the mutant in `SURVIVORS`, labelled
+  *unconfirmed* in the scorecard. Fail toward the loud direction: a false failure costs two laps, a
+false pass costs the gate its meaning. This outcome is *expected* on one of the two routes in —
+"mutants still dying `Timeout` at concurrency 1" means the full command has already been seen to
+time out here. And reaching this escape a second time from inside itself is the exit, not a loop:
+there is nothing left to narrow. This is a handful of mutants on a degraded path, not a pass over
+every run, which is the whole reason it is affordable here and was not affordable as a general
+mechanism.
+- The scorecard says which kind of run produced the result, because "measured against the whole
+  suite" and "measured against four files somebody picked" are not the same claim.
+
+**Only then**, if that also fails, is this Stage 0's "G3 cannot gate this repo" exit arriving late.
+Reaching for the second before the first would declare a repo ungateable while a configuration known
+to measure it sits unused.
+
+### Reading a mutation run
+
+**This applies to every mutation run the stage makes, G3's re-run after each hardener lap included.**
+That re-run is where it matters most: the hardener has just added tests, so the suite each mutant
+re-executes is longer than the one the first run measured, and that is exactly when mutants start
+dying on the clock instead of on an assertion. **Four buckets** — the tool emits more statuses than
+that, and every one of them lands in exactly one bucket. Conflating any two is how a false pass gets
+recorded:
+
+- **`Killed`** — a test caught the mutant. This is the only status that is evidence of anything good.
+- **`Timeout`** — the instrument failed. The clock expired before any assertion ran, so it is
+  **never a survivor and never a pass**. Raise the timeout, confirm concurrency is 1, re-run. If it
+  persists, take *The narrowing escape* above — in that order, and only then the exit it ends in.
+- **`Survived` or `NoCoverage`** — a survivor, and both go to the hardener. Under the full suite
+  `NoCoverage` means *no test in the repo executes that line*, which is the harshest finding this
+  stage can produce, not a gap in the measurement. Discarding it would let wholly untested new code
+  record a clean pass, and G2 does not stop that: it requires only that the diff touch a test file,
+  never that the changed lines are covered.
+- **Anything else** — `CompileError`, `RuntimeError`, `Ignored`, `Pending`. The schema defines eight
+  statuses, and a mutant that never ran is not a mutant that was caught. Record the
+  count by status and treat any of these on a changed line exactly as `Timeout`: unmeasured, so
+  neither a survivor nor a pass. Leaving them unruled is the same arithmetic as counting them
+  `Killed`, which is the conflation this list exists to stop.
+
+A raw survivor count read straight off the tool's report, without the status split, is never the gate.
 
 **Run the mutation tool first, then dispatch.** Before the first hardener dispatch, run it
 yourself over the scope. Two things fall out of this and neither is optional:
 
-- **Zero survivors here ends Stage 3 immediately** — gate passed, no dispatch spent, and the
-  scorecard says so. A well-hardened change is a common outcome, not a suspicious one.
+- **Zero survivors *inside the changed lines* here ends Stage 3 immediately** — gate passed, no
+  dispatch spent, and the scorecard says so, naming any count outside those lines it is passing over.
+  **Check the mutant count before reading this as a pass:** zero survivors out of zero mutants is
+  `G3: NOT-APPLICABLE`, not `G3: PASSED`.
+  On the range-scoped path the two numbers are the same; on the whole-file fallback they are not, and
+  it is the changed-line one that decides. A well-hardened change is a common outcome, not a
+  suspicious one.
 - **The hardener is never dispatched without `SURVIVORS`.** Its `HARDEN` mode is written entirely
   against a list; dispatched blind it has nothing to work from and the lap is a no-op, which turns
   the 2-lap budget into 1.
 
-Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS` (file,
-line, mutator, what it changed). It adds or strengthens tests; it may not edit implementation files.
+Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS`. `SCOPE` is
+the file list; `SURVIVORS` is **only the survivors inside the changed lines** (file, line, mutator,
+what it changed), never every survivor those files produced. It adds or strengthens tests; it may not
+edit implementation files.
 
-**Gate G3.** You re-run the mutation tool yourself and read the survivor count out of its JSON
-report. An agent reporting "all mutants killed" is not the gate. G3 has **two passing outcomes and
-they are never recorded as the same one**:
+**Gate G3.** You re-run the mutation tool yourself over the same ranges and read it under *Reading
+a mutation run* above — the status split is the gate, not the tool's bare survivor number. That
+matters most here: this run follows a hardener lap that lengthened the suite, which is when timeouts
+are likeliest and when a zero looks most like success. An agent reporting "all mutants killed" is
+not the gate. G3 has **two passing outcomes plus one that is neither, and no two of them are ever
+recorded as the same one**:
 
-- **`G3: PASSED`** — suite green, survivor count zero. Fully deterministic.
-- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only survivors left are `n` you have
-  explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
+- **`G3: NOT-APPLICABLE (no mutable changed lines)`** — the scope produced **zero mutants**, because
+  every hunk was a deletion. Neither passing nor failing: no hardener dispatch, the run proceeds to
+  Stage 4, and it is recorded under LOUD-DEGRADATION as a gate that did not apply. Never quietly
+  counted as a pass — zero survivors out of zero mutants is not a measurement.
+- **`G3: PASSED`** — suite green, changed-line survivor count zero, **out of a nonzero mutant
+  count**. Fully deterministic.
+- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only changed-line survivors left are `n`
+  you have explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
 
 **Accepted survivors — the named exit, not a silent one.** Some mutants cannot be killed by any
 honest test: an *equivalent* mutant (semantically identical to the original), or one killable only
@@ -206,7 +451,7 @@ An implementation-only survivor is a **finding about the implementation** — de
 unreachable branch, a defensive check nothing can trigger. Carry it into the scorecard as a finding
 for Kyle, not as a gate failure.
 
-Any other failure → redispatch with the surviving mutants listed.
+Any other failure → redispatch with the surviving mutants inside the changed lines listed.
 
 **Invariant HARDENER-CAP: 2 laps.** Here a lap is **one hardener dispatch plus the gate run after
 it** — the pre-dispatch run above is not a lap and never consumes budget, which is the whole point
@@ -222,9 +467,18 @@ Write `scorecard.md` into the run-log directory:
 - Dispatch count.
 - Final line coverage against the Stage 0 baseline — **measured, not gated**; say so where you
   report it. No mechanism available → say that, rather than omitting the line.
-- Mutants generated / killed / survived. Every **accepted survivor** by name, with the reason it
-  cannot be killed and your assessment of that reason; every survivor still standing at the cap,
-  likewise.
+- Mutants generated / killed / survived / **timed out** / **uncovered** — the last two by name and
+  count on every run, never summarised into the survivor number: a `Timeout` is a measurement that
+  failed, and an uncovered changed line is the harshest finding this stage can produce. Say whether
+  the run was scoped by line range or by whole file, since only the second kind can produce mutants
+  outside the story's changed lines, and split those out where it did. Every **accepted survivor** by
+  name, with the reason it cannot be killed and your assessment of that reason; every survivor still
+  standing at the cap, likewise. On a whole-file run, the mutants outside the changed lines go in as
+  a count per file, labelled a standing finding about the repo's existing suite rather than anything
+  this run produced or failed.
+- **The G3 outcome verbatim** — `PASSED`, `PASSED-WITH-ACCEPTED(n)`, `NOT-APPLICABLE (no mutable
+  changed lines)`, or the failure with its standing survivors. A gate that did not apply is not a
+  gate that passed, and the scorecard is where that distinction has to survive.
 - Any **implementation findings** the hardener raised — mutants that point at dead code or an
   unreachable branch rather than a test gap.
 - Files touched, and the diff size.
@@ -246,8 +500,10 @@ own outcome name, so what he is reading is never ambiguous about which kind it w
   runs, all stage commits, accepting a survivor on the recorded terms above — named, assessed, and
   reported as `PASSED-WITH-ACCEPTED(n)` rather than as a clean pass — writing and presenting the
   scorecard.
-- ⛔ **Never without Kyle:** raising a cap, running two-stage when the mutation runner is missing
-  (unattended: stop instead), proceeding past a dirty tree in the target repo, merging the story
-  branch, or reporting a gate as passed on an agent's word.
+- ⛔ **Never without Kyle:** raising a cap, running two-stage when the mutation runner is missing or
+  cannot measure the repo (unattended: stop instead), proceeding past a dirty tree in the target
+  repo, merging the story branch, or reporting a gate as passed on an agent's word.
+- ⛔ **Never:** substituting `general-purpose` for a stage agent that failed to resolve. Stop and ask
+  for a fresh session instead — see Stage 0's precondition for what the substitution silently drops.
 - ⛔ **Never:** merging from this skill at all. The branch leaves here unmerged, and goes through
   the repo's normal git workflow including `adversarial-review`.
