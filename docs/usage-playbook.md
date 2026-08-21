@@ -507,9 +507,11 @@ rows get re-pointed to match.
 - **Pairs well with:** [`grilling`](#grilling) + [`domain-modeling`](#domain-modeling) (resolve
   the default ticket type), [`prototype`](#prototype) and [`research`](#research) (the other
   two), [`kickoff`](#kickoff) (the single-session front door for a *new* project — wayfinder
-  is for a big effort inside an existing one), [`backlog-hygiene`](#backlog-hygiene) /
-  [`/autonomous-milestone`](#autonomous-milestone) (where a cleared map routes),
-  [`/launch`](#launch) (starts the session its Run-config note recommends).
+  is for a big effort inside an existing one), [`to-spec`](#to-spec) (a cleared map collapses
+  through it) + [`to-tickets`](#to-tickets) (slices the resulting spec),
+  [`backlog-hygiene`](#backlog-hygiene) / [`/autonomous-milestone`](#autonomous-milestone)
+  (where a cleared map routes), [`/launch`](#launch) (starts the session its Run-config note
+  recommends).
 - **Notes:** typed-only (`disable-model-invocation: true`) — it never auto-fires. **One ticket
   per session**, `research` excepted. Tracker backend is chosen once at charting time and
   recorded in the map's Notes — GitHub Issues preferred because native sub-issues and blocking
@@ -586,6 +588,63 @@ rows get re-pointed to match.
   `bash -n` + shellcheck + a static trace checked off by invariant name. Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with that conversion as the
   house edit.
+
+#### `to-spec`
+
+- **Run config:** inherits the session · `high` — pure synthesis; the judgment already happened
+  in the conversation it's condensing.
+- **Reach for it when:**
+  - A grilling, a wayfinder map, or a long design conversation has settled the decisions and
+    you want them as one document instead of a transcript.
+  - A cleared wayfinder map needs collapsing into its spec (the clear-map handoff calls this).
+- **Pairs well with:** [`wayfinder`](#wayfinder) (cleared maps collapse through it),
+  [`grilling`](#grilling) (the interview that precedes it), [`to-tickets`](#to-tickets) (the
+  next link), [`codebase-design`](#codebase-design) (the seam vocabulary its step 2 uses),
+  [`implement`](#implement) (the link after that).
+- **Notes:** typed-only (`/to-spec`) — and **no interview by design**: it synthesizes what's
+  already known and won't re-ask. Spec lands where the repo keeps specs (`docs/specs/<slug>.md`
+  absent a convention) and is committed; tracker publish is optional and asks first on a
+  public repo. Imported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT);
+  house edits: self-contained (no setup skill), in-repo spec landing, guarded optional tracker
+  publish.
+
+#### `to-tickets`
+
+- **Run config:** inherits the session · `high` — slicing and edge-wiring judgment; the quiz
+  gate is the point, not ceremony.
+- **Reach for it when:**
+  - An approved spec or plan needs breaking into agent-sized tracer-bullet vertical slices
+    with explicit blocking edges.
+  - A wide mechanical refactor needs expand–contract sequencing instead of vertical slices.
+- **Pairs well with:** [`to-spec`](#to-spec) (the link before it), [`wayfinder`](#wayfinder)
+  (its tracker.md Backend A mechanics are reused for GitHub edges),
+  [`/autonomous-milestone`](#autonomous-milestone) (builds a ticket),
+  [`backlog-hygiene`](#backlog-hygiene) (sequencing against the wider backlog),
+  [`implement`](#implement) (works the frontier).
+- **Notes:** typed-only (`/to-tickets`). Backend decided per breakdown — GitHub Issues with
+  native dependencies (following wayfinder tracker.md's procedures, including trap
+  `node-id-not-database-id`), or one committed file per ticket under
+  `docs/tickets/<feature-slug>/`; asks before writing to a public repo's tracker. Presents the
+  breakdown and iterates until you approve before publishing anything. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in
+  `THIRD-PARTY.md`.
+
+#### `implement`
+
+- **Run config:** Opus 5 · `high` — well-specified build work, per the Planner/Builder
+  protocol.
+- **Reach for it when:**
+  - A spec or ticket set is ready to build and you want the standard build discipline without
+    re-deciding it: TDD at the agreed seams, typechecks as you go, full suite at the end.
+- **Pairs well with:** [`/tdd`](#tdd) (called at pre-agreed seams), [`to-spec`](#to-spec) /
+  [`to-tickets`](#to-tickets) (the links before it), [`adversarial-review`](#adversarial-review)
+  (the gate it routes to), [`/autonomous-milestone`](#autonomous-milestone) (the heavier
+  full-milestone alternative).
+- **Notes:** typed-only (`/implement`). Works on a feature branch and opens a PR per the global
+  git workflow — never straight to the default branch; the adversarial-review loop is the
+  standing pre-merge gate. Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits: git workflow +
+  review gate replace upstream's `/code-review` + commit-to-current-branch.
 
 ### Session & Context Management
 
@@ -706,6 +765,27 @@ rows get re-pointed to match.
   Simplified Technical English and follows `CONTEXT-MAP.md` to the right glossary when a repo
   has more than one. Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), body verbatim.
+
+#### `triage`
+
+- **Run config:** inherits the session · `high` per issue — verification and brief-writing are
+  judgment work; `medium` for mechanical label-application passes.
+- **Reach for it when:**
+  - The tracker's intake needs working: unlabeled issues, `needs-triage` evaluations,
+    `needs-info` threads where the reporter has replied.
+  - An external PR needs a verdict, or a `ready-for-agent` issue needs a durable agent brief.
+- **Pairs well with:** [`grilling`](#grilling) + [`domain-modeling`](#domain-modeling) (its
+  grill step calls both), [`backlog-hygiene`](#backlog-hygiene) (grooms the accepted backlog;
+  triage manages intake), [`bug-hunt`](#bug-hunt) (finds unknown bugs; triage handles reported
+  ones), [`to-tickets`](#to-tickets) (slices what triage accepts).
+- **Notes:** typed-only (`/triage`). Every tracker write starts with the AI-generated
+  disclaimer. Canonical role names are the label strings by default; the first run in a repo
+  maps them against existing labels and records the mapping as a "Triage labels:" note in that
+  repo's `CLAUDE.md` — external PRs are in scope only when that note says so. Asks before the
+  first write on a public repo's tracker. Rejected enhancements go to the `docs/out-of-scope/`
+  knowledge base (`AGENT-BRIEF.md` and `OUT-OF-SCOPE.md` ship with the skill). Imported from
+  [mattpocock/skills](https://github.com/mattpocock/skills) (MIT); house edits listed in
+  `THIRD-PARTY.md`.
 
 ### Quality & Debugging
 

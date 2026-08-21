@@ -19,7 +19,7 @@ Source: <https://github.com/mattpocock/skills>
 | [`grilling`](skills/grilling/SKILL.md) | `skills/productivity/grilling` | trigger conditions, unattended runs |
 | [`grill-me`](skills/grill-me/SKILL.md) | `skills/productivity/grill-me` | — |
 | [`teach`](skills/teach/SKILL.md) | `skills/productivity/teach` | house-edited description; a workspace-location guard before the first write; `GLOSSARY.md` wired into the workspace list. The four `*-FORMAT.md` files were taken verbatim at import and have never been edited here — upstream has moved since, so don't read that as "identical to upstream today". |
-| [`wayfinder`](skills/wayfinder/SKILL.md) | `skills/engineering/wayfinder` | self-contained tracker doc with a local-markdown fallback; clear-map handoff writes a spec and routes instead of calling `/to-spec`; named invariants hardening the upstream-documented failure modes; unattended runs |
+| [`wayfinder`](skills/wayfinder/SKILL.md) | `skills/engineering/wayfinder` | self-contained tracker doc with a local-markdown fallback; clear-map handoff calls the vendored `to-spec` and routes onward (originally rewired around its absence); named invariants hardening the upstream-documented failure modes; unattended runs |
 | [`prototype`](skills/prototype/SKILL.md) | `skills/engineering/prototype` | the verdict is never the agent's; unattended runs |
 | [`research`](skills/research/SKILL.md) | `skills/engineering/research` | citation and "not established" discipline; no git operations in the subagent |
 | [`domain-modeling`](skills/domain-modeling/SKILL.md) | `skills/engineering/domain-modeling` | decisions route to the repo's existing ledger rather than a second one; unattended runs |
@@ -27,6 +27,10 @@ Source: <https://github.com/mattpocock/skills>
 | [`wait-what`](skills/wait-what/SKILL.md) | `skills/productivity/wait-what` | — |
 | [`wizard`](skills/wizard/SKILL.md) | `skills/engineering/wizard` | upstream `template.sh` not shipped — re-expressed as a named-invariant UX contract in `SKILL.md` (house rule: no copy-paste shell in skill files) |
 | [`resolving-merge-conflicts`](skills/resolving-merge-conflicts/SKILL.md) | `skills/engineering/resolving-merge-conflicts` | heading added; otherwise verbatim |
+| [`to-spec`](skills/to-spec/SKILL.md) | `skills/engineering/to-spec` | self-contained (no `/setup-matt-pocock-skills`); spec lands in-repo at `docs/specs/` with an optional guarded tracker publish; codebase-design seam vocabulary cited; routes onward to `to-tickets` |
+| [`to-tickets`](skills/to-tickets/SKILL.md) | `skills/engineering/to-tickets` | self-contained backend choice with the public-repo guard; local tickets under `docs/tickets/` (upstream: `.scratch/`); GitHub blocking edges via wayfinder tracker.md's Backend A procedures |
+| [`triage`](skills/triage/SKILL.md) | `skills/engineering/triage` | self-contained label mapping recorded in the repo's `CLAUDE.md`; external-PR surface opt-in; public-repo write guard; out-of-scope KB at `docs/out-of-scope/` (upstream: `.out-of-scope/`) |
+| [`implement`](skills/implement/SKILL.md) | `skills/engineering/implement` | house git workflow (feature branch + PR) and the adversarial-review gate replace `/code-review`; `tdd` invoked via the Skill tool |
 
 ```
 MIT License
