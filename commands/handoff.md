@@ -85,6 +85,28 @@ paraphrasing.
      asks before acting, doesn't assume
    - The 1–3 files/branches/PRs the fresh session should open first
 
+6. **Suggested skills** — name which of the fresh session's available skills
+   apply to the next concrete action, one bullet each: skill name + why it
+   fits (e.g. "adversarial-review — this PR is ready to merge and hasn't
+   been reviewed yet", "gauntlet — next backlog item is a fresh story, not a
+   bugfix"). The fresh session already has the full skill catalog in its own
+   system reminder; the value here is narrowing it, not listing it — skip
+   any skill that's a generic fit for "writing code" and name only the ones
+   this specific next step calls for. Omit the section entirely if nothing
+   beyond ordinary coding applies — don't force a pick.
+
+## Redaction
+
+Before printing anything — the "For Kyle" briefing, the run-config note, and
+the fenced block alike — scan for secrets and personally identifiable
+information: API keys, tokens, passwords, connection strings with embedded
+credentials, private keys, and anything else that shouldn't sit in a
+paste-able prompt. Redact with a placeholder that preserves the shape of what
+was there (e.g. `sk-...REDACTED`, `<DB_PASSWORD>`) rather than silently
+dropping the line — the fresh session still needs to know a credential goes
+there, just not its value. If in doubt whether something is sensitive, redact
+it; a fresh session can always ask me for the real value.
+
 ## Length
 
 A few hundred words is normal. If the handoff is creeping past ~600 words,
@@ -304,7 +326,7 @@ ambiguous between two modes, name both and say what tips it.
 When the run-config model pick is **Opus 5**, read the builder notes —
 `~/.claude/opus5-builder-notes.md` if present, else the vendored repo copy
 `.claude/opus5-builder-notes.md` — before writing the fenced block and
-apply their rules **within the handoff's existing contract** — the five-section
+apply their rules **within the handoff's existing contract** — the six-section
 structure, the derivability rule, and the ~600-word cap all still govern:
 
 - The notes' "complete spec up front" rule is satisfied by pointing, not
