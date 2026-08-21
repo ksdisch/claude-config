@@ -653,6 +653,29 @@ rows get re-pointed to match.
 
 ### Quality & Debugging
 
+#### `gauntlet`
+
+- **Run config:** Opus 5 · `high` — you are the orchestrator, and the judgment that stays with you
+  is reading gate output and deciding what the next lap needs. The three stage agents are already
+  config-pinned in their own frontmatter, so effort here buys your side of the relay.
+- **Reach for it when:**
+  - You have one well-bounded story and want it built through the staged relay — specified,
+    coded, and mutation-hardened — with a scorecard at the end instead of a "looks good to me."
+  - You want the quality bar enforced by exit codes rather than by an agent's account of itself.
+- **Pairs well with:** [`specifier`](#specifier), [`gauntlet-coder`](#gauntlet-coder), and
+  [`mutation-hardener`](#mutation-hardener) (the three stages),
+  [`adversarial-review`](#adversarial-review) (the gate the resulting branch still has to pass),
+  [`backlog-hygiene`](#backlog-hygiene) (picks the story it relays).
+- **Notes:** it **never merges** — the branch leaves the run unmerged and goes through the repo's
+  normal git workflow. Hard caps: 3 coder laps, 2 hardener laps; a cap is never raised mid-run and
+  always lands in the scorecard by name. A dirty tree or a red baseline suite stops the run at
+  Stage 0 rather than gating on nonsense. Coverage is measured, not gated — the gates are
+  spec-shape, suite-green-plus-a-test-file-touched, and zero *unaccepted* mutation survivors. A
+  survivor no honest test can kill (equivalent, or killable only by changing implementation) can be
+  accepted, but only named, assessed, and reported as `PASSED-WITH-ACCEPTED(n)` — never as a clean
+  pass. Needs a reachable mutation runner (Stryker / mutmut); if it can't be installed, the run
+  stops rather than silently dropping a stage.
+
 #### `bug-hunt`
 
 - **Run config:** Opus 5 · dialable from `medium` to `ultracode` — the skill exists to be
@@ -688,6 +711,34 @@ rows get re-pointed to match.
   escape hatch exists but a skip is always stated in the merge brief, never silent, and
   never for skills/agents/commands/CLAUDE.md edits. Findings land as a PR comment with a
   CLEAR / NOT-CLEAR verdict.
+
+#### `architecture-viewer`
+
+- **Run config:** Opus 5 · `high` — the extraction is judgment (what counts as a module,
+  where a runtime dependency hides), and `high` is what buys the runtime edges an import
+  parser would never find. Drop to `medium` for a re-map after correcting the grouping;
+  the boundaries are already decided by then.
+- **Reach for it when:**
+  - You want to review the *structure* rather than the code — "where do the dependencies
+    actually run", before a redesign or a big refactor.
+  - You suspect a dependency cycle, or want to know which module is the expensive one to
+    change.
+  - A repo's stated layering rule (in its `CLAUDE.md` or README) needs checking against
+    what the tree really does.
+- **Pairs well with:** [`project-guide`](#project-guide) (the same repo in prose, where
+  this is a navigable map), [`reorient`](#reorient) (the map is a fast way back into a
+  repo you've been away from), [`bug-hunt`](#bug-hunt) (structural findings are good
+  hunting ground).
+- **Notes:** no approval gate on the module boundaries, on purpose — the map is cheap to
+  regenerate, so it renders first and you correct the grouping after looking. The
+  validator is a hard gate: it opens every cited file and checks the line is in range,
+  and it fails when modules leave source unaccounted for. **Never lower `--min-coverage`
+  to make a run pass** — that number exists to catch the directory the extraction never
+  noticed. Output lands in the target repo's `docs/architecture/` unless `--out` says
+  otherwise, and a target repo that isn't the one you're working in gets files written
+  but nothing committed. Publishing to a claude.ai Artifact is opt-in via `--publish`.
+  v0 draws one drill level and no arrows leaving a drilled-in view; "open the code" is a
+  click-to-copy `file:line`, never embedded source.
 
 #### `artifacts-audit`
 
@@ -1001,6 +1052,73 @@ rows get re-pointed to match.
   map is a single shared file. Already AFK by design, so it has no unattended gate. Imported from
   [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), with house edits for
   citation discipline and the wayfinder contract.
+#### `youtube-transcript`
+
+- **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
+  decision (is Whisper worth it?) is Kyle's, not the model's.
+- **Reach for it when:**
+  - You have a YouTube URL and want the text — to read, to grep, or to feed something else.
+  - A video has no captions at all and you're willing to spend CPU on local Whisper.
+- **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (the usual consumer — it
+  calls this skill automatically for URL input, so you rarely invoke this one directly),
+  [`teach-research`](#teach-research) (a talk's transcript is a legitimate source).
+- **Notes:** needs `yt-dlp`, which is **not currently installed** — first run will offer
+  `brew install yt-dlp`. Whisper is gated behind an explicit yes with the duration and
+  audio size quoted, because it's the only step that costs real bandwidth and CPU.
+  Conversion runs through `scripts/vtt-to-text.py`, which dedupes **per cue** rather than
+  over a window of output lines — rollup captions repeat whatever is still on screen, so
+  the overlap is a cue-boundary property, and any line-count window either misses it or
+  eats the short utterances ("Yeah.", "Right.") that recur legitimately in interviews. The
+  video title reaches the script through `--title-file` rather than the command line,
+  because a title containing `$` or a backtick would otherwise execute.
+
+#### `youtube-breakdown`
+
+- **Run config:** Opus 5 · `high` — the four mode prompts are synthesis-heavy writing, and
+  Critique mode in particular is real analytical work rather than summarization.
+- **Reach for it when:**
+  - You watched (or want to triage) a video and want structured notes rather than a
+    summary — Study Notes to retain it, Quick Reference to decide if it's worth the time,
+    Critique to pressure-test a contrarian claim, Actionable Insights to leave with a plan.
+  - You have a transcript from anywhere and want the same four-mode treatment.
+- **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
+  URL), [`cc-yt-idea-mine`](#cc-yt-idea-mine) (the idea-mining sibling — "mine this video
+  for Claude Code ideas" is its lane, not a fifth mode here),
+  [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  section leads if the topic deserves a workspace),
+  [`notebook-assist`](#notebook-assist) (adds the video to a notebook as a source),
+  [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
+  which writes to the hub's own stores instead).
+- **Notes:** always asks which mode before generating — the four modes are different tools,
+  not lengths, and the auto-router that would pick for you is specced but deliberately off.
+  Saving asks for the destination every run: it proposes `~/Learning/youtube-notes/` and
+  lists the real teach workspaces under `~/Learning/` as alternatives, since filing a
+  breakdown into one puts it where `/teach` will read it. One mode per run.
+
+#### `cc-yt-idea-mine`
+
+- **Run config:** inherits the session · `high` — exhaustive extraction and leverage-ranking
+  carry judgment, but not enough to launch a session for; run it wherever you just watched
+  the video.
+- **Reach for it when:**
+  - A video about Claude Code / AI agents / engineering workflow left you thinking "some of
+    this belongs in my setup" and you want every implementable segment surfaced — not just
+    the memorable ones.
+  - You want idea triage pre-done: each find dedup-tagged against your existing inventory
+    (reference doc, CLAUDE.md rules, hooks/settings, memory), effort-banded, and ranked
+    within its artifact category and overall.
+- **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
+  URL), [`youtube-breakdown`](#youtube-breakdown) (the general four-mode sibling —
+  "analyze this video" is its lane), [`/brainstorm`](#brainstorm) (same capture shape, so
+  video ideas and brainstorm ideas groom identically),
+  [`backlog-hygiene`](#backlog-hygiene) (grooms what this captures), and the
+  `claude-code-guide` agent (harness-provided, no card — verifies picked ideas' capability
+  claims at the gate).
+- **Notes:** the report auto-saves to `~/Learning/youtube-notes/` — fixed home, no prompt.
+  Capture is gated and lands in `~/Projects/claude-config` regardless of cwd, via a
+  docs-only branch + PR. The report ships unverified with a staleness caveat; only picked
+  ideas get their Claude Code claims checked. Proposes only — building a pick is a handoff,
+  never a side effect of the run.
 
 ### Personal Coaching
 
@@ -1346,7 +1464,7 @@ session *in that repo*.
 - **Pairs well with:** [`/build-course`](#build-course) (the thin entry point),
   [`episode-review`](#episode-review) (quizzes the material afterward),
   [`review-next`](#review-next) (ranks what to revisit),
-  [`youtube-breakdown`](#youtube-breakdown) (its notes are usable course input).
+  [`youtube-breakdown`](#youtube-breakdown-home-base) (its notes are usable course input).
 - **Notes:** the syllabus approval is the **single** human checkpoint — nothing is authored
   before it, and any deviation from the approved syllabus is reported at the end. NotebookLM
   enrichment is separately gated. Every subagent gets a copy-paste-complete payload so it
@@ -1377,7 +1495,7 @@ session *in that repo*.
 - **Notes:** read-only — SELECTs only, never a write to the store. It prefers the backend
   engine when it's running and falls back to raw queries offline.
 
-#### `youtube-breakdown`
+#### `youtube-breakdown` (home-base)
 
 - **Run config:** Sonnet 5 · `medium` — a transcript into one of four fixed output formats.
 - **Reach for it when:**
@@ -1697,3 +1815,62 @@ choose: the cards state what's pinned and who dispatches them.
   behavior (unclear contracts become `uncertainty` comments), never guesses cross-module or
   async links, and flags code inconsistencies rather than fixing them. Repo-read-only except
   the single spec file.
+
+### `specifier`
+
+- **Pinned config:** `model: opus`, `effort: high` — the wrong-thing catcher is the highest-leverage
+  stage, and pinning down what "done" means is judgment work.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 1, with `STORY`, `REPO_PATH`, `OUT_FEATURE`,
+  and `OUT_QA` — or directly, when you want a vague backlog stub's acceptance line sharpened.
+- **Reach for it when:**
+  - A story is about to be built and you want "done" pinned down first, in a form a coder can
+    build to and a human can verify.
+  - A backlog stub's `Acceptance:` line is mush and you want it turned into concrete scenarios.
+- **Pairs well with:** [`gauntlet`](#gauntlet) (the relay that owns it),
+  [`gauntlet-coder`](#gauntlet-coder) (builds to its `.feature` file),
+  [`/tdd`](#tdd) (the Gherkin makes a natural test list),
+  [`spec-miner`](#spec-miner) (the brownfield counterpart — mines specs from code that exists,
+  where this one writes them for code that doesn't yet).
+- **Notes:** writes **exactly two files** and has no Bash, so it can never claim anything about
+  tests passing. It deliberately does not propose an implementation approach — that biases the
+  coder. A story too vague to specify is a real result: it names the ambiguity in the files
+  rather than papering over it with generic scenarios.
+
+### `gauntlet-coder`
+
+- **Pinned config:** `model: opus`, `effort: high` — a well-specified build, which is exactly what
+  Opus is for under the planner/builder protocol.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 2, with `STORY`, `FEATURE_PATH`, `REPO_PATH`,
+  and — on re-laps — `GATE_OUTPUT`, the failing gate's raw output.
+- **Reach for it when:** you're running the relay. It expects a Gherkin contract to build against
+  and stops without one, so it isn't a general-purpose coding dispatch.
+- **Pairs well with:** [`specifier`](#specifier) (writes the contract it builds to),
+  [`mutation-hardener`](#mutation-hardener) (hardens what it wrote),
+  [`gauntlet`](#gauntlet).
+- **Notes:** leaves the tree **dirty** by design — the orchestrator owns every commit, so laps stay
+  reproducible and diffable. Never weakens, skips, or deletes an existing test to reach green: a
+  genuine conflict between spec and existing test is reported and the run stops, because deleting
+  the test destroys the only evidence there was a conflict. Never edits the `.feature` file it's
+  measured against. Not a TDD-ritual agent — the gates enforce the outcome, not the ceremony.
+
+### `mutation-hardener`
+
+- **Pinned config:** `model: sonnet`, `effort: high` — killing survivors is grind-shaped work
+  (the `silent-failure-hunter` precedent). Worth revisiting to Opus if survivors routinely
+  persist to the lap cap.
+- **Dispatched by:** [`gauntlet`](#gauntlet), Stage 3, in `HARDEN` mode with `REPO_PATH`, `SCOPE`,
+  and `SURVIVORS` from the orchestrator's own run — **required**, and it stops rather than guess
+  without one. Dispatch it yourself in `AUDIT` mode for a read-only look at a suite.
+- **Reach for it when:**
+  - You want to know what your tests *aren't* actually checking — coverage says a line ran,
+    a killed mutant says its behavior is pinned (`AUDIT`).
+  - Surviving mutants need killing on a change in flight (`HARDEN`).
+- **Pairs well with:** [`gauntlet`](#gauntlet) (the relay that owns it),
+  [`bug-hunt`](#bug-hunt) (whose rubric grades its `AUDIT` findings),
+  [`gauntlet-coder`](#gauntlet-coder) (writes the suite it hardens).
+- **Notes:** `MODE` is required — the two modes have opposite write permissions and it refuses to
+  guess. **Implementation files are read-only in both modes**: a mutant killable only by changing
+  implementation is a finding *about the implementation*, reported rather than worked around. It
+  won't write a contrived mutant-specific test either — that pins the implementation instead of the
+  behavior and breaks on the next honest refactor. Zero survivors is a valid result; it won't widen
+  `SCOPE` looking for work.
