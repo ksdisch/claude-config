@@ -18,15 +18,21 @@ checked. Coverage says a line ran; a killed mutant says the line's behavior is p
 - `SCOPE` — the source files to mutate. In gauntlet use this is the story's diff, deliberately
   narrow: whole-repo mutation runs are slow and mostly irrelevant to the change in hand.
   Dispatched with no `SCOPE`, report that back rather than mutating the whole repo on a guess.
-- `SURVIVORS` — in `HARDEN` mode on a re-lap: the surviving mutants from the orchestrator's own
-  run (file, line, mutator, what it changed). When you get this list, it is authoritative — work
-  from it rather than re-deriving your own.
+- `SURVIVORS` — **required in `HARDEN` mode**: the surviving mutants from the orchestrator's own
+  run (file, line, mutator, what it changed). It is authoritative — work from it rather than
+  re-deriving your own. Dispatched in `HARDEN` with no list, report that and stop; there is nothing
+  to harden against, and guessing wastes the lap.
+
+**Never write into a tracked config file.** The orchestrator scopes the mutation run on the command
+line (`--mutate` for Stryker, paths for mutmut) precisely so a story-shaped `mutate` list cannot
+merge into the repo and make every future run there a near-empty pass. If you believe the tool
+cannot run without a config file, say so in your report rather than creating one.
 
 ## `AUDIT` mode — report only
 
-Run the repo's mutation tool (Stryker for JS/TS, mutmut for Python) over `SCOPE` and report every
-survivor. **You edit nothing** — not tests, not implementation, not config beyond what the tool
-needs to run over the scope.
+Run the repo's mutation tool (Stryker for JS/TS, mutmut for Python) over `SCOPE` — scoping it on
+the command line — and report every survivor. **You edit nothing**: no tests, no implementation,
+and no config file. Your `Write`/`Edit` grants exist for `HARDEN` mode and are not to be used here.
 
 Report each survivor with:
 
@@ -63,9 +69,14 @@ implementation to make it go away, and you do not write a test that pretends to 
 
 ## Zero survivors
 
-Zero survivors on the first run is a valid, common result on a well-tested change. Say so plainly
-and stop. Never invent work, never lower the bar to manufacture a survivor, never widen `SCOPE`
-looking for something to do.
+In `AUDIT` mode, zero survivors is a valid and common result on a well-tested change. Say so
+plainly and stop. Never invent work, never lower the bar to manufacture a survivor, never widen
+`SCOPE` looking for something to do.
+
+In `HARDEN` mode you should never see it as a starting state — the orchestrator only dispatches you
+against a non-empty `SURVIVORS` list. If your own run finds nothing the list names, say that; it
+means the list and the tree disagree, which the orchestrator needs to know and you must not paper
+over by inventing tests.
 
 ## Output
 
