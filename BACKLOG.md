@@ -210,3 +210,45 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Acceptance:** Close as confirmed-covered unless practice surfaces a gap.
 - **Size:** S
 - **Added:** 2026-08-20
+
+### [Feature] Glossary bootstrap: mine the ubiquitous language from an existing codebase
+- **Why:** Three skills already consume `CONTEXT.md` but nothing creates it for a brownfield repo — Pocock calls the bootstrapped glossary "an absolute powerhouse" (better planning, less-verbose AI). Full write-up in [`docs/ideas/glossary-bootstrap-ubiquitous-language-miner.md`](docs/ideas/glossary-bootstrap-ubiquitous-language-miner.md).
+- **Acceptance:** A skill or spec-miner-style agent that scans a repo and writes a `CONTEXT-FORMAT.md`-conformant `CONTEXT.md`, with an overwrite guard; first step is checking mattpocock/skills for a vendorable original.
+- **Size:** M
+- **Added:** 2026-08-21
+
+### [Feature] Rate-of-feedback hook: fast typecheck feedback after edit bursts
+- **Why:** Nothing in the hooks inventory gives code-quality feedback, and "take small steps" as prompt text is exactly what the hooks-over-prompts lesson says to mechanize. Full write-up in [`docs/ideas/rate-of-feedback-hook.md`](docs/ideas/rate-of-feedback-hook.md).
+- **Acceptance:** A PostToolUse (Edit/Write) hook that runs the project's cheapest check and feeds failures back — feedback-only by design (PostToolUse cannot gate, verified 2026-08-20); minimal TS-repo version first.
+- **Size:** M
+- **Added:** 2026-08-21
+
+### [Feature] Architecture-improvement sweep: shallow modules → deep modules, end to end
+- **Why:** `codebase-design` has the method and `architecture-viewer` has the map, but no skill runs the deepening loop across a repo and lands the refactors. Full write-up in [`docs/ideas/architecture-improvement-sweep.md`](docs/ideas/architecture-improvement-sweep.md).
+- **Acceptance:** An orchestrated skill: arch-graph → ranked deepening candidates → DEEPENING.md applied per cluster → one branch/PR per deepening; decide its relationship to `deep-modules-for-agent-legibility` first.
+- **Size:** L
+- **Added:** 2026-08-21
+
+### [Improvement] Spec template: mandatory "module changes & interfaces" section
+- **Why:** Specs today name behavior but not which module interfaces change — the part the human owns at planning time. Full write-up in [`docs/ideas/spec-module-interface-section.md`](docs/ideas/spec-module-interface-section.md).
+- **Acceptance:** `to-spec`'s template gains the section (conditional on interface-touching changes); judged on one real spec whether `specifier` needs it too.
+- **Size:** S
+- **Added:** 2026-08-21
+
+### [Improvement] Load CONTEXT.md before any planning or grilling session
+- **Why:** `wait-what` reads the glossary and `domain-modeling` calls doing so "a one-line habit any skill can do" — but no rule makes planning skills do it. Full write-up in [`docs/ideas/load-context-md-before-planning.md`](docs/ideas/load-context-md-before-planning.md).
+- **Acceptance:** One global CLAUDE.md line: when a repo has `CONTEXT.md`, read it before grilling/planning/spec-writing.
+- **Size:** S
+- **Added:** 2026-08-21
+
+### [Exploration] Grilling-before-plan-mode convention
+- **Why:** Pocock (author of the vendored `grilling`) prefers it to plan mode's rush to a plan asset; the open call is whether grilling joins the superpowers EnterPlanMode gate — one gate, two, or routed by work type — adjudicated against `anti-plan-maxing`, which pulls the opposite way. Full write-up in [`docs/ideas/grilling-before-plan-mode.md`](docs/ideas/grilling-before-plan-mode.md).
+- **Acceptance:** The gate decision made and recorded; candidate rule text trialed for a week of design-heavy sessions before any CLAUDE.md commit. (Plan mode behavior verified current 2026-08-21 — no pre-plan hook exists, so prompt-layer routing is the only shape.)
+- **Size:** S
+- **Added:** 2026-08-21
+
+### [Exploration] Gray-box review policy: design the interface, delegate the implementation
+- **Why:** Pocock's fix for "shipping faster than your brain": review interfaces + boundary tests, delegate implementation reading for non-critical modules — in real tension with the whole-diff review habit, and that tension needs an explicit call, not drift. Full write-up in [`docs/ideas/gray-box-review-policy.md`](docs/ideas/gray-box-review-policy.md).
+- **Acceptance:** The complement-or-erode question answered in writing; if adopted, convention text with a criticality rule for one real repo, trialed on clean-review merges. Agent gates stay whole-diff regardless.
+- **Size:** S
+- **Added:** 2026-08-21
