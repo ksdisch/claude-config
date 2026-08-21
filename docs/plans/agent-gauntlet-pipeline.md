@@ -116,6 +116,18 @@ Two arms, same story, isolated worktrees, no shared context:
 
 **Honest-failure clause:** if the gauntlet arm hits a cap, loses to control on both time and quality, or G1's structural gate proves too weak to matter, the report says so plainly — the backlog stub's bet gets an evidence-based *no* rather than a rescued demo. Bob's own warning is the kill criterion: slower than the human path with no quality delta = lost game.
 
+### 4.1 Second pilot — three arms (added 2026-08-21)
+
+The first pilot ran this protocol and **failed the acceptance bar** ([`../reports/2026-08-20-gauntlet-pilot.md`](../reports/2026-08-20-gauntlet-pilot.md)). Its four pipeline defects are fixed in `skills/gauntlet/SKILL.md`; the re-run changes the protocol in three ways.
+
+1. **A third arm, to price the specifier.** The judge called the gauntlet arm the over-engineered one while the unguided control arm found the same constraint and handled it better — plausibly because 18 Gherkin scenarios plus "every scenario needs a test" over-specifies a small story. That is an inference, and the way to settle it is to measure it. The arms are: **control** (one `general-purpose` dispatch, raw story only, exactly as step 1 above specifies), **coder-only** (`gauntlet-coder` + the G2/G3 gates, raw story in place of the `.feature`, no specifier), and **full gauntlet**. If coder-only matches or beats full gauntlet at lower cost, the skeleton is not three stages needing repair — it is one stage that works and two that don't.
+2. **Every arm's worktree lives outside the target repo.** The first pilot put the control worktree at `party-line/.claude/worktrees/`, inside the tree the gauntlet coder greps; the coder surfaced the control arm's `PROJECT.md` / `BACKLOG.md` prose describing that arm's approach and disclosed it unprompted. The deterministic measurements survive that, but no independence claim about the *approach* does. Put every arm under a sibling directory (e.g. `~/Projects/_gauntlet-arms/<slug>-<arm>/`) so no arm can reach another by path.
+3. **Mutation is measured at changed-line scope, symmetrically.** The fixed G3 counts only mutants inside the branch's changed lines; the same intersection is applied to every arm, and the file-level number is recorded beside it as context rather than as the comparison.
+
+Everything else holds: same story text to every arm, same model tier, the step-3 deterministic measures run by the orchestrating session, and **one** unlabeled zero-context judge given all three diffs at once. Run it **from a fresh session** — Stage 0's precondition — with the story picked against: small, JS-only, unit-testable, a real backlog item, and no attended leg.
+
+**What a second null result means, stated before the run rather than after:** if the hardener again finds nothing inside the changed lines, the mutation stage is hunting a defect class an Opus-tier coder writing tests alongside implementation does not produce often enough to pay for, and it comes out of the relay to live on as the standalone `AUDIT` auditor its vision doc wanted.
+
 ## 5. Build order (builder session)
 
 1. Branch `feat/agent-gauntlet-skeleton` in claude-config.

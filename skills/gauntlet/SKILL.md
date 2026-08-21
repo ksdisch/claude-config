@@ -13,7 +13,7 @@ so the gates live here, in Bash, in this session, and nowhere else.
 |---|---|---|
 | 1 Specify | `specifier` (opus/high) | **G1** — spec files exist and are shaped like Gherkin |
 | 2 Code | `gauntlet-coder` (opus/high) | **G2** — suite exit 0 **and** the diff touches a test file |
-| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)`) |
+| 3 Harden | `mutation-hardener` (sonnet/high, `HARDEN` mode) | **G3** — suite still green **and** no *unaccepted* mutation survivors **in the story's changed lines** (see Stage 3: `PASSED` vs `PASSED-WITH-ACCEPTED(n)`) |
 
 The run produces a branch and a scorecard. It does **not** merge. Merging is the normal git
 workflow plus `adversarial-review`, outside this skill — one gate per merge, and the gauntlet's
@@ -34,8 +34,16 @@ degraded and quiet.
   by name and reason. Never absorb a degradation to keep the relay moving.
 - **STAGE-COMMITS** — each stage's work is committed by you, with a stage-tagged message
   (`stage-1: …`, `stage-2 lap 2: …`), *before* its gate runs. Agents leave the tree dirty and
-  report; commit authorship stays in one place so every lap is reproducible and diffable. **Stage
-  paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's dispatch
+  report; commit authorship stays in one place so every lap is reproducible and diffable.
+  **Wait for the agent's completion report before you commit, and never infer completion from
+  anything else.** A tree that has stopped changing is not a finished agent — an agent reading files,
+  composing a report, or between two edits leaves exactly the same still tree as one that is done.
+  Committing on that heuristic captures half a lap, sends a partial diff into the gate, and makes the
+  gate's result a statement about a state no agent ever produced. The dispatch's completion
+  notification is the only signal; if you are tempted to check the tree instead, that is the tell that
+  you are about to commit early. **Do not read the agent's task output to find out whether it is
+  done** — a stage agent's transcript is large enough to displace the run's own context, and the
+  notification already carries the report. **Stage paths by name — never `git add -A` or `git add .`.** The names are the ones the stage's dispatch
   specified plus the ones the agent reports touching; new files are staged the same way, since
   everything the relay produces is untracked at the moment you commit it. Naming paths, not
   restricting yourself to tracked ones, is what keeps the probe's permitted scratch files out of the
@@ -47,6 +55,20 @@ degraded and quiet.
 ## Stage 0 — Probe
 
 Run before any dispatch. Its job is to find out whether this repo can be gated at all.
+
+**Precondition — the three agents must resolve in *this* session.** Claude Code loads the agent
+registry at session start, so `specifier`, `gauntlet-coder` and `mutation-hardener` are dispatchable
+only if their files were on disk before this session began. A session that just wrote or merged them
+gets `Agent type 'specifier' not found` at the first dispatch. This is checked before the repo probe
+because it is about the session, not the repo, and because failing it invalidates every stage.
+
+Confirm all three names appear in this session's available agent types. Any that do not → **stop and
+tell Kyle to re-run from a fresh session.** Do not fall back to `general-purpose` with the agent's
+brief pasted in: that fallback silently drops the two things the agent files exist to guarantee —
+`tools:` restrictions are not enforced (the specifier's deliberate lack of `Bash` is what backs its
+promise never to claim a test passed, and under the fallback it is prose), and `effort:` cannot be
+passed through the `Agent` tool at all, so the subagent inherits this session's. A relay run on that
+fallback is not a run of this pipeline, and its scorecard cannot be used as evidence about it.
 
 **The steps are ordered, and the order is load-bearing** — each one acts on state the one before
 it established.
@@ -76,14 +98,38 @@ it established.
    in the run log — coverage is **measured, not gated**. Absent → record it as a named degradation
    and **continue**: the scorecard's coverage line becomes "no mechanism available" rather than a
    number. Coverage gates nothing, so its absence never stops the run.
-5. **Mutation runner reachable.** Stryker for JS/TS, mutmut for Python. Absent → install it as a
-   dev dependency, which lands on the story branch created in step 3. **Commit the install here,
-   tagged `stage-0`**, rather than leaving it dirty: that is what makes it visible, committed, and
-   revertable, and it is what keeps the manifest and lockfile out of Stage 1's `stage-1:` commit —
-   where they would be attributed to the specifier, the exact mis-attribution step 1 stops the run
-   to prevent. Not installable → the hardener stage cannot gate: name the missing tool and stop
-   (unattended), or ask Kyle whether to run two-stage with G3 recorded as unavailable (attended).
-   **Never silently skip a stage.**
+5. **Mutation runner can measure this repo.** Stryker for JS/TS, mutmut for Python. Absent →
+   install it as a dev dependency, which lands on the story branch created in step 3. **Commit the
+   install here, tagged `stage-0`**, rather than leaving it dirty: that is what makes it visible,
+   committed, and revertable, and it is what keeps the manifest and lockfile out of Stage 1's
+   `stage-1:` commit — where they would be attributed to the specifier, the exact mis-attribution
+   step 1 stops the run to prevent. Not installable → the hardener stage cannot gate: name the
+   missing tool and stop (unattended), or ask Kyle whether to run two-stage with G3 recorded as
+   unavailable (attended). **Never silently skip a stage.**
+
+   **Then prove it can measure, with a trial mutation — "the binary installed" is not a probe.**
+   Scope a run to one small source file the existing suite already covers, cap it at a handful of
+   mutants, and read the *per-mutant status* out of the JSON report. **The probe passes only when
+   mutants die `Killed`.** A run where they die `Timeout` has measured nothing: a timeout kill is the
+   clock expiring, not a test catching anything, and it produces a survivor count of zero that looks
+   exactly like a well-hardened change. That is a false G3 pass, which is the one failure this whole
+   skill is built to refuse.
+
+   The failure mode to expect, because it is the common one: **Stryker's `command` test runner has
+   no per-test granularity.** Against a `node --test` repo its dry run reports the entire suite as a
+   single test (`Ran 1 tests in …`), after which every mutant re-runs the whole suite, several
+   concurrently, and dies on the clock rather than on an assertion. The dry-run line is the cheap
+   early tell — read it before you spend a full run. **The resolution is a Stryker config written
+   outside the repo** (the escape clause Stage 3 already grants) whose `commandRunner.command` runs
+   only the test files covering the scope, passed with `--config-file`. It cannot be done on the
+   command line: `--commandRunner.command` is not a recognised flag, and the command runner's command
+   can only come from a config file. A config written *inside* the repo is the tracked-config
+   degradation Stage 3 refuses — same file, wrong side of the boundary.
+
+   Re-probe after configuring. Still dying by timeout rather than detection → **G3 cannot gate this
+   repo**: treat it exactly as "not installable" above (stop, or ask Kyle), and record the timing
+   evidence rather than a bare "probe failed". Record either way in the run log: the trial's
+   killed/timeout split, and the absolute path of any out-of-repo config, since Stage 3 reuses it.
 6. **Open the run log.** Create `~/.claude/gauntlet/<repo-name>/<date>-<slug>/` — outside the repo,
    mirroring the review-mailbox pattern, so the relay's bookkeeping never lands in the story's diff.
    Record the start timestamp, the language, the test/coverage/mutation commands, and every probe
@@ -162,27 +208,57 @@ a mutation setup whose near-empty runs look like passes forever after. That is t
 degradation this skill exists to refuse, arriving by the back door. If some repo genuinely cannot
 be scoped without a config file, write it outside the repo and point the tool at it; if even that
 is impossible, treat the tracked config as a degradation, name it in the scorecard, and revert it
-before the branch leaves the run.
+before the branch leaves the run. If Stage 0's trial mutation already produced an out-of-repo
+config to make this repo measurable at all, that is the config Stage 3 uses — but **re-point its
+`commandRunner.command` at the tests covering *this story's* scope** before the first run. Stage 0
+aimed it at whatever small file the probe used, and left pointing there it would run tests that
+touch none of the story's code, killing nothing and reporting every mutant a survivor. The
+`--mutate` list still comes from the command line, so the config never carries the story's files.
+
+**The gate is changed *lines*, not touched *files*.** The scope above is what you hand the tool. It
+is not what G3 counts. Mutating a whole file drags in every mutant that file already carried before
+this story existed, and on a story that edits 100 lines of a 500-line module that debt is most of
+what comes back. In the pilot it was the entire difference between outcomes: **39 survivors at file
+level, 0 inside the story's own changed lines**, all 39 in functions the story never touched. Read
+at file level, the orchestrator dispatches the hardener against a module's accumulated debt, burns
+both HARDENER-CAP laps on it, and records a false G3 failure against a change that is in fact fully
+hardened.
+
+So derive the branch's changed-line ranges once, and keep them for every G3 run this stage makes:
+`git diff -U0` against the merge-base, restricted to the scope files, taking the **new-side** range
+from each hunk header. **A survivor counts against G3 only if its reported line falls inside one of
+those ranges.** Intersecting the tool's JSON report with those ranges is a few lines of scripting
+and cheap enough to redo each lap rather than cache — and doing it fresh each lap is what keeps it
+correct after the hardener adds tests and the line numbers move.
+
+**Out-of-scope survivors are a finding, never a gate failure.** They are real — they say the repo's
+existing suite executes that code without pinning it — but they are not this story's work and G3 has
+no claim on them. Record them in the scorecard by count and file, as a standing finding for Kyle.
+**Never put them in the hardener's `SURVIVORS` list:** a lap spent on pre-existing debt is a lap the
+story's own survivors don't get, and the hardener has only two. If they look worth acting on, the
+instrument for that is a standalone `mutation-hardener` `AUDIT` dispatch, outside this run.
 
 **Run the mutation tool first, then dispatch.** Before the first hardener dispatch, run it
 yourself over the scope. Two things fall out of this and neither is optional:
 
-- **Zero survivors here ends Stage 3 immediately** — gate passed, no dispatch spent, and the
-  scorecard says so. A well-hardened change is a common outcome, not a suspicious one.
+- **Zero in-scope survivors here ends Stage 3 immediately** — gate passed, no dispatch spent, and
+  the scorecard says so, including the out-of-scope count it is passing over. A well-hardened change
+  is a common outcome, not a suspicious one.
 - **The hardener is never dispatched without `SURVIVORS`.** Its `HARDEN` mode is written entirely
   against a list; dispatched blind it has nothing to work from and the lap is a no-op, which turns
   the 2-lap budget into 1.
 
-Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS` (file,
-line, mutator, what it changed). It adds or strengthens tests; it may not edit implementation files.
+Dispatch `mutation-hardener` in `HARDEN` mode with `REPO_PATH`, `SCOPE`, and `SURVIVORS` — the
+**in-scope** survivors only (file, line, mutator, what it changed). It adds or strengthens tests; it
+may not edit implementation files.
 
-**Gate G3.** You re-run the mutation tool yourself and read the survivor count out of its JSON
-report. An agent reporting "all mutants killed" is not the gate. G3 has **two passing outcomes and
-they are never recorded as the same one**:
+**Gate G3.** You re-run the mutation tool yourself, intersect its JSON report with the changed-line
+ranges, and read the in-scope survivor count off that. An agent reporting "all mutants killed" is
+not the gate. G3 has **two passing outcomes and they are never recorded as the same one**:
 
-- **`G3: PASSED`** — suite green, survivor count zero. Fully deterministic.
-- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only survivors left are `n` you have
-  explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
+- **`G3: PASSED`** — suite green, in-scope survivor count zero. Fully deterministic.
+- **`G3: PASSED-WITH-ACCEPTED(n)`** — suite green, and the only in-scope survivors left are `n` you
+  have explicitly accepted. Record it in this form, with the count, everywhere the run is reported.
 
 **Accepted survivors — the named exit, not a silent one.** Some mutants cannot be killed by any
 honest test: an *equivalent* mutant (semantically identical to the original), or one killable only
@@ -206,7 +282,7 @@ An implementation-only survivor is a **finding about the implementation** — de
 unreachable branch, a defensive check nothing can trigger. Carry it into the scorecard as a finding
 for Kyle, not as a gate failure.
 
-Any other failure → redispatch with the surviving mutants listed.
+Any other failure → redispatch with the in-scope surviving mutants listed.
 
 **Invariant HARDENER-CAP: 2 laps.** Here a lap is **one hardener dispatch plus the gate run after
 it** — the pre-dispatch run above is not a lap and never consumes budget, which is the whole point
@@ -222,9 +298,12 @@ Write `scorecard.md` into the run-log directory:
 - Dispatch count.
 - Final line coverage against the Stage 0 baseline — **measured, not gated**; say so where you
   report it. No mechanism available → say that, rather than omitting the line.
-- Mutants generated / killed / survived. Every **accepted survivor** by name, with the reason it
-  cannot be killed and your assessment of that reason; every survivor still standing at the cap,
-  likewise.
+- Mutants generated / killed / survived, **split into the story's changed lines and everything
+  else** — those are two different claims and a single number hides which one G3 ruled on. Every
+  **accepted survivor** by name, with the reason it cannot be killed and your assessment of that
+  reason; every in-scope survivor still standing at the cap, likewise. Out-of-scope survivors go in
+  as a count per file, labelled a standing finding about the repo's existing suite rather than
+  anything this run produced or failed.
 - Any **implementation findings** the hardener raised — mutants that point at dead code or an
   unreachable branch rather than a test gap.
 - Files touched, and the diff size.
@@ -246,8 +325,10 @@ own outcome name, so what he is reading is never ambiguous about which kind it w
   runs, all stage commits, accepting a survivor on the recorded terms above — named, assessed, and
   reported as `PASSED-WITH-ACCEPTED(n)` rather than as a clean pass — writing and presenting the
   scorecard.
-- ⛔ **Never without Kyle:** raising a cap, running two-stage when the mutation runner is missing
-  (unattended: stop instead), proceeding past a dirty tree in the target repo, merging the story
-  branch, or reporting a gate as passed on an agent's word.
+- ⛔ **Never without Kyle:** raising a cap, running two-stage when the mutation runner is missing or
+  cannot measure the repo (unattended: stop instead), proceeding past a dirty tree in the target
+  repo, merging the story branch, or reporting a gate as passed on an agent's word.
+- ⛔ **Never:** substituting `general-purpose` for a stage agent that failed to resolve. Stop and ask
+  for a fresh session instead — see Stage 0's precondition for what the substitution silently drops.
 - ⛔ **Never:** merging from this skill at all. The branch leaves here unmerged, and goes through
   the repo's normal git workflow including `adversarial-review`.
