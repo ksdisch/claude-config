@@ -657,6 +657,34 @@ rows get re-pointed to match.
   never for skills/agents/commands/CLAUDE.md edits. Findings land as a PR comment with a
   CLEAR / NOT-CLEAR verdict.
 
+#### `architecture-viewer`
+
+- **Run config:** Opus 5 · `high` — the extraction is judgment (what counts as a module,
+  where a runtime dependency hides), and `high` is what buys the runtime edges an import
+  parser would never find. Drop to `medium` for a re-map after correcting the grouping;
+  the boundaries are already decided by then.
+- **Reach for it when:**
+  - You want to review the *structure* rather than the code — "where do the dependencies
+    actually run", before a redesign or a big refactor.
+  - You suspect a dependency cycle, or want to know which module is the expensive one to
+    change.
+  - A repo's stated layering rule (in its `CLAUDE.md` or README) needs checking against
+    what the tree really does.
+- **Pairs well with:** [`project-guide`](#project-guide) (the same repo in prose, where
+  this is a navigable map), [`reorient`](#reorient) (the map is a fast way back into a
+  repo you've been away from), [`bug-hunt`](#bug-hunt) (structural findings are good
+  hunting ground).
+- **Notes:** no approval gate on the module boundaries, on purpose — the map is cheap to
+  regenerate, so it renders first and you correct the grouping after looking. The
+  validator is a hard gate: it opens every cited file and checks the line is in range,
+  and it fails when modules leave source unaccounted for. **Never lower `--min-coverage`
+  to make a run pass** — that number exists to catch the directory the extraction never
+  noticed. Output lands in the target repo's `docs/architecture/` unless `--out` says
+  otherwise, and a target repo that isn't the one you're working in gets files written
+  but nothing committed. Publishing to a claude.ai Artifact is opt-in via `--publish`.
+  v0 draws one drill level and no arrows leaving a drilled-in view; "open the code" is a
+  click-to-copy `file:line`, never embedded source.
+
 #### `artifacts-audit`
 
 - **Run config:** Opus 5 · `medium` — a taxonomy audit against a fixed rubric, ending in a
