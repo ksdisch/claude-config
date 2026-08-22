@@ -616,7 +616,8 @@ rows get re-pointed to match.
 - **Notes:** propose-first (2026-08-22) — the run opens with an honest SKIP / SINGLE ROUND /
   FULL LOOP recommendation; you decide interactively (either-direction veto), unattended runs
   decide and record why, with a floor of at least a single round for
-  skills/agents/commands/CLAUDE.md/hooks diffs. Hard STOP at triage — you can flip verdicts
+  behavioral/agent-instruction diffs (CLAUDE.md, skills, agents, commands, hooks,
+  settings*.json). Hard STOP at triage — you can flip verdicts
   or waive findings by name, and a waiver is recorded verbatim. Hard cap of 3 reviewer
   dispatches per run. Any skip is stated in the merge brief, never silent. Findings land as
   a PR comment with a CLEAR / NOT-CLEAR verdict.
