@@ -142,8 +142,8 @@ Status: complete | partial (died at segment N) · Lineup tour: taken | skipped
 
 **Landing:** at close-out (or by a later session if this one died), via the
 standard git workflow — short docs branch + PR in the project repo. Docs-only
-and non-behavioral, so the adversarial-review escape hatch applies; state the
-skip and reason in the merge brief. A project CLAUDE.md's stricter git rules win.
+and non-behavioral, so under the propose-first review gate the honest
+recommendation is SKIP; state the skip and reason in the merge brief. A project CLAUDE.md's stricter git rules win.
 
 ## Failure modes to avoid
 

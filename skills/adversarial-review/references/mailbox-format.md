@@ -70,7 +70,7 @@ OPEN ─▶ ACCEPTED ───────────────────�
                           FIXED-IN <sha> ─▶ VERIFIED | REOPENED
 ```
 
-Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)`, `FOLLOW-UP` (nice-to-have, listed in the PR comment). `REOPENED` goes back onto the author's plate within the round cap. An unclosed **coverage bound** has its own disposition, separate from findings: closed by a later round's review, or `COVERAGE-WAIVED-BY-KYLE (<his words>)` at the cap-residue prompt or Phase 6's pre-verdict coverage check.
+Terminal states: `VERIFIED`, `CLOSED (overruled)`, `WAIVED-BY-KYLE (<his words>)`, `FOLLOW-UP` (nice-to-have, listed in the PR comment), and — under a SINGLE ROUND scope only, when the round produced no critical — `FIXED-IN <sha> (self-verified)` (the author's own verification stands in for the reviewer's; PR-comment disposition reads "Fixed in <sha>, self-verified (single round)"). Plain `FIXED-IN <sha>` without the marker remains non-terminal and awaits `VERIFIED | REOPENED`. `REOPENED` goes back onto the author's plate within the round cap. An unclosed **coverage bound** has its own disposition, separate from findings: closed by a later round's review, or `COVERAGE-WAIVED-BY-KYLE (<his words>)` at the cap-residue prompt or Phase 6's pre-verdict coverage check.
 
 ## PR comment template (orchestrator, Phase 6)
 

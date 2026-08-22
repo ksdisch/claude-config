@@ -186,8 +186,8 @@ rows get re-pointed to match.
   - You've repeated a workaround across sessions and want it encoded rather than remembered.
 - **Pairs well with:** [`/wrap`](#wrap) (the same end-of-session moment),
   `superpowers:writing-skills` (how the skill file itself should be shaped),
-  [`adversarial-review`](#adversarial-review) (skills edits never take the trivial-diff
-  escape hatch).
+  [`adversarial-review`](#adversarial-review) (skills edits keep an unattended review floor —
+  at least a single round).
 - **Notes:** hard STOP after presenting candidates — nothing is written before you pick. It
   lands skills in `claude-config` via branch + PR, which may not be the repo you're working
   in, and each new skill ships with its index row *and* its card here in the same commit —
@@ -613,11 +613,14 @@ rows get re-pointed to match.
   [`review-judge`](#review-judge) (the agents it dispatches),
   [`ship-and-route`](#ship-and-route) (calls it as its landing gate),
   [`bug-hunt`](#bug-hunt) (the no-merge-in-play counterpart).
-- **Notes:** hard STOP at triage — you can flip verdicts or waive findings by name, and a
-  waiver is recorded verbatim. Hard cap of 3 reviewer dispatches per run. The trivial-diff
-  escape hatch exists but a skip is always stated in the merge brief, never silent, and
-  never for skills/agents/commands/CLAUDE.md edits. Findings land as a PR comment with a
-  CLEAR / NOT-CLEAR verdict.
+- **Notes:** propose-first (2026-08-22) — the run opens with an honest SKIP / SINGLE ROUND /
+  FULL LOOP recommendation; you decide interactively (either-direction veto), unattended runs
+  decide and record why, with a floor of at least a single round for
+  behavioral/agent-instruction diffs (CLAUDE.md, skills, agents, commands, hooks,
+  settings*.json). Hard STOP at triage — you can flip verdicts
+  or waive findings by name, and a waiver is recorded verbatim. Hard cap of 3 reviewer
+  dispatches per run. Any skip is stated in the merge brief, never silent. Findings land as
+  a PR comment with a CLEAR / NOT-CLEAR verdict.
 
 #### `architecture-viewer`
 

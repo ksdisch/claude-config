@@ -12,14 +12,18 @@ Orchestrator-side calibration: how findings gate the merge, and which diffs may 
 
 **Anti-inflation.** Grade blast radius, not confidence — a finding you're unsure of gets its uncertainty stated in the claim, not a lower grade. Reviewers always come back with *something*; the nice-to-have grade exists precisely so real-but-unimportant findings have somewhere honest to go. A calibrated-low list beats an alarmist one — inflated grades train the author to dispute everything and the judge to discount the reviewer.
 
-## Escape hatch — what "trivial" means
+## Scope calibration — SKIP / SINGLE ROUND / FULL LOOP (propose-first, updated 2026-08-22)
 
-A diff qualifies for skipping the loop only if **all** of its changes are:
+The loop no longer auto-runs; the session recommends a scope and Kyle decides interactively (unattended, the session decides and records why in the merge brief). This section calibrates the *recommendation* — Kyle's call can override any of it.
+
+**SKIP-worthy** — a diff whose changes are all:
 
 - docs-only **and non-behavioral** (README, code comments, prose no agent executes), or
 - pure formatting with no semantic change, or
 - config-typo scale (fixing a label, a string, a version bump with no code path implications).
 
-**Disqualifiers — always run the loop** if the diff touches: executable code paths, dependencies or lockfiles, CI/workflow files, auth or permissions, data handling (schemas, migrations, serialization), install-class scripts (anything that runs on someone's machine at setup), or **behavioral/agent-instruction files** — any `CLAUDE.md`, `skills/**`, `agents/**`, `commands/**`, hooks, or `settings*.json`: prose by file type, executable by effect.
+**Lean FULL LOOP** if the diff touches: dependencies or lockfiles, CI/workflow files, auth or permissions, data handling (schemas, migrations, serialization), install-class scripts (anything that runs on someone's machine at setup), or **behavioral/agent-instruction files** — any `CLAUDE.md`, `skills/**`, `agents/**`, `commands/**`, hooks, or `settings*.json`: prose by file type, executable by effect. Ordinary executable code with decent test coverage often earns **SINGLE ROUND** (one reviewer dispatch, self-verified fixes — defined in SKILL.md Phase 0).
 
-A skip taken under the pre-merge gate must be **stated in the merge brief** ("skipped adversarial review: docs-only") — never silent. When in doubt, it isn't trivial.
+**Unattended floor:** behavioral/agent-instruction diffs never get SKIP when Kyle isn't around to veto — at least SINGLE ROUND.
+
+A skip, however arrived at, must be **stated in the merge brief** ("skipped adversarial review: docs-only, Kyle's call" / "…session's call, unattended") — never silent. When in doubt about trivial vs. not, it isn't trivial.
