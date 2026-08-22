@@ -129,6 +129,35 @@ This is checked, not remembered: `scripts/check-doc-sync.py` runs as the repo's 
 
 ---
 
+## Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)
+
+The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) are vendored raw upstream via `npx skills` and deliberately untracked in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next reinstall. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
+
+**Keep one-file-per-ticket as the source of truth.** Per-ticket `Status:` / `Blocked by:` lines and `## Comments` history live only in the issue files — never collapse them into a single combined file.
+
+**Also maintain a generated index.** Write or refresh `.scratch/<feature-slug>/tickets.md` — a short manifest listing, for each ticket: number, title, one-line summary, `Status`, and `Blocked by`, each linking to its issue file — at two points only: (1) whenever tickets are published to a local-markdown tracker (`/to-tickets`, or any skill step that publishes tickets to the issue tracker in local-markdown mode), and (2) whenever `/triage` changes a ticket's `Status`. **Don't refresh it from a concurrent context** — `/implement-spec` runs implementer subagents each in their own worktree/branch, and none of them should touch `tickets.md`; only the orchestrating session refreshes it, once, after merging each implementer's work to the PR branch. This is what makes `/implement @tickets.md`-style references resolve without hand-listing every issue file, without turning the manifest into a merge-conflict magnet.
+
+```markdown
+# Tickets: <feature-slug>
+
+Generated index — resolves to the issue files below. Source of truth is `issues/`; refresh on publish, on a /triage Status change, or once after each merge in /implement-spec.
+
+| # | Title | Summary | Status | Blocked by |
+|---|---|---|---|---|
+| [01](issues/01-slug.md) | Ticket title | One-line summary | ready-for-human | None |
+| [02](issues/02-slug.md) | Ticket title | One-line summary | ready-for-agent | 01 |
+```
+
+`Status` values are the five triage roles (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`) for `/to-tickets` tickets. `/wayfinder` tickets use a disjoint `claimed`/`resolved` vocabulary and don't belong in this manifest at all (see below) — don't mix the two.
+
+**The manifest is an entry point, never the source of truth.** `/implement` and `/implement-spec` should treat `tickets.md` as an index that resolves to the issue files — read it to find which files exist and their current status, then read the issue files themselves for content (What to build / Acceptance criteria / Comments). If `tickets.md` and an issue file's `Status:` line ever disagree, the issue file wins; refresh the manifest.
+
+**`/wayfinder` does not consume this manifest.** Its frontier is defined as a scan of `issues/` for open, unblocked, unclaimed files, and its claim/resolve steps write only the issue file and `map.md` — never `tickets.md`. Reading the manifest instead of scanning risks missing a ticket the manifest hasn't caught up to. `map.md` stays wayfinder's canonical index; this convention doesn't apply to wayfinder efforts.
+
+**When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the untracked upstream template, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
+
+---
+
 ## Project Wiki
 
 When working in a project that contains `PROJECT.md`, a `Wiki/` directory, or `HANDOFF.md`, maintain the project wiki using the `project-wiki` skill:
