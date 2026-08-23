@@ -259,20 +259,8 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Size:** M
 - **Added:** 2026-08-22
 
-### [Feature] Connector audit: prune unused claude.ai connectors from CLI sessions
-- **Why:** ~15 connectors' worth of tool surface ships with every CLI session and several (ZipRecruiter, Spotify, Canva, AWS Marketplace) have no plausible CLI use; per-connector pruning is a one-time S-sized change that pays on every future request. Full write-up in [`docs/ideas/connector-audit-prune.md`](docs/ideas/connector-audit-prune.md).
-- **Acceptance:** A used/unused verdict per connector backed by transcript evidence or Kyle's say-so, and the unused ones actually pruned via the per-connector mechanism (never the global `disableClaudeAiConnectors` switch, which is any-source-true).
-- **Size:** S
-- **Added:** 2026-08-22
-
 ### [Feature] System-prompt inspector: measure what actually ships over the wire
 - **Why:** Every trimming decision is guesswork without a wire-level number; Matt's zero-dependency `agent-proxy` (or `/context`, where it suffices) turns "feels bloated" into a before/after measurement that doubles as the acceptance test for the other trimming items. Full write-up in [`docs/ideas/system-prompt-inspector.md`](docs/ideas/system-prompt-inspector.md).
 - **Acceptance:** A documented, repeatable measure workflow in `docs/` — `/context` vs. proxy compared once for real, with the winner recorded — producing a per-tool/per-feature token table for a live session.
-- **Size:** S
-- **Added:** 2026-08-22
-
-### [Exploration] Harness disable ruling: keep/cut pass over Matt Pocock's disable list
-- **Why:** Five of Matt's eight disables conflict with live workflows here (workflows/ultracode, remote control, artifacts, AskUserQuestion, crons) — the win is an explicit keep/cut ruling per feature, pocketing the genuine cuts and recording the keeps so this never gets re-litigated; the conflicts are named in [`docs/ideas/harness-disable-ruling.md`](docs/ideas/harness-disable-ruling.md).
-- **Acceptance:** One sitting with Kyle over the eight-feature table ends in recorded keep/cut verdicts and a single settings.json PR for the cuts.
 - **Size:** S
 - **Added:** 2026-08-22

@@ -1,6 +1,27 @@
 # Harness disable ruling: keep/cut pass over Matt Pocock's disable list
 
-**Status:** Idea — not committed. Mined from "Claude Code's system tools are SO BLOATED" (https://www.youtube.com/watch?v=oLx4yCbeklQ) by `cc-yt-idea-mine` on 2026-08-22.
+**Status:** Executed 2026-08-22 — verdicts recorded below; Kyle ruled on every line. Mined from "Claude Code's system tools are SO BLOATED" (https://www.youtube.com/watch?v=oLx4yCbeklQ) by `cc-yt-idea-mine` on 2026-08-22.
+
+## Ruling (2026-08-22) — keep all eight
+
+Evidence: full sweep of `~/.claude/projects` (2.6 GB, 299 project dirs, ~1 year of
+transcripts), counting actual `tool_use` invocations. Every feature on Matt's list is
+in live use here, so no feature-level disable landed; the genuine cuts were all on the
+connector side (see [`connector-audit-prune.md`](connector-audit-prune.md)).
+
+| Feature | Observed usage | Verdict — keep because |
+|---|---|---|
+| Plan-mode tools | ExitPlanMode ×74 (EnterPlanMode ×6; most entries via shift-tab) | Plan mode itself is in real use, not just `/explore-plan` |
+| AskUserQuestion | ×1,225 — most-used tool on the list | The CLAUDE.md clarifying-questions convention runs through it |
+| Cron tools | ×5 ever | Marginal, but `/schedule` + DogHood's live `/scheduled-reconcile` depend on the mechanism; savings are 3 small tool defs |
+| Bundled skills | `/code-review` ×13 (incl. ultra), `/simplify` ×2 | `disableBundledSkills` is all-or-nothing |
+| Dynamic workflows | Workflow tool ×190 | Ultracode orchestration: `/autonomous-milestone`, `/brainstorm`, `/replenish` |
+| Remote control | `remoteControlAtStartup: true`; RemoteTrigger ×6 | `/launch --remote`, phone sessions |
+| Artifacts | Artifact tool ×30 | `paper-gloss` publishes claude.ai Artifacts |
+| Connectors (global) | — | Global switch ruled out (any-source-true); ruled per-connector instead |
+
+These verdicts are recorded so the question never gets re-litigated; re-open only if
+usage patterns change materially.
 
 ## Premise
 

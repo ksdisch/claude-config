@@ -1,6 +1,35 @@
 # Connector audit: prune unused claude.ai connectors from CLI sessions
 
-**Status:** Idea — not committed. Mined from "Claude Code's system tools are SO BLOATED" (https://www.youtube.com/watch?v=oLx4yCbeklQ) by `cc-yt-idea-mine` on 2026-08-22.
+**Status:** Executed 2026-08-22 — verdicts recorded below and applied to
+`~/.claude/settings.json` (untracked; the repo is public, so the ruling record lives
+here and the edit lives only in the live file). Mined from "Claude Code's system tools
+are SO BLOATED" (https://www.youtube.com/watch?v=oLx4yCbeklQ) by `cc-yt-idea-mine` on
+2026-08-22.
+
+## Verdicts (2026-08-22)
+
+Evidence: full sweep of `~/.claude/projects` (2.6 GB, ~1 year) counting actual
+`mcp__claude_ai_*` tool invocations. Mechanism question resolved: `deniedMcpServers`
+is a valid **user-scope** settings key (documented as enterprise but merges from all
+sources, so users can deny for themselves) — the prune is one edit in
+`~/.claude/settings.json`, no per-project toggles needed. Entries are
+`{ "serverName": "claude.ai <Name>" }`; note `claude.ai O’Reilly` uses a Unicode
+apostrophe (U+2019).
+
+**Cut (13):** Asana, Figma, Supabase, IFTTT, Elicit, AWS Marketplace, Canva, O’Reilly,
+Spotify, ZipRecruiter (all zero CLI invocations ever) · Todoist (~47 tools duplicating
+the self-hosted `todoist` MCP: ×68 vs ×125, self-hosted kept) · Context7 (duplicates
+the context7 plugin's identical 2 tools) · Notion (×1 ever, 2026-06-05).
+
+**Keep (5):** Gmail (×116, last 2026-08-22) · Slack (×7, 2026-08-19) · Google Drive
+(×25, 2026-07-21) · Google Calendar (×28, stale since 2026-06-08 — Kyle explicitly
+kept) · Wispr Flow (zero CLI use, but Kyle explicitly spared it).
+
+Corrections to the original premise: Supabase and Wispr Flow were assumed CLI-used but
+show zero CLI invocations — their use was claude.ai web, which these settings don't
+touch. Two connectors not in the original list exist on the account (Zapier, Clinical
+Trials — zero use, didn't attach recently); not ruled on, not denied. `claude.ai
+Claude Code Remote` is the remote-control bridge and must never be denied.
 
 ## Premise
 
