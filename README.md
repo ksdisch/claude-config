@@ -39,7 +39,7 @@ skill and the subagent it dispatches — which is the clearest look at how the p
 | [`operating-constraints.md`](operating-constraints.md) | Scope, honesty, and act-vs-assess guardrails |
 | [`adversarial-review`](skills/adversarial-review/SKILL.md) | Author, reviewer, and judge argue before a merge |
 | [`adversarial-reviewer`](agents/adversarial-reviewer.md) | The zero-context subagent that review loop dispatches |
-| [`/autonomous-milestone`](commands/autonomous-milestone.md) | Plan, build, test, verify, report — unattended |
+| `/autonomous-milestone` | **Disabled 2026-08-27** — plan, build, test, verify, report, unattended. Preserved at [`commands/autonomous-milestone.md.disabled`](commands/autonomous-milestone.md.disabled) |
 | [`kickoff`](skills/kickoff/SKILL.md) | Half-baked idea → interviewed → scaffolded repo |
 | [`/handoff-session`](commands/handoff-session.md) | Portable prompt to continue in a fresh session |
 | [`/claudify-repo`](commands/claudify-repo.md) | Vendors these into any other repo |
