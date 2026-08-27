@@ -99,7 +99,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-27
 
 ### [Feature] CRAP-score gate: coverage × complexity as a deterministic quality loop
-- **Status:** **Shipped 2026-08-27** as Constellation's `npm run gate:crap` ([`scripts/crapReport.ts`](https://github.com/ksdisch/constellation/pull/45), squashed as `629fef9`) plus the global [`/crap-check`](commands/crap-check.md) invoker. Acceptance met: report-only, ranked worst-function output on one coverage-wired repo, flagging scores > 6. **Promotion to a blocking loop is deliberately not decided here** — per [ADR 0001](docs/adr/0001-gates-earn-the-veto.md) it's Kyle's explicit per-repo call at the month-one verdict below, judged on noise level exactly as this stub's acceptance asked.
+- **Status:** **Shipped 2026-08-27** as Constellation's `npm run gate:crap` ([`scripts/crapReport.ts`](https://github.com/ksdisch/constellation/pull/45), squashed as `629fef9`) plus the global [`/crap-check`](commands/crap-check.md) invoker. Acceptance met: report-only, ranked worst-function output on one coverage-wired repo, flagging scores > 6. **Promotion to a blocking loop is deliberately not decided here** — per [ADR 0001](docs/adr/0001-gates-earn-the-veto.md) it's Kyle's explicit per-repo call at the **[month-one verdict](#decision-month-one-verdict-on-the-two-piloted-gates--due-2026-09-25)** entry above, judged on noise level exactly as this stub's acceptance asked.
 - **Why:** The config's hooks gate git behavior; nothing gates the code. A CRAP score is hooks-over-prompts applied to code quality. Verified 2026-08-20: the loop must anchor on the Stop hook — PostToolUse cannot block. Full write-up in [`docs/ideas/crap-score-gate.md`](docs/ideas/crap-score-gate.md).
 - **Acceptance:** Report-only `/crap-check` on one coverage-wired repo, ranked worst-function output; promotion to a Stop-hook loop decided from its noise level.
 - **Size:** M
@@ -126,7 +126,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Feature] Agent-tuned thresholds: widen human lint limits for agents
-- **Status:** **Closed 2026-08-27 — acceptance met as written.** The principle landed as one sentence in the global `CLAUDE.md` review-gate bullet ("agents get wider limits than humans — CRAP flags at 6 where humans conventionally run under 4"), in the same PR as the first shipped numeric gate. Future numeric gates cite that sentence rather than re-deriving it.
+- **Status:** **Closed 2026-08-27 — acceptance met in substance, not literally.** The principle landed as one sentence in the global `CLAUDE.md` review-gate bullet ("agents get wider limits than humans — CRAP flags above 6 where humans conventionally run under 4"), and future numeric gates cite that sentence rather than re-deriving it. The acceptance said "in the same PR as the first shipped numeric gate"; that wasn't reachable across two repos — the gate shipped in constellation #45, the sentence in claude-config #118. Same pilot, two PRs.
 - **Why:** Bob runs CRAP 4 for humans, 6–8 for agents — numeric gates need per-audience thresholds, stated once where every future gate can cite it. Full write-up in [`docs/ideas/agent-tuned-thresholds.md`](docs/ideas/agent-tuned-thresholds.md).
 - **Acceptance:** The principle landed as one CLAUDE.md sentence in the same PR as the first shipped numeric gate.
 - **Size:** S
@@ -212,7 +212,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Feature] Spot-check dashboard: monitor scores instead of reading code
-- **Status:** **Acceptance met 2026-08-27** — [`/crap-check`](commands/crap-check.md)'s report-only output is the v0 dashboard, and `adversarial-review`'s Preflight step is what makes it a *supervision* posture rather than a report you have to remember to run. Left open deliberately: v0 is one repo, one metric, on demand. Whether the posture deserves anything more (multi-repo, trend over time) is a question for the month-one verdict below, not a build to start now.
+- **Status:** **Acceptance met 2026-08-27** — [`/crap-check`](commands/crap-check.md)'s report-only output is the v0 dashboard, and `adversarial-review`'s Preflight step is what makes it a *supervision* posture rather than a report you have to remember to run. Left open deliberately: v0 is one repo, one metric, on demand. Whether the posture deserves anything more (multi-repo, trend over time) is a question for the **[month-one verdict](#decision-month-one-verdict-on-the-two-piloted-gates--due-2026-09-25)** entry above, not a build to start now.
 - **Why:** Bob's supervision posture — watch the scores, sample the code, never full-review. Almost certainly ships as the CRAP gate's report mode; stubbed so the posture half isn't lost in the enforcement half. Full write-up in [`docs/ideas/crap-spot-check-dashboard.md`](docs/ideas/crap-spot-check-dashboard.md).
 - **Acceptance:** `/crap-check`'s report-only output serves as the v0 dashboard.
 - **Size:** S

@@ -327,8 +327,8 @@ rows get re-pointed to match.
   - You want the spot-check posture — watch the scores, sample the code — instead of
     reading a subsystem line by line.
   - A module feels risky and you want the complexity-vs-coverage number rather than a vibe.
-- **Pairs well with:** [`adversarial-review`](#adversarial-review) (its Phase 0 Preflight is
-  the main consumer of this output), [`bug-hunt`](#bug-hunt) (a high-CRAP function is where
+- **Pairs well with:** [`adversarial-review`](#adversarial-review) (its Phase 0 Preflight
+  names this command as the way to run and read a repo's CRAP gate), [`bug-hunt`](#bug-hunt) (a high-CRAP function is where
   to point the finders), [`/tdd-loop`](#tdd-loop) (the obvious response to a high score is
   tests, not a rewrite).
 - **Notes:** it **discovers** the command from the target repo's "Wired gates (Preflight)"
