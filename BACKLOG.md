@@ -70,6 +70,7 @@ live in [`docs/ideas/`](docs/ideas/).
   - **The number that decides it:** mutation survivors in the story's changed lines were **0 in both arms**. The control arm's unguided build was already fully mutation-covered, so the hardener stage had nothing to do.
   - **Four fixable defects found:** (1) Stage 3 scopes mutation by *file*, not changed *lines*, so it gates on a touched module's pre-existing debt — 39 survivors, none from the story; (2) the tooling probe checks that Stryker *installs*, not that it can *measure* — its `command` runner treats a whole `node --test` suite as one opaque test and every mutant died by timeout, costing ~45 min; (3) agent files merged in a session aren't dispatchable in that session (registry loads at session start), so the pilot needs a fresh session; (4) STAGE-COMMITS never says to wait for the agent's report before committing.
   - **The unexpected result:** the *specifier* is on notice, not just the hardener. The judge called the gauntlet arm the over-engineered one (four keys beyond the story's three, one unreachable by measurement) while the unguided control arm found the same §14.3 constraint and handled it better. Plausible mechanism, flagged as inference: 18 Gherkin scenarios + "every scenario needs a test" over-specifies a small story.
+- **Re-pilot parked 2026-08-25 per [ADR 0001](docs/adr/0001-gates-earn-the-veto.md)** — merge-time gates (dependency conformance + CRAP as Preflight evidence) took the slot instead. Parked, not killed: the four defects below are still the entry price if it's picked back up.
 - **Next, if picked up:** fix the four defects, then re-run on a second story **in a fresh session** — and add a third arm (coder+gates, no specifier) to measure the specifier's contribution directly. If the hardener finds nothing across two more stories, drop it from the relay and keep it as the standalone `AUDIT` auditor its own vision doc wanted.
 
 ### [Exploration] Values, not disciplines: stop imposing human TDD ritual on agents
@@ -90,13 +91,22 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Size:** M
 - **Added:** 2026-08-20
 
+### [Decision] Month-one verdict on the two piloted gates — due ~2026-09-25
+- **Why:** [ADR 0001](docs/adr/0001-gates-earn-the-veto.md) grants no gate the veto on day one. `gate:deps` and `gate:crap` shipped report-only in Constellation on 2026-08-27; a month later each one gets an explicit **Promotion** (earns the merge veto in that repo — recorded in its `CLAUDE.md`, installed as a pre-push hook), **Demotion** (becomes an Instrument, never tuned into staying), or **extend** call. Kyle's call, not a session's. Without a dated entry this decision just quietly never happens and the gates drift into permanent advisory limbo.
+- **Acceptance:** A recorded verdict per gate. Promotion bar: ≥1 true catch, or clean passes across ≥5 merges, **and** zero false blocks. Demotion bar: zero actionable signal **plus** ≥1 false block. Evidence is the PR comments citing Preflight results — plus the month-one payoff metric from the plan: **the count of propose-first scope downgrades actually taken on Preflight evidence.**
+- **Evidence so far (2026-08-27):** `gate:deps` — zero violations at the entry bar, all twelve rules falsification-probed and firing. `gate:crap` — baseline 61 of 348 functions above the flag line, but **the report is dominated by functions that are 0%-covered by Constellation's own convention** (Phaser scenes, entities, React components are playtest-gated, not unit-tested), so for those the score degenerates to a pure complexity ranking and buries the real complexity-vs-coverage signal in the framework-free modules. Noted as month-one calibration evidence, deliberately **not** fixed in Phase 2 — whether that's a threshold problem, a scoping problem, or a Demotion is exactly what the verdict decides.
+- **Size:** S
+- **Added:** 2026-08-27
+
 ### [Feature] CRAP-score gate: coverage × complexity as a deterministic quality loop
+- **Status:** **Shipped 2026-08-27** as Constellation's `npm run gate:crap` ([`scripts/crapReport.ts`](https://github.com/ksdisch/constellation/pull/45), squashed as `629fef9`) plus the global [`/crap-check`](commands/crap-check.md) invoker. Acceptance met: report-only, ranked worst-function output on one coverage-wired repo, flagging scores > 6. **Promotion to a blocking loop is deliberately not decided here** — per [ADR 0001](docs/adr/0001-gates-earn-the-veto.md) it's Kyle's explicit per-repo call at the month-one verdict below, judged on noise level exactly as this stub's acceptance asked.
 - **Why:** The config's hooks gate git behavior; nothing gates the code. A CRAP score is hooks-over-prompts applied to code quality. Verified 2026-08-20: the loop must anchor on the Stop hook — PostToolUse cannot block. Full write-up in [`docs/ideas/crap-score-gate.md`](docs/ideas/crap-score-gate.md).
 - **Acceptance:** Report-only `/crap-check` on one coverage-wired repo, ranked worst-function output; promotion to a Stop-hook loop decided from its noise level.
 - **Size:** M
 - **Added:** 2026-08-20
 
 ### [Feature] Module dependency-rules checker: a spec file the agents cannot violate
+- **Status:** **Shipped 2026-08-27** as Constellation's `.dependency-cruiser.cjs` (12 rules) behind `npm run gate:deps` (PR #45, `629fef9`). Acceptance met in substance, with one deliberate deviation: **no `deps.yml`** — the plan's scope fence ruled out a house format, so the dependency-cruiser config *is* the spec file, encoding intended architecture with no baseline-ignore file. Entry bar met on the weaker side: the hand-run found **zero violations across 82 modules / 173 dependencies**, so all twelve rules were falsification-probed (inject a violating import, confirm the catch, revert) to prove a clean run means something — which caught three rules that had been silently vacuous. No hook wiring, per the fence.
 - **Why:** Architecture is what agents erode and no test catches — a declared dependency graph plus a checker turns the design layer deterministic. Full write-up in [`docs/ideas/module-dependency-rules-checker.md`](docs/ideas/module-dependency-rules-checker.md).
 - **Acceptance:** `deps.yml` + checker run by hand on one pilot repo, finding (or proving absent) real violations, before any hook wiring.
 - **Size:** M
@@ -116,6 +126,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Feature] Agent-tuned thresholds: widen human lint limits for agents
+- **Status:** **Closed 2026-08-27 — acceptance met as written.** The principle landed as one sentence in the global `CLAUDE.md` review-gate bullet ("agents get wider limits than humans — CRAP flags at 6 where humans conventionally run under 4"), in the same PR as the first shipped numeric gate. Future numeric gates cite that sentence rather than re-deriving it.
 - **Why:** Bob runs CRAP 4 for humans, 6–8 for agents — numeric gates need per-audience thresholds, stated once where every future gate can cite it. Full write-up in [`docs/ideas/agent-tuned-thresholds.md`](docs/ideas/agent-tuned-thresholds.md).
 - **Acceptance:** The principle landed as one CLAUDE.md sentence in the same PR as the first shipped numeric gate.
 - **Size:** S
@@ -140,6 +151,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Exploration] Loop-until-the-tool-says-okay as the core agent contract
+- **Status:** **Closed 2026-08-27 — superseded, not met.** The acceptance ("the first shipped gate implements loop-until-green with a max-iteration escape valve") was **not** satisfied and won't be: [ADR 0001](docs/adr/0001-gates-earn-the-veto.md) replaced loop-until-green with the report-first **Promotion** model, so the first two shipped gates block nothing and have no loop condition at all. Loop-until-green isn't rejected in principle — it becomes available to a gate that earns the veto, and the escape-valve warning goes with it then. Closing on the substitution, not on a pass.
 - **Why:** Gates as loop conditions, not reports — the connective framing for the CRAP gate and dependency checker, with Bob's escape-valve warning attached. Likely absorbed by whichever gate ships first. Full write-up in [`docs/ideas/loop-until-tool-passes.md`](docs/ideas/loop-until-tool-passes.md).
 - **Acceptance:** The first shipped gate implements loop-until-green with a max-iteration escape valve; then close this stub.
 - **Size:** S
@@ -200,6 +212,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Feature] Spot-check dashboard: monitor scores instead of reading code
+- **Status:** **Acceptance met 2026-08-27** — [`/crap-check`](commands/crap-check.md)'s report-only output is the v0 dashboard, and `adversarial-review`'s Preflight step is what makes it a *supervision* posture rather than a report you have to remember to run. Left open deliberately: v0 is one repo, one metric, on demand. Whether the posture deserves anything more (multi-repo, trend over time) is a question for the month-one verdict below, not a build to start now.
 - **Why:** Bob's supervision posture — watch the scores, sample the code, never full-review. Almost certainly ships as the CRAP gate's report mode; stubbed so the posture half isn't lost in the enforcement half. Full write-up in [`docs/ideas/crap-spot-check-dashboard.md`](docs/ideas/crap-spot-check-dashboard.md).
 - **Acceptance:** `/crap-check`'s report-only output serves as the v0 dashboard.
 - **Size:** S
