@@ -227,6 +227,9 @@ rows get re-pointed to match.
 
 #### `/autonomous-milestone`
 
+> **Disabled 2026-08-27** — archived to `commands/autonomous-milestone.md.disabled`; the
+> command won't resolve until it's renamed back. Card kept for the re-enable.
+
 - **Run config:** Opus 5 · `ultracode` — a build-heavy autonomous run, and the command is
   itself your explicit opt-in to multi-agent orchestration.
 - **Reach for it when:**
