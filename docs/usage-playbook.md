@@ -316,6 +316,29 @@ rows get re-pointed to match.
 - **Notes:** the TL;DR of main objectives comes **last**, on purpose, and the checklist is
   saved to `docs/smoke/` so it survives the session.
 
+#### `/crap-check`
+
+- **Run config:** Sonnet 5 · `medium` — discovering one command from a note and reading a
+  ranked table back is checklist-shaped; the judgment (which functions are worth acting on)
+  is a two-line call at the end, not the bulk of the work.
+- **Reach for it when:**
+  - You're composing a merge proposal in a repo with a CRAP gate wired, and you want the
+    Preflight evidence the scope recommendation is supposed to cite.
+  - You want the spot-check posture — watch the scores, sample the code — instead of
+    reading a subsystem line by line.
+  - A module feels risky and you want the complexity-vs-coverage number rather than a vibe.
+- **Pairs well with:** [`adversarial-review`](#adversarial-review) (its Phase 0 Preflight
+  names this command as the way to run and read a repo's CRAP gate), [`bug-hunt`](#bug-hunt) (a high-CRAP function is where
+  to point the finders), [`/tdd-loop`](#tdd-loop) (the obvious response to a high score is
+  tests, not a rewrite).
+- **Notes:** it **discovers** the command from the target repo's "Wired gates (Preflight)"
+  note — script names differ per repo, and that indirection is the point. It never installs
+  or writes tooling: a repo with nothing wired gets one honest line and a stop, because
+  wiring a gate is its own reviewed change (`docs/adr/0001-gates-earn-the-veto.md`). A
+  ranking has no pass/fail, so the command may always exit 0 — that isn't "clean". Expect
+  0%-by-convention code (UI components, game scenes) to dominate the top of the list; split
+  those out rather than averaging them in.
+
 #### `/trim-context`
 
 - **Run config:** Sonnet 5 · `medium` — a fixed-rubric audit plus mechanical fixes.

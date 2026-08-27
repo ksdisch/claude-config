@@ -60,6 +60,7 @@ Available in every Claude Code session. Live in `commands/`.
 | [`/tdd-loop`](../commands/tdd-loop.md) | Test-first loop — write failing tests for a spec, confirm they fail for the right reason, commit them, then write implementation until they pass without modifying the tests. · [config →](usage-playbook.md#tdd-loop) |
 | [`/screenshot-iterate`](../commands/screenshot-iterate.md) | Visual loop — implement against a mock, screenshot the running app, compare to target, fix diffs, repeat until it matches. · [config →](usage-playbook.md#screenshot-iterate) |
 | [`/smoke-test`](../commands/smoke-test.md) | Sets up a manual smoke test — figures out what to verify, opens needed pages in Chrome, then gives you a precise do-this / see-that checklist. · [config →](usage-playbook.md#smoke-test) |
+| [`/crap-check`](../commands/crap-check.md) | Runs the target repo's own wired CRAP tooling — discovered from that repo's "Wired gates (Preflight)" note, never a guessed filename — and presents the ranked worst-functions report, flagging scores above the note's threshold (> 6 by default). Report-only: installs nothing, blocks nothing, and says plainly when a repo has nothing wired. · [config →](usage-playbook.md#crap-check) |
 | [`/trim-context`](../commands/trim-context.md) | Finds and fixes token bloat in a repo — oversized CLAUDE.md, bloated memory files, large always-loaded files, `.claude/` cruft. · [config →](usage-playbook.md#trim-context) |
 
 ### Environment & Setup
