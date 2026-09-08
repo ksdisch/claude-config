@@ -584,6 +584,25 @@ rows get re-pointed to match.
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
   Cross-lane dedup happens on the *move* axis — Harden ↔ bug-hunt is a known seam.
 
+#### `day`
+
+- **Run config:** Opus 5 · `medium` — sits resident all day; the gate needs judgment (is this
+  polish or progress?) but every action is rule-following against a written list. Sonnet 5
+  is fine on a light day.
+- **Reach for it when:**
+  - You're starting a working day driven by one Todoist project and want today's list
+    briefed, a must-do set pinned, and a running log as you report outcomes in plain language.
+  - You know you'll drift into tooling or polish mid-morning and want one-line pushback plus
+    hourly pace check-ins.
+  - The day is over and you want what slipped re-dated and the record written.
+- **Pairs well with:** [`rebrief-a2c`](#rebrief-a2c) / [`reorient`](#reorient) (run one of
+  those first after a gap of more than a day), [`/wrap`](#wrap) (the coding-session bookend;
+  `/day wrap` is the Todoist one).
+- **Notes:** one Todoist project per run; the project hook (`.claude/day.md`, template in the
+  skill's `references/`) supplies extra sources, outcome vocabulary, the polish list, and the
+  wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
+  re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
+
 ### Quality & Debugging
 
 #### `gauntlet`
