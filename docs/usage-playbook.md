@@ -584,25 +584,6 @@ rows get re-pointed to match.
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
   Cross-lane dedup happens on the *move* axis — Harden ↔ bug-hunt is a known seam.
 
-#### `day`
-
-- **Run config:** Opus 5 · `medium` — sits resident all day; the gate needs judgment (is this
-  polish or progress?) but every action is rule-following against a written list. Sonnet 5
-  is fine on a light day.
-- **Reach for it when:**
-  - You're starting a working day driven by one Todoist project and want today's list
-    briefed, a must-do set pinned, and a running log as you report outcomes in plain language.
-  - You know you'll drift into tooling or polish mid-morning and want one-line pushback plus
-    hourly pace check-ins.
-  - The day is over and you want what slipped re-dated and the record written.
-- **Pairs well with:** [`rebrief-a2c`](#rebrief-a2c) / [`reorient`](#reorient) (run one of
-  those first after a gap of more than a day), [`/wrap`](#wrap) (the coding-session bookend;
-  `/day wrap` is the Todoist one).
-- **Notes:** one Todoist project per run; the project hook (`.claude/day.md`, template in the
-  skill's `references/`) supplies extra sources, outcome vocabulary, the polish list, and the
-  wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
-  re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
-
 ### Quality & Debugging
 
 #### `gauntlet`
@@ -1084,6 +1065,45 @@ rows get re-pointed to match.
   interview still runs when no `MISSION.md` exists, so a truly unattended run needs
   `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
   the teach skill itself is never edited.
+
+### Personal Productivity
+
+#### `day`
+
+- **Run config:** Opus 5 · `medium` — sits resident all day; the gate needs judgment (is this
+  polish or progress?) but every action is rule-following against a written list. Sonnet 5
+  is fine on a light day.
+- **Reach for it when:**
+  - You're starting a working day driven by one Todoist project and want today's list
+    briefed, a must-do set pinned, and a running log as you report outcomes in plain language.
+  - You know you'll drift into tooling or polish mid-morning and want one-line pushback plus
+    hourly pace check-ins.
+  - The day is over and you want what slipped re-dated and the record written.
+- **Pairs well with:** [`rebrief-a2c`](#rebrief-a2c) / [`reorient`](#reorient) (run one of
+  those first after a gap of more than a day), [`/wrap`](#wrap) (the coding-session bookend;
+  `/day wrap` is the Todoist one).
+- **Notes:** one Todoist project per run; the project hook (`.claude/day.md`, template in the
+  skill's `references/`) supplies extra sources, outcome vocabulary, the polish list, and the
+  wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
+  re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
+
+#### `todoist-triage`
+
+- **Run config:** Opus 5 · `medium` — every write is rule-following against an approved map,
+  but each bucket has judgment rows (done or Someday? which project?) and the sittings are
+  long and interactive.
+- **Reach for it when:**
+  - Todoist has overflowed: Inbox full of auto-captures, dozens overdue, hundreds undated, a
+    project tree that grew a duplicate branch.
+  - It's Sunday and you want the four-step weekly review run as proposal tables instead of
+    by hand (`weekly`).
+  - Inbox alone needs emptying between full runs (`inbox`).
+- **Pairs well with:** [`day`](#day) (runs one project's day on the clean structure),
+  [`backlog-hygiene`](#backlog-hygiene) (the coding-backlog analog).
+- **Notes:** no delete exists in the MCP, so dropped tasks get a dated suffix and complete;
+  descriptions are never rewritten (the read truncates at 200 characters); projects can't be
+  archived or reparented from here, so each run ends with an archive list for you. State
+  (map, inventory snapshots, run logs) lives in `~/Projects/_todoist/`, never in this repo.
 
 ### UI & Frontend
 

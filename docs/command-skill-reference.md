@@ -97,7 +97,6 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
 | [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
-| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
 
 ### Quality & Debugging
 
@@ -144,6 +143,13 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 |---|---|
 | [`career-coach`](../skills/career-coach/SKILL.md) | ICF MCC-level career and life coaching — progressive clarity on your next career move, grounded in values, life stage, and what you actually want. Supports multi-session continuity via [SNAPSHOT] / [UPDATE] / [FOCUS] tags. Auto-triggers when you feel stuck, unfulfilled, or at a professional crossroads. · [config →](usage-playbook.md#career-coach) |
 | [`teach-research`](../skills/teach-research/SKILL.md) | Research companion for `teach` — mission interview, parallel six-modality source discovery, a curation gate, then cached digests plus a curated `RESOURCES.md` that `/teach` consumes unchanged. Typed-only (`/teach-research`); run from the learning directory. · [config →](usage-playbook.md#teach-research) |
+
+### Personal Productivity
+
+| Skill | What it does |
+|---|---|
+| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
+| [`todoist-triage`](../skills/todoist-triage/SKILL.md) | Bulk cleanup and periodic hygiene for the whole Todoist — inventories every open task, settles a target project tree once, then proposes dispositions bucket by bucket (finished projects, duplicates, the collapse, Inbox, overdue, undated, pasted titles) and writes only after each bucket is approved. `weekly` runs the four-step weekly review. · [config →](usage-playbook.md#todoist-triage) |
 
 ### UI & Frontend
 
