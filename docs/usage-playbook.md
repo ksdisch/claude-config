@@ -1138,6 +1138,19 @@ session *in that repo*.
   the browser; "none" ends the run cleanly. Unverified addresses get a staged draft with an
   empty `To:` and a flag. Trackers are not auto-marked sent.
 
+#### `call-brief`
+
+- **Run config:** Sonnet 5 · `medium` — four fixed sources, a fixed output shape, and a
+  reference example to match.
+- **Reach for it when:**
+  - You're about to dial one prospect and want every line you'd say written out in full.
+  - A task's script has gone stale and you need it rebuilt from the files before the call.
+- **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
+  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at).
+- **Notes:** one contact per run. Numbers in the task and `prospects.md` must agree or the
+  header flags it. Only two figures are ever spoken (no listing fee, 85% wired); everything
+  else routes to Zach.
+
 #### `rebrief-a2c`
 
 - **Run config:** Sonnet 5 · `medium` — two live sweeps and a reconciliation with a fixed
