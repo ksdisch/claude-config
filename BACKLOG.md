@@ -5,6 +5,30 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Feature] orchestrate: headless workers
+- **Why:** v1 of `/orchestrate` needs a visible window per worker, and every new worktree path costs Kyle one folder-trust dialog click (pilot 2026-09-07, finding #10). `claude -p` seats with `crossSessionInbound: accept` passed via `--settings` would remove both the window and the dialog for tickets nobody needs to watch.
+- **Acceptance:** The Milestone 1 pass bar (A1–A10 in `docs/reports/2026-09-07-orchestrate-pilot.md`) holds with zero windows open.
+- **Size:** M
+- **Added:** 2026-09-08
+
+### [Exploration] orchestrate vs Agent Teams
+- **Why:** `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` ships a lead/teammate/shared-task-list shape that overlaps `/orchestrate`'s loop. Before investing further in the skill, one hour on the same fixture should say whether the built-in already covers it.
+- **Acceptance:** A `docs/reports/` note running the three-ticket pilot fixture under Agent Teams and stating whether it covers assign → Done → review → merge → index refresh, and what it lacks.
+- **Size:** S
+- **Added:** 2026-09-08
+
+### [Improvement] orchestrate: merge-conflict handling
+- **Why:** Every pilot run hit a merge conflict between sibling tickets that append to the same file (findings #8, #13). The skill's answer is "stop, tell Kyle, propose a rebase Follow-up" — correct but it costs a Kyle decision per conflict, and Kyle chose the same route all three times.
+- **Acceptance:** A conflict during a feature-branch merge is handled by a rebase Follow-up to the same worker without a Kyle round-trip (still briefed), and the worker's rebase re-targets the current tip when ticket-state commits move it.
+- **Size:** S
+- **Added:** 2026-09-08
+
+### [Improvement] /launch: detect Warp by presence, not by `$TERM_PROGRAM`
+- **Why:** From an Apple Terminal session `/launch` maps to the fallback path and never starts the session, even though Warp is installed and `open warp://launch/<config>` works from any process (pilot 2026-09-07, finding #11 — the orchestrator ran the Warp path by hand). `/orchestrate` needs seats opened from whatever terminal the orchestrator happens to be in.
+- **Acceptance:** `commands/launch.md` takes the Warp path when `/Applications/Warp.app` exists regardless of `$TERM_PROGRAM` (or accepts an explicit `--terminal warp`), with the fallback only when Warp is absent.
+- **Size:** S
+- **Added:** 2026-09-08
+
 ### [Feature] Session auto-close: the `/launch` companion that reaps finished sessions
 - **Why:** `/launch` (PRs #75/#76) made opening sessions one command, but nothing ever closes them — finished Warp windows/tabs accumulate on the desktop until Kyle sweeps them by hand, and the more `/launch` gets used the faster they pile up. Sessions need the ability and insight to close sessions that are *for sure* done being used. The governing asymmetry: a launch mistake costs one ⌘V; a close mistake kills live work. Full write-up in [`docs/ideas/session-auto-close.md`](docs/ideas/session-auto-close.md).
 - **Acceptance:** A plan doc in `docs/plans/` settling the four open design questions (Warp close mechanism, what "for sure done" means, where the reaper lives, consent model), then the build it specifies — or the plan session itself ships the build if it turns out light.

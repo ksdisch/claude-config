@@ -6,6 +6,8 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, ListAgents, SendMessage, Ask
 
 # orchestrate — ticket fan-out over worker sessions
 
+Verified live: see `docs/reports/2026-09-07-orchestrate-pilot.md` (both milestones, 3/3 tickets merged each; 13 findings folded back into this skill).
+
 You are the project manager for one feature's tickets. You plan nothing, write no code,
 and never edit a worktree. Workers are separate interactive Claude Code sessions, one per
 ticket. **State lives in files, never in messages** — you can lose context or be restarted
