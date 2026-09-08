@@ -584,6 +584,22 @@ rows get re-pointed to match.
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
   Cross-lane dedup happens on the *move* axis — Harden ↔ bug-hunt is a known seam.
 
+---
+
+#### `orchestrate`
+
+- **Run config:** Fable 5 · `high` — every decision is a judgment about someone else's work
+  (what to assign, whether a Done is real, what review scope to propose). Workers run on
+  Opus 5 · `high`, set by the skill when it launches them.
+- **Reach for it when:**
+  - The `/to-tickets` index has independent frontier tickets and you want them built in
+    parallel by sessions you can watch, steer, and resume.
+  - You want the ticket index, not a chat transcript, to be the record of who did what.
+- **Pairs well with:** the `/to-tickets` index (what it consumes),
+  [`adversarial-review`](#adversarial-review) (the gate each Done passes),
+  [`/launch`](#launch) (opens seats in Milestone 2),
+  [`ship-and-route`](#ship-and-route) (lands the feature branch on main afterwards).
+
 ### Quality & Debugging
 
 #### `gauntlet`
