@@ -116,7 +116,8 @@ dialog in the receiver's window and dropped after five minutes; same-class messa
 delivered. The orchestrator runs in the prompting class and **never launches a worker
 with a bypass flag**, so held messages should not occur. If one does, the fix is on the
 worker side: restart it without the bypass flag, or set `"crossSessionInbound": "accept"`
-in that project's `.claude/settings.local.json`. The skill never writes settings.
+in that project's `.claude/settings.local.json`. The skill never writes permission
+settings; its only config write is the repo root's folder-trust flag (SKILL.md, Setup step 6).
 
 ## Trust
 
