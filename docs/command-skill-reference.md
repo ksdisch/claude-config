@@ -97,6 +97,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
 | [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
+| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
 
 ### Quality & Debugging
 
