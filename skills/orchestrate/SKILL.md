@@ -29,7 +29,10 @@ Workers reply to that name.
 - **Frontier**: tickets whose `Status:` is `ready-for-agent` and whose every `Blocked by:`
   ticket has `Status: done`.
 - **Seat**: a `ListAgents` row that is `interactive`, `idle`, on this machine, named
-  `<feature-slug>-worker-<N>`. A busy seat is not free.
+  `<feature-slug>-worker-<N>`. A busy seat is not free. An open window is not a seat until
+  the session has registered (`~/.claude/sessions/<pid>.json` exists): a session parked on
+  the folder-trust dialog for a never-seen directory never registers and cannot be
+  messaged. Kyle accepts that dialog in the tab; you never write `~/.claude.json`.
 - **Feature branch**: `feat/<feature-slug>` off `main`. Create it if absent.
 - **Ticket branch / worktree**: `feat/<feature-slug>-<NN>-<ticket-slug>` checked out at
   `.claude/worktrees/<feature-slug>-<NN>`.
@@ -41,6 +44,9 @@ Workers reply to that name.
 3. `git show-ref --verify --quiet refs/heads/feat/<slug> || git branch feat/<slug> main`
 4. Detect the test command: `package.json` scripts.test → `npm test`; `pyproject.toml` or
    `pytest.ini` → `pytest`; `Makefile` with a `test` target → `make test`; none → ask Kyle once.
+   Then confirm the binary exists (`command -v pytest`); if not, fall back to
+   `python3 -m pytest` or `uvx --from pytest pytest -q`, whichever runs, and put **that**
+   string in the Assign brief. A brief carrying a command that is not on PATH wastes a worker turn.
 5. Detect a GitHub remote: `git remote get-url origin` succeeds and contains `github.com` →
    workers open PRs; otherwise workers commit to their branch and you merge branches directly.
 
@@ -56,7 +62,9 @@ Workers reply to that name.
    print the Assign brief as a fenced block, then invoke `/launch` with
    `<abs worktree path> --model claude-opus-5 --effort high --name <slug>-worker-<N> --send`
    (next unused N). After its Verified-start report, run `ListAgents` up to three times,
-   ten seconds apart, until the name appears; if it never does, tell Kyle and stop. Then
+   ten seconds apart, until the name appears; if it never does, the window is most likely
+   parked on the folder-trust dialog (new worktree path) — tell Kyle to accept it in that
+   tab, and stop until the name appears. Then
    `SendMessage` with `to: <name>`, no message, `notify_when_idle: true`.
 4. **Assign.** For each frontier ticket (lowest number first) with a free seat:
    a. `git worktree add -b feat/<slug>-<NN>-<ticket-slug> .claude/worktrees/<slug>-<NN> feat/<slug>`
@@ -102,6 +110,7 @@ you cannot see it. If Kyle asks why a worker is silent, say so and point at its 
 |---|---|
 | `in-progress` ticket, worker not in `ListAgents` | `Status: ready-for-agent`; comment `worker <name> gone at <time>; branch <b> kept`. Keep worktree and branch. Next Assign says "resume". |
 | Send dropped (tool result says rate-limited / repeat / queue full) | End the turn; on the next wake resend once; second drop → tell Kyle. |
+| Send fails to resolve the name ("No agent named … is reachable") | The ticket is already `in-progress` and its worktree exists; leave both. Tell Kyle which worker is unreachable and why (unregistered window, or the session list too long to search). Resend once the name appears in `ListAgents`; the brief is unchanged. |
 | Message held for approval (reported by worker or visible in its window) | Do not resend. Tell Kyle the worker is in the other permission class; point at `references/messages.md` § Inbound gating. |
 | Merge conflict | Stop, tell Kyle the branch and files. Do not resolve. |
 | Restart / compaction | Re-run `/orchestrate <slug>`; step 1 recovers; step 2 catches gone workers. |
