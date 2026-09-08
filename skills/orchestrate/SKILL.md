@@ -123,6 +123,7 @@ you cannot see it. If Kyle asks why a worker is silent, say so and point at its 
 |---|---|
 | `in-progress` ticket, worker not in `ListAgents` | `Status: ready-for-agent`; comment `worker <name> gone at <time>; branch <b> kept`. Keep worktree and branch. Next Assign says "resume". |
 | Send dropped (tool result says rate-limited / repeat / queue full) | End the turn; on the next wake resend once; second drop → tell Kyle. |
+| Send is ambiguous ("2 agents are named …") | A worker you ended (or that crashed) can linger under the same name as a Remote Control row for several minutes. Re-send with the ref of the row marked *on this machine* (`<name> [ref]`); never the Remote Control one. |
 | Send fails to resolve the name ("No agent named … is reachable") | The ticket is already `in-progress` and its worktree exists; leave both. Tell Kyle which worker is unreachable and why (unregistered window, or the session list too long to search). Resend once the name appears in `ListAgents`; the brief is unchanged. |
 | Message held for approval (reported by worker or visible in its window) | Do not resend. Tell Kyle the worker is in the other permission class; point at `references/messages.md` § Inbound gating. |
 | Merge conflict | Abort the merge. Stop, tell Kyle the branch and files, and propose the one fix the pilot proved: a Follow-up asking the same worker to rebase its branch onto the feature branch and send Done again. Do not resolve it yourself. |
