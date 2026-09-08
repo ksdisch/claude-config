@@ -68,6 +68,36 @@ Same as Assign with the first line `Follow-up: ticket <NN> — <k> review findin
 plus `Findings: <abs path to the PR comment or review mailbox file>`. Send with
 `notify_when_idle: true`. Done shape is unchanged.
 
+## Follow-up — rebase (orchestrator → worker, after a merge conflict)
+
+The Follow-up shape for the failure table's merge-conflict row. Send with `notify_when_idle: true`.
+
+```text
+Follow-up: ticket <NN> — 1 review finding to fix (merge conflict with <feat/slug>)
+
+You are worker <worker-name> for feature <feature-slug>. Reply to: <orchestrator-name>.
+
+Findings: <branch> was cut before <sibling ticket(s)> landed on <feat/slug> (now at <sha>).
+Merging conflicts in <files>. Nothing wrong with the ticket's own change.
+
+Ticket file: <abs path>
+Worktree: <abs worktree path>
+Branch: <branch>  (off feature branch <feat/slug>)
+Resume: resume from the existing commits on this branch
+
+Definition of done:
+1. Rebase <branch> onto the **current tip** of <feat/slug> — it may have moved past the SHA
+   named above (the orchestrator commits ticket state there); if it moves again while you
+   work, rebase again. Keep <feat/slug>'s existing code exactly as it is and re-apply your
+   change on top. Every acceptance checkbox stays satisfied.
+2. The repo's test command passes: <test command>.
+3. The branch is committed (rebased); PR updated if there is one.
+4. You send me a Done message (unchanged shape).
+
+Rules unchanged: no scope creep, no merging, no ticket-file commits on your branch,
+Blocked message rather than a guess.
+```
+
 ## Nudge (orchestrator → worker, idle with no Done)
 
 ```text

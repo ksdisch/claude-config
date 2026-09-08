@@ -19,7 +19,7 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ### [Improvement] orchestrate: merge-conflict handling
 - **Why:** Every pilot run hit a merge conflict between sibling tickets that append to the same file (findings #8, #13). The skill's answer is "stop, tell Kyle, propose a rebase Follow-up" — correct but it costs a Kyle decision per conflict, and Kyle chose the same route all three times.
-- **Acceptance:** A conflict during a feature-branch merge is handled by a rebase Follow-up to the same worker without a Kyle round-trip (still briefed), and the worker's rebase re-targets the current tip when ticket-state commits move it.
+- **Acceptance:** A conflict during a feature-branch merge is handled by the rebase Follow-up (template now in `references/messages.md`) to the same worker without a Kyle round-trip — still briefed, never silent.
 - **Size:** S
 - **Added:** 2026-09-08
 

@@ -30,8 +30,9 @@ Workers reply to that name.
 
 - **Frontier**: tickets whose `Status:` is `ready-for-agent` and whose every `Blocked by:`
   ticket has `Status: done`.
-- **Seat**: a `ListAgents` row that is `interactive`, `idle`, on this machine, named
-  `<feature-slug>-worker-<N>`. A busy seat is not free. An open window is not a seat until
+- **Seat**: any `ListAgents` row that is `interactive`, on this machine, named
+  `<feature-slug>-worker-<N>` — busy or idle. A **free seat** is one whose row says `idle`.
+  `--seats` caps the number of seats, not free seats. An open window is not a seat until
   the session has registered (`~/.claude/sessions/<pid>.json` exists): a session parked on
   the folder-trust dialog for a never-seen directory never registers and cannot be
   messaged. Kyle accepts that dialog in the tab; you never write `~/.claude.json`.
@@ -62,15 +63,18 @@ Workers reply to that name.
 2. **List.** `ListAgents`. Collect free seats. Note every `in-progress` ticket whose worker
    is **not** listed → handle per the failure table (worker gone) before assigning.
 3. **Open seats** *(Milestone 2 only; skip if you have not been told M2 is live)*: while
-   frontier tickets > free seats and seats < `--seats`: create the worktree (step 4a),
-   print the Assign brief as a fenced block, then invoke `/launch` with
+   frontier tickets (not yet assigned this turn) > free seats and seats < `--seats`, take the
+   lowest unassigned frontier ticket and, in this order: run 4a (worktree) and 4b–4c (status
+   flip and commit) for it; print its Assign brief as a fenced block; invoke `/launch` with
    `<abs worktree path> --model claude-opus-5 --effort high --name <slug>-worker-<N> --send`
-   (next unused N). After its Verified-start report, run `ListAgents` up to three times,
+   (next unused N) — the brief is the session's first prompt, so no 4d send follows; run 4e
+   (brief Kyle). After `/launch`'s Verified-start report, run `ListAgents` up to three times,
    ten seconds apart, until the name appears; if it never does, the window is most likely
    parked on the folder-trust dialog (new worktree path) — tell Kyle to accept it in that
-   tab, and stop until the name appears. Then
-   `SendMessage` with `to: <name>`, no message, `notify_when_idle: true`.
-4. **Assign.** For each frontier ticket (lowest number first) with a free seat:
+   tab, and stop until the name appears. Then `SendMessage` with `to: <name>`, no message,
+   `notify_when_idle: true`. The ticket is now assigned; step 4 must not touch it.
+4. **Assign.** For each frontier ticket **not assigned in step 3 this turn** (lowest number
+   first) with a free seat:
    a. `git worktree add -b feat/<slug>-<NN>-<ticket-slug> .claude/worktrees/<slug>-<NN> feat/<slug>`
       (if the branch already exists from an earlier attempt: `git worktree add .claude/worktrees/<slug>-<NN> feat/<slug>-<NN>-<ticket-slug>` and mark the brief "resume").
    b. In the issue file set `Status: in-progress` and append under `## Comments`:
@@ -85,13 +89,18 @@ Workers reply to that name.
 
 ## Wake handling
 
-You are woken by one of four things. Identify which, then act.
+You are woken by one of five things. Identify which, then act.
 
 - **Done message** (first line `Done: ticket <NN> …`). Verify: the branch exists and its
   tip is ahead of the feature branch; with a remote, the PR exists (`gh pr view <n> --json state,baseRefName`) and targets the feature branch. Verification fails → reply with a Follow-up naming what is missing. Verification passes →
   run the **review-gate proposal** exactly as the global git workflow defines it: propose
   skip / single round / full loop with the why, then **STOP and wait for Kyle's call**.
-  After the call: run `adversarial-review` at that scope if any; blocking findings → Follow-up
+  After the call: run `adversarial-review` at that scope if any — **from the ticket worktree**
+  (`cd .claude/worktrees/<slug>-<NN>`, so its "current branch" is the ticket branch and its
+  mailbox is keyed per ticket), telling it the comparison base is `feat/<slug>` rather than
+  the repo default branch, so the reviewer sees this ticket's diff and not every merged
+  sibling. Only the SKIP branch of this gate has been exercised live (pilot 2026-09-07);
+  the first real review run should be watched. Blocking findings → Follow-up (review shape)
   to the same worker (it fixes, sends Done again, you re-verify). Clean → merge
   (`gh pr merge <n> --merge` with a remote; `git merge --no-ff <branch>` into the feature
   branch without), set `Status: done` with a comment naming the merge SHA, rewrite
@@ -109,6 +118,9 @@ You are woken by one of four things. Identify which, then act.
   tell Kyle which worker and ticket, and leave the ticket `in-progress`. An idle notice for a
   ticket already `done` or under review is ignored.
 - **Subscription-expiry notice** (12 h). Same as an idle notice.
+- **Exit notice** ("has exited before going idle") for a worker whose ticket is `in-progress`.
+  A dead worker sends nothing else, ever: go to loop step 1 now; step 2 applies the
+  worker-gone row of the failure table and the freed ticket is re-assigned.
 
 Idle and exit notices are delivered in a batch at your next turn boundary, not as they happen
 (pilot, 2026-09-07: four arrived together, all after the Done messages they trailed). Treat the
