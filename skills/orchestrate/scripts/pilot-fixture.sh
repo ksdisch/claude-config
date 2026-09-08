@@ -21,6 +21,7 @@ cat > pytest.ini <<'EOF'
 testpaths = tests
 pythonpath = .
 EOF
+printf '__pycache__/\n.pytest_cache/\n' > .gitignore
 mk() { # NN slug title blocked body
 cat > ".scratch/greet/issues/$1-$2.md" <<EOF
 # $3

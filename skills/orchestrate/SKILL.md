@@ -41,7 +41,9 @@ Workers reply to that name.
 
 1. `git rev-parse --abbrev-ref HEAD` must be `main` or the feature branch; otherwise stop.
 2. `git check-ignore -q .claude/worktrees || echo '.claude/worktrees/' >> .git/info/exclude`
-3. `git show-ref --verify --quiet refs/heads/feat/<slug> || git branch feat/<slug> main`
+3. `git show-ref --verify --quiet refs/heads/feat/<slug> || git branch feat/<slug> main`, then
+   `git checkout feat/<slug>` — the main checkout stays on the feature branch for the whole run,
+   because ticket state (`.scratch/`) is committed there after every status change (loop 4c).
 4. Detect the test command: `package.json` scripts.test → `npm test`; `pyproject.toml` or
    `pytest.ini` → `pytest`; `Makefile` with a `test` target → `make test`; none → ask Kyle once.
    Then confirm the binary exists (`command -v pytest`); if not, fall back to
@@ -71,7 +73,9 @@ Workers reply to that name.
       (if the branch already exists from an earlier attempt: `git worktree add .claude/worktrees/<slug>-<NN> feat/<slug>-<NN>-<ticket-slug>` and mark the brief "resume").
    b. In the issue file set `Status: in-progress` and append under `## Comments`:
       `- <YYYY-MM-DD HH:MM> orchestrator: assigned to <worker-name> on <branch>`.
-   c. Rewrite `tickets.md`.
+   c. Rewrite `tickets.md`, then `git add .scratch && git commit -m "tickets: <NN> in-progress (<worker>)"`
+      on the feature branch. Ticket files are git-tracked; the orchestrator is the only one who
+      commits them, so worker branches never carry `.scratch/` changes and merges never conflict there.
    d. `SendMessage` the Assign template, `to: <worker-name>`, `notify_when_idle: true`.
    e. Brief Kyle in one line: ticket, worker, branch.
 5. **Wait.** End your turn with a one-line status (`Waiting on <k> workers: …`). Do not
@@ -89,8 +93,11 @@ You are woken by one of four things. Identify which, then act.
   to the same worker (it fixes, sends Done again, you re-verify). Clean → merge
   (`gh pr merge <n> --merge` with a remote; `git merge --no-ff <branch>` into the feature
   branch without), set `Status: done` with a comment naming the merge SHA, rewrite
-  `tickets.md`, `git worktree remove .claude/worktrees/<slug>-<NN>`, brief Kyle (ticket,
-  PR, merge SHA), and go to loop step 1 — the freed seat takes the next ticket.
+  `tickets.md`, commit `.scratch/` on the feature branch, `git worktree remove
+  .claude/worktrees/<slug>-<NN>` (plain — never `--force`; see the failure table if it refuses),
+  brief Kyle (ticket, PR, merge SHA), and go to loop step 1 — the freed seat takes the next ticket.
+  A Done whose content Kyle already ruled on (a rebase that changes no lines, a resend) merges
+  under that standing call; say so in the brief instead of asking again.
 - **Blocked message.** Answer from the issue file if the answer is there (quote the line).
   Otherwise put the question to Kyle with `AskUserQuestion` and relay the answer verbatim.
   Never invent an answer.
@@ -100,6 +107,12 @@ You are woken by one of four things. Identify which, then act.
   tell Kyle which worker and ticket, and leave the ticket `in-progress`. An idle notice for a
   ticket already `done` or under review is ignored.
 - **Subscription-expiry notice** (12 h). Same as an idle notice.
+
+Idle and exit notices are delivered in a batch at your next turn boundary, not as they happen
+(pilot, 2026-09-07: four arrived together, all after the Done messages they trailed). Treat the
+Done message as the primary wake signal and the notice as the backstop for a worker that never
+sends one. Every state change is recorded in files *before* the turn ends, so a late notice
+that refers to an already-handled state is simply ignored.
 
 A worker parked on a permission prompt or an `AskUserQuestion` is neither idle nor done;
 you cannot see it. If Kyle asks why a worker is silent, say so and point at its window.
@@ -112,7 +125,8 @@ you cannot see it. If Kyle asks why a worker is silent, say so and point at its 
 | Send dropped (tool result says rate-limited / repeat / queue full) | End the turn; on the next wake resend once; second drop → tell Kyle. |
 | Send fails to resolve the name ("No agent named … is reachable") | The ticket is already `in-progress` and its worktree exists; leave both. Tell Kyle which worker is unreachable and why (unregistered window, or the session list too long to search). Resend once the name appears in `ListAgents`; the brief is unchanged. |
 | Message held for approval (reported by worker or visible in its window) | Do not resend. Tell Kyle the worker is in the other permission class; point at `references/messages.md` § Inbound gating. |
-| Merge conflict | Stop, tell Kyle the branch and files. Do not resolve. |
+| Merge conflict | Abort the merge. Stop, tell Kyle the branch and files, and propose the one fix the pilot proved: a Follow-up asking the same worker to rebase its branch onto the feature branch and send Done again. Do not resolve it yourself. |
+| `git worktree remove` refuses (untracked files left by the worker) | Never `--force` (the safety-net hook blocks it anyway). Send a Follow-up asking the worker to remove its untracked files, or — for build caches only (`__pycache__/`, `node_modules/`, `.pytest_cache/`) — append the pattern to `.git/info/exclude` and retry. |
 | Restart / compaction | Re-run `/orchestrate <slug>`; step 1 recovers; step 2 catches gone workers. |
 | Worker Done for a ticket not `in-progress` | Ignore the message; tell Kyle a stray Done arrived. |
 

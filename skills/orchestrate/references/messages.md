@@ -28,6 +28,10 @@ Rules:
 - If anything in the ticket is ambiguous, send a Blocked message instead of guessing.
 - Stay inside the ticket's scope. No refactors, no cleanup outside the files it names.
 - Do not merge anything. Do not touch `tickets.md` or other ticket files.
+- Tick the acceptance boxes in the ticket file at the path above (the main checkout), never
+  in your worktree's copy, and never commit anything under `.scratch/` on your branch.
+- Before sending Done, leave the worktree with no untracked files (build caches included);
+  the orchestrator removes the worktree after merging and a dirty one blocks that.
 - If this message arrived marked "held for approval", your session is in a different
   permission class than mine; reply with your permission mode and stop.
 
