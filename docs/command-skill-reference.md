@@ -97,6 +97,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
 | [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
+| [`orchestrate`](../skills/orchestrate/SKILL.md) | Runs one feature's ticket set through separate worker sessions — hands each ready ticket in `.scratch/<slug>/tickets.md` to a named worker session in its own worktree over SendMessage, waits on notify_when_idle, reviews under the standing gate, merges to the feature branch, refreshes the index. · [config →](usage-playbook.md#orchestrate) |
 
 ### Quality & Debugging
 
