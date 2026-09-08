@@ -80,3 +80,59 @@
 7. **`git worktree remove` refuses when the worker leaves untracked files** (`__pycache__/`), and `--force` is blocked by the repo safety net. **Fixed**: the Assign brief asks workers to leave the worktree free of untracked files before Done; the fixture script ships a `.gitignore`; the failure table gets a row (Follow-up to clean, never `--force`).
 8. **Parallel tickets that append to the same file conflict at merge** — by construction of this fixture, but also of any real ticket set that shares a module. The failure table's "stop and tell Kyle" held, and the Follow-up-rebase route resolved it in one worker turn. **Noted in SKILL.md** as the recommended thing to propose when telling Kyle; automatic handling stays a backlog stub.
 9. **Assign sent before the status flip on the re-assignment** — an orchestrator slip, not a skill defect; the skill's ordering is right and was followed everywhere else.
+
+---
+
+## Milestone 2 — auto-launched seats
+
+**Fixture:** fresh `orchestrate-pilot-m2-1788841328`, `--seats 2`, zero workers open. Same orchestrator session. The three Milestone 1 worker sessions were ended first so their names were free.
+
+### Timeline
+
+| Step | What happened | Evidence |
+|---|---|---|
+| Setup | `feat/greet` created and checked out in the main tree (the loop's ticket-state commits go there). Fixture now ships `.gitignore` for build caches. | git |
+| Loop 1–2 | Frontier {01, 02}; zero seats; cap 2 → open two. Worktrees created; 01/02 → `in-progress`; index committed. | git |
+| Launch 1 | Assign brief printed as a fenced block, then `/launch <worktree-01> --model claude-opus-5 --effort high --name greet-worker-1 --send`. Followed launch.md's steps by hand: clipboard, before-probe, Warp launch config with the prompt as the trailing argument, `open warp://launch/claude-launch`, verify. **Verified**: new PID 22722, cwd = worktree, argv prefix = launch command. | launch steps |
+| Launch 2 | Same for ticket 02 → PID 23404, verified. | launch steps |
+| Trust stall | Neither launched worker registered — both parked on the folder-trust dialog for their **worktree** paths (trust is per exact path; the fixture root was not trusted either). Kyle accepted both dialogs by hand; both registered 52 s later. | registry |
+| Subscribe | Pure `notify_when_idle` subscriptions (no message) to both, per loop step 3. Both accepted. | tool result |
+| Done 01 / 02 | Both Done messages arrived within ~3 min of registration (the `--send` prompt ran as soon as trust was granted). Worker 2 reported it could not delete gitignored caches (its safety net blocked every route) and asked the orchestrator to run `git clean -Xdf` — **declined as permission laundering**; the caches are gitignored and did not block anything. | messages |
+| Gate | SKIP both + rebase route proposed; Kyle chose it. | AskUserQuestion |
+| Merge 01 | `91a96a6`; 01 → `done`; worktree removed. 03's worktree created off the new tip; 03 → `in-progress`; Assign sent to the freed seat (worker 1) — **no third window opened** (B5). Follow-up (rebase) sent to worker 2. | git, sends |
+| Sabotage (B6) | Worker 1 ended (SIGTERM) seconds after the 03 Assign; registry entry gone. 03 → `ready-for-agent`, branch kept (still at the feature tip — the worker had not committed). Then 03 → `in-progress` with a resume brief printed as a fenced block, and **`/launch` re-opened the seat** into the greet-03 worktree: PID 71634 verified. Trust dialog again (new worktree path); Kyle accepted. | git, launch |
+| Done 02 (rebased) | Worker 2 rebased twice on its own because `feat/greet` moved under it (ticket-state commits), as the Follow-up allowed. Verified: +4/+5 shout-only, clean merge-tree, 3 passed. Merged `37e29ff` under the standing call; worktree removed — **gitignored caches did not block removal**. | git |
+| Done 03 | Relaunched worker 1 Done ~6 min after launch. Conflict with 02 in `tests/test_greet.py` (adjacent appended hunks). Gate: SKIP + rebase Follow-up; Kyle chose it. | merge-tree |
+| Ambiguous name | The Follow-up to `greet-worker-1` was refused: *"2 agents are named 'greet-worker-1'"* — the killed session lingered as a Remote Control row on "another machine". Resent with the local ref `[871e3f]`; delivered. | tool result |
+| Done 03 (rebased) | Worker rebased onto the *current* tip (two bookkeeping commits past the SHA the Follow-up named) and said so. Verified: clean merge-tree, 5 passed, three boxes, clean tree. Merged `b6b84be`; 03 → `done`; worktree removed. | git |
+| End state | `feat/greet` 13 commits ahead of `main`; all three `done`; index matches; one worktree; tree clean; `5 passed`. | git |
+
+### Pass bar
+
+| Check | Pass condition | Result |
+|---|---|---|
+| B1 | Two Warp tabs titled `greet-worker-1` / `greet-worker-2`, each in its worktree | ✅ verified by PID cwd |
+| B2 | Each launched worker appears in `ListAgents` under that name within three probes | ✅ after the trust dialog; not before (What broke #1 holds for launched seats too) |
+| B3 | Each launched worker receives its brief via `--send` and starts without an approval dialog | ✅ no cross-session approval dialog; the folder-trust dialog is a different, per-path prompt |
+| B4 | A1–A8 hold | ✅ |
+| B5 | Seat cap respected: no third window while two are busy | ✅ 03 went to the freed seat by SendMessage |
+| B6 | Sabotage, re-open done by `/launch` not by hand | ✅ |
+
+### Counts
+
+| Metric | Value |
+|---|---|
+| `/launch` invocations / verified starts | 3 / 3 |
+| Assign (via `--send`) / Assign (SendMessage) / Follow-up / pure subscriptions | 3 / 1 / 2 / 2 |
+| Sends refused as ambiguous → resent with ref | 1 |
+| Done messages | 5 (01, 02, 03, 02-rebased, 03-rebased) |
+| Idle/exit notices | 5, batched, all redundant with a Done |
+| Kyle decisions | 5 (2 trust dialogs, gate 01+02, gate 03, and the M1-era conflict route reused) |
+| Tickets merged | 3 of 3 |
+
+### What broke (new in Milestone 2)
+
+10. **Launched seats stall on the folder-trust dialog per worktree path**, not per repo: every new worktree is a new path, so every `/launch` costs Kyle one dialog click until Claude Code offers a way to pre-trust a directory that the skill is allowed to use. Recorded in SKILL.md step 3 already; the cost is now measured (three dialogs for three launches).
+11. **`/launch`'s terminal detection keys off `$TERM_PROGRAM`.** From an Apple Terminal session it would take the fallback path and never start the worker, even though Warp is installed and its `warp://launch/` URL works from anywhere. The pilot took the Warp path deliberately. Backlog stub — `/launch` is out of scope for this skill.
+12. **A killed worker lingers as a Remote Control row under the same name for minutes**, making the bare name ambiguous. **Fixed in SKILL.md**: resend with the ref of the *on this machine* row.
+13. **Ticket-state commits move the feature branch under a rebasing worker.** Both rebases had to re-target the tip; both workers handled it because the Follow-up said they could. Worth keeping in the Follow-up template rather than fixing — it costs the worker one extra rebase and avoids the orchestrator holding the branch still.
