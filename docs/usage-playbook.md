@@ -137,12 +137,19 @@ rows get re-pointed to match.
   - Context is getting long and the remaining work would be cleaner in a fresh session.
   - You want hard-won lessons and rejected options captured so the next session doesn't
     relitigate them.
+  - Pass `--orchestrator` when the next session should **coordinate** an arc across worker
+    sessions rather than build it — it swaps the block's structure for an arc decomposition,
+    worker mechanics, gate delegation and boundaries, and lifts the ~600-word cap.
 - **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
   [`/launch`](#launch) (opens the fresh session and loads the prompt into it),
-  [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
-  [`narrate`](#narrate) (`--audio`).
+  [`orchestrate`](#orchestrate) (`--orchestrator` checks first whether that skill already
+  covers the arc, and defers to it when it does), [`/prompt-optimize`](#prompt-optimize)
+  (same model/effort vocabulary, advisory only), [`narrate`](#narrate) (`--audio`).
 - **Notes:** it **stops the current work** after printing — that's deliberate. The
-  run-config note lands outside the paste-able block, never inside it.
+  run-config note lands outside the paste-able block, never inside it. Under
+  `--orchestrator` the run-config guidance flips to Opus 5 (1M) at `high` — a coordinator
+  reads far more than it writes — and a pick that wants Fable 5 is the signal that the
+  decomposition isn't settled enough to dispatch yet.
 
 #### `/launch`
 

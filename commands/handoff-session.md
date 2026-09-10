@@ -1,6 +1,6 @@
 ---
-description: Generate a self-contained handoff prompt I can paste into a fresh Claude Code session to continue this work without losing context. Captures hard-won lessons, what's done, and where the plan stands. Also prints a short plain-English 'what's next & why' briefing for me, so I stay oriented across the handoff. Stops the current work after generating. Project-agnostic.
-argument-hint: "[--audio [short|long]]"
+description: Generate a self-contained handoff prompt I can paste into a fresh Claude Code session to continue this work without losing context. Captures hard-won lessons, what's done, and where the plan stands. Also prints a short plain-English 'what's next & why' briefing for me, so I stay oriented across the handoff. With --orchestrator, writes a coordinator brief instead — a session that dispatches an arc to worker sessions rather than building it itself. Stops the current work after generating. Project-agnostic.
+argument-hint: "[--audio [short|long]] [--orchestrator]"
 allowed-tools: Bash, Read, Write, Glob, Grep, Task, Skill, ToolSearch, SendUserFile, mcp__plugin_voicemode_voicemode__service
 ---
 
@@ -11,6 +11,11 @@ Context handoff.
   of the brief (see "Audio narration" at the end). Optional level: `short`
   (default) or `long`. Without `--audio`, ignore all audio steps entirely —
   the command behaves exactly as before.
+- `--orchestrator` → the fresh session **coordinates** an arc across worker
+  sessions instead of building it. Replaces the block's section structure and
+  lifts the word cap; see "Orchestrator mode". Everything outside the block —
+  the "For Kyle" briefing, the run-config note, the slot ordering, redaction —
+  is unchanged. Composable with `--audio`.
 
 I'm stopping here to switch to a fresh Claude Code session. Generate a
 self-contained prompt I can paste into a new session so it picks up exactly
@@ -52,6 +57,9 @@ name tradeoffs, quote exact paths/branches/PRs/commands rather than
 paraphrasing.
 
 ## Handoff structure (sections, in order, inside the code block)
+
+**With `--orchestrator`, this structure is replaced** — skip to "Orchestrator
+mode" and use its sections instead. Everything else in this file still applies.
 
 1. **Title** — `# Context handoff — <project>: <one-line topic>`
 
@@ -114,12 +122,193 @@ you're including things derivable from git — cut those. If it's under ~150
 words, you're probably missing the hard-won lessons — mine the conversation
 harder.
 
+**`--orchestrator` lifts the ~600-word cap** — a coordinator brief carries an
+arc decomposition, worker mechanics and a boundary list that a continuation
+handoff doesn't, and a real one runs ~800–1,400 words. The cap lifts; the
+*discipline* behind it does not. Every line must be one of two things: a fact
+the orchestrator cannot derive by reading the repo, or a verified fact that
+saves it a lookup it would otherwise have to do (a symbol's file:line, a
+baseline test count). Anything else is filler and costs the orchestrator
+attention it needs for the gates.
+
 ## Honesty rules
 
 If something is half-done or wrong, say so. If a decision was made under
 uncertainty, flag the assumption so the fresh session can revisit. Don't
 paper over gaps to make the handoff look tidy — gaps are exactly what the
 fresh session needs to know about.
+
+## Orchestrator mode (only if `--orchestrator` was passed)
+
+The fresh session **coordinates an arc**: it decomposes nothing that this
+session already decomposed, writes no feature code, and dispatches each unit of
+work to a separate worker session in its own worktree — then reviews, merges,
+and records. Without the flag, ignore this whole section.
+
+An arc is worth orchestrating when the work splits into units a separate session
+can hold in its head, and the coordination (gates, merges, tracker updates) is
+real work in its own right. A single well-specified change is not an arc — write
+an ordinary handoff for it.
+
+### 1. First check whether `/orchestrate` already covers it
+
+`/orchestrate` (`~/.claude/skills/orchestrate/SKILL.md`) is the existing runtime
+for exactly this. **It fits when all four hold:**
+
+- the tracker is a local-markdown one — `.scratch/<slug>/tickets.md` plus
+  `issues/`;
+- the specs live in those ticket files, not in the brief you are about to write;
+- the frontier is genuinely wider than one, so seats buy wall-clock;
+- every step in the arc is agent-shaped — nothing waits on Kyle's credentials,
+  hardware, or physical presence.
+
+**All four → write a thin brief.** Name the slug, the branch, anything
+repo-specific `/orchestrate` cannot infer, and tell the session to run
+`/orchestrate <feature-slug> [--seats N]`. Do not restate its mechanics; it owns
+them and a copy will drift. Say in the "For Kyle" briefing that you did this and
+why.
+
+**Any one fails → write the full brief below**, and say in the "For Kyle"
+briefing which of the four failed. That is the honest reason a hand-written
+orchestrator exists for this arc, and it is also the bug report: a fit test that
+keeps failing the same way is an argument for extending `/orchestrate`.
+
+### 2. Verify the mechanics — never recall them
+
+The worker-dispatch mechanics are the most fakeable content in the brief and the
+most expensive to get wrong: a wrong flag or a missed invocation rule doesn't
+error, it produces a worker that silently does the wrong thing, or no worker at
+all. **Run the checks; quote what came back.**
+
+- **A skill the worker must run in its first prompt.** Skills marked
+  `disable-model-invocation: true` cannot be invoked on a worker's behalf — the
+  worker's first prompt must *literally begin* with `/<skill-name>`, and the
+  spec follows on the lines after it. Check before asserting it either way —
+  `grep -m1 '^disable-model-invocation:' ~/.claude/skills/<name>/SKILL.md` — and
+  grep rather than eyeballing a line range, since frontmatter length varies. As
+  of 2026-09-09, 22 of the installed skills carry the flag (`implement`,
+  `to-tickets`, `wayfinder`, `handoff`, …), so it is the common case, not an
+  exotic one; recount rather than trusting that number. If the flag is absent,
+  say so — a brief that demands the literal-first-line ritual where it isn't
+  needed wastes a turn.
+- **Cross-session tools.** `ListAgents` and `SendMessage` are usually deferred:
+  the brief must tell the orchestrator to load them first with
+  `ToolSearch` — query `select:ListAgents,SendMessage` — and to learn its **own**
+  name from the first line of `ListAgents` output, because that is the address
+  workers reply to. If Kyle renames the session mid-arc, the addressable name may
+  not change; the brief should say to re-check rather than assume.
+- **Worktrees.** One per worker, branched off the integration branch, e.g.
+  `git worktree add -b <branch> .claude/worktrees/<name> <base>`. Confirm
+  `.claude/worktrees/` is ignored (`.gitignore` or `.git/info/exclude`) and say
+  so; an unignored worktree shows up as untracked noise in every worker's
+  `git status` and in the orchestrator's own untouched checks.
+- **Opening sessions.** `/launch <absolute-worktree-path> --model <id> --effort
+  <level> --name <worker-name> --send`. Quote the real flags — `/launch` verifies
+  a new PID plus working directory plus command line, so a session that didn't
+  start is reported, not assumed.
+- **Waiting.** `SendMessage` with `notify_when_idle: true`. Never poll.
+
+### 3. Sections, in order, inside the code block
+
+Replaces "Handoff structure". Drop any section the arc genuinely has nothing
+for; never pad one.
+
+1. **Role** — who the session is and what it does not do, in two sentences.
+   "You coordinate; you do not write feature code yourself" needs a companion
+   clause or it fails open: say what to do when the worker machinery won't start
+   (ask Kyle, or fall back to the Agent tool) and say explicitly **not** to
+   quietly start building instead. A blocked orchestrator that starts coding is
+   the failure mode this line exists to prevent.
+
+2. **Orient first** — the read list, in order, and **the tracker, named
+   explicitly**: GitHub Issues via `gh`, or `.scratch/<slug>/`, or something
+   else. Say which it is *and* which it is not. An orchestrator that guesses the
+   tracker wrong burns its first several tool calls and may write state into a
+   directory nothing reads.
+
+3. **Current state** — verified, with the receipts: the base SHA, the baseline
+   test/lint counts, what closed recently, what is open and out of scope. This
+   is what the orchestrator would otherwise spend twenty minutes rediscovering,
+   and it is the section most worth being exact in.
+
+4. **The arc** — each unit in order, with its full spec, plus the **topology,
+   stated with its reason**: how wide the frontier is and why. Both errors are
+   real and they fail differently. Manufactured parallelism puts two workers in
+   the same file and surfaces as merge conflicts at the end, when the work is
+   done and expensive to redo; missed parallelism just costs wall-clock, quietly.
+   So state the width, give the reason (shared module, shared command, a
+   sequential data dependency), and close with the anti-manufacture clause in
+   both directions: *if you see a genuine independent split I missed, take it; do
+   not manufacture one.*
+
+   **Name any human-only step as a first-class member of the arc**, with what
+   makes it human — real credentials, real spend, hardware, a physical check —
+   and what the orchestrator does when it arrives: stop, hand Kyle a checklist,
+   and go no further. This is the part no runtime can infer, and an arc that
+   hides it produces an orchestrator that either stalls or improvises past a
+   gate that exists for a reason.
+
+5. **How to run workers** — only what section 2 verified. Include what each
+   worker reports back and to whom, and the instruction that a worker which
+   finds the spec contradicting the code should **stop and ask** rather than
+   decide — that contradiction is the single most valuable thing a worker
+   surfaces, and it is lost if the worker quietly picks one.
+
+6. **Review gates** — how much review each unit gets, per CLAUDE.md's
+   propose-first rule. **The delegation is Kyle's to give, and you may not
+   invent it.** If he delegated the gate decisions in this session, quote him
+   verbatim and say the orchestrator decides and records. If he did not, say so
+   plainly and write the interactive default: propose the scope and **stop for
+   his call**. Either way, state what still blocks a merge (critical and
+   should-fix findings — fixed and verified, closed or downgraded by the judge,
+   or waived by name) and that nice-to-haves become follow-ups. Never write a
+   brief that reads as if Kyle delegated when he didn't.
+
+7. **Tracker and git conventions** — the house pattern, read out of `git log`
+   rather than assumed: PR title shape, branch-per-unit, squash or merge,
+   whether the branch is deleted, what gets commented where, which items may be
+   closed and which need Kyle's ruling, and the commit trailers CLAUDE.md
+   requires.
+
+8. **Ask Kyle when** — a short, specific list of the things that must not be
+   guessed. The generic version ("ask if unsure") is worthless; the useful
+   version names this arc's real forks. The reliable four: a spec contradicts
+   the code; the worker machinery won't start; a review finding suggests a unit
+   boundary is wrong; a decision would change what the feature *means* rather
+   than how it's built. Close with "routine judgment calls are yours," or the
+   brief produces a session that asks about everything.
+
+9. **Boundaries** — what not to touch, each with its reason: out-of-scope
+   issues by number, PRs awaiting Kyle's separate call, anything that would
+   spend real money or hit a live account, and "do not refactor beyond what a
+   unit needs."
+
+10. **When the arc is done** — the reporting contract: what merged with SHAs,
+    what each gate ruled and why, any checklist Kyle owes himself, and what the
+    state of the backlog implies about what comes next. An orchestrator that
+    isn't told what to report ends on "done."
+
+**State lives in files, never only in messages.** Say this in the brief and give
+it a test the orchestrator can apply: *you must be able to recover by re-reading
+`<the tracker item>`.* Worker reports and cross-session messages evaporate on a
+restart or a compaction; the issue, its comments, and the PR do not.
+
+### 4. Run-config for an orchestrator session
+
+Overrides the model-pick guidance in "Run-config recommendation" below; the
+note's shape, placement and launch-command rule are unchanged.
+
+Orchestrator sessions read far more than they write — worker reports, review
+mailboxes, diffs, tracker threads — while the judgment stays bounded (gate
+scope, triage, spec-vs-code calls) because this session already did the design.
+That is **Opus 5 (1M context)** at **`high`**: `claude --model
+'claude-opus-5[1m]' --effort high`. Go to `xhigh` only when the gates are
+genuinely hard — a live account, money, or a security surface.
+
+**If the pick wants to be Fable 5, the arc isn't ready to orchestrate.** Needing
+a planner in the coordinator's seat means the decomposition is still open, and
+dispatching workers against an unsettled decomposition wastes their work. Say
+that in the run-config note and recommend finishing the design first.
 
 ## Party-line handoff note (only where the project has one)
 
@@ -340,6 +529,13 @@ structure, the derivability rule, and the ~600-word cap all still govern:
   notes' shape-test exception never fires — and an ultracode recommendation
   can silently degrade to a single-agent session, which is exactly the
   session the cap was written for.
+- **Except under `--orchestrator`, where the cap line is omitted.** That
+  block *is* a delegation design — the notes' own shape-test exception ("a
+  single orchestrator dispatching subagents") fires on it, and a cap telling
+  an orchestrator not to delegate contradicts the role the brief just gave
+  it. The deliverable-length line still applies (an orchestrator authors PR
+  comments, tracker comments and a final report), and lands in "When the arc
+  is done" — orchestrator mode has no "Where the plan stands" section.
 - Emit no verification boilerplate anywhere in the block.
 
 The notes shape the paste-able prompt only — the "For Kyle" briefing and
