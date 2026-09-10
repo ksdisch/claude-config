@@ -13,9 +13,13 @@ Context handoff.
   the command behaves exactly as before.
 - `--orchestrator` → the fresh session **coordinates** an arc across worker
   sessions instead of building it. Replaces the block's section structure and
-  lifts the word cap; see "Orchestrator mode". Everything outside the block —
-  the "For Kyle" briefing, the run-config note, the slot ordering, redaction —
-  is unchanged. Composable with `--audio`.
+  lifts the word cap; see "Orchestrator mode". What is genuinely unchanged: the
+  **slot ordering**, the rule that notes stay outside the block, **redaction**,
+  and the **honesty rules**. What is *not*: the notes' content. The "For Kyle"
+  briefing, the run-config note, the party-line `--kickoff` line, the `--audio`
+  script and the Opus-5 builder notes each draw on a section this mode replaces,
+  and "What the replaced sections fed" says where each reads from instead.
+  Composable with `--audio` through that map.
 
 I'm stopping here to switch to a fresh Claude Code session. Generate a
 self-contained prompt I can paste into a new session so it picks up exactly
@@ -202,10 +206,25 @@ all. **Run the checks; quote what came back.**
   `.claude/worktrees/` is ignored (`.gitignore` or `.git/info/exclude`) and say
   so; an unignored worktree shows up as untracked noise in every worker's
   `git status` and in the orchestrator's own untouched checks.
-- **Opening sessions.** `/launch <absolute-worktree-path> --model <id> --effort
-  <level> --name <worker-name> --send`. Quote the real flags — `/launch` verifies
-  a new PID plus working directory plus command line, so a session that didn't
-  start is reported, not assumed.
+- **Opening sessions — and the prompt, which is not an argument.** `/launch`
+  takes **no prompt parameter**. It resolves the prompt as "the paste-able block
+  this session most recently printed, with the fence markers stripped"
+  (`commands/launch.md:52`). So the brief must tell the orchestrator to **print
+  the worker's spec as a fenced block immediately before invoking `/launch`** —
+  that block *is* the first prompt. Omit that and the best case is `/launch`'s
+  stop rule halting for a turn; the worst is that the most recent block in a
+  fresh orchestrator session is *the coordinator brief Kyle pasted in*, so worker
+  one is auto-submitted the entire arc decomposition while Verified-start reports
+  a perfectly healthy launch. `/orchestrate` states it outright
+  (`orchestrate/SKILL.md:79-81`) and this path must too.
+  **This is also what makes the first-prompt rule above satisfiable**: where the
+  worker must fire a `disable-model-invocation` skill, the printed block's first
+  line has to be `/<skill-name>`, with the spec on the lines after it. The two
+  rules only compose that way — state them together, never three bullets apart.
+  The invocation itself: `/launch <absolute-worktree-path> --model <id> --effort
+  <level> --name <worker-name> --send`. Every flag there is real, and `/launch`
+  verifies a new PID plus working directory plus command line, so a session that
+  didn't start is reported, not assumed.
 - **Waiting.** `SendMessage` with `notify_when_idle: true`. Never poll.
 
 ### 3. Sections, in order, inside the code block
@@ -293,7 +312,32 @@ it a test the orchestrator can apply: *you must be able to recover by re-reading
 `<the tracker item>`.* Worker reports and cross-session messages evaporate on a
 restart or a compaction; the issue, its comments, and the PR do not.
 
-### 4. Run-config for an orchestrator session
+### 4. What the replaced sections fed
+
+Replacing the block's structure is not a local change. **Five things outside the
+block read the default sections** — the "For Kyle" briefing, the run-config note,
+the party-line `--kickoff` value, the `--audio` script and the Opus-5 builder
+notes — and every one needs an orchestrator source or it has no defined input.
+This table is authoritative: when a future section is added to this file that
+consumes the default structure, add its row here rather than discovering the gap
+in a generated brief.
+
+| Consumer | Reads by default | Reads under `--orchestrator` |
+|---|---|---|
+| "For Kyle" briefing | "Where the plan stands" (the next concrete action) | **"The arc"** — the next unit to be dispatched and what it unblocks |
+| Run-config note | the model-pick guidance | **§5 below**, which overrides it |
+| Party-line `--kickoff` | the next concrete action from "Where the plan stands" | **the first unit to dispatch**, as one imperative line under the same constraints (no newlines, no leading `--`, ~160 chars, no apostrophes) |
+| `--audio` `short` | the Overview | **Role + "The arc"** — what this arc is and how it is split, 2–4 spoken sentences |
+| `--audio` `long` | the Overview plus "Where the plan stands" | **those plus "Ask Kyle when"** — so the listener knows what will stop for them |
+| Opus-5 notes, "complete spec up front" | plan file in the Overview; done-bar in "Where the plan stands" | **source-of-truth file in "Orient first"; done-bar in "When the arc is done"** |
+| Opus-5 notes, delegation cap | final bullets of "Where the plan stands" | **omitted** — see the carve-out in "Opus 5 builder handoffs" |
+| Opus-5 notes, deliverable length | final bullets of "Where the plan stands" | **"When the arc is done"** |
+
+The "For Kyle" briefing also gains one obligation under this flag — §1's fit-test
+result, in a clause — so its budget goes to **5–7 lines / ~150 words**. Nothing
+else about it changes.
+
+### 5. Run-config for an orchestrator session
 
 Overrides the model-pick guidance in "Run-config recommendation" below; the
 note's shape, placement and launch-command rule are unchanged.
@@ -394,7 +438,9 @@ is the safe direction to fail in.
      Never pass any other value from this command.
    - `--kickoff` is the **next concrete action** from "Where the plan stands", as one
      imperative line: no newlines, no leading `--`, under ~160 characters, and no
-     apostrophes so the single-quoting stays simple.
+     apostrophes so the single-quoting stays simple. Under `--orchestrator` that
+     section does not exist — take the first unit to dispatch instead, per "What
+     the replaced sections fed".
    - It prints the note's path on success, and exits non-zero with a reason on failure.
 
 3. **Delete `body`** — `rm -f "<body>"` — once the writer has returned, whatever it
@@ -426,7 +472,8 @@ is to keep me oriented and engaged across the session boundary, the way a projec
 
 > **📋 For Kyle — what the next session will build, and why**
 
-Cover, in 4–6 lines / ~120 words max:
+Cover, in 4–6 lines / ~120 words max (5–7 / ~150 under `--orchestrator`, which
+adds a clause):
 - **What** it's about to build — the next chunk of work, in plain language.
 - **How** — the approach in one sentence (the shape of it, not step-by-step).
 - **Why** — the reasoning/motive: why this, why now, what it unblocks or proves.
@@ -434,8 +481,9 @@ Cover, in 4–6 lines / ~120 words max:
 Voice: explain it like I'm sharp but new to the jargon — plain English, define any term the
 first time, clearer not longer. It's the plain-English distillation of "Where the plan stands"
 (the next concrete action) — the forward-looking "what's coming + why," not a recap of what's
-done. If the next step is genuinely uncertain or pending my decision, say that plainly instead
-of inventing a plan.
+done. Under `--orchestrator` it distils **"The arc"** instead and adds the fit-test clause —
+see "What the replaced sections fed". If the next step is genuinely uncertain or pending my
+decision, say that plainly instead of inventing a plan.
 
 **If the briefing cites any identifier** (`D31`, `F2`, `T3`, "slice C"), the global "Never show
 me a bare identifier" rule applies here too: gloss each one on first mention, and put its
@@ -521,7 +569,10 @@ structure, the derivability rule, and the ~600-word cap all still govern:
 - The notes' "complete spec up front" rule is satisfied by pointing, not
   inlining: name the plan / source-of-truth file in the Overview and state
   the next done-bar in "Where the plan stands" — the plan file carries the
-  spec.
+  spec. Under `--orchestrator` both of those sections are gone: the
+  source-of-truth file goes in "Orient first" and the done-bar in "When the
+  arc is done". This section fires on **every** orchestrator run, since §5
+  mandates Opus 5 — so the routing is the common path, not an edge case.
 - Add the delegation-cap line — and the deliverable-length line when the
   next session will author documents — as the final bullets of "Where the
   plan stands." The cap line always applies here, whatever the recommended
@@ -556,6 +607,8 @@ content.
      being continued, in 2–4 spoken sentences (~90s).
    - `long`: the Overview **plus Where the plan stands** — the next concrete
      action, anything blocked, and any decision pending me (~3–4 min).
+   - Under `--orchestrator` neither section exists; "What the replaced sections
+     fed" gives the substitute source for each level.
    - Follow the narrate skill's "Writing for the ear" rules: no Markdown, expand
      paths/branches/PR numbers into speech, drop commit SHAs and command blocks,
      open with "Here's where things stand…" and close on the one next thing.
