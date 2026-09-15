@@ -1145,6 +1145,30 @@ session *in that repo*.
   the browser; "none" ends the run cleanly. Unverified addresses get a staged draft with an
   empty `To:` and a flag. Trackers are not auto-marked sent.
 
+#### `sync-check`
+
+- **Run config:** Opus 5 · `high` — mostly deterministic checkers, but the whitelist boundary
+  is real judgment and the thing it edits is a file full of identifiers that must never be
+  guessed. Scheduled runs use the same pair; override with `SYNC_CHECK_MODEL`.
+- **Reach for it when:**
+  - You want to trust tomorrow's calendar block without auditing it first.
+  - Several sessions have written to Todoist and you're not sure the blocks kept up.
+  - Something was corrected in `prospects.md` and you want to know where the old version
+    still lives.
+- **Pairs well with:** [`day`](#day) (the sweep is what makes the morning block trustworthy),
+  [`rebrief-a2c`](#rebrief-a2c) (re-entry after a gap; the sweep is the standing version of
+  the same reconciliation), [`replenish-a2c`](#replenish-a2c) (run the sweep after a refill).
+- **Notes:** the whitelist is **closed** and lives in
+  `.claude/skills/sync-check/references/whitelist.md`. It adds a missing row, corrects a row's
+  time, drops a plainly-transcribed dead row and flags a hand-authored one — nothing else.
+  It never changes a name, number, address or company; never deletes, merges or re-dates a
+  Todoist task; never edits a past block or a day log's Log/Wrap; and has no send path at
+  all, enforced twice (no send tool is loaded, and `bin/run-sync-check.sh` denies every send
+  tool at the process boundary). A block that reads back at 7,900+ characters is never
+  written, because at that size the read itself may be truncated. `CLEAN` is unreachable when
+  a source failed — that becomes `COULD NOT COMPLETE` with the reason. Regression test:
+  `python3 .claude/skills/sync-check/scripts/selftest.py`.
+
 #### `rebrief-a2c`
 
 - **Run config:** Sonnet 5 · `medium` — two live sweeps and a reconciliation with a fixed
