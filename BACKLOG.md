@@ -6,7 +6,7 @@ live in [`docs/ideas/`](docs/ideas/).
 ## Open
 
 ### [Feature] orchestrate: headless workers
-- **Why:** v1 of `/orchestrate` needs a visible window per worker, and every new worktree path costs Kyle one folder-trust dialog click (pilot 2026-09-07, finding #10). `claude -p` seats with `crossSessionInbound: accept` passed via `--settings` would remove both the window and the dialog for tickets nobody needs to watch.
+- **Why:** v1 of `/orchestrate` needs a visible window per worker. `claude -p` seats with `crossSessionInbound: accept` passed via `--settings` would remove the window for tickets nobody needs to watch. (The folder-trust dialog cost from pilot finding #10 is already gone via `scripts/pretrust.sh`.)
 - **Acceptance:** The Milestone 1 pass bar (A1–A10 in `docs/reports/2026-09-07-orchestrate-pilot.md`) holds with zero windows open.
 - **Size:** M
 - **Added:** 2026-09-08

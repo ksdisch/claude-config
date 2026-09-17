@@ -137,12 +137,19 @@ rows get re-pointed to match.
   - Context is getting long and the remaining work would be cleaner in a fresh session.
   - You want hard-won lessons and rejected options captured so the next session doesn't
     relitigate them.
+  - Pass `--orchestrator` when the next session should **coordinate** an arc across worker
+    sessions rather than build it — it swaps the block's structure for an arc decomposition,
+    worker mechanics, gate delegation and boundaries, and lifts the ~600-word cap.
 - **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
   [`/launch`](#launch) (opens the fresh session and loads the prompt into it),
-  [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
-  [`narrate`](#narrate) (`--audio`).
+  [`orchestrate`](#orchestrate) (`--orchestrator` checks first whether that skill already
+  covers the arc, and defers to it when it does), [`/prompt-optimize`](#prompt-optimize)
+  (same model/effort vocabulary, advisory only), [`narrate`](#narrate) (`--audio`).
 - **Notes:** it **stops the current work** after printing — that's deliberate. The
-  run-config note lands outside the paste-able block, never inside it.
+  run-config note lands outside the paste-able block, never inside it. Under
+  `--orchestrator` the run-config guidance flips to Opus 5 (1M) at `high` — a coordinator
+  reads far more than it writes — and a pick that wants Fable 5 is the signal that the
+  decomposition isn't settled enough to dispatch yet.
 
 #### `/launch`
 
@@ -1147,9 +1154,36 @@ session *in that repo*.
   - A task's script has gone stale and you need it rebuilt from the files before the call.
 - **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
   [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at).
-- **Notes:** one contact per run. Numbers in the task and `prospects.md` must agree or the
-  header flags it. Only two figures are ever spoken (no listing fee, 85% wired); everything
-  else routes to Zach.
+- **Notes:** one contact per run, and every spoken section comes **twice** — detailed bullets
+  to talk from, the full-sentence script blockquoted under them, same ground in the same order
+  so his eye can jump between the layers (the voicemail is script only). Numbers in the task
+  and `prospects.md` must agree or the header flags it — never resolved by picking one. Only
+  two figures are ever spoken (no listing fee, 85 percent wired); everything else routes to
+  Zack.
+
+#### `sync-check`
+
+- **Run config:** Opus 5 · `high` — mostly deterministic checkers, but the whitelist boundary
+  is real judgment and the thing it edits is a file full of identifiers that must never be
+  guessed. Scheduled runs use the same pair; override with `SYNC_CHECK_MODEL`.
+- **Reach for it when:**
+  - You want to trust tomorrow's calendar block without auditing it first.
+  - Several sessions have written to Todoist and you're not sure the blocks kept up.
+  - Something was corrected in `prospects.md` and you want to know where the old version
+    still lives.
+- **Pairs well with:** [`day`](#day) (the sweep is what makes the morning block trustworthy),
+  [`rebrief-a2c`](#rebrief-a2c) (re-entry after a gap; the sweep is the standing version of
+  the same reconciliation), [`replenish-a2c`](#replenish-a2c) (run the sweep after a refill).
+- **Notes:** the whitelist is **closed** and lives in
+  `.claude/skills/sync-check/references/whitelist.md`. It adds a missing row, corrects a row's
+  time, drops a plainly-transcribed dead row and flags a hand-authored one — nothing else.
+  It never changes a name, number, address or company; never deletes, merges or re-dates a
+  Todoist task; never edits a past block or a day log's Log/Wrap; and has no send path at
+  all, enforced twice (no send tool is loaded, and `bin/run-sync-check.sh` denies every send
+  tool at the process boundary). A block that reads back at 7,900+ characters is never
+  written, because at that size the read itself may be truncated. `CLEAN` is unreachable when
+  a source failed — that becomes `COULD NOT COMPLETE` with the reason. Regression test:
+  `python3 .claude/skills/sync-check/scripts/selftest.py`.
 
 #### `rebrief-a2c`
 
