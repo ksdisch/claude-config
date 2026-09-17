@@ -1158,8 +1158,8 @@ session *in that repo*.
   to talk from, the full-sentence script blockquoted under them, same ground in the same order
   so his eye can jump between the layers (the voicemail is script only). Numbers in the task
   and `prospects.md` must agree or the header flags it — never resolved by picking one. Only
-  two figures are ever spoken (no listing fee, 85 percent wired); everything else routes to
-  Zack.
+  the two figures the skill names are ever spoken; every other commercial question routes to
+  the principal.
 
 #### `sync-check`
 
