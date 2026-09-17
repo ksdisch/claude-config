@@ -1171,13 +1171,18 @@ session *in that repo*.
   - You're about to dial one prospect and want every line you'd say written out in full.
   - A task's script has gone stale and you need it rebuilt from the files before the call.
 - **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
-  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at).
+  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at), [`narrate`](#narrate)
+  (`--audio`).
 - **Notes:** one contact per run, and every spoken section comes **twice** — detailed bullets
   to talk from, the full-sentence script blockquoted under them, same ground in the same order
   so his eye can jump between the layers (the voicemail is script only). Numbers in the task
   and `prospects.md` must agree or the header flags it — never resolved by picking one. Only
   the two figures the skill names are ever spoken; every other commercial question routes to
-  the principal.
+  the principal. `--audio [short|long]` renders a spoken version through `narrate` after the
+  brief prints: `short` (default) is the prep briefing for the walk to the car; `long` adds the
+  opener and voicemail read as written, the one place in the setup where narration is
+  deliberately verbatim. The MP3 and its script land inside the A2C folder, never the shared
+  audio dir, because both name a real prospect.
 
 #### `sync-check`
 
