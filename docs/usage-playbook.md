@@ -1145,6 +1145,22 @@ session *in that repo*.
   the browser; "none" ends the run cleanly. Unverified addresses get a staged draft with an
   empty `To:` and a flag. Trackers are not auto-marked sent.
 
+#### `call-brief`
+
+- **Run config:** Sonnet 5 · `medium` — four fixed sources, a fixed output shape, and a
+  reference example to match.
+- **Reach for it when:**
+  - You're about to dial one prospect and want every line you'd say written out in full.
+  - A task's script has gone stale and you need it rebuilt from the files before the call.
+- **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
+  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at).
+- **Notes:** one contact per run, and every spoken section comes **twice** — detailed bullets
+  to talk from, the full-sentence script blockquoted under them, same ground in the same order
+  so his eye can jump between the layers (the voicemail is script only). Numbers in the task
+  and `prospects.md` must agree or the header flags it — never resolved by picking one. Only
+  two figures are ever spoken (no listing fee, 85 percent wired); everything else routes to
+  Zack.
+
 #### `sync-check`
 
 - **Run config:** Opus 5 · `high` — mostly deterministic checkers, but the whitelist boundary
