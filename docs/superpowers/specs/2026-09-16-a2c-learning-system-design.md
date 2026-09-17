@@ -1,6 +1,6 @@
 # A2C learning system — design spec
 
-**Written:** 2026-09-16 · **Status:** approved by Kyle 2026-09-16 (brainstorm → design → this spec); build not started
+**Written:** 2026-09-16 · **Status:** approved by Kyle 2026-09-16 (brainstorm → design → this spec); build not started; plan: `../plans/2026-09-16-a2c-learning-system.md`
 **Deliverable:** a `/teach` learning workspace for the A2C Auctions business at `~/Learning/a2c-auctions/`, seeded with a mission and internal-source digests; a new global skill `skills/mock-call/` (SKILL.md + PERSONA-FORMAT.md) plus its reference-doc row and usage-playbook card; five persona files in the workspace; one optional brief slot added to the A2C project's `day` skill and a `## Bite` section in its hook. The `teach` and `teach-research` skills are **not edited**.
 
 ---
@@ -23,6 +23,7 @@ Kyle's stated purpose, in priority order: **sound credible on calls** (the main 
 | Daily bite placement | The `/day` brief, not the calendar block | Blocks already run near the 7,900-character size where `sync-check` refuses to write; adding text there risks the scripts |
 | Audio | Phase 3, after the reference docs exist | `notebook-init` needs sources worth listening to; not part of the first build |
 | Persona names | Fictional archetypes, real case facts as scenario only | A drill must never put invented words in a real receiver's mouth |
+| Workspace under git | Yes, a local repo with no remote | `/orchestrate` needs a feature branch and worktrees; teach-research's guard passes once MISSION.md exists |
 
 ## 3. Workspace contract
 
@@ -37,9 +38,11 @@ Kyle's stated purpose, in priority order: **sound credible on calls** (the main 
   personas/             this design · five files in PERSONA-FORMAT, read by /mock-call
   recall-log.md         this design · append-only, one line per recall event
   zack-questions.md     this design · drafted after the public research shows the gaps
+  .gitignore, Makefile, scripts/check-workspace.sh    build scaffolding · `make test` is the contract check, `make strict` the final one
+  .scratch/a2c-learning-system/                       /orchestrate's ticket tracker for the build
 ```
 
-Ownership rules: this build writes only MISSION.md, RESOURCES.md, NOTES.md, `research/a2c-internal-*.md`, `personas/`, `recall-log.md`. It never creates `lessons/`, `reference/`, `learning-records/`, `assets/`, or `GLOSSARY.md`; those are teach's to create when it first teaches.
+Ownership rules: this build writes only MISSION.md, RESOURCES.md, NOTES.md, `research/a2c-internal-*.md`, `personas/`, `recall-log.md`, plus the scaffolding and tracker listed above. It never creates `lessons/`, `reference/`, `learning-records/`, `assets/`, or `GLOSSARY.md`; those are teach's to create when it first teaches.
 
 `recall-log.md` line format: `YYYY-MM-DD · <term> · hit|miss · bite|mock-call`. Both the bite and the mock-call debrief append to it. It is retention evidence, not a learning record; a `/teach` session reads it (the NOTES.md pointer says so) and may promote a run of hits into a learning record.
 
@@ -162,7 +165,7 @@ Teach picks what's next from learning records; this is the order it should find 
 # Persona: {fictional name}, {role}
 
 ## Who they are
-{2–3 sentences: role, the situation they're in, what's on their desk this week. Fictional person; scenario facts cited from ./research/ digests.}
+{2–3 sentences: role, the situation they're in, what's on their desk this week. Fictional person; scenario facts cited from ./research/ digests by file name.}
 
 ## What they care about
 - {the two or three things that decide whether they keep talking}
@@ -171,7 +174,7 @@ Teach picks what's next from learning records; this is the order it should find 
 {The vocabulary they will actually use, as a short list. Every term here is one the debrief may score.}
 
 ## Opening line
-{What they say when they pick up or call back.}
+{What they say when they pick up or call back. Say which: Kyle dialed them, or they are returning his voicemail.}
 
 ## Curveballs
 1. {an objection or question that tests a specific term}
@@ -189,11 +192,11 @@ Teach picks what's next from learning records; this is the order it should find 
 
 | File | Archetype | Tests |
 |---|---|---|
-| `personas/receiver.md` | Court-appointed receiver over a multi-state operator's Michigan entities, four months in, long tail of gear unsold | appointment order, asset schedule, secured-creditor consent, court approval, commercially reasonable, appraisal for the court, buyer's premium and who pays it, "I already have a national auctioneer" |
-| `personas/reit-asset-manager.md` | Asset manager at a cannabis REIT holding a recovered building full of tenant gear | sale-leaseback, tenant default, landlord's lien vs abandoned property, fixtures vs equipment, re-lease timeline, removal at buyer's cost |
-| `personas/operator-facilities-lead.md` | Facilities head at an MSO consolidating sites; soft-pitch territory | decommissioning, idle lines, C1D1, extraction skid, "we're redeploying it," "corporate approves dispositions," "what's it worth" (never quote) |
-| `personas/skeptical-executive.md` | CFO who reads every pitch as a sale; the 9/11 lesson | money direction, "I'm not a buyer," "send me a deck," "how do you get paid," the one ask |
-| `personas/zack.md` | Zack asking Kyle to explain the process back to him and to answer "what would you say if a receiver asked…" | the whole chain: consignment agreement, reserve, settlement, wire, intro on email as the attribution record |
+| `personas/01-receiver.md` | Court-appointed receiver over a multi-state operator's Michigan entities, four months in, long tail of gear unsold | appointment order, asset schedule, secured-creditor consent, court approval, commercially reasonable, appraisal for the court, buyer's premium and who pays it, "I already have a national auctioneer" |
+| `personas/02-reit-asset-manager.md` | Asset manager at a cannabis REIT holding a recovered building full of tenant gear | sale-leaseback, tenant default, landlord's lien vs abandoned property, fixtures vs equipment, re-lease timeline, removal at buyer's cost |
+| `personas/03-operator-facilities-lead.md` | Facilities head at an MSO consolidating sites; soft-pitch territory | decommissioning, idle lines, C1D1, extraction skid, "we're redeploying it," "corporate approves dispositions," "what's it worth" (never quote) |
+| `personas/04-skeptical-executive.md` | CFO who reads every pitch as a sale; the 9/11 lesson | money direction, "I'm not a buyer," "send me a deck," "how do you get paid," the one ask |
+| `personas/05-zack.md` | Zack asking Kyle to explain the process back to him and to answer "what would you say if a receiver asked…" | the whole chain: consignment agreement, reserve, settlement, wire, intro on email as the attribution record |
 
 Zack is the one persona modeled on a real person, and only in the role of asking questions; the persona never asserts facts about A2C beyond what the digests hold.
 
@@ -201,9 +204,9 @@ Zack is the one persona modeled on a real person, and only in the role of asking
 
 ### 8.1 `day` skill (project skill at `~/Desktop/A2CAuctions/.claude/skills/day/`, not in git)
 
-One optional brief item. Phase 1's "post the brief, in this order and nothing more" gains item 7, and the must-do question becomes item 8:
+One optional brief item. Phase 1's "post the brief, in this order and nothing more" gains item 6 (Bite), and the must-do question becomes item 7:
 
-> 7. **Bite** — only when the hook has a `## Bite` section: follow it. One term, one recall question, nothing more.
+> 6. **Bite** — only when the hook has a `## Bite` section: follow it. One term, one recall question, nothing more.
 
 Phase 2 gains one sentence under Log: a reply to the bite's recall question is confirmed in one line and recorded per the hook; it is never a log line and never touches Todoist. `references/hook-template.md` gains the optional section with a one-line description. The prime directive is untouched: the bite is thirty seconds of the brief.
 
@@ -229,7 +232,7 @@ Once `reference/` holds four or more cheat sheets: `/notebook-init` with the `le
 
 ## 11. Build order and who does what
 
-`/teach` and `/teach-research` are typed-only, so Kyle runs those. Everything else is Claude's.
+Sequencing and worker dispatch are owned by the implementation plan (`docs/superpowers/plans/2026-09-16-a2c-learning-system.md`); this list is the dependency order. `/teach` and `/teach-research` are typed-only, so Kyle runs those. Everything else is Claude's.
 
 1. Claude: create the workspace; write MISSION.md, NOTES.md, `recall-log.md` (empty with a header comment), RESOURCES.md (a2cauctions.com entry, the seven internal entries, the `## Gaps` lanes).
 2. Claude: write the seven internal digests (fan out to subagents, one or two digests each, each reading only the named project files). Verify teach-research's own contract by hand: every `Cached:` path exists, every digest is linked, counts match.
@@ -245,7 +248,7 @@ Once `reference/` holds four or more cheat sheets: `/notebook-init` with the `le
 - **Top-up safety.** Before Kyle's `/teach-research` run, snapshot RESOURCES.md; after, diff: every internal entry survives verbatim, `## Gaps` shrank only where a lane was hunted.
 - **mock-call, text.** From the workspace: `/mock-call receiver --text --turns 6` ends with a three-part debrief, one or more `recall-log.md` lines, and a learning record only if the criteria were met (a plain run with no demonstrated skill writes none). From `~/Desktop/A2CAuctions/`: the guard stops with the path and the missing files named.
 - **mock-call, voice.** A two-turn voice smoke run completes; unplugging the headset mid-run produces the text fallback line.
-- **Bite.** `/day` on a weekday with a receiver on the list shows item 7 with a receivership term; on a day with no matching contact type it shows an A2C deal term; before any reference docs exist it shows nothing and the brief is unchanged. A recall answer appends one line and creates no Todoist change.
+- **Bite.** `/day` on a weekday with a receiver on the list shows item 6 with a receivership term; on a day with no matching contact type it shows an A2C deal term; before any reference docs exist it shows nothing and the brief is unchanged. A recall answer appends one line and creates no Todoist change.
 - **Doc sync.** `python3 scripts/check-doc-sync.py` passes in claude-config with the mock-call row and card.
 - **Nothing sent, nothing dialed.** No Gmail, Todoist, or calendar-block writes anywhere in the build except the optional Sunday event.
 
@@ -254,7 +257,7 @@ Once `reference/` holds four or more cheat sheets: `/notebook-init` with the `le
 - Voicemode services down: mock-call says so once and runs in text.
 - `GLOSSARY.md` absent for weeks (teach adds terms only once understood): the bite and the debrief draw from `reference/` until then. If `reference/` is also empty, the bite skips silently (the brief is unchanged) and mock-call says "nothing to test yet, run /teach" and stops before picking a persona.
 - Persona argument doesn't match a file: list the available slugs and stop.
-- `learning-records/` or `recall-log.md` absent when choosing a persona: treat as zero coverage everywhere, which makes the choice a tie; break ties in the order the personas are listed in §7.4 (receiver first).
+- `learning-records/` or `recall-log.md` absent when choosing a persona: treat as zero coverage everywhere, which makes the choice a tie; break ties by the lowest file prefix (`01-receiver` first).
 - `recall-log.md` missing: recreate it with the header line; it's append-only data, not state anyone else owns.
 - Project files change (they do, daily): the internal digests are point-in-time and dated in `Fetched:`; a lesson cites the digest, not the live file. A re-digest is a manual top-up, not automatic.
 - The bite's contact-type match depends on task names in Todoist; a task with no recognizable type falls through to the A2C deal terms rather than guessing.
@@ -262,7 +265,7 @@ Once `reference/` holds four or more cheat sheets: `/notebook-init` with the `le
 ## 14. Landing it
 
 - claude-config branch `feat/a2c-learning-system` carries this spec, `skills/mock-call/`, the reference row, and the playbook card. PR to `main` per the git workflow; `skills/**` is a behavioral file, so the review-gate proposal applies (single round is the likely recommendation: one new skill, no existing behavior changed, no data or auth surface).
-- The workspace (`~/Learning/a2c-auctions/`) and the A2C-folder edits (`day` skill, `day.md`) are not under version control. The `day` edit is small and reversible; the previous text is quoted in the plan so it can be restored by hand.
+- The workspace (`~/Learning/a2c-auctions/`) is its own local git repo with no remote, so `/orchestrate` can run worktrees in it; its build lands on the workspace's `main` via `feat/a2c-learning-system`. The A2C-folder edits (`day` skill, `day.md`) are not under version control; they are small and reversible, and the previous text is quoted in the plan so it can be restored by hand.
 
 ## 15. Out of scope
 
