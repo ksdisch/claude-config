@@ -40,8 +40,9 @@ Write nothing.
 
 1. The persona file, whole.
 2. `GLOSSARY.md` if it exists; its definitions are the workspace's canonical language.
-3. `reference/` if it exists: the cheat sheets. The persona's vocabulary comes from here and
-   from its own file, never from memory.
+3. `reference/` and `lessons/` where they exist: the cheat sheets and the lessons behind
+   them. Read every file in both, so the debrief can cite a lesson or cheat sheet that
+   exists. The persona's vocabulary comes from these and from its own file, never from memory.
 4. Each `./research/` digest the persona's "Who they are" cites, for scenario facts.
 5. `recall-log.md` if it exists, for the choice below and the debrief; `learning-records/`
    if it exists, for the debrief only.
