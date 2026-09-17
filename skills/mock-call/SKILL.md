@@ -19,8 +19,10 @@ The current directory must hold `MISSION.md` and a `personas/` directory with at
 learning workspace (`~/Learning/<topic>/`), and write nothing. Never write outside the
 current directory.
 
-The workspace must also have something taught to test: `GLOSSARY.md`, or a `reference/`
-directory holding at least one file. If neither exists, print exactly
+The workspace must also have something taught to test: `GLOSSARY.md`, or a `lessons/`
+directory holding at least one file, or a `reference/` directory holding at least one file.
+Lessons count on their own — they are teach's primary unit, and `reference/` is compressed
+from them afterward. If none of the three exists, print exactly
 `nothing to test yet, run /teach` and stop — before picking a persona, before reading one.
 Write nothing.
 
