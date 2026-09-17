@@ -1089,6 +1089,24 @@ rows get re-pointed to match.
   `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
   the teach skill itself is never edited.
 
+#### `mock-call`
+
+- **Run config:** Opus 5 · `medium` — the persona has to stay in character and the debrief
+  has to map each miss to the right term, which is judgment; voice turns want low latency,
+  which argues against `high`.
+- **Reach for it when:**
+  - A teach workspace has personas and you want to test whether the vocabulary survives a
+    live conversation, not a quiz.
+  - Sunday learning hour, after the `/teach` lesson.
+  - Before a real call of a type you have not made in a while.
+- **Pairs well with:** [`teach`](#teach) (builds the reference docs the persona draws on and
+  promotes terms to the glossary), [`teach-research`](#teach-research) (stocks the digests
+  the personas cite).
+- **Notes:** typed-only (`disable-model-invocation: true`). Voice needs the voicemode
+  plugin's services running (`/voicemode:status`); two failed turns fall back to text
+  automatically. Writes only `recall-log.md` and, when earned, one learning record; never
+  the glossary.
+
 ### UI & Frontend
 
 #### `match-the-mock`
