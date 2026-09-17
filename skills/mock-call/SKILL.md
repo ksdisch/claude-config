@@ -3,7 +3,7 @@ name: mock-call
 description: Use when Kyle wants to drill a live call against a persona from a teach workspace — "/mock-call", "/mock-call receiver", "run a practice call", "drill me on a lender call". Runs from the workspace (needs MISSION.md and personas/): picks a persona, plays it for 6 to 10 turns by voice (voicemode) or text, then debriefs out of character — handled, missed with each miss named to a term and the doc that covers it, one rewrite — and writes recall-log lines plus a learning record only when teach's criteria are met. Typed-only. NOT for teaching a concept (teach), stocking sources (teach-research), or briefing a real dial (the A2C folder's call-brief).
 disable-model-invocation: true
 argument-hint: "[persona-slug] [--voice|--text] [--turns N]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, mcp__plugin_voicemode_voicemode__converse
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, ToolSearch, mcp__plugin_voicemode_voicemode__converse, mcp__plugin_voicemode_voicemode__service
 ---
 
 # mock-call — drill a call against a persona
@@ -18,6 +18,11 @@ The current directory must hold `MISSION.md` and a `personas/` directory with at
 `.md` file. Otherwise stop: print the resolved directory, name what is missing, suggest the
 learning workspace (`~/Learning/<topic>/`), and write nothing. Never write outside the
 current directory.
+
+The workspace must also have something taught to test: `GLOSSARY.md`, or a `reference/`
+directory holding at least one file. If neither exists, print exactly
+`nothing to test yet, run /teach` and stop — before picking a persona, before reading one.
+Write nothing.
 
 ## Arguments
 
@@ -36,23 +41,32 @@ current directory.
 3. `reference/` if it exists: the cheat sheets. The persona's vocabulary comes from here and
    from its own file, never from memory.
 4. Each `./research/` digest the persona's "Who they are" cites, for scenario facts.
-5. `recall-log.md` and `learning-records/` if they exist, for the choice below and the debrief.
+5. `recall-log.md` if it exists, for the choice below and the debrief; `learning-records/`
+   if it exists, for the debrief only.
 
 ## Choosing a persona (no slug given)
 
 For each persona, take its "Terms this persona tests" list and count the **uncovered** terms:
-a term with no `hit` line in `recall-log.md`, or whose most recent line is a `miss`. Pick the
-persona with the most uncovered terms; ties go to the lowest file prefix (`01-` before `02-`).
-Absent files count as zero coverage everywhere. Say the pick and the count in one line before
-the call starts.
+a term with no `hit` line in `recall-log.md`, or whose most recent line is a `miss`. Rank by
+the **fraction** uncovered — uncovered ÷ total terms on that persona's list — and pick the
+highest fraction, so a long term list never out-ranks a short one on length alone. Ties go to
+the lowest file prefix (`01-` before `02-`). Absent files count as zero coverage everywhere,
+which puts every persona at 1.0 — a real tie, broken by the prefix. Say the pick, the
+fraction, and the count in one line before the call starts.
 
 ## The call
 
-**Voice.** Load the tool once: `ToolSearch` with `select:mcp__plugin_voicemode_voicemode__converse`.
-Each persona line is one call: `message` is the line, `wait_for_response: true`,
-`listen_duration_max: 90`. The transcript that comes back is Kyle's turn. A tool error or an
-empty transcript twice in a row → say "Switching to text" once and continue in text from the
-next turn; the turn count carries on.
+**Voice.** Load the tools once: `ToolSearch` with
+`select:mcp__plugin_voicemode_voicemode__converse,mcp__plugin_voicemode_voicemode__service`.
+Before turn 1, check both services — `service(kokoro, status)` and `service(whisper, status)`;
+if either is stopped, say so in one line and run the whole call in text. Each persona line is
+one call: `message` is the line, `wait_for_response: true`, `listen_duration_max: 90`. The
+transcript that comes back is Kyle's turn.
+
+On a tool error or an empty transcript, retry the same persona line once, unchanged. A second
+failure in a row → say "Switching to text" once, re-print that same undelivered persona line
+as a text blockquote so Kyle answers the line he never heard, and continue in text from there.
+Failed attempts never consume a turn: the turn count advances only when Kyle's reply arrives.
 
 **Text.** Print the persona line as a blockquote and end your turn. Kyle's next message is his
 turn. Nothing else in the message: no coaching, no hints, no stage directions.
