@@ -6,6 +6,7 @@ This doc is the index — *what exists*. Its companion, the
 **[Usage Playbook](usage-playbook.md)**, is the judgment layer: *how to run each one* —
 suggested model + effort, the situations worth reaching for it in, and what it pairs with.
 Every row below links to its card with `config →`.
+Items removed on purpose are logged in [`retired.md`](retired.md) with restore pointers.
 
 **How to invoke:**
 - **Commands** → type `/command-name` in the Claude Code prompt
