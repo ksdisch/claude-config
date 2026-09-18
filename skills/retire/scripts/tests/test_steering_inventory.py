@@ -231,18 +231,21 @@ class RecordTests(FixtureCase):
         self.assertEqual(rc, si.EXIT_OK)
         alpha = self.items_by_id(payload)["skill:alpha"]
         self.assertEqual((alpha["slash_90d"], alpha["slash_all"]), (1, 1))
-        self.assertEqual(alpha["last_used"], day(3))
+        # Typed at day 3, but a session chose it at day 2 — last used is the later of the two.
+        self.assertEqual(alpha["last_used"], day(2))
         self.assertEqual(alpha["added"], day(BASE_COMMIT_DAYS_AGO))
         self.assertTrue(alpha["tracked"])
 
-    def test_session_chosen_counts_are_unmeasured_not_zero(self):
+    def test_unread_sources_are_unmeasured_not_zero(self):
         rc, payload, _ = self.run_json()
         self.assertEqual(rc, si.EXIT_OK)
         alpha = self.items_by_id(payload)["skill:alpha"]
-        self.assertIsNone(alpha["tool_90d"])
-        self.assertIsNone(alpha["tool_all"])
+        # No trigger source is read yet, so trigger counts stay unmeasured rather than 0.
         self.assertIsNone(alpha["trigger_90d"])
-        self.assertIsNone(payload["meta"]["transcripts_scanned"])
+        self.assertIsNone(alpha["trigger_all"])
+        # The transcripts, by contrast, were read — so their counts are real ints.
+        self.assertEqual(payload["meta"]["transcripts_scanned"], 1)
+        self.assertIsNotNone(alpha["tool_90d"])
 
 
 class TypedCountBoundaryTests(FixtureCase):
@@ -339,7 +342,7 @@ class OutputTests(FixtureCase):
         self.assertNotIn(str(self.root), md)
         self.assertNotIn(str(self.cfg.claude_home), md)
         self.assertIn(si.LOCAL_CORPUS_CAVEAT, md)
-        self.assertIn("auto —/—", md)          # session-chosen is unmeasured, never 0
+        self.assertIn("trig —/—", md)          # trigger hits are unmeasured, never 0
 
     def test_markdown_goes_to_stdout_when_no_output_file_is_named(self):
         rc, stdout, _ = self.run_cli()

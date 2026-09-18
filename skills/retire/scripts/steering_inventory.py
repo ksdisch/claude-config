@@ -357,10 +357,180 @@ class History:
 
 
 # ---------------------------------------------------------------- evidence: transcripts
-#
-# Session-chosen usage (Skill tool calls, Agent dispatches, mcp__<server>__ tool names) with a
-# per-file cache keyed by path, size and mtime. Not yet built: until it is, tool_* stays None
-# and renders as unmeasured rather than as 0.
+
+# Transcript lines are compact JSON (no spaces after colons), so these needles are exact. Every
+# line is substring-filtered before the JSON parser ever sees it: the corpus is gigabytes and the
+# overwhelming majority of lines carry no tool call at all.
+NEEDLES = ('"name":"Skill"', '"name":"Agent"', '"name":"mcp__')
+
+
+def skill_spellings(name: str, namespace: str | None = None) -> list[str]:
+    """Every Skill-call spelling that belongs to one skill.
+
+    A plugin skill is reachable both bare and namespaced (`tdd` and `mp:tdd`) and both spellings
+    count for it. A house skill has no namespace and answers to its bare name only — a namespaced
+    call went to the plugin, not to the loose copy sitting beside it.
+    """
+    return [name] if namespace is None else [name, f"{namespace}:{name}"]
+
+
+def _parse_iso(ts) -> datetime | None:
+    """Transcript timestamps are ISO-8601 with a `Z`. None when the stamp is unusable."""
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def extract_events(path: Path) -> list[list] | None:
+    """[[iso_ts, kind, key], ...] for every Skill / Agent / mcp__ tool call in one transcript.
+
+    None means the file could not be read at all — distinct from a file that read cleanly and
+    held no tool calls, which is an empty list. That distinction is what keeps an unreadable
+    corpus from being reported as a corpus of zeroes.
+
+    A line that is malformed, truncated, or shaped unexpectedly is skipped; one bad line never
+    costs the rest of the file, and never aborts the run.
+    """
+    out: list[list] = []
+    try:
+        fh = open(path, errors="ignore")
+    except OSError:
+        return None
+    try:
+        with fh:
+            for line in fh:
+                if not any(n in line for n in NEEDLES):
+                    continue
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(d, dict):
+                    continue
+                ts, msg = d.get("timestamp"), d.get("message")
+                if not ts or not isinstance(msg, dict):
+                    continue
+                for c in msg.get("content") or []:
+                    if not (isinstance(c, dict) and c.get("type") == "tool_use"):
+                        continue
+                    name = c.get("name")
+                    if not isinstance(name, str):
+                        continue
+                    inp = c.get("input")
+                    inp = inp if isinstance(inp, dict) else {}
+                    if name == "Skill" and inp.get("skill"):
+                        out.append([ts, "skill", str(inp["skill"])])
+                    elif name == "Agent" and inp.get("subagent_type"):
+                        out.append([ts, "agent", str(inp["subagent_type"])])
+                    elif name.startswith("mcp__"):
+                        parts = name.split("__")
+                        if len(parts) >= 2 and parts[1]:
+                            out.append([ts, "mcp", parts[1]])
+    except OSError:
+        return None
+    return out
+
+
+class Transcripts:
+    """Session-chosen usage — what a session reached for without being told to.
+
+    Skill tool calls, Agent dispatches and `mcp__<server>__*` names, read once per file and
+    cached by path, size and mtime so a re-run over a multi-gigabyte corpus only reads what
+    changed. Agent and MCP tallies are collected in the same pass the skill counts come from;
+    the surfaces that consume them land later.
+
+    Zero readable transcripts is a missing source, never a corpus of zeroes.
+    """
+
+    def __init__(self, root: Path, cache_path: Path | None = None):
+        self.root = root
+        files = sorted(root.rglob("*.jsonl")) if root.is_dir() else []
+        cache = self._load_cache(cache_path)
+        fresh: dict = {}
+        self.cache_hits = 0
+        self.files_unreadable = 0
+        self.events: list[tuple[datetime, str, str]] = []
+        self._index: dict[tuple[str, str], list[datetime]] = {}
+        for p in files:
+            try:
+                st = p.stat()
+            except OSError:
+                self.files_unreadable += 1
+                continue
+            key = str(p)
+            hit = cache.get(key)
+            if (isinstance(hit, dict) and hit.get("size") == st.st_size
+                    and hit.get("mtime") == st.st_mtime):
+                events = hit.get("events") or []
+                self.cache_hits += 1
+            else:
+                events = extract_events(p)
+                if events is None:
+                    self.files_unreadable += 1
+                    continue
+            fresh[key] = {"size": st.st_size, "mtime": st.st_mtime, "events": events}
+            self._ingest(events)
+        self.files_found = len(files)
+        self.files_scanned = len(fresh)
+        if not self.files_scanned:
+            raise SourceMissing(f"no readable transcripts under {root} "
+                                f"({self.files_found} found, {self.files_unreadable} unreadable)")
+        self._write_cache(cache_path, fresh)
+
+    def _ingest(self, events) -> None:
+        for row in events:
+            try:
+                ts, kind, key = row
+            except (TypeError, ValueError):
+                continue
+            dt = _parse_iso(ts)
+            if dt is None:
+                continue
+            self.events.append((dt, kind, key))
+            self._index.setdefault((kind, key), []).append(dt)
+
+    def count(self, kind: str, key, since: datetime) -> tuple[int, int, str | None]:
+        """(all-time hits, hits inside the window, ISO date of the latest hit).
+
+        `key` may be one spelling or several; several are counted as one item, which is how a
+        plugin skill's bare and namespaced calls add up (see `skill_spellings`).
+        """
+        keys = [key] if isinstance(key, str) else list(key)
+        total = recent = 0
+        last: datetime | None = None
+        for k in keys:
+            for dt in self._index.get((kind, k), ()):
+                total += 1
+                if dt >= since:
+                    recent += 1
+                if last is None or dt > last:
+                    last = dt
+        return total, recent, (last.date().isoformat() if last else None)
+
+    @staticmethod
+    def _load_cache(cache_path: Path | None) -> dict:
+        """An unreadable or corrupt cache is not an error: it just means reading everything."""
+        if not cache_path or not cache_path.exists():
+            return {}
+        try:
+            data = json.loads(cache_path.read_text())
+        except (OSError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    @staticmethod
+    def _write_cache(cache_path: Path | None, fresh: dict) -> None:
+        """Only the files seen this run are kept, so the cache cannot outgrow the corpus."""
+        if not cache_path:
+            return
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(json.dumps(fresh))
+        except OSError as e:
+            print(f"WARN transcript cache not written ({e}); the next run re-reads everything",
+                  file=sys.stderr)
 
 
 # ---------------------------------------------------------------- cross-references
@@ -372,12 +542,29 @@ class History:
 
 # ---------------------------------------------------------------- assembly
 
-def attach_usage(it: Item, history: History, since: datetime) -> None:
-    """Typed counts from the prompt history. Session-chosen counts come from the transcripts."""
+def note_last_used(it: Item, *dates: str | None) -> None:
+    """Last used is the latest date across every source that measured this item."""
+    it.last_used = max((d for d in (it.last_used, *dates) if d), default=None)
+
+
+def attach_usage(it: Item, history: History, transcripts: Transcripts, since: datetime) -> None:
+    """Typed counts from the prompt history, session-chosen counts from the transcripts."""
     if it.surface in ("skill", "command"):
-        it.slash_all, it.slash_90d, last = history.count(slash_pattern(it.name), since)
-        if last and (it.last_used is None or last > it.last_used):
-            it.last_used = last
+        it.slash_all, it.slash_90d, last_typed = history.count(slash_pattern(it.name), since)
+        it.tool_all, it.tool_90d, last_auto = transcripts.count(
+            "skill", skill_spellings(it.name), since)
+        note_last_used(it, last_typed, last_auto)
+
+
+def flag_auto_only(it: Item) -> None:
+    """Kyle never types it, but sessions keep choosing it.
+
+    Informational only — `auto_only` is evidence about how an item is reached, not a reason to
+    retire or keep it, so it never touches `proposed`.
+    """
+    if (it.surface in ("skill", "command") and it.slash_90d == 0
+            and (it.tool_90d or 0) >= AUTO_ONLY_MIN_AUTO and "auto_only" not in it.flags):
+        it.flags.append("auto_only")
 
 
 def temperature(it: Item, window_start: str) -> str:
@@ -419,6 +606,7 @@ def build_inventory(cfg: Config) -> Inventory:
 
     # Evidence first: a surface must never be counted before the source that scores it was read.
     history = History(cfg.claude_home / "history.jsonl")
+    transcripts = Transcripts(cfg.claude_home / "projects", cfg.cache_path)
 
     tracked = git_tracked(cfg.config_repo)
     added = first_added_dates(cfg.config_repo)
@@ -427,7 +615,8 @@ def build_inventory(cfg: Config) -> Inventory:
         items += enumerate_skills(cfg.config_repo, tracked, added)
 
     for it in items:
-        attach_usage(it, history, since)
+        attach_usage(it, history, transcripts, since)
+        flag_auto_only(it)
         it.temperature = temperature(it, window_start)
         it.proposed = propose(it)
 
@@ -437,8 +626,9 @@ def build_inventory(cfg: Config) -> Inventory:
         "generated": now.isoformat(timespec="seconds"),
         "surfaces": list(cfg.surfaces),
         "history_rows": len(history.rows),
-        "transcripts_scanned": None,          # unmeasured in this build
-        "transcripts_cache_hits": None,
+        "transcripts_scanned": transcripts.files_scanned,
+        "transcripts_cache_hits": transcripts.cache_hits,
+        "transcripts_unreadable": transcripts.files_unreadable,
         "git_tracked": tracked is not None,
         "thresholds": {"window_default_days": WINDOW_DEFAULT_DAYS, "hot_min_uses": HOT_MIN_USES,
                        "warm_min_uses": WARM_MIN_USES, "auto_only_min_auto": AUTO_ONLY_MIN_AUTO},
@@ -478,7 +668,8 @@ def render_markdown(inv: Inventory) -> str:
     scanned = _fmt(m["transcripts_scanned"])
     out = [f"# Steering inventory — {m['generated'][:10]}", "",
            f"Window: last {m['since_days']} days (since {m['since']}). "
-           f"History rows: {m['history_rows']:,}. Transcripts scanned: {scanned}. "
+           f"History rows: {m['history_rows']:,}. Transcripts scanned: {scanned} "
+           f"({_fmt(m['transcripts_cache_hits'])} from cache). "
            f"Surfaces: {', '.join(m['surfaces'])}.", "",
            m["caveat"], "",
            "Read-only; an Instrument, never a Gate. An em dash is unmeasured, never zero.", "",
