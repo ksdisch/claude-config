@@ -4,13 +4,16 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The skill file has a short, honest description carrying the trigger phrases from the spec, prime directives, the four invocation forms, steps from preflight through ship, a failure table, and the handoffs (relocate → /trim-context, merge-into → backlog stub, hook-convertible → backlog stub, vendored copies → ledger and PR body)
-- [ ] The bookkeeping reference has one checklist per surface covering backup, removal without `rm -rf`, row and card, ignore block, referrer excision with the refuse-if-unsure guard, doc-mention editing, ledger line, downstream report, re-inventory; plus pause mechanics, the CLI verbs, per-file confirmation, and the public-repo rule
-- [ ] The reference-doc row (Session & Context Management) and the playbook card are in the same commit; the doc-sync check passes
-- [ ] `/retire --report` invoked as the skill runs end to end on the live setup and produces the same report the script does
-- [ ] The skills directory is live through the symlink, so the description is accurate from the first commit
+- [x] The skill file has a short, honest description carrying the trigger phrases from the spec, prime directives, the four invocation forms, steps from preflight through ship, a failure table, and the handoffs (relocate → /trim-context, merge-into → backlog stub, hook-convertible → backlog stub, vendored copies → ledger and PR body)
+- [x] The bookkeeping reference has one checklist per surface covering backup, removal without `rm -rf`, row and card, ignore block, referrer excision with the refuse-if-unsure guard, doc-mention editing, ledger line, downstream report, re-inventory; plus pause mechanics, the CLI verbs, per-file confirmation, and the public-repo rule
+- [x] The reference-doc row (Session & Context Management) and the playbook card are in the same commit; the doc-sync check passes
+- [x] `/retire --report` invoked as the skill runs end to end on the live setup and produces the same report the script does
+- [x] The skills directory is live through the symlink, so the description is accurate from the first commit
 
 ## Comments
+
+- 2026-09-18 — written inline by the orchestrating session, committed as `4c7d3a8`. Amends the plan's Task 10 draft per design §14: script-computed `proposed`, `pause` as a verdict, `merge-into` removing nothing, `--surface` as a fourth form, mentions edited separately from referrers, per-file settings confirmation, CLI verbs, and every `ask` row carrying its own question. Doc-sync 102/102/64 → 103/103/65 in the same commit.
+- **Observer effect caught before push.** Naming real items as illustrations made the skill a referrer to them: `plugin:swift-lsp@claude-plugins-official` — the only `cold` item in the whole 222-item surface and the only individual `retire` row — flipped to `cool`/`ask` purely because `SKILL.md` used it as an example of surface-qualified naming. All illustrative names replaced with placeholders; swift-lsp verified back at `cold`/`retire` with 0 referrers. Genuine routes (`/trim-context`, `adversarial-review`) correctly remain referrers.
 

@@ -156,6 +156,19 @@ and gets no proposal. That is correct — `dangling` is an apply step on the *re
 verdict on the item — but it means the five dangling routes to `autonomous-milestone` are
 visible in the full inventory and in the JSON, not in the proposals table.
 
+## The observer effect — read this before writing any steering file on this arc
+
+A steering file that **names a real item as an illustration becomes a referrer to it**, and
+referrers feed temperature. Writing `plugin:swift-lsp@claude-plugins-official` into
+`skills/retire/SKILL.md` as an example of surface-qualified naming flipped that plugin from
+`cold`/`retire` to `cool`/`ask` — it was the only `cold` item in a 222-item surface, and the
+tool for subtracting things had silently suppressed its own only retirement proposal.
+
+**Use placeholders (`skill:<name>`, `plugin:<key>`, `claude-md:<heading>`) in every example.**
+Reserve real names for genuine routes — a handoff to `/trim-context` *should* count as a referrer.
+Known blunt edge, not worth fixing: a path like `docs/superpowers/specs/...` matches the
+`superpowers` plugin by word boundary. It inflates a referrer count by one and changes no verdict.
+
 ## Gates
 
 - **doc-sync is a pre-push Gate.** `scripts/check-doc-sync.py` checks *the commits being pushed*,
