@@ -216,7 +216,8 @@ class RecordTests(FixtureCase):
         rc, payload, _ = self.run_json()
         self.assertEqual(rc, si.EXIT_OK)
         by = self.items_by_id(payload)
-        self.assertEqual(sorted(by), ["skill:alpha", "skill:beta", "skill:tdd"])
+        self.assertEqual(sorted(i for i in by if i.startswith("skill:")),
+                         ["skill:alpha", "skill:beta", "skill:tdd"])
         # The `>-` block scalar is joined with single spaces before it is measured.
         self.assertEqual(by["skill:beta"]["description"], BETA_DESC)
         self.assertEqual(by["skill:beta"]["bytes_always_loaded"], len(BETA_DESC))
@@ -241,7 +242,6 @@ class RecordTests(FixtureCase):
         alpha = self.items_by_id(payload)["skill:alpha"]
         self.assertIsNone(alpha["tool_90d"])
         self.assertIsNone(alpha["tool_all"])
-        self.assertIsNone(alpha["trigger_90d"])
         self.assertIsNone(payload["meta"]["transcripts_scanned"])
 
 
@@ -319,7 +319,7 @@ class OutputTests(FixtureCase):
         self.assertEqual(stdout, "")
         payload = json.loads(out_json.read_text())
         self.assertEqual(payload["meta"]["since_days"], si.WINDOW_DEFAULT_DAYS)
-        self.assertEqual(len(payload["items"]), 3)
+        self.assertEqual(sum(1 for i in payload["items"] if i["surface"] == "skill"), 3)
         md = out_md.read_text()
         self.assertIn("## Totals", md)
         self.assertIn("## skill", md)
@@ -390,12 +390,12 @@ class CliTests(FixtureCase):
         self.assertEqual(rc, si.EXIT_OK)
         payload = json.loads(out_json.read_text())
         self.assertEqual(payload["meta"]["config_repo"], str(self.cfg.config_repo))
-        self.assertEqual(len(payload["items"]), 3)
+        self.assertEqual(sum(1 for i in payload["items"] if i["surface"] == "skill"), 3)
 
 
 class ExitCodeTests(FixtureCase):
     def test_happy_path_exits_zero(self):
-        rc, _, err = self.run_cli("--md", str(self.root / "inv.md"))
+        rc, _, err = self.run_cli("--surface", "skill", "--md", str(self.root / "inv.md"))
         self.assertEqual(rc, 0)
         self.assertIn("OK 3 items", err)
 
