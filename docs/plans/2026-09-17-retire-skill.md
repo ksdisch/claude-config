@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Amended 2026-09-18.** A `/grill-with-docs` pass changed the design after this plan was written; the code below does not yet
+> reflect it (a `new` temperature, a script-computed `proposed` field, referrers vs. mentions, kept/paused suppression, report
+> redaction, `--surface`, a `pause` verdict, `merge-into` recording, CLI verbs for settings). The spec at `.scratch/retire-skill/spec.md`
+> wins on conflict and design §14 lists every delta. Tickets from `/to-tickets` are the executable unit; treat each task's code here as
+> a starting point to amend, not as final.
+
 **Goal:** Build the `retire` skill — an evidence-ranked subtraction pass over the global steering surface (CLAUDE.md sections, skills, commands, agents, plugins, MCP servers, hooks, output styles, auto-memory) that proposes retire/keep verdicts Kyle ratifies, applies them with full bookkeeping, and measures before → after weight — then run the first sweep on the live config.
 
 **Architecture:** One read-only Python script (`steering_inventory.py`) owns enumeration and counting and exits non-zero instead of reporting a false zero; one prose skill (`SKILL.md` + `references/bookkeeping.md`) owns judgment, ratification, and the per-surface apply checklist; one ledger (`docs/retired.md`) owns "why is X gone / how do I get it back". Two PRs: **PR A** lands the tooling (Tasks 1–11); **PR B** lands the pilot's actual removals (Task 12).

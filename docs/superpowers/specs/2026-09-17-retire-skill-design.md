@@ -3,6 +3,8 @@
 **Status:** Approved design, 2026-09-17. Kyle approved every recommended default in the
 brainstorm (nine decisions, recorded in §4). Implementation plan:
 [`docs/plans/2026-09-17-retire-skill.md`](../../plans/2026-09-17-retire-skill.md).
+**Amended 2026-09-18** by a `/grill-with-docs` pass (23 rulings, §14). The implementation-facing spec is
+[`.scratch/retire-skill/spec.md`](../../../.scratch/retire-skill/spec.md); where §5–§7 below disagree with it or with §14, the spec wins.
 **Ancestor:** [`docs/ideas/coliseum-commands-earn-their-keep.md`](../../ideas/coliseum-commands-earn-their-keep.md)
 (2026-06-18) — this skill is that idea built; it also absorbs
 [`docs/ideas/minimal-initial-prompt.md`](../../ideas/minimal-initial-prompt.md) as its CLAUDE.md lane.
@@ -401,3 +403,38 @@ claude --model claude-fable-5-1 --effort xhigh
 
 Phase 1 (the script and its tests) is mechanical enough to dispatch to a Sonnet 5 subagent at
 `medium` from within the session; the plan marks that task.
+
+## 14. Grill amendments (2026-09-18)
+
+Rulings from the grill, each a delta to the sections above. The spec in `.scratch/retire-skill/spec.md`
+encodes them in full; this list exists so a reader of this document is not misled.
+
+**Evidence (§5.3)**
+- A `new` temperature for items added inside the window; never proposed `retire`; omitted unless it carries another flag. Added date per surface: first commit (tracked), first commit containing the heading (CLAUDE.md sections), mtime (untracked), `installedAt` (plugins); MCP, hooks, memory dirs are never `new`.
+- Typed and session-chosen invocations are shown split; temperature uses the sum. `auto_only` flags skills and commands with 0 typed and ≥5 session-chosen in the window; informational only.
+- Referrers (steering files) drive temperature; mentions (all other tracked markdown) are reported and edited. The index doc, the playbook, and the ledger are excluded from both.
+- MCP servers are the union of the user-scope config and server names observed in transcripts, so claude.ai connectors get rows. Output styles carry an `unlinked` flag (the repo's one style never loads).
+- Usage is local-only by design; the report and table carry a one-line caveat. The number of projects an item was used in is shown as a count.
+
+**Proposals (§5.4)**
+- Precedence table adopted (spec, Implementation Decisions). Change from §5.4: `warm` is a silent keep, not `ask`. `cool`, `unlinked`, flagged-`new`, and long-paused items are `ask`; `cold` and duplicates are `retire`.
+- The precedence table is computed by the script as a `proposed` field so it is under test; the skill renders and Kyle rules.
+- Kept-on-purpose rows are read back by the script and omitted with a count. Paused items are omitted until paused a full window, then `ask`.
+- Duplicates collapse to one row per canonical plugin; empty memory dirs and comment-only hooks collapse to one row per class.
+
+**Verdicts (§5.4, §5.10)**
+- `pause` is a verdict: commands and skills rename to `.disabled`, plugins get `claude plugin disable`; no pause for CLAUDE.md sections, MCP servers, or hooks; no ledger line. Index rows read "(paused <date>)" with a bold "Paused" note.
+- `merge-into` writes a backlog stub only; the removal lands with the merge PR, whose ledger line reads "merged into".
+- Reply grammar gains `keep (hook)` for hook-convertible sections, and "ask me about row N" for a fuller card. The table is the interview.
+
+**Ratification and apply (§5.5, §5.6)**
+- One table, grouped by surface, CLAUDE.md sections last, mechanical classes collapsed.
+- Untracked settings: one confirmation per file per pass showing the exact edit list, using the CLI verbs (`claude plugin uninstall|disable`, `claude mcp remove`). Retire = uninstall for plugins.
+- Doc mentions are edited by the skill in the same PR, listed under their own PR heading.
+
+**Ledger and report (§5.7, §5.9)**
+- Ledger Item ids are surface-qualified (`skill:mock-call`, `claude-md:Improvement Mode`).
+- The committed report is redacted (counts and generic labels for memory dirs and hooks, repo names only for vendored copies); the full JSON stays under the local cache dir. `--report` follows the standing git workflow.
+- `--surface <name>` filters the sweep and the report.
+
+**Glossary.** CONTEXT.md gained steering surface, retire, pause, relocate, temperature, verdict, ledger (commits `65c56f4`, `83147c2`).
