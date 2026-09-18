@@ -13,4 +13,4 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 | [07](issues/07-ledger-pointer-first-live-report.md) | Ledger seeded, reference pointer, first live redacted report | The ledger exists, the index intro points at it, and a real --report run is committed with sanity checks passed | done | 06 |
 | [08](issues/08-the-skill-procedure-and-docs.md) | The skill: procedure, bookkeeping reference, index row, playbook card | SKILL.md and the per-surface bookkeeping reference written per the spec, with row and card in the same commit | done | 06 |
 | [09](issues/09-pilot-sweep.md) | Pilot sweep (PR B) | The first live sweep: ratification with Kyle, apply, measure, ledger, review-scope proposal | ready-for-human | 07, 08, and PR A merged |
-| [10](issues/10-backlog-and-idea-doc-bookkeeping.md) | Backlog and idea-doc bookkeeping | Three v2 stubs in the backlog; coliseum marked built; minimal-initial-prompt marked absorbed | ready-for-agent | 08 |
+| [10](issues/10-backlog-and-idea-doc-bookkeeping.md) | Backlog and idea-doc bookkeeping | Three v2 stubs in the backlog; coliseum marked built; minimal-initial-prompt marked absorbed | done | 08 |
