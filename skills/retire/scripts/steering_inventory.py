@@ -47,7 +47,17 @@ SURFACE_ORDER = ["skill", "command", "agent", "output-style", "plugin", "mcp", "
 # The surfaces this build actually enumerates. Later tickets extend this list as their
 # enumerators land; --surface validates against it so an unimplemented lane can never be
 # mistaken for an empty one.
-ENUMERATED_SURFACES = ["skill", "command", "agent", "output-style", "claude-md"]
+ENUMERATED_SURFACES = ["skill", "command", "agent", "output-style", "plugin", "mcp", "hook",
+                       "memory", "claude-md"]
+
+# Surfaces no usage source can score. Nothing in the prompt history or the transcripts names a
+# hook entry or an auto-memory directory, so their counts stay unmeasured and their temperature
+# is `unknown` — never `cold`, which would claim a disuse no source could have shown.
+UNMEASURABLE_SURFACES = ("hook", "memory")
+
+# Surfaces the markdown reports as one count instead of a row each: an auto-memory directory's
+# name is a project path slug, and this report is committed to a public repo.
+COUNT_ONLY_SURFACES = ("memory",)
 
 # Coldest first: the rows that need a ruling come before the rows that earned their place.
 TEMP_ORDER = {"cold": 0, "cool": 1, "new": 2, "warm": 3, "hot": 4, "unknown": 5}
@@ -507,8 +517,257 @@ def claude_md_file_bytes(config_repo: Path) -> int:
 
 # ---------------------------------------------------------------- claude-home surfaces
 #
-# Plugins, MCP servers, hook entries and auto-memory directories are enumerated here. Not yet
-# built; add the enumerators to this section and their surface names to ENUMERATED_SURFACES.
+# Plugins, MCP servers, hook entries and auto-memory directories: the steering that reaches a
+# session from the claude home rather than from the config repo. None of it is under git, so
+# none of it has a first-commit date — only a plugin carries an install date of its own.
+
+
+def _plugin_short(key: str) -> str:
+    """`mattpocock-skills@mattpocock` -> `mattpocock-skills`: the namespace a session sees."""
+    return key.split("@", 1)[0]
+
+
+def _install_date(value) -> str | None:
+    """An `installedAt` stamp as an ISO date.
+
+    Live records write ISO-8601 (`2026-08-21T18:46:48.710Z`); older ones write epoch
+    milliseconds. Both spellings are in the wild, so both are accepted, and an unusable stamp
+    reports no date at all rather than a wrong one.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)) or (isinstance(value, str) and value.strip().isdigit()):
+        try:
+            return datetime.fromtimestamp(int(value) / 1000, tz=timezone.utc).date().isoformat()
+        except (ValueError, OverflowError, OSError):
+            return None
+    dt = _parse_iso(value)
+    return dt.date().isoformat() if dt else None
+
+
+def plugin_skills(install: Path) -> list[dict]:
+    """Every SKILL.md a plugin ships, at whatever depth it sits.
+
+    `mattpocock-skills` nests them as `skills/engineering/<name>/SKILL.md`, so the walk has to be
+    recursive; the frontmatter `name` wins over the directory name because that is the spelling a
+    session calls the skill by.
+    """
+    out: list[dict] = []
+    if not install.is_dir():
+        return out
+    for sk in sorted(install.rglob("SKILL.md")):
+        fm = parse_frontmatter(sk.read_text(errors="ignore"))
+        out.append({"name": fm.get("name") or sk.parent.name,
+                    "description": fm.get("description", ""), "path": str(sk)})
+    return out
+
+
+def enumerate_plugins(claude_home: Path) -> list[Item]:
+    """One item per installed plugin, enabled or not.
+
+    A disabled plugin still occupies the surface — it is installed, and one CLI verb from being
+    live again — but it costs a session nothing, so its always-loaded weight is 0 and it carries
+    `disabled`. An enabled plugin's weight is the sum of its shipped skill descriptions, which is
+    exactly what every request pays for it.
+    """
+    settings = load_json(claude_home / "settings.json")
+    installed = load_json(claude_home / "plugins" / "installed_plugins.json")
+    enabled = settings.get("enabledPlugins") or {}
+    items: list[Item] = []
+    for key, entries in sorted((installed.get("plugins") or {}).items()):
+        entry = (entries[0] if entries else {}) if isinstance(entries, list) else entries
+        entry = entry if isinstance(entry, dict) else {}
+        skills = plugin_skills(Path(entry.get("installPath") or ""))
+        is_enabled = bool(enabled.get(key, False))
+        it = Item(id=f"plugin:{key}", surface="plugin", name=key,
+                  path=str(entry.get("installPath") or ""),
+                  bytes_always_loaded=(sum(len(s["description"]) for s in skills)
+                                       if is_enabled else 0),
+                  added=_install_date(entry.get("installedAt")),
+                  extra={"enabled": is_enabled, "short": _plugin_short(key),
+                         "version": entry.get("version"), "skills": skills})
+        if not is_enabled:
+            it.flags.append("disabled")
+        items.append(it)
+    return items
+
+
+def plugin_skill_canonicals(plugins: list[Item]) -> dict[str, str]:
+    """Skill name -> the canonical `<plugin short>:<skill>` spelling of the plugin that ships it.
+
+    Enabled plugins only: a disabled plugin ships nothing into a session, so a loose copy of one
+    of its skills is the only copy there is and duplicates nothing.
+    """
+    out: dict[str, str] = {}
+    for p in plugins:
+        if not p.extra.get("enabled"):
+            continue
+        short = p.extra.get("short") or _plugin_short(p.name)
+        for s in p.extra.get("skills") or []:
+            out.setdefault(s["name"], f"{short}:{s['name']}")
+    return out
+
+
+def flag_duplicate_skills(items: list[Item], canonicals: dict[str, str]) -> None:
+    """An untracked house skill an enabled plugin already ships is listed twice in every session.
+
+    Tracked skills are Kyle's own and are left alone even on a name collision; the untracked ones
+    are what `npx skills` dropped into `skills/` beside a plugin that already carries them, which
+    is why `duplicate_of` names the plugin spelling that survives the copy's removal.
+    """
+    for it in items:
+        if it.surface == "skill" and it.tracked is False and it.name in canonicals:
+            it.duplicate_of = canonicals[it.name]
+            if "duplicate" not in it.flags:
+                it.flags.append("duplicate")
+
+
+MCP_NAME_RE = re.compile(r"[^0-9A-Za-z_-]+")
+
+
+def mcp_key(name: str) -> str:
+    """A server name as a transcript spells it: `claude.ai Gmail` -> `claude_ai_Gmail`.
+
+    Tool names are `mcp__<server>__<tool>`, and the harness flattens what cannot appear in one —
+    dots, spaces, apostrophes — to underscores. Hyphens and underscores survive untouched
+    (`mcp__basic-memory__search`), so flattening them too would split every hyphenated server
+    into two rows: one configured with no calls, one "connector" carrying all of them.
+    """
+    return MCP_NAME_RE.sub("_", name)
+
+
+def enumerate_mcp(claude_json: Path, claude_home: Path,
+                  observed: list[str] | None = None) -> list[Item]:
+    """The union of the user-scope config and every server a transcript actually called.
+
+    A claude.ai connector is configured on the website and appears in no local config file, so
+    the config alone would report a surface smaller than the one steering Kyle's sessions.
+    Anything seen only in the transcripts is flagged `connector_only` — it reaches sessions from
+    outside the user-scope config — except a plugin's own server, whose weight already belongs to
+    its plugin's row. A server on the deny list carries `denied`.
+    """
+    configured = load_json(claude_json).get("mcpServers") or {}
+    settings = load_json(claude_home / "settings.json")
+    denied = set()
+    for entry in settings.get("deniedMcpServers") or []:
+        name = entry.get("serverName") if isinstance(entry, dict) else entry
+        if isinstance(name, str) and name:
+            denied.add(mcp_key(name))
+
+    rows: dict[str, dict] = {}
+    for name in sorted(configured):
+        cfg = configured[name]
+        rows[mcp_key(name)] = {"name": name, "origin": "config",
+                               "cfg": cfg if isinstance(cfg, dict) else {}}
+    for key in sorted(observed or []):
+        rows.setdefault(key, {"name": key, "cfg": {},
+                              "origin": "plugin" if key.startswith("plugin_") else "connector"})
+
+    items: list[Item] = []
+    for key in sorted(rows):
+        row = rows[key]
+        cfg = row["cfg"]
+        it = Item(id=f"mcp:{row['name']}", surface="mcp", name=row["name"],
+                  path=str(claude_json) if row["origin"] == "config" else "",
+                  bytes_always_loaded=0,
+                  extra={"origin": row["origin"], "key": key, "transport": cfg.get("type"),
+                         "command": cfg.get("command")})
+        if row["origin"] == "connector":
+            it.flags.append("connector_only")
+        if key in denied:
+            it.flags.append("denied")
+        items.append(it)
+    return items
+
+
+def enumerate_hooks(claude_home: Path) -> list[Item]:
+    """One item per hook entry, named by its position in the settings file and nothing else.
+
+    A hook command is a shell line carrying absolute paths, and the markdown report is committed
+    to a public repo — so the name a row renders under is its position (`Stop[1][0]`) and the
+    command text stays in the JSON, which never leaves the local cache. The text is kept there
+    because a prompt-type hook is part of the referrer corpus: the Stop hook names three
+    CLAUDE.md modes by title, and retiring one of them has to patch that prompt.
+
+    A command that is entirely a comment is a hook Kyle already switched off by commenting it
+    out. It still sits in the file, so it is still an item, and it carries `disabled_comment`.
+    """
+    settings = load_json(claude_home / "settings.json")
+    items: list[Item] = []
+    for event, groups in sorted((settings.get("hooks") or {}).items()):
+        for gi, group in enumerate(groups or []):
+            group = group if isinstance(group, dict) else {}
+            for hi, hook in enumerate(group.get("hooks") or []):
+                hook = hook if isinstance(hook, dict) else {}
+                cmd = hook.get("command") or hook.get("prompt") or ""
+                cmd = cmd if isinstance(cmd, str) else ""
+                it = Item(id=f"hook:{event}[{gi}][{hi}]", surface="hook",
+                          name=f"{event}[{gi}][{hi}]",
+                          path=str(claude_home / "settings.json"), bytes_always_loaded=0,
+                          extra={"event": event, "group": gi, "index": hi,
+                                 "matcher": group.get("matcher"), "type": hook.get("type"),
+                                 "command": cmd})
+                if cmd.lstrip().startswith("#"):
+                    it.flags.append("disabled_comment")
+                items.append(it)
+    return items
+
+
+def enumerate_memory(claude_home: Path) -> list[Item]:
+    """One item per auto-memory directory under the projects tree.
+
+    The directory name is a project path slug, which is why the markdown reports this surface as
+    a count and never by name (see `COUNT_ONLY_SURFACES`). A directory holding nothing carries
+    `empty`: most of them are leftovers from projects that no longer exist.
+    """
+    items: list[Item] = []
+    for mem in sorted((claude_home / "projects").glob("*/memory")):
+        if not mem.is_dir():
+            continue
+        files = [f for f in sorted(mem.rglob("*")) if f.is_file()]
+        size = 0
+        for f in files:
+            try:
+                size += f.stat().st_size
+            except OSError:
+                continue
+        it = Item(id=f"memory:{mem.parent.name}", surface="memory", name=mem.parent.name,
+                  path=str(mem), bytes_always_loaded=size, extra={"files": len(files)})
+        if not files:
+            it.flags.append("empty")
+        items.append(it)
+    return items
+
+
+def plugin_usage(it: Item, transcripts: "Transcripts",
+                 since: datetime) -> tuple[int, int, str | None]:
+    """A plugin's session-chosen uses: its skills, its namespaced agents, and its own MCP servers.
+
+    A plugin is never invoked by name — what a session reaches for is one of the things it ships:
+    a skill (bare or namespaced), an agent dispatched as `<plugin>:<agent>`, or one of the MCP
+    servers it registers, which the harness names `mcp__plugin_<plugin>_<server>__<tool>`.
+    Summing those is a measurement taken from the same transcript pass everything else uses;
+    without it a heavily-used plugin would read as unused, which is the one thing this script
+    must never say about a source it did read.
+
+    Its slash commands are the one thing not counted here: they are typed, not chosen, and the
+    live history holds seven of them across every plugin that has any other evidence at all.
+    """
+    short = _plugin_short(it.name)
+    prefixes = (f"plugin_{short}_", f"plugin_{short.replace('-', '_')}_")
+    keys: list[tuple[str, object]] = [("skill", skill_spellings(s["name"], short))
+                                      for s in it.extra.get("skills") or []]
+    keys += [("agent", k) for k in transcripts.keys("agent") if k.startswith(f"{short}:")]
+    keys += [("mcp", k) for k in transcripts.keys("mcp") if k.startswith(prefixes)]
+    total = recent = 0
+    last: str | None = None
+    for kind, key in keys:
+        seen_all, seen_recent, seen_last = transcripts.count(kind, key, since)
+        total += seen_all
+        recent += seen_recent
+        if seen_last and (last is None or seen_last > last):
+            last = seen_last
+    return total, recent, last
 
 
 # ---------------------------------------------------------------- evidence: history.jsonl
@@ -697,6 +956,15 @@ class Transcripts:
             self.events.append((dt, kind, key))
             self._index.setdefault((kind, key), []).append(dt)
 
+    def keys(self, kind: str) -> list[str]:
+        """Every key of one kind that appeared anywhere in the corpus.
+
+        This is what makes the MCP surface the union of the config and what sessions actually
+        called: a claude.ai connector is in no local file, so the transcripts are the only place
+        its name exists.
+        """
+        return sorted(k for kd, k in self._index if kd == kind)
+
     def count(self, kind: str, key, since: datetime) -> tuple[int, int, str | None]:
         """(all-time hits, hits inside the window, ISO date of the latest hit).
 
@@ -754,12 +1022,27 @@ def note_last_used(it: Item, *dates: str | None) -> None:
 
 
 def attach_usage(it: Item, history: History, transcripts: Transcripts, since: datetime) -> None:
-    """Typed counts from the prompt history, session-chosen counts from the transcripts."""
+    """Typed counts from the prompt history, session-chosen counts from the transcripts.
+
+    Only skills and commands have a typed spelling; an agent, an MCP server and a plugin are
+    reached by a session on its own, so the transcripts are their whole evidence. A surface with
+    no source at all is left alone here and stays unmeasured.
+    """
     if it.surface in ("skill", "command"):
         it.slash_all, it.slash_90d, last_typed = history.count(slash_pattern(it.name), since)
         it.tool_all, it.tool_90d, last_auto = transcripts.count(
             "skill", skill_spellings(it.name), since)
         note_last_used(it, last_typed, last_auto)
+    elif it.surface == "agent":
+        it.tool_all, it.tool_90d, last_auto = transcripts.count("agent", it.name, since)
+        note_last_used(it, last_auto)
+    elif it.surface == "mcp":
+        it.tool_all, it.tool_90d, last_auto = transcripts.count(
+            "mcp", it.extra.get("key") or it.name, since)
+        note_last_used(it, last_auto)
+    elif it.surface == "plugin":
+        it.tool_all, it.tool_90d, last_auto = plugin_usage(it, transcripts, since)
+        note_last_used(it, last_auto)
 
 
 def flag_auto_only(it: Item) -> None:
@@ -796,9 +1079,16 @@ def attach_triggers(it: Item, history: History, since: datetime, triggers: dict 
 
 
 def temperature(it: Item, window_start: str) -> str:
-    """`new` wins over every count; otherwise recent uses decide, then any evidence at all."""
+    """`new` wins over every count; otherwise recent uses decide, then any evidence at all.
+
+    A surface no source can score is `unknown`, not `cold`: `cold` is a measured claim that an
+    item went unused, and nothing in the history or the transcripts ever names a hook entry or a
+    memory directory.
+    """
     if it.added and it.added >= window_start:
         return "new"
+    if it.surface in UNMEASURABLE_SURFACES:
+        return "unknown"
     recent = it.slash_90d + (it.tool_90d or 0) + (it.trigger_90d or 0)
     if recent >= HOT_MIN_USES:
         return "hot"
@@ -842,16 +1132,32 @@ def build_inventory(cfg: Config) -> Inventory:
 
     tracked = git_tracked(cfg.config_repo)
     added = first_added_dates(cfg.config_repo)
+    # The plugin cache is read whenever skills are, filtered out or not: a loose skill copy can
+    # only be called a duplicate against the plugin that ships the canonical one.
+    plugins: list[Item] = []
+    if {"plugin", "skill"} & set(cfg.surfaces):
+        plugins = enumerate_plugins(cfg.claude_home)
+
     items: list[Item] = []
     if "skill" in cfg.surfaces:
-        items += enumerate_skills(cfg.config_repo, tracked, added)
-        items += enumerate_untracked_skills(cfg.config_repo, tracked)
+        skills = (enumerate_skills(cfg.config_repo, tracked, added)
+                  + enumerate_untracked_skills(cfg.config_repo, tracked))
+        flag_duplicate_skills(skills, plugin_skill_canonicals(plugins))
+        items += skills
     if "command" in cfg.surfaces:
         items += enumerate_commands(cfg.config_repo, tracked, added)
     if "agent" in cfg.surfaces:
         items += enumerate_agents(cfg.config_repo, tracked, added)
     if "output-style" in cfg.surfaces:
         items += enumerate_output_styles(cfg.config_repo, tracked, added, cfg.claude_home)
+    if "plugin" in cfg.surfaces:
+        items += plugins
+    if "mcp" in cfg.surfaces:
+        items += enumerate_mcp(cfg.claude_json, cfg.claude_home, transcripts.keys("mcp"))
+    if "hook" in cfg.surfaces:
+        items += enumerate_hooks(cfg.claude_home)
+    if "memory" in cfg.surfaces:
+        items += enumerate_memory(cfg.claude_home)
     if "claude-md" in cfg.surfaces:
         items += enumerate_claude_md(cfg.config_repo, tracked, added)
 
@@ -918,6 +1224,20 @@ def evidence_summary(it: Item, since_days: int) -> str:
     return " · ".join(parts)
 
 
+def count_only_summary(surface: str, rows: list) -> str:
+    """One line standing in for every row of a surface whose names cannot be printed.
+
+    An auto-memory directory is named for the project path it belongs to, so printing the names
+    would publish Kyle's private project list in a public repo. The count, how many are empty and
+    what the rest weigh is everything a ruling needs; the names are in the local JSON.
+    """
+    empty = sum(1 for i in rows if "empty" in i.flags)
+    chars = sum(i.bytes_always_loaded for i in rows)
+    return (f"{len(rows)} {surface} entries · {empty} flagged `empty` · "
+            f"{len(rows) - empty} holding files · {chars:,} chars. "
+            f"Names are project path slugs and are not printed; they are in the local JSON.")
+
+
 def render_markdown(inv: Inventory) -> str:
     """The redacted view: names, counts and dates only — no paths, no private detail."""
     m = inv.meta
@@ -938,6 +1258,9 @@ def render_markdown(inv: Inventory) -> str:
                       key=lambda i: (TEMP_ORDER.get(i.temperature, 9), -i.bytes_always_loaded,
                                      i.name))
         if not rows:
+            continue
+        if s in COUNT_ONLY_SURFACES:
+            out += ["", f"## {s}", "", count_only_summary(s, rows)]
             continue
         out += ["", f"## {s}", "", "| Item | Evidence | Flags | Temp | Proposed |",
                 "|---|---|---|---|---|"]

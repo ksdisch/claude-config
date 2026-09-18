@@ -129,12 +129,13 @@ def make_fixture(root: Path) -> "si.Config":
     plugin_dir = home / "plugins/cache/mp/mp/1.0.0"
     write(plugin_dir / "skills/tdd/SKILL.md",
           "---\nname: tdd\ndescription: Plugin tdd skill.\n---\n")
+    # `installedAt` is ISO-8601 in every live install record; the epoch-millisecond spelling
+    # older records use is covered in tests/test_claude_home_surfaces.py.
     write(home / "plugins/installed_plugins.json", json.dumps({"version": 2, "plugins": {
         "mp@mp": [{"scope": "user", "installPath": str(plugin_dir), "version": "1.0.0",
-                   "installedAt": int((NOW - timedelta(days=120)).timestamp() * 1000)}],
+                   "installedAt": iso(120)}],
         "off@x": [{"scope": "user", "installPath": str(home / "plugins/cache/x/off/1.0.0"),
-                   "version": "1.0.0",
-                   "installedAt": int((NOW - timedelta(days=120)).timestamp() * 1000)}]}}))
+                   "version": "1.0.0", "installedAt": iso(120)}]}}))
     write(home / "settings.json", json.dumps({
         "enabledPlugins": {"mp@mp": True, "off@x": False},
         "hooks": {

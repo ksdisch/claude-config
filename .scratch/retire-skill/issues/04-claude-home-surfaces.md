@@ -6,13 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] Plugins come from the install record and the settings enable map; a disabled plugin has bytes 0 and flag `disabled`; an enabled plugin's bytes are the sum of its shipped skill descriptions; `installedAt` is the added date and drives `new`
-- [ ] An untracked skill whose name matches a skill an enabled plugin ships carries `duplicate` with `duplicate_of` naming the canonical `short:name`
-- [ ] MCP rows are the union of user-scope config servers and `mcp__<server>__` names seen in transcripts, with session-chosen counts and last-used; connector-only servers are labelled as such and denied connectors are flagged
-- [ ] Hook rows use id `hook:<event>[group][index]`; a command that is comment-only carries `disabled_comment`; prompt-type hooks are exposed for the referrer corpus
-- [ ] Memory directories under the projects tree carry `empty` when they hold nothing; the markdown renders them as a count, never by slug
-- [ ] Agent tool dispatches count as session-chosen for the named agent
-- [ ] Tests cover every criterion above
+- [x] Plugins come from the install record and the settings enable map; a disabled plugin has bytes 0 and flag `disabled`; an enabled plugin's bytes are the sum of its shipped skill descriptions; `installedAt` is the added date and drives `new`
+- [x] An untracked skill whose name matches a skill an enabled plugin ships carries `duplicate` with `duplicate_of` naming the canonical `short:name`
+- [x] MCP rows are the union of user-scope config servers and `mcp__<server>__` names seen in transcripts, with session-chosen counts and last-used; connector-only servers are labelled as such and denied connectors are flagged
+- [x] Hook rows use id `hook:<event>[group][index]`; a command that is comment-only carries `disabled_comment`; prompt-type hooks are exposed for the referrer corpus
+- [x] Memory directories under the projects tree carry `empty` when they hold nothing; the markdown renders them as a count, never by slug
+- [x] Agent tool dispatches count as session-chosen for the named agent
+- [x] Tests cover every criterion above
 
 ## Comments
 

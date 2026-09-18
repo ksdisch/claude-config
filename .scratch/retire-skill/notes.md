@@ -53,18 +53,32 @@ blocked by the safety net.
 
 ## State of the script (update this as tickets land)
 
-Landed on `feat/retire-skill`: tickets 01, 02, 03. Suite is **77 tests**, green.
+Landed on `feat/retire-skill`: tickets 01, 02, 03, 04. Suite is **118 tests**, green.
 
 - `# ---- tunables` at the top owns every threshold. Add new ones there.
 - `ENUMERATED_SURFACES` gates `--surface` so an unbuilt lane errors instead of reporting
-  empty. Extend it as you land a surface. Currently: skill, command, agent, output-style,
-  claude-md.
+  empty. Extend it as you land a surface. Currently: **every** surface — skill, command,
+  agent, output-style, plugin, mcp, hook, memory, claude-md.
 - **Unmeasured is `None`, never 0.** This is the invariant the whole Instrument rests on
   (spec story 15). `trigger_*` is `None` for an item with no trigger source; `tool_*` is
   `None` only if transcripts could not be read. Never collapse an unread source to 0.
 - The transcript reader already collects **all three** call kinds in one pass —
-  skill, agent (`input.subagent_type`), and `mcp__<server>__`. Ticket 04 consumes the
-  agent and MCP tallies; it does not need to re-read transcripts.
+  skill, agent (`input.subagent_type`), and `mcp__<server>__`. Ticket 04 consumed the
+  agent and MCP tallies; no later ticket needs to re-read transcripts either.
+  `Transcripts.keys(kind)` lists every key of one kind seen anywhere — that is what makes
+  the MCP surface a union rather than a copy of the config file.
+- `UNMEASURABLE_SURFACES` (hook, memory) get temperature `unknown`, not `cold`: no source
+  names a hook entry or a memory dir, and `cold` is a *measured* claim of disuse. Their
+  `proposed` therefore comes from their flags, which is ticket 06's table.
+- `COUNT_ONLY_SURFACES` (memory) render in markdown as one summary line, never a row per
+  item — a memory dir's name is a project path slug and this repo is public.
+- Plugins are dated by `installedAt`, which is **ISO-8601** in every live record (the plan
+  and the original fixture assumed epoch ms; both spellings are now accepted). Their usage
+  is the sum over what they ship: skills (bare + namespaced), `<short>:<agent>` dispatches,
+  and `mcp__plugin_<short>_<server>__` calls. Slash commands are deliberately not counted.
+- `mcp_key()` flattens only what cannot appear in a tool name (dots, spaces, apostrophes).
+  **Hyphens survive** — `mcp__basic-memory__search`. Flattening them split every hyphenated
+  server into two rows; do not "simplify" that regex.
 - `compute_totals` takes `config_repo` because CLAUDE.md byte totals are measured from the
   files, not summed across records (a `###` body is already inside its `##` parent's).
 - `_name_cell()` in `# ---- output` renders item names safely — some headings contain
