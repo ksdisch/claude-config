@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Plugins come from the install record and the settings enable map; a disabled plugin has bytes 0 and flag `disabled`; an enabled plugin's bytes are the sum of its shipped skill descriptions; `installedAt` is the added date and drives `new`
 - [x] An untracked skill whose name matches a skill an enabled plugin ships carries `duplicate` with `duplicate_of` naming the canonical `short:name`
@@ -15,4 +15,7 @@
 - [x] Tests cover every criterion above
 
 ## Comments
+
+- 2026-09-18 — merged to `feat/retire-skill` as `26139d5`. 118 tests green. Live: 221 items / 81,601 chars; 19 plugins (67 shipped skills, matching design §3's hand count), 33 MCP rows (5 config, 3 plugin-origin, 25 connector-only, 3 denied), 11 hooks with 4 `disabled_comment`, 33 memory dirs with 32 `empty`. All 36 loose mattpocock copies flagged `duplicate`. Redaction verified independently.
+- Two rulings went beyond the ticket and are flagged for Kyle in the PR body: `UNMEASURABLE_SURFACES` (hooks and memory get `unknown`, not `cold`, so live safety-net hooks are never auto-proposed for retirement) and plugin usage summed from what a plugin ships (a plugin is never invoked by its own name).
 

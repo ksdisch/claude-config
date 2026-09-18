@@ -91,6 +91,15 @@ assertion about a not-yet-measured state false by construction. Amend those in p
 say so in your report — do not work around them, and do not weaken an assertion to pass.
 Put your *new* tests in your own file so parallel tickets don't collide.
 
+## Open wrinkle, owned by ticket 06
+
+`slash_90d` / `slash_all` default to `0` on surfaces that have no typed spelling at all
+(hooks, memory dirs, agents, output styles, CLAUDE.md sections). The history *was* read, so
+this is not an unread source reported as zero — but the evidence column reads
+`typed 0/90d · 0 all` for something that can never be typed, which invites a wrong reading of
+the very table Kyle rules from. Fixing it touches every landed surface's evidence column, so
+it belongs with the precedence/redaction pass. Do not paper over it elsewhere.
+
 ## Gates
 
 - **doc-sync is a pre-push Gate.** `scripts/check-doc-sync.py` checks *the commits being pushed*,
