@@ -31,6 +31,8 @@ WINDOW_DEFAULT_DAYS = 90        # --since default: how far back "recent" reaches
 HOT_MIN_USES = 5                # uses inside the window at or above this -> hot
 WARM_MIN_USES = 1               # uses inside the window at or above this -> warm
 AUTO_ONLY_MIN_AUTO = 5          # 0 typed and at least this many session-chosen -> auto_only
+TRIGGER_PHRASE_MIN_CHARS = 8    # a shorter double-quoted run is a word, not a trigger phrase
+TRIGGER_PHRASE_MAX_CHARS = 80   # a longer one is a quoted sentence nobody types verbatim
 
 EXIT_OK = 0
 EXIT_SOURCE_MISSING = 2
@@ -45,7 +47,7 @@ SURFACE_ORDER = ["skill", "command", "agent", "output-style", "plugin", "mcp", "
 # The surfaces this build actually enumerates. Later tickets extend this list as their
 # enumerators land; --surface validates against it so an unimplemented lane can never be
 # mistaken for an empty one.
-ENUMERATED_SURFACES = ["skill"]
+ENUMERATED_SURFACES = ["skill", "command", "agent", "output-style", "claude-md"]
 
 # Coldest first: the rows that need a ruling come before the rows that earned their place.
 TEMP_ORDER = {"cold": 0, "cool": 1, "new": 2, "warm": 3, "hot": 4, "unknown": 5}
@@ -86,6 +88,7 @@ def load_json(path: Path) -> dict:
 
 FM_KEY_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*)$")
 HEADING_RE = re.compile(r"^(#{1,3})\s+(.+?)\s*$")
+BOLD_LEAD_RE = re.compile(r"^\*\*(.+?)\*\*")
 
 
 def parse_frontmatter(text: str) -> dict:
@@ -144,6 +147,42 @@ def split_sections(text: str):
                 end = j
                 break
         yield title, "".join(lines[i:end]), i + 1
+
+
+def split_bold_paragraphs(text: str):
+    """Yield (name, body, line_no) for every paragraph whose first run is bold.
+
+    `operating-constraints.md` carries no headings at all, so a heading splitter would see it as
+    one undifferentiated blob. Its real unit is the bold-led paragraph — `**Scope discipline.**
+    Do exactly what's asked…` — and that bold lead is the rule's name. Paragraphs with no bold
+    lead (the file's preamble) are prose about the rules, not rules, and are not items.
+    """
+    para: list[str] = []
+    start = 1
+    for i, line in enumerate(text.splitlines(keepends=True) + [""], start=1):
+        if line.strip():
+            if not para:
+                start = i
+            para.append(line)
+            continue
+        if para:
+            body = "".join(para)
+            m = BOLD_LEAD_RE.match(body)
+            if m:
+                yield m.group(1).strip().rstrip(".:").strip(), body, start
+            para = []
+
+
+def phrases_from_description(desc: str) -> list[str]:
+    """A description's double-quoted runs, lowercased and escaped for use as regexes.
+
+    A skill or command description quotes the phrases Kyle would say to summon it ("red-team
+    this diff"), so those quotes are the item's trigger phrases. Bounded by the tunables above:
+    below the floor a quoted run is a single word that would match everything, above the ceiling
+    it is a quoted sentence nobody retypes verbatim.
+    """
+    rx = rf'"([^"]{{{TRIGGER_PHRASE_MIN_CHARS},{TRIGGER_PHRASE_MAX_CHARS}}})"'
+    return [re.escape(p.lower()) for p in re.findall(rx, desc)]
 
 
 # ---------------------------------------------------------------- model
@@ -297,6 +336,173 @@ def enumerate_skills(config_repo: Path, tracked: set[str] | None,
     if not items and dirs:
         raise EmptySurface(f"skill: {root} has directories but no tracked SKILL.md files")
     return items
+
+
+def enumerate_untracked_skills(config_repo: Path, tracked: set[str] | None) -> list[Item]:
+    """Gitignored skill directories: vendored third-party copies the repo deliberately ignores.
+
+    They are invisible to `git ls-files` but not to a session — the harness loads their
+    descriptions like any other skill's, so they cost the same bytes and steer the same routing.
+    Their added date is the directory's mtime; git has nothing to say about a file it ignores.
+    When the repo has no usable git nothing can be classified as ignored, and `enumerate_skills`
+    has already listed every directory with tracked=None, so this returns nothing.
+    """
+    root = config_repo / "skills"
+    if tracked is None or not root.is_dir():
+        return []
+    items: list[Item] = []
+    for d in sorted(root.iterdir()):
+        if not d.is_dir():
+            continue
+        sk = d / "SKILL.md"
+        if not sk.is_file() or f"skills/{d.name}/SKILL.md" in tracked:
+            continue
+        desc = parse_frontmatter(sk.read_text(errors="ignore")).get("description", "")
+        items.append(Item(id=f"skill:{d.name}", surface="skill", name=d.name, path=str(sk),
+                          bytes_always_loaded=len(desc), tracked=False, description=desc,
+                          added=_mtime_date(d)))
+    return items
+
+
+def _md_items(root: Path, surface: str, tracked: set[str] | None, config_repo: Path,
+              added: dict[str, str] | None = None,
+              suffixes: tuple[str, ...] = (".md",)) -> list[Item]:
+    """One item per markdown file directly under `root`, in filename order.
+
+    `suffixes` is tried in order, so `.md.disabled` must precede `.md`; a file matched by a
+    `.disabled` suffix is paused, and a paused file costs a session nothing, so its
+    always-loaded weight is 0 rather than its description's length.
+    """
+    if not root.is_dir():
+        return []
+    added = added or {}
+    items: list[Item] = []
+    entries = [f for f in sorted(root.iterdir()) if f.is_file()]
+    for f in entries:
+        name = None
+        paused = False
+        for suf in suffixes:
+            if f.name.endswith(suf):
+                name, paused = f.name[: -len(suf)], suf.endswith(".disabled")
+                break
+        if not name:
+            continue
+        desc = parse_frontmatter(f.read_text(errors="ignore")).get("description", "")
+        rel = str(f.relative_to(config_repo))
+        it = Item(id=f"{surface}:{name}", surface=surface, name=name, path=str(f),
+                  bytes_always_loaded=0 if paused else len(desc),
+                  tracked=_tracked_flag(tracked, rel), paused=paused, description=desc,
+                  added=added_date(f, rel, added))
+        if paused:
+            it.flags.append("paused")
+        items.append(it)
+    if not items and entries:
+        raise EmptySurface(f"{surface}: {root} has files but none of them are items")
+    return items
+
+
+def enumerate_commands(config_repo: Path, tracked: set[str] | None,
+                       added: dict[str, str] | None = None) -> list[Item]:
+    """Slash commands, paused ones included: a `.md.disabled` is a ruling, not an absence."""
+    return _md_items(config_repo / "commands", "command", tracked, config_repo, added,
+                     suffixes=(".md.disabled", ".md"))
+
+
+def enumerate_agents(config_repo: Path, tracked: set[str] | None,
+                     added: dict[str, str] | None = None) -> list[Item]:
+    return _md_items(config_repo / "agents", "agent", tracked, config_repo, added)
+
+
+def enumerate_output_styles(config_repo: Path, tracked: set[str] | None,
+                            added: dict[str, str] | None = None,
+                            claude_home: Path | None = None) -> list[Item]:
+    """Output styles, each flagged `unlinked` when the harness has no way to load it.
+
+    A style only reaches a session through `<claude home>/output-styles/<name>.md`. With no such
+    directory — or no entry in it for this style — the file is in the repo and nowhere else:
+    dead weight that is invisible from inside a session, which is exactly why it needs a flag.
+    """
+    items = _md_items(config_repo / "output-styles", "output-style", tracked, config_repo, added)
+    linked = claude_home / "output-styles" if claude_home else None
+    for it in items:
+        if linked is None or not (linked / f"{it.name}.md").exists():
+            it.flags.append("unlinked")
+    return items
+
+
+def first_commit_containing(repo: Path, rel: str, needle: str) -> str | None:
+    """ISO date of the earliest commit whose change to `rel` introduced `needle`.
+
+    A section of a file has no add-date of its own — the file's first commit is the file's, not
+    the section's, and would date every rule in CLAUDE.md to the day the file was created. The
+    pickaxe finds the commit that actually introduced the heading.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(repo), "log", "--reverse", "--format=%aI", "-S", needle,
+             "--", rel],
+            capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    for line in out.split("\n"):
+        if line.strip():
+            return line[:10]
+    return None
+
+
+def enumerate_claude_md(config_repo: Path, tracked: set[str] | None = None,
+                        added: dict[str, str] | None = None) -> list[Item]:
+    """The always-loaded prose: constraints paragraphs first, then CLAUDE.md's own sections.
+
+    Constraints lead because CLAUDE.md imports that file at the top, so that is the order a
+    session reads them in. A section's bytes are its own length, heading line included; a `###`
+    nests inside its `##`, so the surface total is taken from the files rather than from this
+    sum (see `claude_md_file_bytes`).
+    """
+    cm = config_repo / "CLAUDE.md"
+    if not cm.is_file():
+        raise SourceMissing(f"CLAUDE.md missing: {cm}")
+    items: list[Item] = []
+    for rel, splitter in (("operating-constraints.md", split_bold_paragraphs),
+                          ("CLAUDE.md", split_sections)):
+        path = config_repo / rel
+        if not path.is_file():
+            continue
+        text = path.read_text(errors="ignore")
+        for name, body, line_no in splitter(text):
+            when = (first_commit_containing(config_repo, rel, _needle(body))
+                    if tracked is not None else None)
+            items.append(Item(
+                id=f"claude-md:{name}", surface="claude-md", name=name, path=str(path),
+                bytes_always_loaded=len(body), tracked=_tracked_flag(tracked, rel),
+                added=when or added_date(path, rel, added or {}),
+                extra={"body": body, "line": line_no, "file": rel}))
+    if not items:
+        raise EmptySurface(f"claude-md: {cm} holds no ##/### headings")
+    return items
+
+
+def _needle(body: str) -> str:
+    """The shortest run of a section or paragraph that identifies it in a diff.
+
+    For a section that is its heading line; for a bold-led paragraph, the bold lead.
+    """
+    m = BOLD_LEAD_RE.match(body)
+    return m.group(0) if m else body.splitlines()[0].strip()
+
+
+def claude_md_file_bytes(config_repo: Path) -> int:
+    """Always-loaded weight of the claude-md surface, measured from the files themselves.
+
+    Summing the items would double-count: a `###` section's body is also inside its `##`
+    parent's, and neither covers the preamble above the first heading. The files are the truth.
+    """
+    total = 0
+    for rel in ("CLAUDE.md", "operating-constraints.md"):
+        path = config_repo / rel
+        if path.is_file():
+            total += len(path.read_text(errors="ignore"))
+    return total
 
 
 # ---------------------------------------------------------------- claude-home surfaces
@@ -567,6 +773,28 @@ def flag_auto_only(it: Item) -> None:
         it.flags.append("auto_only")
 
 
+def attach_triggers(it: Item, history: History, since: datetime, triggers: dict | None) -> None:
+    """Trigger-phrase hits from the prompt history.
+
+    A CLAUDE.md section is never typed by name, so its only usage evidence is how often Kyle
+    said something that should have fired it — and that list of phrases can only come from the
+    sidecar. No entry, or a `null` entry, means no phrase is a fair proxy for the rule, so the
+    counts stay None and render as unmeasured. Reporting 0 there would read as "never fired",
+    which is the one thing this script must never claim about a source it did not read.
+    """
+    if it.surface == "claude-md":
+        pats = (triggers or {}).get(it.name)
+    elif it.surface in ("skill", "command"):
+        pats = phrases_from_description(it.description)
+    else:
+        pats = None
+    if not pats:
+        return
+    it.trigger_all, it.trigger_90d, last = history.count_any(pats, since)
+    if last and (it.last_used is None or last > it.last_used):
+        it.last_used = last
+
+
 def temperature(it: Item, window_start: str) -> str:
     """`new` wins over every count; otherwise recent uses decide, then any evidence at all."""
     if it.added and it.added >= window_start:
@@ -587,13 +815,17 @@ def propose(it: Item) -> str | None:
     return PROPOSED_BY_TEMPERATURE.get(it.temperature)
 
 
-def compute_totals(items: list[Item], surfaces: tuple[str, ...]) -> dict:
+def compute_totals(items: list[Item], surfaces: tuple[str, ...],
+                   config_repo: Path | None = None) -> dict:
     """Always-loaded weight per enumerated surface. Surfaces not read are absent, not zero."""
     totals = {s: {"items": 0, "always_loaded_chars": 0} for s in SURFACE_ORDER if s in surfaces}
     for it in items:
         bucket = totals.setdefault(it.surface, {"items": 0, "always_loaded_chars": 0})
         bucket["items"] += 1
         bucket["always_loaded_chars"] += it.bytes_always_loaded
+    # Nested CLAUDE.md sections overlap, so their sum overstates the surface: measure the files.
+    if "claude-md" in totals and config_repo is not None:
+        totals["claude-md"]["always_loaded_chars"] = claude_md_file_bytes(config_repo)
     totals["ALL"] = {"items": sum(v["items"] for v in totals.values()),
                      "always_loaded_chars": sum(v["always_loaded_chars"] for v in totals.values())}
     return totals
@@ -613,9 +845,19 @@ def build_inventory(cfg: Config) -> Inventory:
     items: list[Item] = []
     if "skill" in cfg.surfaces:
         items += enumerate_skills(cfg.config_repo, tracked, added)
+        items += enumerate_untracked_skills(cfg.config_repo, tracked)
+    if "command" in cfg.surfaces:
+        items += enumerate_commands(cfg.config_repo, tracked, added)
+    if "agent" in cfg.surfaces:
+        items += enumerate_agents(cfg.config_repo, tracked, added)
+    if "output-style" in cfg.surfaces:
+        items += enumerate_output_styles(cfg.config_repo, tracked, added, cfg.claude_home)
+    if "claude-md" in cfg.surfaces:
+        items += enumerate_claude_md(cfg.config_repo, tracked, added)
 
     for it in items:
         attach_usage(it, history, transcripts, since)
+        attach_triggers(it, history, since, cfg.triggers)
         flag_auto_only(it)
         it.temperature = temperature(it, window_start)
         it.proposed = propose(it)
@@ -636,13 +878,27 @@ def build_inventory(cfg: Config) -> Inventory:
         "claude_home": str(cfg.claude_home),
         "caveat": LOCAL_CORPUS_CAVEAT,
     }
-    return Inventory(items=items, totals=compute_totals(items, cfg.surfaces), meta=meta)
+    return Inventory(items=items, totals=compute_totals(items, cfg.surfaces, cfg.config_repo),
+                     meta=meta)
 
 
 # ---------------------------------------------------------------- output
 
 def _fmt(n: int | None) -> str:
     return UNMEASURED if n is None else str(n)
+
+
+def _name_cell(name: str) -> str:
+    """A name as a code span inside a table cell.
+
+    CLAUDE.md heading names are arbitrary prose: an unescaped `|` would end the cell early and a
+    bare backtick would close the span mid-name, and the name has to survive verbatim because it
+    is the key Kyle rules by and the key the trigger sidecar is keyed on.
+    """
+    safe = name.replace("|", "\\|")
+    fence = "``" if "`" in safe else "`"
+    pad = " " if safe.startswith("`") or safe.endswith("`") else ""
+    return f"{fence}{pad}{safe}{pad}{fence}"
 
 
 def evidence_summary(it: Item, since_days: int) -> str:
@@ -686,7 +942,7 @@ def render_markdown(inv: Inventory) -> str:
         out += ["", f"## {s}", "", "| Item | Evidence | Flags | Temp | Proposed |",
                 "|---|---|---|---|---|"]
         for i in rows:
-            out.append(f"| `{i.name}` | {evidence_summary(i, m['since_days'])} | "
+            out.append(f"| {_name_cell(i.name)} | {evidence_summary(i, m['since_days'])} | "
                        f"{', '.join(i.flags) or UNMEASURED} | {i.temperature} | "
                        f"{i.proposed or UNMEASURED} |")
     return "\n".join(out) + "\n"

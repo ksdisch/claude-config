@@ -216,7 +216,8 @@ class RecordTests(FixtureCase):
         rc, payload, _ = self.run_json()
         self.assertEqual(rc, si.EXIT_OK)
         by = self.items_by_id(payload)
-        self.assertEqual(sorted(by), ["skill:alpha", "skill:beta", "skill:tdd"])
+        self.assertEqual(sorted(i for i in by if i.startswith("skill:")),
+                         ["skill:alpha", "skill:beta", "skill:tdd"])
         # The `>-` block scalar is joined with single spaces before it is measured.
         self.assertEqual(by["skill:beta"]["description"], BETA_DESC)
         self.assertEqual(by["skill:beta"]["bytes_always_loaded"], len(BETA_DESC))
@@ -240,12 +241,17 @@ class RecordTests(FixtureCase):
         rc, payload, _ = self.run_json()
         self.assertEqual(rc, si.EXIT_OK)
         alpha = self.items_by_id(payload)["skill:alpha"]
-        # No trigger source is read yet, so trigger counts stay unmeasured rather than 0.
-        self.assertIsNone(alpha["trigger_90d"])
-        self.assertIsNone(alpha["trigger_all"])
-        # The transcripts, by contrast, were read — so their counts are real ints.
+        beta = self.items_by_id(payload)["skill:beta"]
+        # beta's description quotes no phrase, so it has no trigger source at all: the counts
+        # stay unmeasured rather than collapsing to a 0 that would read as evidence of disuse.
+        self.assertIsNone(beta["trigger_90d"])
+        self.assertIsNone(beta["trigger_all"])
+        # alpha's description does quote phrases, and the transcripts were read — so both of
+        # its count families are real ints. A source that was read never reports None.
+        self.assertIsNotNone(alpha["trigger_90d"])
         self.assertEqual(payload["meta"]["transcripts_scanned"], 1)
         self.assertIsNotNone(alpha["tool_90d"])
+        self.assertIsNotNone(alpha["tool_all"])
 
 
 class TypedCountBoundaryTests(FixtureCase):
@@ -322,7 +328,7 @@ class OutputTests(FixtureCase):
         self.assertEqual(stdout, "")
         payload = json.loads(out_json.read_text())
         self.assertEqual(payload["meta"]["since_days"], si.WINDOW_DEFAULT_DAYS)
-        self.assertEqual(len(payload["items"]), 3)
+        self.assertEqual(sum(1 for i in payload["items"] if i["surface"] == "skill"), 3)
         md = out_md.read_text()
         self.assertIn("## Totals", md)
         self.assertIn("## skill", md)
@@ -393,12 +399,12 @@ class CliTests(FixtureCase):
         self.assertEqual(rc, si.EXIT_OK)
         payload = json.loads(out_json.read_text())
         self.assertEqual(payload["meta"]["config_repo"], str(self.cfg.config_repo))
-        self.assertEqual(len(payload["items"]), 3)
+        self.assertEqual(sum(1 for i in payload["items"] if i["surface"] == "skill"), 3)
 
 
 class ExitCodeTests(FixtureCase):
     def test_happy_path_exits_zero(self):
-        rc, _, err = self.run_cli("--md", str(self.root / "inv.md"))
+        rc, _, err = self.run_cli("--surface", "skill", "--md", str(self.root / "inv.md"))
         self.assertEqual(rc, 0)
         self.assertIn("OK 3 items", err)
 
