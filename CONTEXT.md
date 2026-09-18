@@ -41,3 +41,15 @@ _Avoid_: disable, archive, retire
 **Relocate**:
 Keeping an item's content but moving it out of the always-loaded surface so it loads on demand. Relocation is `/trim-context`'s verb, never `retire`'s.
 _Avoid_: trim, defer, retire
+
+**Temperature**:
+The evidence class the inventory assigns an item from usage, referrers, and age — `new`, `cold`, `cool`, `warm`, `hot`. A temperature proposes; it never decides.
+_Avoid_: score, grade, verdict
+
+**Verdict**:
+Kyle's ruling on one item — retire, keep, pause, merge-into, relocate — recorded so it is not re-proposed. Only a verdict changes the steering surface.
+_Avoid_: temperature, recommendation, proposal (for the ruling itself)
+
+**Ledger**:
+The dated record of every retirement and every keep-with-clause: why, the evidence at the time, and how to restore. The answer to "why is X gone".
+_Avoid_: changelog, archive, log
