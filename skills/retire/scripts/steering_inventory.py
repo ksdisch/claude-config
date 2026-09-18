@@ -221,7 +221,8 @@ class Item:
     last_used: str | None = None         # ISO date
     trigger_all: int | None = None       # None = no trigger list known (reported as —, never 0)
     trigger_90d: int | None = None
-    referrers: list[str] = field(default_factory=list)
+    referrers: list[str] = field(default_factory=list)   # steering files that route here
+    mentions: list[str] = field(default_factory=list)    # other tracked docs that describe it
     routes_to_missing: list[str] = field(default_factory=list)
     vendored_copies: list[str] = field(default_factory=list)
     duplicate_of: str | None = None
@@ -1009,9 +1010,355 @@ class Transcripts:
 
 # ---------------------------------------------------------------- cross-references
 #
-# Referrers (steering files that route to an item) versus mentions (every other tracked doc),
-# dangling routes, vendored copies in the fleet, plugin duplicates, ledger read-back. Not yet
-# built: until it is, `referrers` stays empty and only usage feeds temperature.
+# Who routes to an item (referrers), who merely talks about it (mentions), which of its own
+# routes point at something that is gone (dangling), which project repos carry a copy of it,
+# whether the ledger already records a keep ruling for it, and when it was last edited.
+#
+# Only referrers feed temperature. A doc that describes an item is prose to repair on the way
+# out; a steering file that routes to it is something that breaks, which is the whole reason
+# `cool` exists as a class distinct from `cold`.
+
+# The three docs that describe the steering surface rather than steer with it. Each already has
+# its own step in the apply order — the index row, the playbook card, the ledger line — so
+# counting them here would report the skill's own bookkeeping back as a reason not to retire.
+INDEX_DOC_REL = "docs/command-skill-reference.md"
+PLAYBOOK_REL = "docs/usage-playbook.md"
+LEDGER_REL = "docs/retired.md"
+BOOKKEEPING_DOCS = (INDEX_DOC_REL, PLAYBOOK_REL, LEDGER_REL)
+
+# Surfaces whose name is a position (`Stop[0][1]`) or a private path slug rather than something
+# a file could route to. Matching those as words would find nothing and leak the slug trying.
+UNNAMEABLE_SURFACES = ("hook", "memory")
+
+# Surfaces the fleet can carry a copy of: a project's `.claude/` mirrors skills, commands and
+# agents by file, and a project's own CLAUDE.md can carry a copy of a global section.
+VENDORABLE_SURFACES = ("skill", "command", "agent", "claude-md")
+
+# An item id is surface-qualified (`skill:reweave`). A route in prose is not — it is written
+# `/reweave` — so a ledger id has to shed its prefix before it can be matched against one.
+SURFACE_PREFIX_RE = re.compile(
+    r"^(?:" + "|".join(re.escape(s) for s in sorted(SURFACE_ORDER, key=len, reverse=True))
+    + r"):")
+
+# A ledger row opens with an ISO date in its first cell; every other table line does not.
+LEDGER_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}\b")
+LEDGER_KEPT_HEADING_RE = re.compile(r"^#{1,6}\s+Kept on purpose\s*$", re.I | re.M)
+
+
+def steering_files(config_repo: Path) -> list[Path]:
+    """Every file in the repo that can route a session somewhere: the steering corpus.
+
+    Skills (their reference files too, not just the SKILL.md — a route lives wherever it is
+    written), commands including the paused ones, agents, and the two always-loaded prose files.
+    """
+    files: list[Path] = []
+    skills = config_repo / "skills"
+    if skills.is_dir():
+        files += sorted(skills.rglob("*.md"))
+    for sub, pattern in (("commands", "*.md*"), ("agents", "*.md")):
+        d = config_repo / sub
+        if d.is_dir():
+            files += sorted(d.glob(pattern))
+    files += [config_repo / "CLAUDE.md", config_repo / "operating-constraints.md"]
+    return [p for p in files if p.is_file()]
+
+
+def build_corpus(config_repo: Path, claude_home: Path) -> dict[str, str]:
+    """Referrer corpus: path -> text, plus one entry per prompt-type hook.
+
+    A prompt hook is a steering file that happens to live in JSON: the Stop hook names CLAUDE.md
+    modes by title, and retiring one of them has to patch that prompt. Its key is the hook's own
+    id spelling (`settings.json:Stop[0][0]`) so a referrer found here names the row that carries
+    it — the prompt text itself never leaves this dict.
+    """
+    corpus = {str(p): p.read_text(errors="ignore") for p in steering_files(config_repo)}
+    settings_path = claude_home / "settings.json"
+    if not settings_path.is_file():
+        return corpus
+    try:
+        settings = load_json(settings_path)
+    except SourceMissing:
+        return corpus
+    for event, groups in sorted((settings.get("hooks") or {}).items()):
+        for gi, group in enumerate(groups or []):
+            group = group if isinstance(group, dict) else {}
+            for hi, hook in enumerate(group.get("hooks") or []):
+                hook = hook if isinstance(hook, dict) else {}
+                if hook.get("type") != "prompt":
+                    continue
+                prompt = hook.get("prompt")
+                corpus[f"settings.json:{event}[{gi}][{hi}]"] = (
+                    prompt if isinstance(prompt, str) else "")
+    return corpus
+
+
+def build_mention_corpus(config_repo: Path, tracked: set[str] | None,
+                         referrers: dict[str, str]) -> dict[str, str]:
+    """Mention corpus: every other tracked markdown file, minus the three bookkeeping docs.
+
+    A mention is prose that would describe something that no longer exists — a README, a design
+    record, a third-party note. It is a repair the apply step owes, never evidence of use, which
+    is why it is kept apart from the referrer corpus and never reaches temperature.
+
+    Tracked is the filter because an untracked markdown file is not something a PR can edit.
+    When the repo has no usable git nothing can be classified as tracked, so the corpus falls
+    back to the markdown actually on disk — a superset, measured from a source that was read,
+    and `meta.git_tracked` says which of the two happened.
+    """
+    excluded = set(referrers) | {str(config_repo / rel) for rel in BOOKKEEPING_DOCS}
+    if tracked is None:
+        paths = sorted(config_repo.rglob("*.md"))
+    else:
+        paths = sorted(config_repo / rel for rel in tracked if rel.endswith(".md"))
+    return {str(p): p.read_text(errors="ignore")
+            for p in paths if str(p) not in excluded and p.is_file()}
+
+
+def _display_name(it: Item) -> str:
+    """The name a file would route to. A plugin is written by its short name, never its key."""
+    if it.surface == "plugin":
+        return it.extra.get("short") or _plugin_short(it.name)
+    return it.name
+
+
+def _own_paths(it: Item, config_repo: Path) -> set[str]:
+    """The files that are the item itself — a skill describing itself is not a referrer."""
+    if it.surface == "skill":
+        return {str(q) for q in Path(it.path).parent.rglob("*.md")}
+    if it.surface == "claude-md":
+        return {str(config_repo / "CLAUDE.md"), str(config_repo / "operating-constraints.md")}
+    return {it.path}
+
+
+def _name_matches(it: Item, corpus: dict[str, str], config_repo: Path) -> list[str]:
+    """Corpus keys whose text carries the item's name as a whole word, its own files aside.
+
+    Word-boundary on both sides and hyphen-aware: `handoff-session` must not count as a hit for
+    `handoff`, and `alphabet` must not count for `alpha`.
+    """
+    rx = re.compile(r"(?<![\w-])" + re.escape(_display_name(it)) + r"(?![\w-])", re.I)
+    own = _own_paths(it, config_repo)
+    return sorted(k for k, text in corpus.items() if k not in own and rx.search(text))
+
+
+def attach_referrers(it: Item, corpus: dict[str, str], config_repo: Path) -> None:
+    """Steering files that route to this item. The only cross-reference that feeds temperature."""
+    if it.surface in UNNAMEABLE_SURFACES:
+        return
+    it.referrers = _name_matches(it, corpus, config_repo)
+
+
+def attach_mentions(it: Item, corpus: dict[str, str], config_repo: Path) -> None:
+    """Tracked docs that merely talk about this item: prose the apply step owes a repair."""
+    if it.surface in UNNAMEABLE_SURFACES:
+        return
+    it.mentions = _name_matches(it, corpus, config_repo)
+
+
+def strip_surface_prefix(item_id: str) -> str:
+    """`skill:zeta` -> `zeta`: the spelling a route in prose would actually use."""
+    return SURFACE_PREFIX_RE.sub("", item_id, count=1)
+
+
+def _ledger_table_ids(text: str) -> set[str]:
+    """Item ids from every date-led row of a ledger table."""
+    ids: set[str] = set()
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) >= 2 and LEDGER_DATE_RE.match(cells[0]):
+            item = re.sub(r"\s*\(.*\)$", "", cells[1].strip("`").strip())
+            if item:
+                ids.add(item)
+    return ids
+
+
+def ledger_ids(config_repo: Path) -> tuple[set[str], set[str]]:
+    """(retired ids, kept ids) from the ledger's two tables. No ledger yet means two empty sets.
+
+    An absent ledger is not a missing source: before the first retirement there is nothing to
+    read, and both answers are honestly empty rather than unknown.
+    """
+    path = config_repo / LEDGER_REL
+    if not path.is_file():
+        return set(), set()
+    text = path.read_text(errors="ignore")
+    m = LEDGER_KEPT_HEADING_RE.search(text)
+    retired_text, kept_text = (text[:m.start()], text[m.start():]) if m else (text, "")
+    return _ledger_table_ids(retired_text), _ledger_table_ids(kept_text)
+
+
+def paused_command_names(config_repo: Path) -> set[str]:
+    """Commands renamed to `.disabled`.
+
+    Read from the directory rather than from the enumerated rows, so a `--surface skill` run
+    still sees them: a dangling route is a fact about the referrer, not about the lane swept.
+    """
+    root = config_repo / "commands"
+    if not root.is_dir():
+        return set()
+    suffix = ".md.disabled"
+    return {f.name[: -len(suffix)] for f in root.iterdir()
+            if f.is_file() and f.name.endswith(suffix)}
+
+
+def missing_names(config_repo: Path) -> set[str]:
+    """Every name a route can dangle on: paused commands plus everything the ledger retired.
+
+    A paused command still has a file, so a route to it resolves to nothing a session can run;
+    a retired one has no file at all. Both are routes that need patching, and the ledger's ids
+    are surface-qualified, so they shed their prefix to match the way a route is written.
+    """
+    retired, _ = ledger_ids(config_repo)
+    names = paused_command_names(config_repo) | {strip_surface_prefix(i) for i in retired}
+    return {n for n in names if n}
+
+
+def kept_ids(config_repo: Path) -> set[str]:
+    """Surface-qualified ids Kyle already ruled `keep`, from the ledger's kept table."""
+    return ledger_ids(config_repo)[1]
+
+
+def attach_kept(it: Item, kept: set[str]) -> None:
+    """A recorded keep ruling is not re-litigated; the flag is what suppresses the row later."""
+    if it.id in kept and "kept" not in it.flags:
+        it.flags.append("kept")
+
+
+def _item_text(it: Item) -> str:
+    """The item's own text — where its outgoing routes are written."""
+    if it.surface == "claude-md":
+        return it.extra.get("body", "")
+    if it.surface == "hook":
+        return it.extra.get("command", "")
+    if it.surface in ("skill", "command", "agent", "output-style"):
+        try:
+            return Path(it.path).read_text(errors="ignore")
+        except OSError:
+            return ""
+    return ""
+
+
+def attach_dangling(it: Item, missing: set[str]) -> None:
+    """Routes this item writes that resolve to nothing runnable.
+
+    A route is strict: `/name` or `` `name` ``. Bare prose words are not routes — several of
+    these names are ordinary English (`learn`, `old`), and counting every sentence that happens
+    to use one would bury the handful of routes that genuinely need patching.
+    """
+    text = _item_text(it)
+    hits = sorted(n for n in missing
+                  if n != it.name and re.search(r"(?:/|`)" + re.escape(n) + r"(?![\w-])", text))
+    it.routes_to_missing = hits
+    if hits and "dangling" not in it.flags:
+        it.flags.append("dangling")
+
+
+def _claude_md_carries(repo: Path, name: str) -> bool:
+    """Whether a project's own CLAUDE.md carries a section (or constraints paragraph) by name.
+
+    A global rule copied into a project is a copy by heading, not by file, so the match is on
+    the same units the global surface is split into.
+    """
+    for rel in ("CLAUDE.md", ".claude/CLAUDE.md"):
+        path = repo / rel
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(errors="ignore")
+        except OSError:
+            continue
+        titles = {t for t, _, _ in split_sections(text)}
+        titles |= {t for t, _, _ in split_bold_paragraphs(text)}
+        if name in titles:
+            return True
+    return False
+
+
+def _is_the_config_repo(repo: Path, config_repo: Path | None) -> bool:
+    """Whether a directory under the projects root is the config repo itself, or a worktree of it.
+
+    The config repo is the source of every global item, not a downstream copy of one — counting
+    it would report the global CLAUDE.md back as evidence that the global CLAUDE.md is vendored
+    somewhere. Its worktrees are the same repo at another commit and say the same thing twice.
+    A worktree's `.git` is a file naming the main repo's git directory, which is how one is
+    recognised without shelling out.
+    """
+    if config_repo is None:
+        return False
+    try:
+        if repo.resolve() == config_repo.resolve():
+            return True
+        dot_git = repo / ".git"
+        if dot_git.is_file():
+            pointer = dot_git.read_text(errors="ignore").strip()
+            if pointer.startswith("gitdir:"):
+                target = Path(pointer.split(":", 1)[1].strip())
+                return str(target).startswith(str((config_repo / ".git").resolve()))
+    except OSError:
+        return False
+    return False
+
+
+def vendored_copies(projects_root: Path, it: Item, config_repo: Path | None = None) -> list[str]:
+    """Repo directory names under the projects root that carry a copy of this item.
+
+    Names, never paths: this repo is public and the report is committed to it. The fleet is
+    report-only — knowing the blast radius is the whole point, and no edit is ever made here.
+    """
+    if it.surface not in VENDORABLE_SURFACES or not projects_root.is_dir():
+        return []
+    hits: list[str] = []
+    for repo in sorted(projects_root.iterdir()):
+        if not repo.is_dir() or _is_the_config_repo(repo, config_repo):
+            continue
+        dot = repo / ".claude"
+        if it.surface == "skill":
+            found = (dot / "skills" / it.name / "SKILL.md").is_file()
+        elif it.surface == "command":
+            found = (dot / "commands" / f"{it.name}.md").is_file()
+        elif it.surface == "agent":
+            found = (dot / "agents" / f"{it.name}.md").is_file()
+        else:
+            found = _claude_md_carries(repo, it.name)
+        if found:
+            hits.append(repo.name)
+    return hits
+
+
+def git_last_edited(repo: Path, rel: str) -> str | None:
+    """ISO date of the last commit touching a path, or None when git cannot say."""
+    try:
+        out = subprocess.run(["git", "-C", str(repo), "log", "-1", "--format=%as", "--", rel],
+                             capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out or None
+
+
+def last_edited(config_repo: Path, it: Item) -> str | None:
+    """When the item's own files last changed: git for tracked items, mtime for everything else.
+
+    An untracked skill is invisible to git by construction, and mtime is the only date it has.
+    A skill is dated by its whole directory, because a rewrite of its reference file is an edit
+    to the skill even when SKILL.md never moved.
+    """
+    if it.surface not in ("skill", "command", "agent", "output-style"):
+        return None
+    path = Path(it.path)
+    target = path.parent if it.surface == "skill" else path
+    if it.tracked:
+        try:
+            rel = str(target.relative_to(config_repo))
+        except ValueError:
+            rel = None
+        if rel:
+            found = git_last_edited(config_repo, rel)
+            if found:
+                return found
+    return _mtime_date(target)
 
 
 # ---------------------------------------------------------------- assembly
@@ -1161,10 +1508,24 @@ def build_inventory(cfg: Config) -> Inventory:
     if "claude-md" in cfg.surfaces:
         items += enumerate_claude_md(cfg.config_repo, tracked, added)
 
+    # Cross-references are built from the repo rather than from the enumerated rows, so a
+    # `--surface` run still resolves a route to a command it did not list.
+    corpus = build_corpus(cfg.config_repo, cfg.claude_home)
+    mention_corpus = build_mention_corpus(cfg.config_repo, tracked, corpus)
+    missing = missing_names(cfg.config_repo)
+    kept = kept_ids(cfg.config_repo)
+
     for it in items:
         attach_usage(it, history, transcripts, since)
         attach_triggers(it, history, since, cfg.triggers)
         flag_auto_only(it)
+        attach_referrers(it, corpus, cfg.config_repo)
+        attach_mentions(it, mention_corpus, cfg.config_repo)
+        attach_dangling(it, missing)
+        attach_kept(it, kept)
+        it.vendored_copies = vendored_copies(cfg.projects_root, it, cfg.config_repo)
+        it.last_edited = last_edited(cfg.config_repo, it)
+        # Referrers are in place before this line by design: they are what makes `cool` real.
         it.temperature = temperature(it, window_start)
         it.proposed = propose(it)
 
@@ -1208,15 +1569,24 @@ def _name_cell(name: str) -> str:
 
 
 def evidence_summary(it: Item, since_days: int) -> str:
+    """One cell of counts, dates and names. Never a path, and never a count nobody measured.
+
+    Referrers and mentions are reported as counts: which files they are is a fact about the
+    apply step, lives in the local JSON, and would put private paths in a public report.
+    Vendored copies are named, because repo basenames are what a later fleet prune needs and
+    are the one downstream detail the redaction rules allow.
+    """
     parts = [f"typed {it.slash_90d}/{since_days}d · {it.slash_all} all",
              f"auto {_fmt(it.tool_90d)}/{_fmt(it.tool_all)}",
              f"trig {_fmt(it.trigger_90d)}/{_fmt(it.trigger_all)}",
              f"last {it.last_used or UNMEASURED}",
              f"added {it.added or UNMEASURED}",
+             f"edited {it.last_edited or UNMEASURED}",
              f"refs {len(it.referrers)}",
+             f"mentions {len(it.mentions)}",
              f"{it.bytes_always_loaded:,} chars"]
     if it.vendored_copies:
-        parts.append(f"vendored ×{len(it.vendored_copies)}")
+        parts.append("vendored in " + ", ".join(it.vendored_copies))
     if it.duplicate_of:
         parts.append(f"dup of `{it.duplicate_of}`")
     if it.routes_to_missing:

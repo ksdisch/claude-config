@@ -53,7 +53,7 @@ blocked by the safety net.
 
 ## State of the script (update this as tickets land)
 
-Landed on `feat/retire-skill`: tickets 01, 02, 03, 04. Suite is **118 tests**, green.
+Landed on `feat/retire-skill`: tickets 01, 02, 03, 04, 05. Suite is **155 tests**, green.
 
 - `# ---- tunables` at the top owns every threshold. Add new ones there.
 - `ENUMERATED_SURFACES` gates `--surface` so an unbuilt lane errors instead of reporting
@@ -85,6 +85,28 @@ Landed on `feat/retire-skill`: tickets 01, 02, 03, 04. Suite is **118 tests**, g
   backticks or pipes that would otherwise break the table you rule from. Use it.
 - The trigger sidecar carries a `"_comment"` key documenting the null convention. Any code
   iterating sidecar keys must skip keys beginning with `_`.
+- **Referrers vs. mentions (ticket 05).** Two corpora, built once per run in `build_inventory`
+  from the *repo*, not from the enumerated rows — so a `--surface skill` run still resolves a
+  route to a command it never listed. `build_corpus` is the steering corpus (skills incl. their
+  reference files, commands incl. `.disabled`, agents, `CLAUDE.md`, the constraints file, and
+  one entry per **prompt**-type hook keyed `settings.json:<Event>[g][i]`); `build_mention_corpus`
+  is every other *tracked* `.md`. `BOOKKEEPING_DOCS` (index, playbook, ledger) are in neither.
+  **Only `referrers` feeds temperature.** Both render as counts — the paths stay in the JSON.
+- Word-boundary matching is blunt on purpose and it shows: a plugin short name like `off` hits
+  the phrase "hands off". Expect a few false referrers on short, English-word names; the pilot
+  reads the row, not the count alone.
+- `missing_names()` = paused command filenames + ledger retirement ids with the surface prefix
+  stripped (`skill:zeta` → `zeta`). A route is strict `/name` or `` `name` `` — bare prose words
+  are not routes. Live: **five** files route to the paused `autonomous-milestone`, one to `learn`.
+- `vendored_copies()` skips the config repo **and its git worktrees** (`.git` as a file pointing
+  into `<config repo>/.git`). Several live worktrees sit under `~/Projects`; without that skip
+  every global `CLAUDE.md` section reported itself as vendored four times over.
+- `last_edited` covers the four config-repo file surfaces only (skill/command/agent/output-style):
+  git for tracked, mtime otherwise, and a skill is dated by its **directory**. A plugin, an MCP
+  server, a hook and a `claude-md` section have no edit date of their own and report `None`.
+- `kept` is a flag read back from the ledger's `## Kept on purpose` table by **surface-qualified**
+  id, so `skill:beta` and `command:beta` never collide. `docs/retired.md` does not exist yet
+  (ticket 07 creates it); an absent ledger reads as two empty tables, never a missing source.
 
 **Expect to amend ticket 01's tests.** Each surface that lands makes some earlier
 assertion about a not-yet-measured state false by construction. Amend those in place and
@@ -99,6 +121,19 @@ this is not an unread source reported as zero — but the evidence column reads
 `typed 0/90d · 0 all` for something that can never be typed, which invites a wrong reading of
 the very table Kyle rules from. Fixing it touches every landed surface's evidence column, so
 it belongs with the precedence/redaction pass. Do not paper over it elsewhere.
+
+Two more the live run surfaced, same owner, same reason — all three are one presentation pass:
+
+- **A `cold` that rests on an unmeasured trigger source.** `temperature()` folds `trigger_all`
+  through `(it.trigger_all or 0)`, so a constraints paragraph with no sidecar entry and no
+  referrer lands on `cold` — a *measured* claim of disuse built on a source that was never
+  read. Live, that is three of the four `cold` rows (`Track multi-step work`,
+  `Unattended runs only`, `Clarifying questions and option formatting`). The same `or 0` sits
+  in `invocations_*`. Ticket 05 left it alone deliberately: changing it moves rows in the
+  precedence table, which is ticket 06's.
+- **An oversized evidence cell.** `claude-md:Project Wiki` is vendored in 23 repos and its row
+  now runs past 300 characters. The names are the right content (the ledger and a later fleet
+  prune need them); the row is the wrong place to spend them past a handful.
 
 ## Gates
 

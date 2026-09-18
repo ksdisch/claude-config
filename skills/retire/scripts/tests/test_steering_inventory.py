@@ -165,7 +165,10 @@ def make_fixture(root: Path) -> "si.Config":
     write(root / "claude.json",
           json.dumps({"mcpServers": {"todoist": {"command": "npx"},
                                      "docker": {"command": "docker"}}}))
-    (projects / "repoA/.claude/skills/alpha").mkdir(parents=True)
+    # The fleet: two repos carrying a vendored copy. A skill copy is a directory with a
+    # SKILL.md in it — a bare directory steers nothing, so it is not a copy (ticket 05).
+    write(projects / "repoA/.claude/skills/alpha/SKILL.md",
+          f"---\nname: alpha\ndescription: {ALPHA_DESC}\n---\n")
     write(projects / "repoB/.claude/commands/gamma.md", "vendored\n")
     write(root / "triggers.json",
           json.dumps({"Improvement Mode": ["improvement mode"], "Git Workflow": None}))

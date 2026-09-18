@@ -200,7 +200,11 @@ class TriggerSidecarTests(FixtureCase):
         imp = self.items_by_id(payload)["claude-md:Improvement Mode"]
         # The sidecar named a phrase and the history was read: 0 here is evidence, not absence.
         self.assertEqual((imp["trigger_90d"], imp["trigger_all"]), (0, 0))
-        self.assertEqual(imp["temperature"], "cold")
+        # Never triggered, but the Stop prompt hook still routes to it by title — so it is
+        # `cool`, not `cold`: something breaks if it goes. (Amended by ticket 05; before
+        # referrers landed nothing could route to a section and this read `cold`.)
+        self.assertEqual(imp["referrers"], ["settings.json:Stop[0][0]"])
+        self.assertEqual(imp["temperature"], "cool")
 
     def test_null_and_absent_sidecar_entries_stay_unmeasured(self):
         rc, payload, _ = self.run_json("--surface", "claude-md")
