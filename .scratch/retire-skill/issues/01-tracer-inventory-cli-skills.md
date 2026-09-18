@@ -4,18 +4,20 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `python3 -m unittest discover` from the script's tests directory is green; each test builds a resolved temporary fixture and asserts on JSON, markdown, or exit code only
-- [ ] A fixture with three skills, one using a `>-` description, yields three records whose `bytes_always_loaded` equals the joined description length
-- [ ] Typed 6 times in the window → `hot`; 2 → `warm`; 0 in window but typed once ever → `cool`; never typed, no referrers → `cold`; first commit inside the window → `new` regardless of counts
-- [ ] Typed counts match only history rows whose display begins with the slash form followed by a non-name character (`/handoff` never counts for `/hand`)
-- [ ] `--json` writes full records, `--md` writes the markdown table, neither writes markdown to stdout; `--since`, `--claude-home`, `--config-repo`, `--projects-root`, `--claude-json`, `--triggers`, `--no-cache`, `--surface` all exist
-- [ ] `--surface skill` restricts output; an unknown surface exits non-zero and lists the valid names
-- [ ] Missing or empty history exits 2 naming the source; a skills directory with no skill files exits 3; the happy path exits 0; a zero is only ever reported after the source was read
-- [ ] Window default, temperature thresholds, and the `auto_only` threshold are named constants in one place
-- [ ] Config repo defaults to the resolved target of the skills symlink under the claude home
-- [ ] Run on the live setup, the markdown lists every tracked skill and the `/handoff` typed count agrees with the design's evidence snapshot (79 all-time)
+- [x] `python3 -m unittest discover` from the script's tests directory is green; each test builds a resolved temporary fixture and asserts on JSON, markdown, or exit code only
+- [x] A fixture with three skills, one using a `>-` description, yields three records whose `bytes_always_loaded` equals the joined description length
+- [x] Typed 6 times in the window → `hot`; 2 → `warm`; 0 in window but typed once ever → `cool`; never typed, no referrers → `cold`; first commit inside the window → `new` regardless of counts
+- [x] Typed counts match only history rows whose display begins with the slash form followed by a non-name character (`/handoff` never counts for `/hand`)
+- [x] `--json` writes full records, `--md` writes the markdown table, neither writes markdown to stdout; `--since`, `--claude-home`, `--config-repo`, `--projects-root`, `--claude-json`, `--triggers`, `--no-cache`, `--surface` all exist
+- [x] `--surface skill` restricts output; an unknown surface exits non-zero and lists the valid names
+- [x] Missing or empty history exits 2 naming the source; a skills directory with no skill files exits 3; the happy path exits 0; a zero is only ever reported after the source was read
+- [x] Window default, temperature thresholds, and the `auto_only` threshold are named constants in one place
+- [x] Config repo defaults to the resolved target of the skills symlink under the claude home
+- [x] Run on the live setup, the markdown lists every tracked skill and the `/handoff` typed count agrees with the design's evidence snapshot (79 all-time)
 
 ## Comments
+
+- 2026-09-18 — merged to `feat/retire-skill` as `175bab9`. 22 fixture-driven tests green; live run lists all 38 tracked skills and `/handoff` typed all-time is 79, matching the design's evidence snapshot. Script laid out with all ten section banners; `claude-home surfaces`, `transcripts`, and `cross-references` left as named stubs for tickets 02-04.
 

@@ -39,6 +39,18 @@ session immediately. Consequences:
   trailing ` # comment` on a gitignore line is **part of the pattern** — keep comments on their
   own line.
 
+## Your worktree may not start where you expect
+
+A dispatched worktree can be created from an older `main` commit rather than from
+`feat/retire-skill`. **Before doing anything else**, run:
+
+```
+git merge --ff-only feat/retire-skill
+```
+
+If that is not a fast-forward, stop and report — do not try to force it. `git reset --hard` is
+blocked by the safety net.
+
 ## Gates
 
 - **doc-sync is a pre-push Gate.** `scripts/check-doc-sync.py` checks *the commits being pushed*,

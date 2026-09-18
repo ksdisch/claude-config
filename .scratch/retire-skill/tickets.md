@@ -4,7 +4,7 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 
 | # | Title | Summary | Status | Blocked by |
 |---|---|---|---|---|
-| [01](issues/01-tracer-inventory-cli-skills.md) | Tracer: the inventory CLI over a fixture, tracked skills only | Script runs end to end on a fixture: tracked skills, typed usage, new/temperature, outputs, exit codes, tests | ready-for-agent | None (can start immediately) |
+| [01](issues/01-tracer-inventory-cli-skills.md) | Tracer: the inventory CLI over a fixture, tracked skills only | Script runs end to end on a fixture: tracked skills, typed usage, new/temperature, outputs, exit codes, tests | done | None (can start immediately) |
 | [02](issues/02-session-chosen-usage-transcripts-cache.md) | Session-chosen usage from transcripts, with the per-file cache | Skill rows gain auto counts from Skill tool calls, the typed/auto split, auto_only, and a size+mtime cache | ready-for-agent | 01 |
 | [03](issues/03-config-repo-surfaces.md) | The rest of the config repo: CLAUDE.md sections, constraints paragraphs, commands, agents, output styles, untracked skills | Every config-repo surface enumerated with bytes, added dates, paused/unlinked flags, and trigger hits from the sidecar | ready-for-agent | 01 |
 | [04](issues/04-claude-home-surfaces.md) | The Claude home: plugins, MCP servers, hooks, memory dirs | Plugins with duplicate detection, MCP from config ∪ transcripts, hooks, memory dirs, agent dispatches counted | ready-for-agent | 02, 03 |
