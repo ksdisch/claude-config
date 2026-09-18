@@ -1,6 +1,6 @@
 # The Coliseum: commands earn their keep on lived-invocation evidence
 
-**Status:** Idea — not committed. Added by `/brainstorm` (`moonshot` mode) on 2026-06-18.
+**Status:** **Built 2026-09-18** as [`retire`](../../skills/retire/SKILL.md) — evidence read from the transcript corpus directly, without this doc's Stop-hook tracer. Spec: [`2026-09-17-retire-skill-design.md`](../superpowers/specs/2026-09-17-retire-skill-design.md). Added by `/brainstorm` (`moonshot` mode) on 2026-06-18.
 **Lens:** futurist · **Fit:** stretch · **Boldness:** audacious
 
 ## Premise
