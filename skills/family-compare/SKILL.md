@@ -50,18 +50,18 @@ Resolve each bare name, in order, against:
 
 A `plugin:name` form targets the plugin copy directly. A name that resolves to more than one file is reported with every path — twins are a finding, not a nuisance — and the loose copy is the invocation target unless Kyle says otherwise. A name that resolves to nothing stops and asks.
 
-**Reads are read-only everywhere.** In another checkout, run no git command, change no branch, write nothing.
+**Reads are read-only everywhere.** In another checkout, run only the read-only git queries Phase 1 needs (`git ls-files`, `git check-ignore -v`, `git log`) — change no branch, stage nothing, write nothing.
 
 ## Phase 1 — Inventory (read-only)
 
-Read every item and every neighbor **in full**, then collect per item:
+Read every **item** in full now. Neighbors are read in full too, but only once Gate 1 settles which they are — that read happens between Gate 1 and Phase 3, and the same no-claim-without-a-read rule binds it. Then collect per item:
 
 | Evidence | How |
 |---|---|
 | bytes | `wc -c` |
-| frontmatter flags | `disable-model-invocation`, `allowed-tools`, `argument-hint`, pinned `model` / `effort` (agents) |
+| frontmatter flags | `disable-model-invocation`, `allowed-tools`, `argument-hint`, pinned `model` / `effort` (agents); any sidecar beside the file (`agents/openai.yaml` and the like) that restates a flag |
 | tracked status | `git ls-files` / `git check-ignore -v` in the item's own repo; the `.gitignore` line when ignored |
-| index presence | row in `docs/command-skill-reference.md`, card in `docs/usage-playbook.md` |
+| index presence | row in `docs/command-skill-reference.md`, card in `docs/usage-playbook.md` — or **not eligible**, which is the honest answer for an item the index rule never covered (a vendored or gitignored copy), and a different fact from a missing row |
 | twins | the other files the name resolved to; `diff` each pair; note the plugin version |
 | roster visibility | whether the item appears in this session's own skill listing — the observable form of `disable-model-invocation` |
 | typed usage | `~/.claude/history.jsonl`: count of `display` values starting with `/<name>`, first and last date, distinct projects; the `/<plugin>:<name>` form counted separately |
@@ -73,7 +73,7 @@ Read every item and every neighbor **in full**, then collect per item:
 
 Two channels can ship the same skill — a loose copy in `~/.claude/skills` firing as `/<name>`, a plugin copy firing as `/<plugin>:<name>` and appearing in the roster a second time when model-invocable. Byte-identical today does not mean identical after the next reinstall; say which it is and at what version you read it.
 
-If `skills/retire/scripts/steering_inventory.py` is present, prefer it for typed *and* session-chosen usage and cite its temperature. Otherwise the history grep stands and the doc states that usage counts are typed-only.
+If `skills/retire/scripts/steering_inventory.py` is present **in the repo this session is running in** — a copy on another checkout's unmerged branch does not count, and is never run — prefer it for typed *and* session-chosen usage and cite its temperature. Otherwise the history grep stands and the doc states that usage counts are typed-only.
 
 Confirm each asserted fact from the prose at the cheapest possible cost — a `wc`, a `diff`, a `grep`. A confirmed fact is then used as given.
 
