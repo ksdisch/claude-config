@@ -51,6 +51,32 @@ git merge --ff-only feat/retire-skill
 If that is not a fast-forward, stop and report — do not try to force it. `git reset --hard` is
 blocked by the safety net.
 
+## State of the script (update this as tickets land)
+
+Landed on `feat/retire-skill`: tickets 01, 02, 03. Suite is **77 tests**, green.
+
+- `# ---- tunables` at the top owns every threshold. Add new ones there.
+- `ENUMERATED_SURFACES` gates `--surface` so an unbuilt lane errors instead of reporting
+  empty. Extend it as you land a surface. Currently: skill, command, agent, output-style,
+  claude-md.
+- **Unmeasured is `None`, never 0.** This is the invariant the whole Instrument rests on
+  (spec story 15). `trigger_*` is `None` for an item with no trigger source; `tool_*` is
+  `None` only if transcripts could not be read. Never collapse an unread source to 0.
+- The transcript reader already collects **all three** call kinds in one pass —
+  skill, agent (`input.subagent_type`), and `mcp__<server>__`. Ticket 04 consumes the
+  agent and MCP tallies; it does not need to re-read transcripts.
+- `compute_totals` takes `config_repo` because CLAUDE.md byte totals are measured from the
+  files, not summed across records (a `###` body is already inside its `##` parent's).
+- `_name_cell()` in `# ---- output` renders item names safely — some headings contain
+  backticks or pipes that would otherwise break the table you rule from. Use it.
+- The trigger sidecar carries a `"_comment"` key documenting the null convention. Any code
+  iterating sidecar keys must skip keys beginning with `_`.
+
+**Expect to amend ticket 01's tests.** Each surface that lands makes some earlier
+assertion about a not-yet-measured state false by construction. Amend those in place and
+say so in your report — do not work around them, and do not weaken an assertion to pass.
+Put your *new* tests in your own file so parallel tickets don't collide.
+
 ## Gates
 
 - **doc-sync is a pre-push Gate.** `scripts/check-doc-sync.py` checks *the commits being pushed*,
