@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "Trigger phrases per CLAUDE.md section, keyed by the heading EXACTLY as it appears in the",
+    "file (arrow, backticks and parenthetical date included). Values are regexes matched",
+    "case-insensitively against prompts Kyle typed.",
+    "A null value means no phrase is a fair proxy for the rule: it fires on every session,",
+    "silently, so counting phrases would libel it. Null and absent both report as unmeasured",
+    "(an em dash), never as 0 — only a section with a real phrase list can be said to have",
+    "never fired. Re-check the keys against `grep -n -E '^#{2,3} ' CLAUDE.md` when a heading",
+    "is renamed; a stale key measures nothing and its section silently goes unmeasured."
+  ],
+  "Kickoff Mode → run the `/kickoff` skill": ["kickoff mode", "new project idea", "^\\s*/kickoff"],
+  "Improvement Mode": ["improvement mode"],
+  "New Feature Mode": ["new feature mode", "feature mode"],
+  "Git Workflow": null,
+  "Clarifying questions and option formatting": null,
+  "Never show me a bare identifier (added 2026-08-13)": ["bare identifier", "\\bgloss"],
+  "Planner/Builder Protocol (added 2026-07-27)": ["run-config", "--effort", "planner/builder"],
+  "Reference Doc Maintenance": ["reference doc", "playbook card", "check-doc-sync"],
+  "When to update": null,
+  "Format rules": null,
+  "Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)": ["/to-tickets", "tickets\\.md", "/implement-spec", "/wayfinder"],
+  "Project Wiki": ["/wiki-init", "/wiki-backfill", "project-wiki", "handoff\\.md"]
+}

@@ -607,6 +607,29 @@ rows get re-pointed to match.
   [`/launch`](#launch) (opens seats in Milestone 2),
   [`ship-and-route`](#ship-and-route) (lands the feature branch on main afterwards).
 
+#### `retire`
+
+- **Run config:** Fable 5.1 · `xhigh` — ruling on what still steers you is convention-setting
+  judgment with real tradeoffs; the counting underneath is a deterministic script that needs no
+  model at all.
+- **Reach for it when:**
+  - Sessions start heavy, or an old convention keeps steering new work and you want it *gone*,
+    not relocated.
+  - You're removing one thing and want the bookkeeping done for you — row, card, referrers,
+    ignore block, ledger: `/retire <item>`.
+  - Quarterly, or before a big config change: `/retire --report` for a read-only look at what
+    went cold. `--surface claude-md` makes "audit my CLAUDE.md" a one-liner.
+- **Pairs well with:** [`/trim-context`](#trim-context) (where every `relocate` verdict goes —
+  retire deletes, trim-context relocates),
+  [`adversarial-review`](#adversarial-review) (the gate each apply pass proposes),
+  [`/claudify-repo`](#claudify-repo) (vendored copies are reported, never pruned).
+- **Notes:** nothing is removed before you ratify its row, and unanswered rows are not applied —
+  silence is never consent. Tracked items go through branch + PR; `settings.json`, `~/.claude.json`
+  and plugin toggles change only after a per-file confirmation showing the exact edit list, with a
+  backup first. Never touches a project repo. The inventory script exits non-zero rather than
+  report a zero it didn't measure, so a broken read can't produce a false clean. Restore pointers
+  live in [`retired.md`](retired.md).
+
 ### Quality & Debugging
 
 #### `gauntlet`

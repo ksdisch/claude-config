@@ -23,3 +23,33 @@ _Avoid_: enabling, turning on
 **Demotion**:
 The kill rule for a noisy Gate: zero actionable signal plus one or more false blocks in its first month costs it the veto — it becomes an Instrument. Demoted, never tuned.
 _Avoid_: disabling, tuning
+
+## Steering lifecycle
+
+**Steering surface**:
+Everything a session loads before the first prompt that shapes how it interprets asks, routes to skills, plans, or builds — `CLAUDE.md` sections, skill and command descriptions, agents, plugins, MCP servers, hooks. Two costs ride on it: behavioral steering and token weight.
+_Avoid_: memory (for anything but `CLAUDE.md` and auto-memory), config, context
+
+**Retire**:
+Removing an item from the steering surface for good, with a ledger line recording why and how to restore it. Git history or a backup is the archive; nothing stays on disk as a stub.
+_Avoid_: delete, disable, prune, cleanse
+
+**Pause**:
+Keeping an item on disk but out of the steering surface because it is likely coming back. A paused item is not retired and gets no ledger line.
+_Avoid_: disable, archive, retire
+
+**Relocate**:
+Keeping an item's content but moving it out of the always-loaded surface so it loads on demand. Relocation is `/trim-context`'s verb, never `retire`'s.
+_Avoid_: trim, defer, retire
+
+**Temperature**:
+The evidence class the inventory assigns an item from usage, referrers, and age — `new`, `cold`, `cool`, `warm`, `hot`. A temperature proposes; it never decides.
+_Avoid_: score, grade, verdict
+
+**Verdict**:
+Kyle's ruling on one item — retire, keep, pause, merge-into, relocate — recorded so it is not re-proposed. Only a verdict changes the steering surface.
+_Avoid_: temperature, recommendation, proposal (for the ruling itself)
+
+**Ledger**:
+The dated record of every retirement and every keep-with-clause: why, the evidence at the time, and how to restore. The answer to "why is X gone".
+_Avoid_: changelog, archive, log
