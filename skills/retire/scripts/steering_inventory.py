@@ -33,6 +33,9 @@ WARM_MIN_USES = 1               # uses inside the window at or above this -> war
 AUTO_ONLY_MIN_AUTO = 5          # 0 typed and at least this many session-chosen -> auto_only
 TRIGGER_PHRASE_MIN_CHARS = 8    # a shorter double-quoted run is a word, not a trigger phrase
 TRIGGER_PHRASE_MAX_CHARS = 80   # a longer one is a quoted sentence nobody types verbatim
+OVERSIZED_MIN_SIZED_ITEMS = 10  # below this a "top decile" is one item picked out of a handful
+OVERSIZED_TOP_DECILE = 0.9      # rank at or above this fraction of its surface -> oversized
+EVIDENCE_NAMES_MAX = 3          # names listed in one evidence cell before "+N more"
 
 EXIT_OK = 0
 EXIT_SOURCE_MISSING = 2
@@ -62,16 +65,21 @@ COUNT_ONLY_SURFACES = ("memory",)
 # Coldest first: the rows that need a ruling come before the rows that earned their place.
 TEMP_ORDER = {"cold": 0, "cool": 1, "new": 2, "warm": 3, "hot": 4, "unknown": 5}
 
-# Minimal precedence: temperature alone decides. The full table (flags, collapse, oversized)
-# replaces this mapping; keep the single source of truth here when it does.
-PROPOSED_BY_TEMPERATURE = {
-    "cold": "retire",
-    "cool": "ask",
-    "warm": None,               # None = omitted from the ratification table, kept silently
-    "hot": None,
-    "new": None,
-    "unknown": None,
-}
+# Surfaces with a spelling Kyle could type at a prompt. Nothing else can ever appear in the
+# prompt history, so its typed counts stay unmeasured: an agent that reads `typed 0/90d · 0 all`
+# invites the reading "Kyle never typed it" for something he could not have typed.
+TYPED_SURFACES = ("skill", "command")
+
+# The flags the precedence table reads. `auto_only` is deliberately absent: the spec calls it
+# informational and says in so many words that it changes no proposal, so a `new` item that
+# sessions keep choosing is still `new` alone. The flags later tickets added beyond the spec's
+# list (`disabled`, `connector_only`, `denied`) are informational for the same reason — each
+# describes how an item is reached, not whether it has earned its place.
+PROPOSAL_FLAGS = ("kept", "duplicate", "disabled_comment", "empty", "paused", "unlinked",
+                  "dangling", "oversized")
+
+# Verdicts, sorted the way the proposals table shows them: the removals Kyle rules on first.
+VERDICT_ORDER = {"retire": 0, "ask": 1, "relocate": 2}
 
 LOCAL_CORPUS_CAVEAT = ("Usage evidence is this machine's local corpus only — every count is a "
                        "floor, never a ceiling.")
@@ -214,8 +222,8 @@ class Item:
     tracked: bool | None = None          # None = repo has no usable git
     paused: bool = False                 # commands/<x>.md.disabled
     description: str = ""
-    slash_all: int = 0                   # typed by Kyle, all time
-    slash_90d: int = 0                   # typed by Kyle, inside the window
+    slash_all: int | None = None         # typed by Kyle, all time (None = no typed spelling)
+    slash_90d: int | None = None         # typed by Kyle, inside the window
     tool_all: int | None = None          # session-chosen (Skill / Agent / mcp__), all time
     tool_90d: int | None = None
     last_used: str | None = None         # ISO date
@@ -230,16 +238,19 @@ class Item:
     last_edited: str | None = None
     flags: list[str] = field(default_factory=list)
     temperature: str = "unknown"
-    proposed: str | None = None          # None = omitted from the ratification table
+    proposed: str | None = None          # None = omitted from the proposals table
+    precedence: str | None = None        # key of the precedence row that decided both of those
+    shown: bool = False                  # whether the proposals table carries a row of its own
+    collapsed_into: str | None = None    # key of the collapsed row standing in for it
     extra: dict = field(default_factory=dict)
 
     @property
     def invocations_all(self) -> int:
-        return self.slash_all + (self.tool_all or 0)
+        return (self.slash_all or 0) + (self.tool_all or 0)
 
     @property
     def invocations_90d(self) -> int:
-        return self.slash_90d + (self.tool_90d or 0)
+        return (self.slash_90d or 0) + (self.tool_90d or 0)
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -266,6 +277,76 @@ class Inventory:
     items: list
     totals: dict
     meta: dict
+    collapsed: list = field(default_factory=list)   # one entry per collapsed class
+    omitted: list = field(default_factory=list)     # one entry per suppressed precedence row
+
+
+# ---------------------------------------------------------------- the precedence table
+#
+# Spec, Implementation Decisions: "Precedence table, top wins". The first row whose `test`
+# holds decides both the proposed verdict and whether the item gets a row of its own, so the
+# order of this tuple *is* the rule. Nothing else in the script decides a proposal.
+
+
+@dataclass(frozen=True)
+class PrecedenceRow:
+    key: str                # stable label; names the class in the omitted summary and the JSON
+    title: str              # what the row means, for a reader of the report
+    proposed: str | None    # the verdict, or None for "kept silently"
+    shown: bool             # whether the proposals table carries a row per item
+    collapse: str | None    # None, "plugin" (one row per canonical plugin) or "class"
+    test: object            # (item, window_start) -> bool
+
+
+def _has_proposal_flag(it: "Item") -> bool:
+    return any(f in PROPOSAL_FLAGS for f in it.flags)
+
+
+def _paused_a_full_window(it: "Item", window_start: str) -> bool:
+    """Whether a paused item has been paused for a window or more.
+
+    A pause is dated by the last commit touching the paused file, or its mtime when untracked —
+    `last_edited`, the one date the pause leaves behind. With no date at all the claim "this has
+    been paused long enough to ask about" is one nothing measured, so it is not made.
+    """
+    return it.last_edited is not None and it.last_edited < window_start
+
+
+PRECEDENCE_TABLE = (
+    PrecedenceRow("kept", "ruled keep on purpose, recorded in the ledger", None, False, None,
+                  lambda it, w: "kept" in it.flags),
+    PrecedenceRow("duplicate", "a loose copy of a skill an enabled plugin already ships",
+                  "retire", True, "plugin", lambda it, w: "duplicate" in it.flags),
+    PrecedenceRow("mechanical", "comment-only hook entries and empty auto-memory directories",
+                  "retire", True, "class",
+                  lambda it, w: "disabled_comment" in it.flags or "empty" in it.flags),
+    PrecedenceRow("paused-recent", "paused less than a window ago", None, False, None,
+                  lambda it, w: "paused" in it.flags and not _paused_a_full_window(it, w)),
+    PrecedenceRow("paused-long", "paused a full window or more, or in the repo but never loaded",
+                  "ask", True, None,
+                  lambda it, w: "paused" in it.flags or "unlinked" in it.flags),
+    PrecedenceRow("new-flagged", "added inside the window and carrying a flag", "ask", True, None,
+                  lambda it, w: it.temperature == "new" and _has_proposal_flag(it)),
+    PrecedenceRow("new", "added inside the window, nothing else against it", None, False, None,
+                  lambda it, w: it.temperature == "new"),
+    PrecedenceRow("heavy", "earning its place but heavy enough to load on demand instead",
+                  "relocate", True, None,
+                  lambda it, w: it.temperature in ("hot", "warm") and "oversized" in it.flags),
+    PrecedenceRow("hot-warm", "used inside the window", None, False, None,
+                  lambda it, w: it.temperature in ("hot", "warm")),
+    PrecedenceRow("cool", "unused in the window, but used or referenced before", "ask", True,
+                  None, lambda it, w: it.temperature == "cool"),
+    PrecedenceRow("cold", "no use in the window, nothing all-time, nothing routes to it",
+                  "retire", True, None, lambda it, w: it.temperature == "cold"),
+    # The floor. An item reaches it only when no source could score it — a live hook entry, a
+    # memory directory holding files, a CLAUDE.md section with no trigger phrases in the sidecar.
+    # `cold` would be a measured claim of disuse, and nothing here was measured, so the row is
+    # counted and named rather than proposed on.
+    PrecedenceRow("unmeasured", "no source could score it; nothing here is evidence of disuse",
+                  None, False, None, lambda it, w: True),
+)
+
+PRECEDENCE_BY_KEY = {row.key: row for row in PRECEDENCE_TABLE}
 
 
 # ---------------------------------------------------------------- config-repo surfaces
@@ -1371,11 +1452,12 @@ def note_last_used(it: Item, *dates: str | None) -> None:
 def attach_usage(it: Item, history: History, transcripts: Transcripts, since: datetime) -> None:
     """Typed counts from the prompt history, session-chosen counts from the transcripts.
 
-    Only skills and commands have a typed spelling; an agent, an MCP server and a plugin are
-    reached by a session on its own, so the transcripts are their whole evidence. A surface with
-    no source at all is left alone here and stays unmeasured.
+    Only skills and commands have a typed spelling (`TYPED_SURFACES`); an agent, an MCP server
+    and a plugin are reached by a session on its own, so the transcripts are their whole
+    evidence and their typed counts stay unmeasured rather than reading a measured 0 for
+    something Kyle could not have typed. A surface with no source at all is left alone here.
     """
-    if it.surface in ("skill", "command"):
+    if it.surface in TYPED_SURFACES:
         it.slash_all, it.slash_90d, last_typed = history.count(slash_pattern(it.name), since)
         it.tool_all, it.tool_90d, last_auto = transcripts.count(
             "skill", skill_spellings(it.name), since)
@@ -1398,7 +1480,7 @@ def flag_auto_only(it: Item) -> None:
     Informational only — `auto_only` is evidence about how an item is reached, not a reason to
     retire or keep it, so it never touches `proposed`.
     """
-    if (it.surface in ("skill", "command") and it.slash_90d == 0
+    if (it.surface in TYPED_SURFACES and (it.slash_90d or 0) == 0
             and (it.tool_90d or 0) >= AUTO_ONLY_MIN_AUTO and "auto_only" not in it.flags):
         it.flags.append("auto_only")
 
@@ -1425,31 +1507,144 @@ def attach_triggers(it: Item, history: History, since: datetime, triggers: dict 
         it.last_used = last
 
 
+def _measured(*counts: int | None) -> list[int]:
+    """Only the counts a source actually produced. An unmeasured source contributes nothing —
+    not a zero, which would be indistinguishable from a source that was read and found empty."""
+    return [c for c in counts if c is not None]
+
+
 def temperature(it: Item, window_start: str) -> str:
     """`new` wins over every count; otherwise recent uses decide, then any evidence at all.
 
-    A surface no source can score is `unknown`, not `cold`: `cold` is a measured claim that an
-    item went unused, and nothing in the history or the transcripts ever names a hook entry or a
-    memory directory.
+    `cold` is a *measured* claim that an item went unused, so it is only ever reached when some
+    source was read and came back empty. An item no source could score — a hook entry, a memory
+    directory, a CLAUDE.md section with no trigger phrases in the sidecar — is `unknown`. Folding
+    the unmeasured counts through `or 0` instead would manufacture the very zero the whole script
+    exists to refuse, and `cold` proposes `retire`.
     """
     if it.added and it.added >= window_start:
         return "new"
     if it.surface in UNMEASURABLE_SURFACES:
         return "unknown"
-    recent = it.slash_90d + (it.tool_90d or 0) + (it.trigger_90d or 0)
-    if recent >= HOT_MIN_USES:
+    recent = _measured(it.slash_90d, it.tool_90d, it.trigger_90d)
+    if sum(recent) >= HOT_MIN_USES:
         return "hot"
-    if recent >= WARM_MIN_USES:
+    if sum(recent) >= WARM_MIN_USES:
         return "warm"
-    ever = it.slash_all + (it.tool_all or 0) + (it.trigger_all or 0)
-    if it.referrers or ever:
+    ever = _measured(it.slash_all, it.tool_all, it.trigger_all)
+    if it.referrers or sum(ever):
         return "cool"
+    if not ever:
+        return "unknown"
     return "cold"
 
 
-def propose(it: Item) -> str | None:
-    """The proposed verdict. None means the row is kept silently, off the ratification table."""
-    return PROPOSED_BY_TEMPERATURE.get(it.temperature)
+def propose(it: Item, window_start: str) -> PrecedenceRow:
+    """Walk the precedence table top-down; the first row that holds decides.
+
+    Sets `proposed`, `shown` and `precedence` on the item and hands the winning row back so the
+    caller can collapse on it.
+    """
+    for row in PRECEDENCE_TABLE:
+        if row.test(it, window_start):
+            it.proposed, it.shown, it.precedence = row.proposed, row.shown, row.key
+            return row
+    raise AssertionError(f"precedence table fell through for {it.id}")   # pragma: no cover
+
+
+def mark_oversized(items: list[Item]) -> None:
+    """Top decile of always-loaded bytes within a surface, when the surface has enough items.
+
+    Only sized items rank: a paused command and a disabled plugin cost a session nothing, so
+    they are not "the heavy end" of anything. Under `OVERSIZED_MIN_SIZED_ITEMS` a top decile is
+    one item picked out of a handful, which is a ranking dressed up as a finding.
+    """
+    by_surface: dict[str, list[Item]] = {}
+    for it in items:
+        if it.bytes_always_loaded > 0:
+            by_surface.setdefault(it.surface, []).append(it)
+    for sized in by_surface.values():
+        if len(sized) < OVERSIZED_MIN_SIZED_ITEMS:
+            continue
+        sized.sort(key=lambda i: i.bytes_always_loaded)
+        cutoff = sized[int(len(sized) * OVERSIZED_TOP_DECILE)].bytes_always_loaded
+        for it in sized:
+            if it.bytes_always_loaded >= cutoff and "oversized" not in it.flags:
+                it.flags.append("oversized")
+
+
+def _collapse_key(it: Item, row: PrecedenceRow) -> str | None:
+    """Which collapsed row an item belongs to, or None when it keeps a row of its own."""
+    if row.collapse == "plugin":
+        canonical = it.duplicate_of or ""
+        return f"duplicate:{canonical.split(':', 1)[0]}" if canonical else None
+    if row.collapse == "class":
+        flag = "disabled_comment" if "disabled_comment" in it.flags else "empty"
+        return f"{it.surface}:{flag}"
+    return None
+
+
+def _collapse_title(key: str, members: list[Item]) -> str:
+    """What a collapsed row says in the Item column. Never a member's name: a memory slug is a
+    private project path, and 36 loose copies of one plugin's skills are one judgment call."""
+    n = len(members)
+    kind, _, what = key.partition(":")
+    if kind == "duplicate":
+        return f"{n} loose skill {'copy' if n == 1 else 'copies'} of plugin {what}"
+    if what == "disabled_comment":
+        return f"{n} hook {'entry' if n == 1 else 'entries'} commented out"
+    return f"{n} empty auto-memory {'directory' if n == 1 else 'directories'}"
+
+
+def collapse_rows(items: list[Item], window_start: str) -> list[dict]:
+    """Fold the mechanical classes into one row each, so trivia does not bury the judgment calls.
+
+    Members keep their own records — every field, every flag — and simply stop carrying a row of
+    their own; `collapsed_into` says which row stands in for them, and the row names its members
+    in the JSON so an apply pass can act on all of them from one ruling.
+    """
+    groups: dict[str, list[Item]] = {}
+    for it in items:
+        row = PRECEDENCE_BY_KEY.get(it.precedence or "")
+        if row is None or not row.collapse:
+            continue
+        key = _collapse_key(it, row)
+        if key:
+            groups.setdefault(key, []).append(it)
+    out = []
+    for key in sorted(groups):
+        members = groups[key]
+        for it in members:
+            it.shown, it.collapsed_into = False, key
+        row = PRECEDENCE_BY_KEY[members[0].precedence]
+        out.append({"key": key, "surface": members[0].surface, "title": _collapse_title(key, members),
+                    "proposed": row.proposed, "precedence": row.key, "count": len(members),
+                    "members": [m.id for m in members],
+                    "member_names": [m.name for m in members],
+                    "bytes_always_loaded": sum(m.bytes_always_loaded for m in members)})
+    return out
+
+
+def omitted_summary(items: list[Item]) -> list[dict]:
+    """One entry per precedence row that suppresses items, in the table's own order.
+
+    Collapsed members are not counted here: they are represented in the proposals table by their
+    collapsed row, not omitted from it. Names of items on a count-only surface are never listed —
+    a memory directory is named for the project path it belongs to and this report is public.
+    """
+    suppressed = [it for it in items if not it.shown and it.collapsed_into is None]
+    out = []
+    for row in PRECEDENCE_TABLE:
+        if row.shown:
+            continue
+        members = [it for it in suppressed if it.precedence == row.key]
+        # `hot`/`warm` is a silent keep: the spec counts it and stops. Everything else is named.
+        nameable = (row.key != "hot-warm"
+                    and [m for m in members if m.surface not in COUNT_ONLY_SURFACES])
+        out.append({"key": row.key, "title": row.title, "count": len(members),
+                    "names": sorted(m.name for m in nameable) if nameable else [],
+                    "ids": sorted(m.id for m in members)})
+    return out
 
 
 def compute_totals(items: list[Item], surfaces: tuple[str, ...],
@@ -1527,7 +1722,14 @@ def build_inventory(cfg: Config) -> Inventory:
         it.last_edited = last_edited(cfg.config_repo, it)
         # Referrers are in place before this line by design: they are what makes `cool` real.
         it.temperature = temperature(it, window_start)
-        it.proposed = propose(it)
+
+    # Both of these read the whole item list, so they come after it is complete: `oversized` is
+    # a rank within a surface, and the precedence table reads `oversized`.
+    mark_oversized(items)
+    for it in items:
+        propose(it, window_start)
+    collapsed = collapse_rows(items, window_start)
+    omitted = omitted_summary(items)
 
     meta = {
         "since_days": cfg.since_days,
@@ -1540,13 +1742,15 @@ def build_inventory(cfg: Config) -> Inventory:
         "transcripts_unreadable": transcripts.files_unreadable,
         "git_tracked": tracked is not None,
         "thresholds": {"window_default_days": WINDOW_DEFAULT_DAYS, "hot_min_uses": HOT_MIN_USES,
-                       "warm_min_uses": WARM_MIN_USES, "auto_only_min_auto": AUTO_ONLY_MIN_AUTO},
+                       "warm_min_uses": WARM_MIN_USES, "auto_only_min_auto": AUTO_ONLY_MIN_AUTO,
+                       "oversized_min_sized_items": OVERSIZED_MIN_SIZED_ITEMS,
+                       "oversized_top_decile": OVERSIZED_TOP_DECILE},
         "config_repo": str(cfg.config_repo),
         "claude_home": str(cfg.claude_home),
         "caveat": LOCAL_CORPUS_CAVEAT,
     }
     return Inventory(items=items, totals=compute_totals(items, cfg.surfaces, cfg.config_repo),
-                     meta=meta)
+                     meta=meta, collapsed=collapsed, omitted=omitted)
 
 
 # ---------------------------------------------------------------- output
@@ -1568,15 +1772,24 @@ def _name_cell(name: str) -> str:
     return f"{fence}{pad}{safe}{pad}{fence}"
 
 
+def _name_list(names: list[str], limit: int = EVIDENCE_NAMES_MAX) -> str:
+    """The first few names, then how many more. A table cell is a pointer, not a manifest."""
+    head = ", ".join(names[:limit])
+    extra = len(names) - limit
+    return f"{head} +{extra} more" if extra > 0 else head
+
+
 def evidence_summary(it: Item, since_days: int) -> str:
     """One cell of counts, dates and names. Never a path, and never a count nobody measured.
 
     Referrers and mentions are reported as counts: which files they are is a fact about the
     apply step, lives in the local JSON, and would put private paths in a public report.
     Vendored copies are named, because repo basenames are what a later fleet prune needs and
-    are the one downstream detail the redaction rules allow.
+    are the one downstream detail the redaction rules allow — but only the first few of them:
+    one CLAUDE.md section is vendored in 23 repos, and 23 repo names in a table cell is the
+    right content in the wrong place. The full list is in the JSON the ledger reads.
     """
-    parts = [f"typed {it.slash_90d}/{since_days}d · {it.slash_all} all",
+    parts = [f"typed {_fmt(it.slash_90d)}/{since_days}d · {_fmt(it.slash_all)} all",
              f"auto {_fmt(it.tool_90d)}/{_fmt(it.tool_all)}",
              f"trig {_fmt(it.trigger_90d)}/{_fmt(it.trigger_all)}",
              f"last {it.last_used or UNMEASURED}",
@@ -1586,11 +1799,11 @@ def evidence_summary(it: Item, since_days: int) -> str:
              f"mentions {len(it.mentions)}",
              f"{it.bytes_always_loaded:,} chars"]
     if it.vendored_copies:
-        parts.append("vendored in " + ", ".join(it.vendored_copies))
+        parts.append("vendored in " + _name_list(it.vendored_copies))
     if it.duplicate_of:
         parts.append(f"dup of `{it.duplicate_of}`")
     if it.routes_to_missing:
-        parts.append("routes→ " + ", ".join(it.routes_to_missing))
+        parts.append("routes→ " + _name_list(it.routes_to_missing))
     return " · ".join(parts)
 
 
@@ -1608,6 +1821,74 @@ def count_only_summary(surface: str, rows: list) -> str:
             f"Names are project path slugs and are not printed; they are in the local JSON.")
 
 
+def proposal_rows(inv: Inventory) -> list[dict]:
+    """The rows that need a ruling, in the order Kyle rules them.
+
+    Grouped by surface with CLAUDE.md last (the highest-judgment rows come once the mechanical
+    ones are settled), `retire` first inside a surface, then `ask`, then `relocate`, heaviest
+    first inside that. Collapsed rows sort with the items they stand in for.
+    """
+    # A count-only surface never renders a row of its own here, whatever the precedence table
+    # says: a memory directory's name is a project path slug and this report is public. Their
+    # rulings reach the table through collapsed rows, whose titles are counts.
+    rows = [{"surface": i.surface, "title": _name_cell(i.name), "proposed": i.proposed,
+             "evidence": None, "flags": i.flags, "temperature": i.temperature, "item": i}
+            for i in inv.items if i.shown and i.surface not in COUNT_ONLY_SURFACES]
+    for c in inv.collapsed:
+        names = ("" if c["surface"] in COUNT_ONLY_SURFACES
+                 else _name_list([_name_cell(n) for n in sorted(c["member_names"])]))
+        rows.append({"surface": c["surface"], "title": c["title"], "proposed": c["proposed"],
+                     "evidence": (f"{c['count']} item{'' if c['count'] == 1 else 's'} · "
+                                  f"{c['bytes_always_loaded']:,} chars"
+                                  + (f" · {names}" if names else "")),
+                     "flags": ["collapsed"], "temperature": UNMEASURED, "item": None})
+    rows.sort(key=lambda r: (SURFACE_ORDER.index(r["surface"]),
+                             VERDICT_ORDER.get(r["proposed"], 9),
+                             -(r["item"].bytes_always_loaded if r["item"] else 0),
+                             r["title"]))
+    return rows
+
+
+def render_proposals(inv: Inventory) -> list[str]:
+    """The table Kyle rules from: one numbered row per judgment call and nothing else."""
+    rows = proposal_rows(inv)
+    out = ["## Proposals", "",
+           f"{len(rows)} rows need a ruling. Grouped by surface with `claude-md` last; `retire` "
+           "first inside a surface, then `ask`, then `relocate`. Everything else is omitted and "
+           "summarised below.", ""]
+    if not rows:
+        return out + ["Nothing on this run.", ""]
+    out += ["| # | Surface | Item | Proposed | Evidence | Flags | Temp |",
+            "|---|---|---|---|---|---|---|"]
+    for n, r in enumerate(rows, 1):
+        evidence = (r["evidence"] if r["evidence"] is not None
+                    else evidence_summary(r["item"], inv.meta["since_days"]))
+        out.append(f"| {n} | {r['surface']} | {r['title']} | {r['proposed'] or UNMEASURED} | "
+                   f"{evidence} | {', '.join(r['flags']) or UNMEASURED} | {r['temperature']} |")
+    return out + [""]
+
+
+def render_omitted(inv: Inventory) -> list[str]:
+    """Why every other row is not in front of Kyle, by count and — where it is safe — by name."""
+    out = ["## Omitted from the proposals", "",
+           "Each line is one row of the precedence table doing its job. Names are listed except "
+           "for the silent keeps, which are counted, and for surfaces whose names are private.",
+           ""]
+    for entry in inv.omitted:
+        names = f": {', '.join(_name_cell(n) for n in entry['names'])}" if entry["names"] else ""
+        # A count that outruns its name list is the count-only surfaces being withheld, not a
+        # name quietly dropped: say so rather than leaving the arithmetic to the reader.
+        held = entry["count"] - len(entry["names"])
+        if names and held:
+            names += f" (+{held} on a surface whose names are private)"
+        out.append(f"- **{entry['key']}** — {entry['title']} — {entry['count']}{names}")
+    auto = sorted(i.name for i in inv.items if "auto_only" in i.flags)
+    listed = f": {', '.join(_name_cell(n) for n in auto)}" if auto else ""
+    out += [f"- **auto_only** — never typed, but sessions keep choosing it (evidence, not a "
+            f"verdict) — {len(auto)}{listed}", ""]
+    return out
+
+
 def render_markdown(inv: Inventory) -> str:
     """The redacted view: names, counts and dates only — no paths, no private detail."""
     m = inv.meta
@@ -1623,6 +1904,10 @@ def render_markdown(inv: Inventory) -> str:
     for s in [x for x in SURFACE_ORDER if x in inv.totals] + ["ALL"]:
         t = inv.totals[s]
         out.append(f"| {s} | {t['items']} | {t['always_loaded_chars']:,} |")
+    out += [""] + render_proposals(inv) + render_omitted(inv)
+    out += ["## Full inventory", "",
+            "Every item the run read, proposals and omissions alike, with the evidence behind "
+            "its row."]
     for s in SURFACE_ORDER:
         rows = sorted((i for i in inv.items if i.surface == s),
                       key=lambda i: (TEMP_ORDER.get(i.temperature, 9), -i.bytes_always_loaded,
@@ -1643,8 +1928,30 @@ def render_markdown(inv: Inventory) -> str:
 
 def render_json(inv: Inventory) -> str:
     """The full view: every field, paths included. Written to the local cache, never committed."""
-    return json.dumps({"meta": inv.meta, "totals": inv.totals,
-                       "items": [i.to_dict() for i in inv.items]}, indent=1)
+    return json.dumps({"meta": inv.meta, "totals": inv.totals, "collapsed": inv.collapsed,
+                       "omitted": inv.omitted, "items": [i.to_dict() for i in inv.items]},
+                      indent=1)
+
+
+def render_totals_delta(before: dict, after: dict) -> str:
+    """Always-loaded weight per surface, before against after, from two JSON runs.
+
+    The token-weight goal is a measurement or it is nothing (spec story 52): the PR body carries
+    this table, taken from two runs of this script, rather than a claim written by hand.
+    """
+    surfaces = [s for s in SURFACE_ORDER if s in before.get("totals", {})
+                or s in after.get("totals", {})] + ["ALL"]
+    stamp = (str(before.get("meta", {}).get("generated", UNMEASURED))[:10],
+             str(after.get("meta", {}).get("generated", UNMEASURED))[:10])
+    out = [f"## Always-loaded weight — {stamp[0]} → {stamp[1]}", "",
+           "| Surface | Items | Before chars | After chars | Delta |", "|---|---|---|---|---|"]
+    for s in surfaces:
+        b = before.get("totals", {}).get(s) or {"items": 0, "always_loaded_chars": 0}
+        a = after.get("totals", {}).get(s) or {"items": 0, "always_loaded_chars": 0}
+        delta = a["always_loaded_chars"] - b["always_loaded_chars"]
+        out.append(f"| {s} | {b['items']} → {a['items']} | {b['always_loaded_chars']:,} | "
+                   f"{a['always_loaded_chars']:,} | {delta:+,} |")
+    return "\n".join(out) + "\n"
 
 
 # ---------------------------------------------------------------- CLI
@@ -1676,7 +1983,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-cache", action="store_true",
                     help="do not read or write the transcript cache")
     ap.add_argument("--surface", default=None, help="restrict the inventory to one surface")
+    ap.add_argument("--compare", nargs=2, metavar=("BEFORE", "AFTER"), default=None,
+                    help="two JSON files from earlier runs: print the before/after totals table "
+                         "with deltas and exit, reading nothing else")
     args = ap.parse_args(argv)
+
+    if args.compare:
+        try:
+            before, after = (load_json(Path(p)) for p in args.compare)
+        except SourceMissing as e:
+            print(f"ERROR comparison input missing or unreadable: {e}", file=sys.stderr)
+            return EXIT_SOURCE_MISSING
+        table = render_totals_delta(before, after)
+        if args.md:
+            Path(args.md).write_text(table)
+        else:
+            sys.stdout.write(table)
+        return EXIT_OK
 
     if args.surface is not None and args.surface not in ENUMERATED_SURFACES:
         print(f"ERROR unknown surface {args.surface!r}; valid surfaces: "

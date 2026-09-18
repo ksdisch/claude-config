@@ -375,7 +375,8 @@ class CliTests(FixtureCase):
         self.assertEqual(rc, si.EXIT_OK)
         self.assertEqual(payload["meta"]["thresholds"],
                          {"window_default_days": 90, "hot_min_uses": 5, "warm_min_uses": 1,
-                          "auto_only_min_auto": 5})
+                          "auto_only_min_auto": 5, "oversized_min_sized_items": 10,
+                          "oversized_top_decile": 0.9})
         self.assertEqual(payload["meta"]["since_days"], 90)
 
     def test_surface_filter_restricts_output(self):

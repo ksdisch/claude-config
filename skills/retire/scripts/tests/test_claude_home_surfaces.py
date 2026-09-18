@@ -339,12 +339,22 @@ class HookTests(HomeCase):
     def test_a_hook_is_unmeasured_rather_than_cold(self):
         rc, payload, _ = self.run_json("--surface", "hook")
         self.assertEqual(rc, si.EXIT_OK)
+        by = self.items_by_id(payload)
         for item in payload["items"]:
             # No source names a hook entry, so calling one `cold` would claim a disuse nothing
-            # measured. It is unmeasured, and unmeasured proposes nothing.
+            # measured. It is unmeasured, and an unmeasured hook proposes nothing.
             self.assertEqual(item["temperature"], "unknown", item["id"])
             self.assertIsNone(item["tool_all"], item["id"])
-            self.assertIsNone(item["proposed"], item["id"])
+        for live in ("hook:Stop[0][0]", "hook:PreToolUse[0][0]"):
+            self.assertIsNone(by[live]["proposed"], live)
+            self.assertEqual(by[live]["precedence"], "unmeasured", live)
+        # Amended by ticket 06: a hook commented out is still unmeasured, but `disabled_comment`
+        # outranks temperature in the precedence table — it is a ruling Kyle already made in the
+        # file, and the proposal is to finish it. Its row is collapsed with the rest of its class.
+        off = by["hook:Stop[0][1]"]
+        self.assertEqual((off["temperature"], off["proposed"], off["precedence"]),
+                         ("unknown", "retire", "mechanical"))
+        self.assertEqual(off["collapsed_into"], "hook:disabled_comment")
 
 
 class MemoryTests(HomeCase):
@@ -381,9 +391,16 @@ class MemoryTests(HomeCase):
     def test_a_memory_directory_is_unmeasured_rather_than_cold(self):
         rc, payload, _ = self.run_json("--surface", "memory")
         self.assertEqual(rc, si.EXIT_OK)
+        by = self.items_by_id(payload)
         for item in payload["items"]:
             self.assertEqual(item["temperature"], "unknown", item["id"])
-            self.assertIsNone(item["proposed"], item["id"])
+        # Amended by ticket 06: a directory holding files is unmeasured and proposes nothing, but
+        # an empty one is `empty`, and the precedence table retires the mechanical classes above
+        # any temperature — nothing about its emptiness needed measuring.
+        self.assertIsNone(by["memory:-p3"]["proposed"])
+        self.assertEqual(by["memory:-p3"]["precedence"], "unmeasured")
+        self.assertEqual(by["memory:-p2"]["proposed"], "retire")
+        self.assertEqual(by["memory:-p2"]["collapsed_into"], "memory:empty")
 
 
 class AgentDispatchTests(HomeCase):

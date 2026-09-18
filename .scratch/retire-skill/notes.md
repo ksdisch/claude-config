@@ -53,7 +53,7 @@ blocked by the safety net.
 
 ## State of the script (update this as tickets land)
 
-Landed on `feat/retire-skill`: tickets 01, 02, 03, 04, 05. Suite is **155 tests**, green.
+Landed on `feat/retire-skill`: tickets 01, 02, 03, 04, 05, 06. Suite is **202 tests**, green.
 
 - `# ---- tunables` at the top owns every threshold. Add new ones there.
 - `ENUMERATED_SURFACES` gates `--surface` so an unbuilt lane errors instead of reporting
@@ -107,33 +107,54 @@ Landed on `feat/retire-skill`: tickets 01, 02, 03, 04, 05. Suite is **155 tests*
 - `kept` is a flag read back from the ledger's `## Kept on purpose` table by **surface-qualified**
   id, so `skill:beta` and `command:beta` never collide. `docs/retired.md` does not exist yet
   (ticket 07 creates it); an absent ledger reads as two empty tables, never a missing source.
+- **`PRECEDENCE_TABLE` is the only thing that decides a proposal (ticket 06).** An ordered tuple
+  of `PrecedenceRow`s just under the model; the first row whose `test` holds sets `proposed`,
+  `shown` and `precedence` on the item, so *the order of that tuple is the rule*. Its last row
+  holds for anything — nothing can fall off the table. `PROPOSED_BY_TEMPERATURE` is gone.
+- `PROPOSAL_FLAGS` is the flag set the table reads. `auto_only` is deliberately outside it (the
+  spec calls it informational), and so are the three flags later tickets added beyond the spec's
+  list — `disabled`, `connector_only`, `denied`. Adding a flag to that tuple moves live rows.
+- **Collapse and omission are computed, not rendered.** `collapse_rows` folds the duplicate
+  copies (one row per canonical *plugin*) and the mechanical classes (one row per class) and
+  stamps `collapsed_into` on each member; `omitted_summary` groups everything suppressed by the
+  precedence row that suppressed it. Both ride on `Inventory.collapsed` / `.omitted` and into
+  the JSON. A collapsed member is not "omitted" — its row is in the table, behind the collapse.
+- The markdown is three sections now: `## Proposals` (numbered, grouped by surface, `retire` →
+  `ask` → `relocate`), `## Omitted from the proposals`, then the per-surface `## <surface>`
+  tables as a full-inventory appendix. The appendix is why story 1 still holds — the report
+  shows everything, the proposals table shows only what needs a ruling.
+- `--compare BEFORE.json AFTER.json` renders the before/after always-loaded table with deltas
+  and reads nothing else. That is what story 52's PR-body table comes from.
+- A count-only surface can never render an individual row in the proposals table; the guard is
+  structural, not incidental. Memory rulings reach Kyle only through the collapsed row.
 
 **Expect to amend ticket 01's tests.** Each surface that lands makes some earlier
 assertion about a not-yet-measured state false by construction. Amend those in place and
 say so in your report — do not work around them, and do not weaken an assertion to pass.
 Put your *new* tests in your own file so parallel tickets don't collide.
 
-## Open wrinkle, owned by ticket 06
+## The three wrinkles ticket 06 owned — all ruled, do not reopen
 
-`slash_90d` / `slash_all` default to `0` on surfaces that have no typed spelling at all
-(hooks, memory dirs, agents, output styles, CLAUDE.md sections). The history *was* read, so
-this is not an unread source reported as zero — but the evidence column reads
-`typed 0/90d · 0 all` for something that can never be typed, which invites a wrong reading of
-the very table Kyle rules from. Fixing it touches every landed surface's evidence column, so
-it belongs with the precedence/redaction pass. Do not paper over it elsewhere.
+1. **Typed counts on surfaces with no typed spelling.** `slash_all` / `slash_90d` are now
+   `int | None` and are set only for `TYPED_SURFACES` (`skill`, `command`). Everything else
+   renders `typed —/90d · — all`. Live that is 123 of 221 items. The invariant is the whole
+   script's: a zero is only printed after the source behind it could have shown something.
+2. **A `cold` resting on a source nobody read.** `temperature()` no longer folds anything
+   through `or 0`; `_measured()` drops the unmeasured counts, and an item where *nothing* was
+   measured is `unknown`, not `cold`. A measured zero still earns `cold` (story 11's CLAUDE.md
+   section with a sidecar entry and no hits). Live this moved exactly three rows off `retire`:
+   `claude-md:Track multi-step work`, `claude-md:Unattended runs only`,
+   `claude-md:Clarifying questions and option formatting`. One `cold` row survives:
+   `plugin:swift-lsp@claude-plugins-official`.
+3. **An evidence cell that outgrew its table.** `_name_list()` prints the first
+   `EVIDENCE_NAMES_MAX` names and counts the rest; the full list stays in the JSON the ledger
+   and the fleet prune read. `claude-md:Project Wiki`'s row went from >300 chars to 213.
 
-Two more the live run surfaced, same owner, same reason — all three are one presentation pass:
-
-- **A `cold` that rests on an unmeasured trigger source.** `temperature()` folds `trigger_all`
-  through `(it.trigger_all or 0)`, so a constraints paragraph with no sidecar entry and no
-  referrer lands on `cold` — a *measured* claim of disuse built on a source that was never
-  read. Live, that is three of the four `cold` rows (`Track multi-step work`,
-  `Unattended runs only`, `Clarifying questions and option formatting`). The same `or 0` sits
-  in `invocations_*`. Ticket 05 left it alone deliberately: changing it moves rows in the
-  precedence table, which is ticket 06's.
-- **An oversized evidence cell.** `claude-md:Project Wiki` is vendored in 23 repos and its row
-  now runs past 300 characters. The names are the right content (the ledger and a later fleet
-  prune need them); the row is the wrong place to spend them past a handful.
+Consequence worth knowing for ticket 08: an item whose only flag is `dangling` and whose
+sources were never measured (`claude-md:Unattended runs only`) reaches the unmeasured floor
+and gets no proposal. That is correct — `dangling` is an apply step on the *referrer*, never a
+verdict on the item — but it means the five dangling routes to `autonomous-milestone` are
+visible in the full inventory and in the JSON, not in the proposals table.
 
 ## Gates
 

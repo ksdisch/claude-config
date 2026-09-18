@@ -201,10 +201,22 @@ class AutoOnlyFlagTests(TranscriptCase):
         self.assertEqual(rc, si.EXIT_OK)
         flagged = self.items_by_id(payload)["skill:autoskill"]
         self.assertIn("auto_only", flagged["flags"])
-        # Every row's proposal still comes from its temperature alone — the flag is evidence.
+        # Amended by ticket 06: the precedence table replaced the temperature-only mapping, so
+        # the claim is now made against that table. `auto_only` is deliberately not one of the
+        # flags it reads, so a hot row carrying it is still the silent keep a hot row always was.
+        self.assertNotIn("auto_only", si.PROPOSAL_FLAGS)
+        self.assertEqual((flagged["temperature"], flagged["proposed"], flagged["precedence"]),
+                         ("hot", None, "hot-warm"))
+        # And the flag is invisible to the table for every other row too: dropping it changes
+        # nothing about what any row proposes.
         for item in payload["items"]:
-            self.assertEqual(item["proposed"],
-                             si.PROPOSED_BY_TEMPERATURE[item["temperature"]], item["id"])
+            stripped = si.Item(id=item["id"], surface=item["surface"], name=item["name"],
+                               path="", bytes_always_loaded=0,
+                               flags=[f for f in item["flags"] if f != "auto_only"],
+                               temperature=item["temperature"], last_edited=item["last_edited"],
+                               duplicate_of=item["duplicate_of"])
+            si.propose(stripped, payload["meta"]["since"])
+            self.assertEqual(stripped.proposed, item["proposed"], item["id"])
 
 
 class CacheTests(TranscriptCase):

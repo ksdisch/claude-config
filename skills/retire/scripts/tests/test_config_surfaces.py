@@ -233,7 +233,10 @@ class TriggerSidecarTests(FixtureCase):
         out_md = self.root / "inv.md"
         rc, _, _ = self.run_cli("--surface", "claude-md", "--md", str(out_md))
         self.assertEqual(rc, si.EXIT_OK)
-        row = next(ln for ln in out_md.read_text().splitlines() if "Kickoff Mode" in ln)
+        # Amended by ticket 06: the omitted-class summary names this section too, in prose. The
+        # row under test is the table row — a line that starts a markdown cell.
+        row = next(ln for ln in out_md.read_text().splitlines()
+                   if "Kickoff Mode" in ln and ln.startswith("| "))
         # The name is the key Kyle rules by and the key the sidecar is keyed on: it has to come
         # back verbatim, and the row has to stay a five-column row.
         self.assertIn("Kickoff Mode → run the `/kickoff` skill", row)
