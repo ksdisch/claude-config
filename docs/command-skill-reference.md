@@ -99,6 +99,7 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`backlog-hygiene`](../skills/backlog-hygiene/SKILL.md) | Operates on an already-stocked backlog to decide what's next — grooming, sequencing, decomposing, phase planning. Decision-first; builds nothing and invents nothing. · [config →](usage-playbook.md#backlog-hygiene) |
 | [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
 | [`orchestrate`](../skills/orchestrate/SKILL.md) | Runs one feature's ticket set through separate worker sessions — hands each ready ticket in `.scratch/<slug>/tickets.md` to a named worker session in its own worktree over SendMessage, waits on notify_when_idle, reviews under the standing gate, merges to the feature branch, refreshes the index. · [config →](usage-playbook.md#orchestrate) |
+| [`retire`](../skills/retire/SKILL.md) | The config's subtract verb — inventories every global steering surface (CLAUDE.md sections, constraints paragraphs, skills, commands, agents, plugins, MCP servers, hooks, output styles, auto-memory) with usage evidence, proposes a verdict per item from a fixed precedence table, applies only what you ratify row by row with full bookkeeping and a retirement ledger, and measures before → after weight. Sweep, `--report`, `--surface`, or targeted. · [config →](usage-playbook.md#retire) |
 
 ### Quality & Debugging
 
