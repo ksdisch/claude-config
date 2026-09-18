@@ -79,6 +79,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Re-verified 2026-08-04** (cloud doc-hygiene sweep; `git ls-tree` over freshly fetched **default branches** of all 17 public repos — branch tips and private repos not re-swept): still live. 10 public repos carry `.claude/skills/interview-prep/SKILL.md` today — blind-cite, home-base, forge-gap, decay-pin, dim-stage, ghost-patch, constellation, clinical-data-etl, stopwatch, buoy-legal — each exposing the seven dossier-path lines, and 9 of the 10 also still advertise the skill in their `CLAUDE.md`. The good news, same sweep: `mock-sql` remains fully purged — 0 files and 0 `CLAUDE.md` advertising lines on every public default branch — and every project-specific item indexed in `docs/command-skill-reference.md` was confirmed present in its repo (DogHood included, via private read), so the index's unverifiable-by-checker half is verified accurate as of this date.
 
 ### [Exploration] The Coliseum: commands earn their keep on lived-invocation evidence
+- **Status:** **Built 2026-09-18** as [`retire`](skills/retire/SKILL.md) (PR #132). Acceptance met by a different route than proposed: the Stop-hook tracer and hand-seeded `usage.jsonl` were unnecessary — the transcript corpus already carries lived-invocation evidence, read directly and cached. The bet held: 222 items inventoried, typed vs. session-chosen split, 53 rows needing a ruling.
 - **Why:** Lived-invocation data (which of the ~29 specs actually fire, overlap, or get hand-corrected) is a sharper curation signal than memory — a usage trace + `/retro` gives the repo its first subtraction pressure (A3 + A4). See [`docs/ideas/coliseum-commands-earn-their-keep.md`](docs/ideas/coliseum-commands-earn-their-keep.md) for the full write-up.
 - **Acceptance:** Prototype the credible first step (`/retro` reader over a hand-seeded `usage.jsonl`, then the Stop-hook) and judge whether the bet holds.
 - **Size:** L
@@ -187,6 +188,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Improvement] Minimal initial prompt: salience audit for always-loaded instructions
+- **Status:** **Absorbed 2026-09-18** into [`retire`](skills/retire/SKILL.md)'s CLAUDE.md lane (PR #132). The hand-run audit is now a repeatable sweep (`/retire --surface claude-md`) with per-section trigger evidence and `keep (hook)` marking hook-convertible rules at ratification. The folding decision resolved **against** `/trim-context`: that command relocates, `retire` deletes — they are different verbs and stay separate, with `relocate` verdicts handed over by name.
 - **Why:** Lost-in-the-middle means long CLAUDE.md files silently lose their middle; `/trim-context` audits size — this adds the positional-salience and hook-convertibility criteria. Full write-up in [`docs/ideas/minimal-initial-prompt.md`](docs/ideas/minimal-initial-prompt.md).
 - **Acceptance:** One hand-run audit of the global CLAUDE.md (must-hold vs guidance + ranked hook-conversion list) and a decision on folding the pass into `/trim-context`.
 - **Size:** M
