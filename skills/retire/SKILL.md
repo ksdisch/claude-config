@@ -50,9 +50,12 @@ name stops and asks.** A ledger row pastes straight in, since ledger ids are sur
 ### Step 0 — Preflight
 
 Confirm a clean tree in the config repo; branch `chore/retire-<date>` from `main`. Never work on
-`main`, never stash or reset Kyle's work. Then:
+`main`, never stash or reset Kyle's work. Then set a scratch directory and run the inventory —
+`$SCRATCH` is this session's scratchpad, and the `mkdir -p` matters because the script writes its
+output files directly and does not create parent directories:
 
 ```bash
+SCRATCH="${SCRATCH:-$(mktemp -d)}"; mkdir -p "$SCRATCH"
 python3 skills/retire/scripts/steering_inventory.py --json "$SCRATCH/before.json" --md "$SCRATCH/before.md"
 ```
 

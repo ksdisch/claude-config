@@ -285,17 +285,27 @@ class McpTests(HomeCase):
         self.assertEqual(widget["extra"]["origin"], "plugin")
         self.assertEqual(widget["flags"], [])
 
-    def test_the_markdown_carries_no_mcp_config_values(self):
+    def test_the_markdown_carries_neither_mcp_config_values_nor_server_names(self):
+        """A server name is itself private: it names a service Kyle connected.
+
+        The committed report goes to a public repo, so an MCP row keeps its place in the table
+        under an ordinal and surrenders its name, the way a hook row names a position rather
+        than its command. The real name stays in the JSON the skill rules from.
+        """
         (self.cfg.claude_json).write_text(json.dumps({"mcpServers": {
             "todoist": {"command": "/private/bin/secret-launcher", "type": "stdio",
                         "env": {"TOKEN": "hunter2"}}}}))
-        out_md = self.root / "inv.md"
-        rc, _, _ = self.run_cli("--surface", "mcp", "--md", str(out_md))
+        out_md, out_json = self.root / "inv.md", self.root / "inv.json"
+        rc, _, _ = self.run_cli("--surface", "mcp", "--md", str(out_md), "--json", str(out_json))
         self.assertEqual(rc, si.EXIT_OK)
         md = out_md.read_text()
-        self.assertIn("| `todoist` |", md)
-        for secret in ("secret-launcher", "hunter2", "/private/bin", str(self.cfg.claude_json)):
-            self.assertNotIn(secret, md)
+        self.assertIn("`mcp #1`", md)
+        for private in ("todoist", "secret-launcher", "hunter2", "/private/bin",
+                        str(self.cfg.claude_json)):
+            self.assertNotIn(private, md)
+        # ...and the name is still there in the local JSON, so nothing is lost to the ruling.
+        names = [i["name"] for i in json.loads(out_json.read_text())["items"]]
+        self.assertEqual(names, ["todoist"])
 
 
 class HookTests(HomeCase):

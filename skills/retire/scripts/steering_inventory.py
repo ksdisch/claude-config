@@ -62,6 +62,16 @@ UNMEASURABLE_SURFACES = ("hook", "memory")
 # name is a project path slug, and this report is committed to a public repo.
 COUNT_ONLY_SURFACES = ("memory",)
 
+# Surfaces that keep a row of their own but must not carry their real name into the committed
+# report: an MCP row names a service Kyle has connected (claude.ai connectors arrive as raw
+# UUIDs or as labels naming the service they reach), and this repo is public. Hooks already
+# solve exactly this by naming a position rather than a command; these get an ordinal, and the
+# real name stays in the local JSON the skill actually rules from.
+REDACTED_NAME_SURFACES = ("mcp",)
+
+# Every surface whose names must never reach the markdown, by either route.
+PRIVATE_NAME_SURFACES = COUNT_ONLY_SURFACES + REDACTED_NAME_SURFACES
+
 # Coldest first: the rows that need a ruling come before the rows that earned their place.
 TEMP_ORDER = {"cold": 0, "cool": 1, "new": 2, "warm": 3, "hot": 4, "unknown": 5}
 
@@ -406,6 +416,12 @@ def enumerate_skills(config_repo: Path, tracked: set[str] | None,
 
     Untracked (gitignored) skill copies are a separate surface and are skipped here. When the
     repo has no usable git nothing can be classified, so every skill is listed with tracked=None.
+
+    A paused skill (`SKILL.md.disabled`) is still enumerated, flagged `paused` with zero
+    always-loaded bytes, exactly like a paused command. The harness stops loading it — which is
+    the point of a pause — but the inventory must not: a pause writes no ledger line, so if the
+    row vanished too, nothing anywhere would record that the skill exists, the next sweep could
+    not re-propose it, and routes pointing at it would never be flagged dangling.
     """
     root = config_repo / "skills"
     if not root.is_dir():
@@ -414,20 +430,38 @@ def enumerate_skills(config_repo: Path, tracked: set[str] | None,
     items: list[Item] = []
     dirs = [d for d in sorted(root.iterdir()) if d.is_dir()]
     for d in dirs:
-        sk = d / "SKILL.md"
+        sk, paused = d / "SKILL.md", False
         if not sk.is_file():
-            continue
-        rel = f"skills/{d.name}/SKILL.md"
+            disabled = d / "SKILL.md.disabled"
+            if not disabled.is_file():
+                continue
+            sk, paused = disabled, True
+        rel = f"skills/{d.name}/{sk.name}"
         is_tracked = _tracked_flag(tracked, rel)
         if is_tracked is False:
             continue
         desc = parse_frontmatter(sk.read_text(errors="ignore")).get("description", "")
         items.append(Item(id=f"skill:{d.name}", surface="skill", name=d.name, path=str(sk),
-                          bytes_always_loaded=len(desc), tracked=is_tracked, description=desc,
+                          bytes_always_loaded=0 if paused else len(desc), tracked=is_tracked,
+                          description=desc, flags=["paused"] if paused else [],
                           added=added_date(sk, rel, added)))
     if not items and dirs:
         raise EmptySurface(f"skill: {root} has directories but no tracked SKILL.md files")
     return items
+
+
+def paused_skill_names(config_repo: Path) -> set[str]:
+    """Skills paused by renaming `SKILL.md` to `SKILL.md.disabled`.
+
+    Read from the directory rather than from the enumerated rows, for the same reason
+    `paused_command_names` is: a dangling route is a fact about the referrer, not about the
+    lane being swept, so `--surface command` must still see a route to a paused skill.
+    """
+    root = config_repo / "skills"
+    if not root.is_dir():
+        return set()
+    return {d.name for d in root.iterdir()
+            if d.is_dir() and (d / "SKILL.md.disabled").is_file()}
 
 
 def enumerate_untracked_skills(config_repo: Path, tracked: set[str] | None) -> list[Item]:
@@ -1107,6 +1141,14 @@ PLAYBOOK_REL = "docs/usage-playbook.md"
 LEDGER_REL = "docs/retired.md"
 BOOKKEEPING_DOCS = (INDEX_DOC_REL, PLAYBOOK_REL, LEDGER_REL)
 
+# Directory prefixes holding dated or historical records rather than prose that owes a repair.
+# A mention is a thing the apply step is told to edit, so anything here would direct it to
+# rewrite the past: `docs/reports/` holds the dated inventories the ledger's "Evidence at
+# retirement" column points back at (and each is a table of every item's name, so leaving it in
+# would hand all ~200 items a mention apiece from the next run onward); `docs/plans/` and
+# `.scratch/` hold the record of how a decision was made. History is not a stale reference.
+ARCHIVAL_DIRS = ("docs/reports/", "docs/plans/", ".scratch/")
+
 # Surfaces whose name is a position (`Stop[0][1]`) or a private path slug rather than something
 # a file could route to. Matching those as words would find nothing and leak the slug trying.
 UNNAMEABLE_SURFACES = ("hook", "memory")
@@ -1175,7 +1217,7 @@ def build_corpus(config_repo: Path, claude_home: Path) -> dict[str, str]:
 
 def build_mention_corpus(config_repo: Path, tracked: set[str] | None,
                          referrers: dict[str, str]) -> dict[str, str]:
-    """Mention corpus: every other tracked markdown file, minus the three bookkeeping docs.
+    """Mention corpus: every other tracked markdown file, minus bookkeeping and archival docs.
 
     A mention is prose that would describe something that no longer exists — a README, a design
     record, a third-party note. It is a repair the apply step owes, never evidence of use, which
@@ -1191,8 +1233,17 @@ def build_mention_corpus(config_repo: Path, tracked: set[str] | None,
         paths = sorted(config_repo.rglob("*.md"))
     else:
         paths = sorted(config_repo / rel for rel in tracked if rel.endswith(".md"))
+
+    def archival(path: Path) -> bool:
+        try:
+            rel = path.relative_to(config_repo).as_posix()
+        except ValueError:
+            return False
+        return any(rel.startswith(d) for d in ARCHIVAL_DIRS)
+
     return {str(p): p.read_text(errors="ignore")
-            for p in paths if str(p) not in excluded and p.is_file()}
+            for p in paths
+            if str(p) not in excluded and not archival(p) and p.is_file()}
 
 
 def _display_name(it: Item) -> str:
@@ -1286,14 +1337,16 @@ def paused_command_names(config_repo: Path) -> set[str]:
 
 
 def missing_names(config_repo: Path) -> set[str]:
-    """Every name a route can dangle on: paused commands plus everything the ledger retired.
+    """Every name a route can dangle on: paused items plus everything the ledger retired.
 
-    A paused command still has a file, so a route to it resolves to nothing a session can run;
-    a retired one has no file at all. Both are routes that need patching, and the ledger's ids
-    are surface-qualified, so they shed their prefix to match the way a route is written.
+    A paused command or skill still has a file, so a route to it resolves to nothing a session
+    can run; a retired one has no file at all. Both are routes that need patching, and the
+    ledger's ids are surface-qualified, so they shed their prefix to match how a route is
+    written. Skills pause by the same verb commands do, so they dangle the same way.
     """
     retired, _ = ledger_ids(config_repo)
-    names = paused_command_names(config_repo) | {strip_surface_prefix(i) for i in retired}
+    names = (paused_command_names(config_repo) | paused_skill_names(config_repo)
+             | {strip_surface_prefix(i) for i in retired})
     return {n for n in names if n}
 
 
@@ -1532,10 +1585,14 @@ def temperature(it: Item, window_start: str) -> str:
     if sum(recent) >= WARM_MIN_USES:
         return "warm"
     ever = _measured(it.slash_all, it.tool_all, it.trigger_all)
+    if not ever:
+        # Nothing could be scored, so nothing may be claimed about use. A referrer is not a
+        # measurement: it says another file names this item, never that the item went unused.
+        # Testing referrers first would make this branch unreachable and put a disuse claim in
+        # front of Kyle whose every evidence cell is an em dash.
+        return "unknown"
     if it.referrers or sum(ever):
         return "cool"
-    if not ever:
-        return "unknown"
     return "cold"
 
 
@@ -1640,7 +1697,7 @@ def omitted_summary(items: list[Item]) -> list[dict]:
         members = [it for it in suppressed if it.precedence == row.key]
         # `hot`/`warm` is a silent keep: the spec counts it and stops. Everything else is named.
         nameable = (row.key != "hot-warm"
-                    and [m for m in members if m.surface not in COUNT_ONLY_SURFACES])
+                    and [m for m in members if m.surface not in PRIVATE_NAME_SURFACES])
         out.append({"key": row.key, "title": row.title, "count": len(members),
                     "names": sorted(m.name for m in nameable) if nameable else [],
                     "ids": sorted(m.id for m in members)})
@@ -1772,6 +1829,23 @@ def _name_cell(name: str) -> str:
     return f"{fence}{pad}{safe}{pad}{fence}"
 
 
+def public_labels(items: list[Item]) -> dict[str, str]:
+    """Opaque, stable row titles for surfaces whose real names are private.
+
+    Keyed by item id so a skill or command sharing a name with an MCP server is never redacted
+    by accident. The ordinal is assigned over the sorted names of that surface, so the same
+    inventory always yields the same label and two rows never collide. Kyle rules from the
+    numbered table either way; when he needs to know which server a row is, the name is in the
+    JSON beside it.
+    """
+    out: dict[str, str] = {}
+    for surface in REDACTED_NAME_SURFACES:
+        members = sorted((i for i in items if i.surface == surface), key=lambda i: i.name)
+        for n, it in enumerate(members, start=1):
+            out[it.id] = f"{surface} #{n}"
+    return out
+
+
 def _name_list(names: list[str], limit: int = EVIDENCE_NAMES_MAX) -> str:
     """The first few names, then how many more. A table cell is a pointer, not a manifest."""
     head = ", ".join(names[:limit])
@@ -1831,11 +1905,14 @@ def proposal_rows(inv: Inventory) -> list[dict]:
     # A count-only surface never renders a row of its own here, whatever the precedence table
     # says: a memory directory's name is a project path slug and this report is public. Their
     # rulings reach the table through collapsed rows, whose titles are counts.
-    rows = [{"surface": i.surface, "title": _name_cell(i.name), "proposed": i.proposed,
+    labels = public_labels(inv.items)
+    rows = [{"surface": i.surface,
+             "title": _name_cell(labels[i.id]) if i.id in labels else _name_cell(i.name),
+             "proposed": i.proposed,
              "evidence": None, "flags": i.flags, "temperature": i.temperature, "item": i}
             for i in inv.items if i.shown and i.surface not in COUNT_ONLY_SURFACES]
     for c in inv.collapsed:
-        names = ("" if c["surface"] in COUNT_ONLY_SURFACES
+        names = ("" if c["surface"] in PRIVATE_NAME_SURFACES
                  else _name_list([_name_cell(n) for n in sorted(c["member_names"])]))
         rows.append({"surface": c["surface"], "title": c["title"], "proposed": c["proposed"],
                      "evidence": (f"{c['count']} item{'' if c['count'] == 1 else 's'} · "
@@ -1892,6 +1969,7 @@ def render_omitted(inv: Inventory) -> list[str]:
 def render_markdown(inv: Inventory) -> str:
     """The redacted view: names, counts and dates only — no paths, no private detail."""
     m = inv.meta
+    labels = public_labels(inv.items)
     scanned = _fmt(m["transcripts_scanned"])
     out = [f"# Steering inventory — {m['generated'][:10]}", "",
            f"Window: last {m['since_days']} days (since {m['since']}). "
@@ -1920,7 +1998,8 @@ def render_markdown(inv: Inventory) -> str:
         out += ["", f"## {s}", "", "| Item | Evidence | Flags | Temp | Proposed |",
                 "|---|---|---|---|---|"]
         for i in rows:
-            out.append(f"| {_name_cell(i.name)} | {evidence_summary(i, m['since_days'])} | "
+            title = _name_cell(labels[i.id]) if i.id in labels else _name_cell(i.name)
+            out.append(f"| {title} | {evidence_summary(i, m['since_days'])} | "
                        f"{', '.join(i.flags) or UNMEASURED} | {i.temperature} | "
                        f"{i.proposed or UNMEASURED} |")
     return "\n".join(out) + "\n"

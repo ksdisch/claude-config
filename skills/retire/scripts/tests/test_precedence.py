@@ -394,6 +394,10 @@ class RedactionTests(PrecedenceCase):
             "afplay", "ding.aiff", "notify.sh", "DISABLED:",          # hook command text
             "-Users-private-Projects-client-work", "client-work",     # memory slugs
             "secret-launcher", "hunter2", "swordfish", "stdio",       # MCP config values
+            "todoist",                                                # ...and the server NAME:
+            # a connected service is private even when its config is withheld. The committed
+            # report is public, and claude.ai connectors arrive as raw UUIDs or as labels that
+            # name what they reach. This needle is why `mcp` is in REDACTED_NAME_SURFACES.
         )
         for needle in private:
             self.assertNotIn(needle, md, needle)
