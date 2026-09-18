@@ -1,6 +1,6 @@
 # Minimal initial prompt: trim always-loaded instructions to the salience budget
 
-**Status:** Idea — not committed. Mined from "LIVE: Uncle Bob on Software Fundamentals in the Age of AI" (https://www.youtube.com/watch?v=zcLPGC-tvgk) by `cc-yt-idea-mine` on 2026-08-20.
+**Status:** **Absorbed 2026-09-18** by [`retire`](../../skills/retire/SKILL.md)'s CLAUDE.md lane — trigger-phrase evidence per section, `hook_convertible` marked at ratification. Spec: [`2026-09-17-retire-skill-design.md`](../superpowers/specs/2026-09-17-retire-skill-design.md). Mined from "LIVE: Uncle Bob on Software Fundamentals in the Age of AI" (https://www.youtube.com/watch?v=zcLPGC-tvgk) by `cc-yt-idea-mine` on 2026-08-20.
 
 ## Premise
 

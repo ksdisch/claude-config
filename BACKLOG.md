@@ -5,6 +5,24 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Feature] retire: fleet prune lane
+- **Why:** `retire` reports vendored copies of a retired item but never edits a project repo; 16 repos (13 public) carry the global kit, and the July 2026 PII purge showed what a copy that outlives its source costs. Needs [`fleet-manifest-reconcile`](docs/ideas/fleet-manifest-reconcile.md)'s per-item manifest and its landmine list (single-line command lists, zsh refspecs, false-clean sweeps).
+- **Acceptance:** `/retire` gains a `--fleet` flag that opens one PR per downstream repo removing the retired item, with the refuse-if-unsure excision guard, and reports every repo it could not clean.
+- **Size:** L
+- **Added:** 2026-09-18
+
+### [Feature] retire: per-project CLAUDE.md lane
+- **Why:** The global lane audits `~/.claude`; the biggest per-project files (`stopwatch` 38.7k chars, `hush-gauge` 31.2k) are invisible to it, and `/trim-context` relocates without ever retiring.
+- **Acceptance:** `/retire` run at a project root inventories that repo's `CLAUDE.md` sections and `.claude/` items with the same evidence fields, scoped to that project's transcripts.
+- **Size:** M
+- **Added:** 2026-09-18
+
+### [Improvement] retire: periodic `--report` cadence
+- **Why:** The sweep is only as good as the habit of running it. A quarterly read-only report keeps "what went cold" visible without a Stop-hook tracer.
+- **Acceptance:** One `/schedule`d or calendar-reminded `/retire --report` run per quarter, with the report committed to `docs/reports/`.
+- **Size:** S
+- **Added:** 2026-09-18
+
 ### [Feature] orchestrate: headless workers
 - **Why:** v1 of `/orchestrate` needs a visible window per worker. `claude -p` seats with `crossSessionInbound: accept` passed via `--settings` would remove the window for tickets nobody needs to watch. (The folder-trust dialog cost from pilot finding #10 is already gone via `scripts/pretrust.sh`.)
 - **Acceptance:** The Milestone 1 pass bar (A1–A10 in `docs/reports/2026-09-07-orchestrate-pilot.md`) holds with zero windows open.
