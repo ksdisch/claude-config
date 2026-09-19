@@ -539,6 +539,27 @@ rows get re-pointed to match.
   rewritten in place. It never re-architects functional source code; a behavior change is an
   ordinary edit.
 
+#### `visual-summary`
+
+- **Run config:** inherits the session · `low` — the work is picking three or four visuals
+  and rendering them; the gathering is mechanical and the analysis is deliberately shallow.
+- **Reach for it when:**
+  - You want to *see* what a session or a branch amounted to instead of reading a recap.
+  - A diff is large enough that `git diff --stat` tells you nothing about its shape.
+  - You want something glanceable to share — the page publishes as an Artifact every run.
+- **Pairs well with:** [`/wrap`](#wrap) (the written sibling — vocabulary, quiz, next moves,
+  saved in the repo where this one is archived outside it),
+  [`architecture-viewer`](#architecture-viewer) (structure of the repo, where this shows the
+  change to it), [`ship-and-route`](#ship-and-route) (routes what's next; this only depicts
+  what happened).
+- **Notes:** mode is an argument — `conversation` (default), `branch`, or `worktree`. **A
+  fresh session has no transcript**, so `conversation` only works in the session that did
+  the work; use `branch` or `worktree` otherwise. Every number on the page is measured, and
+  a section with nothing in it is omitted rather than padded. The page lands in
+  `~/Projects/_visual-summaries/`, never in the repo it describes, unless `--out` says
+  otherwise. It judges nothing — no risk flags, no next-move advice. `--no-publish`
+  keeps it local.
+
 #### `ship-and-route`
 
 - **Run config:** Fable 5 · `high` — landing decisions plus ranked next-move routing is
