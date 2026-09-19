@@ -60,7 +60,10 @@ Post the brief, in this order and nothing more:
 5. **Parking lot** — the prior day's unworked items, one line each.
 6. **Bite** — only when the hook has a `## Bite` section: follow it. One term, one recall
    question, nothing more. No section → no line.
-7. One question: **which one to three of these make today a win?**
+7. **Briefs** — only when the hook has a `## Briefs` section: follow it. It names the
+   pre-built briefs file, says how to list what it covers, and how to fill a gap. No
+   section → no line.
+8. One question: **which one to three of these make today a win?**
 
 Kyle's answer is the must-do set. Then write the log file (format below) with Goal (from
 the hook), Must-do, and the Plan table, and arm the check-in cron (see Day mode).
@@ -107,6 +110,11 @@ Writing one freehand produces loose prose in the plan-table voice, which is the 
 artifact: `call-brief` puts the bullets Kyle actually glances at mid-call above the script,
 and a hand-written brief drops that layer every time. One contact per invocation. If he
 names two, run it twice.
+
+If the hook's `## Briefs` section names a file that already holds a brief for that contact,
+print that section verbatim instead; `call-brief` runs only when the hook's section says the
+brief is stale (the task changed after the file was built, or overnight mail names the
+contact).
 
 The brief goes to chat, not the log. What lands under `## Log` is the outcome after he
 dials, per Log above.

@@ -22,6 +22,10 @@ log_dir: daily/
 workspace: <absolute path to a teach learning workspace>
 - <how to pick today's term, what to print, and where to record the recall answer>
 
+## Briefs
+file: <path pattern of the pre-built briefs file, e.g. daily/briefs/YYYY-MM-DD.md, and what builds it>
+- <what to print at the brief, how to fill a gap, when a section counts as stale>
+
 ## Outcome vocabulary (Kyle says → what to do)
 | Outcome | Todoist | Files / follow-through |
 |---|---|---|
@@ -39,4 +43,4 @@ Dates the vocabulary doesn't cover: ask one question, never guess.
 1. <what Claude rebuilds or updates when the day closes>
 ```
 
-`## Bite` adds one term-of-the-day line to the brief (Phase 1, item 6); leave it out for projects with no learning workspace.
+`## Bite` adds one term-of-the-day line to the brief (Phase 1, item 6); leave it out for projects with no learning workspace. `## Briefs` points the brief at a pre-built briefings file (Phase 1, item 7); leave it out for projects with no briefing job.
