@@ -547,16 +547,18 @@ rows get re-pointed to match.
   - You want to *see* what a session or a branch amounted to instead of reading a recap.
   - A diff is large enough that `git diff --stat` tells you nothing about its shape.
   - You want something glanceable to share — the page publishes as an Artifact every run.
-- **Pairs well with:** [`/wrap`](#wrap) (the written sibling — vocabulary, quiz, next moves;
-  the HTML page lands in the same `docs/session-logs/` folder),
+- **Pairs well with:** [`/wrap`](#wrap) (the written sibling — vocabulary, quiz, next moves,
+  saved in the repo where this one is archived outside it),
   [`architecture-viewer`](#architecture-viewer) (structure of the repo, where this shows the
   change to it), [`ship-and-route`](#ship-and-route) (routes what's next; this only depicts
   what happened).
 - **Notes:** mode is an argument — `conversation` (default), `branch`, or `worktree`. **A
   fresh session has no transcript**, so `conversation` only works in the session that did
   the work; use `branch` or `worktree` otherwise. Every number on the page is measured, and
-  a section with nothing in it is omitted rather than padded. It judges nothing — no risk
-  flags, no next-move advice. `--no-publish` keeps it local.
+  a section with nothing in it is omitted rather than padded. The page lands in
+  `~/Projects/_visual-summaries/`, never in the repo it describes, unless `--out` says
+  otherwise. It judges nothing — no risk flags, no next-move advice. `--no-publish`
+  keeps it local.
 
 #### `ship-and-route`
 

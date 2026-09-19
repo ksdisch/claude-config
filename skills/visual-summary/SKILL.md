@@ -1,6 +1,6 @@
 ---
 name: visual-summary
-description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page beside the session logs and publishes it as a claude.ai Artifact every run. Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written recap with vocabulary and recall quiz (/wrap), a prose walkthrough of a project (project-guide), a module dependency map (architecture-viewer), a paste-able prompt for a fresh session (/handoff-session), or judging whether a diff is safe to merge (adversarial-review).
+description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page to `~/Projects/_visual-summaries/` and publishes it as a claude.ai Artifact every run. Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written recap with vocabulary and recall quiz (/wrap), a prose walkthrough of a project (project-guide), a module dependency map (architecture-viewer), a paste-able prompt for a fresh session (/handoff-session), or judging whether a diff is safe to merge (adversarial-review).
 ---
 
 # Visual Summary — one page, read at a glance
@@ -38,8 +38,8 @@ than rendering a page about nothing.
 | Mode | What it summarizes | Gather | Empty when |
 |---|---|---|---|
 | `conversation` | **This session's transcript only** | What you did this session: the arc of decisions, the files touched, what was tried and abandoned, what's unresolved | You were launched fresh into this session. There is no transcript to read and no way to recover one — say so and offer `branch` or `worktree` |
-| `branch` | The diff against the merge-base with `main` | `git merge-base main HEAD`, then `git diff --stat <base>...HEAD`, `git log --oneline <base>..HEAD`, and the diff itself for what actually changed | The branch has no commits past the merge-base — offer `worktree` |
-| `worktree` | The uncommitted working tree | `git status --short`, `git diff HEAD --stat`, and the diff itself | The tree is clean — offer `branch` |
+| `branch` | The diff against the merge-base with the repo's default branch | **Resolve the default branch, never hardcode it** — `git symbolic-ref refs/remotes/origin/HEAD`, falling back to the local default — and prefer `origin/<default>` over the local ref, which goes stale and silently widens the diff. Then `git merge-base`, `git diff --stat <base>...HEAD`, `git log --oneline <base>..HEAD`, and the diff itself for what actually changed | The branch has no commits past the merge-base — offer `worktree` |
+| `worktree` | The uncommitted working tree | `git status --short` **first, because it is the only one of these that sees untracked files** — `git diff HEAD` never reports them, and a tree of nothing but new files is the ordinary shape of a docs or scaffolding session. Then `git diff HEAD --stat` and the diff for what changed, plus a read of each `??` path for what arrived | Nothing modified **and** nothing untracked — offer `branch` |
 
 In `branch` and `worktree` mode, read enough of the diff to say what the change
 *does*, not just which files moved. A page that charts line counts and names no
@@ -94,8 +94,12 @@ Checkable bounds, because "minimal text" loses to the drift toward explaining.
    guessing.
 4. **Write one self-contained HTML file.** No external resource of any kind, so
    the file opens from disk years from now. Default path, when `--out` is absent:
-   `docs/session-logs/YYYY-MM-DD-<project>-<slug>-visual.html`, beside the
-   Markdown recaps `/wrap` writes — same `<project>` tag and slug conventions.
+   `~/Projects/_visual-summaries/YYYY-MM-DD-<project>-<slug>.html` — outside the
+   repo being summarized, the way `~/Projects/_kickoffs/` archives briefs. Use
+   `/wrap`'s `<project>` tag and slug conventions. **The page never lands in a
+   repo by default**: it is generated output, no repo ignores it, and a
+   `conversation` page carries a private session's contents into whatever tree it
+   sits in. `--out` is how Kyle asks for one in a repo anyway.
 
 ---
 
@@ -107,10 +111,9 @@ Checkable bounds, because "minimal text" loses to the drift toward explaining.
    one-sentence `description`. Hand Kyle the link.
 3. **Report in chat in three lines**: mode and what it covered, the local path,
    the Artifact link. The page is the summary — don't also summarize it in chat.
-4. **Git.** When the summarized repo is the one this session is working in, follow
-   the normal workflow. The page is an artifact *about* the work, so it does not
-   belong in the branch it describes unless Kyle asks — save it and say where it
-   landed.
+4. **Commit nothing.** The default path is outside every repo, so there is no git
+   step here at all — not a branch, not a commit, not a PR. A page written into a
+   repo by `--out` is committed only if Kyle asks for that too.
 
 ---
 
