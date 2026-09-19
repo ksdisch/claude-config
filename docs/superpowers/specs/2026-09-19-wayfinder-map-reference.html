@@ -1,0 +1,465 @@
+<title>Team and Manager Pages Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #F3F5F4;
+    --surface: #FFFFFF;
+    --ink: #1C2426;
+    --ink-soft: #4F5B60;
+    --ink-faint: #8A97A0;
+    --rule: #D6DDDF;
+    --trail: #1B7F79;
+    --trail-ink: #FFFFFF;
+    --trail-tint: #DDEFEC;
+    --resolved: #5C8A3C;
+    --resolved-tint: #DCE9CF;
+    --claimed: #C98A1B;
+    --claimed-tint: #F6E3B5;
+    --blocked: #8A97A0;
+    --blocked-tint: #E6EAEC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #151A1C;
+      --surface: #1E2528;
+      --ink: #E4E9E8;
+      --ink-soft: #AEB8BC;
+      --ink-faint: #7C8990;
+      --rule: #2E383C;
+      --trail: #3FB3AB;
+      --trail-ink: #0F1A19;
+      --trail-tint: #1D3634;
+      --resolved: #8DBB6A;
+      --resolved-tint: #2A3A22;
+      --claimed: #E0A43A;
+      --claimed-tint: #3E3220;
+      --blocked: #7C8990;
+      --blocked-tint: #262F33;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #151A1C;
+    --surface: #1E2528;
+    --ink: #E4E9E8;
+    --ink-soft: #AEB8BC;
+    --ink-faint: #7C8990;
+    --rule: #2E383C;
+    --trail: #3FB3AB;
+    --trail-ink: #0F1A19;
+    --trail-tint: #1D3634;
+    --resolved: #8DBB6A;
+    --resolved-tint: #2A3A22;
+    --claimed: #E0A43A;
+    --claimed-tint: #3E3220;
+    --blocked: #7C8990;
+    --blocked-tint: #262F33;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  main {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 40px 24px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .headline {
+    font-size: 18px;
+    max-width: 62ch;
+    margin: 0;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+  .headline strong { color: var(--ink); font-weight: 600; }
+
+  .strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .strip li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-size: 14px;
+  }
+  .strip .n {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 18px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .strip .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    align-self: center;
+    background: var(--c);
+  }
+  .strip .fog-dot { background: none; border: 1.5px dashed var(--ink-faint); }
+
+  section > h2 {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section > h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  figure {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 18px 18px 10px;
+  }
+  .graph-scroll { overflow-x: auto; }
+  pre.mermaid {
+    margin: 0;
+    background: transparent;
+    font-family: "IBM Plex Sans", sans-serif;
+    min-width: 900px;
+  }
+  figcaption {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 12px 0 0;
+    text-wrap: pretty;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    margin: 10px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--ink-soft);
+    list-style: none;
+  }
+  .legend li { display: inline-flex; align-items: center; gap: 7px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--c); }
+  .sw.fog { background: none; border: 1.5px dashed var(--ink-faint); }
+  .sh {
+    width: 22px; height: 14px; border: 1.5px solid var(--ink-faint); box-sizing: border-box;
+  }
+  .sh.grill { border-radius: 5px; }
+  .sh.proto { border-radius: 999px; }
+  .sh.task { border-radius: 0; }
+  .sh.research {
+    border: none;
+    background: var(--ink-faint);
+    clip-path: polygon(20% 0, 80% 0, 100% 50%, 80% 100%, 20% 100%, 0 50%);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--trail);
+    border-radius: 6px;
+    padding: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 100%;
+    box-sizing: border-box;
+  }
+  .card .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card .type {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--trail-tint);
+    color: var(--trail);
+    font-weight: 600;
+  }
+  .card .title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.3;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .card .meta {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card .meta span { color: var(--ink-faint); }
+  .card.hitl .type { background: var(--claimed-tint); color: var(--claimed); }
+
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .decision {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--resolved);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 0;
+  }
+  .decision .num { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint); }
+  .decision .title { font-weight: 600; margin: 2px 0 6px; }
+  .decision p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .fog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fog-list li {
+    border: 1.5px dashed var(--ink-faint);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .fog-list li b { color: var(--ink); font-weight: 600; }
+  .fog-list li span { color: var(--ink-faint); font-size: 13px; white-space: nowrap; }
+
+  footer {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 860px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .two { grid-template-columns: 1fr; }
+    h1 { font-size: 32px; }
+  }
+  @media (max-width: 520px) {
+    .cards { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">wayfinder:map · charted 2026-09-18 · read 2026-09-19</p>
+    <h1>Team and manager pages</h1>
+    <p class="headline"><strong>Fifteen decision tickets stand between here and three plan-ready specs.</strong> Five are takeable now, one is resolved, and one is claimed with no session named.</p>
+  </header>
+
+  <ul class="strip" aria-label="Ticket status counts">
+    <li><span class="n">15</span> tickets</li>
+    <li><span class="dot" style="--c: var(--resolved)"></span><span class="n">1</span> resolved</li>
+    <li><span class="dot" style="--c: var(--claimed)"></span><span class="n">1</span> claimed</li>
+    <li><span class="dot" style="--c: var(--trail)"></span><span class="n">5</span> on the frontier</li>
+    <li><span class="dot" style="--c: var(--blocked)"></span><span class="n">8</span> blocked</li>
+    <li><span class="dot fog-dot"></span><span class="n">4</span> in the fog</li>
+  </ul>
+
+  <section>
+    <h2>The route</h2>
+    <figure>
+      <div class="graph-scroll">
+<pre class="mermaid">
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 22, "rankSpacing": 70, "padding": 8}, "themeVariables": {"fontFamily": "IBM Plex Sans, Helvetica Neue, Arial, sans-serif", "fontSize": "13px", "lineColor": "#8A97A0", "clusterBkg": "transparent", "clusterBorder": "#1B7F79", "titleColor": "#1B7F79", "textColor": "#8A97A0", "edgeLabelBackground": "transparent"}}}%%
+graph LR
+  T01("01 · Manager identity and URL keys")
+  T02("02 · Where the Team page math lives")
+  T03("03 · Manager continuity 2016–2026")
+  T04{{"04 · What espn_api serves for past seasons"}}
+  T05(["05 · Team page layout"])
+  T06("06 · Analytics definitions")
+  T15["15 · Authenticated probe of ESPN"]
+  T07("07 · History data shape")
+  T08("08 · History fetch mechanism")
+  T09("09 · Career card stats")
+  T10("10 · Records page scope")
+  T11("11 · Expanded roster fields")
+  subgraph DEST["Destination · three plan-ready specs"]
+    direction TB
+    T12["12 · Write the Phase A spec"]
+    T13["13 · Write the expanded-roster spec"]
+    T14["14 · Write the Phase B spec"]
+  end
+  F1("Phase C · draft history and transactions")
+  F2("Records page content")
+  F3("Rollover integration for the history fetch")
+  F4("Historical lineups 2018+")
+
+  T01 --> T07
+  T03 --> T07
+  T04 --> T07
+  T04 --> T08
+  T07 --> T08
+  T15 --> T08
+  T03 --> T09
+  T07 --> T09
+  T07 --> T10
+  T04 --> T11
+  T15 --> T11
+  T01 --> T12
+  T02 --> T12
+  T05 --> T12
+  T06 --> T12
+  T11 --> T13
+  T12 --> T13
+  T07 --> T14
+  T08 --> T14
+  T09 --> T14
+  T10 --> T14
+  T07 -.-> F1
+  T07 -.-> F4
+  T10 -.-> F2
+  T08 -.-> F3
+  T02 ~~~ T07
+  T05 ~~~ T07
+  T06 ~~~ T07
+  T15 ~~~ T07
+
+  classDef resolved fill:#DCE9CF,stroke:#5C8A3C,color:#1C2426,stroke-width:1.5px;
+  classDef claimed fill:#F6E3B5,stroke:#C98A1B,color:#1C2426,stroke-width:1.5px;
+  classDef frontier fill:#1B7F79,stroke:#135C58,color:#FFFFFF,stroke-width:2px;
+  classDef blocked fill:#E6EAEC,stroke:#8A97A0,color:#3B464C,stroke-width:1px;
+  classDef fog fill:transparent,stroke:#8A97A0,color:#8A97A0,stroke-width:1.5px,stroke-dasharray:5 4;
+  class T04 resolved;
+  class T01 claimed;
+  class T02,T03,T05,T06,T15 frontier;
+  class T07,T08,T09,T10,T11,T12,T13,T14 blocked;
+  class F1,F2,F3,F4 fog;
+</pre>
+      </div>
+      <ul class="legend" aria-label="Legend">
+        <li><span class="sw" style="--c: var(--trail)"></span>frontier · takeable now</li>
+        <li><span class="sw" style="--c: var(--resolved)"></span>resolved</li>
+        <li><span class="sw" style="--c: var(--claimed)"></span>claimed</li>
+        <li><span class="sw" style="--c: var(--blocked)"></span>blocked</li>
+        <li><span class="sw fog"></span>fog · not yet specified</li>
+        <li><span class="sh grill"></span>grilling</li>
+        <li><span class="sh proto"></span>prototype</li>
+        <li><span class="sh research"></span>research</li>
+        <li><span class="sh task"></span>task</li>
+      </ul>
+      <figcaption>An arrow means "must resolve before". A dashed arrow means the fog patch waits on that ticket to become a ticket of its own. Out-of-scope items are not drawn; they never graduate.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Takeable now · one per session</h2>
+    <ul class="cards">
+      <li class="card">
+        <div class="num">02 <span class="type">grilling</span></div>
+        <p class="title">Where the Team page math lives</p>
+        <p class="meta"><span>Unblocks</span> Phase A spec</p>
+      </li>
+      <li class="card">
+        <div class="num">03 <span class="type">grilling</span></div>
+        <p class="title">Manager continuity 2016–2026</p>
+        <p class="meta"><span>Unblocks</span> History data shape · Career card stats</p>
+      </li>
+      <li class="card">
+        <div class="num">05 <span class="type">prototype</span></div>
+        <p class="title">Team page layout</p>
+        <p class="meta"><span>Unblocks</span> Phase A spec</p>
+      </li>
+      <li class="card">
+        <div class="num">06 <span class="type">grilling</span></div>
+        <p class="title">Analytics definitions</p>
+        <p class="meta"><span>Unblocks</span> Phase A spec</p>
+      </li>
+      <li class="card hitl">
+        <div class="num">15 <span class="type">task</span></div>
+        <p class="title">Authenticated probe of ESPN</p>
+        <p class="meta"><span>Needs</span> league cookies · Kyle or Connor<span>Unblocks</span> History fetch mechanism · Expanded roster fields</p>
+      </li>
+    </ul>
+  </section>
+
+  <div class="two">
+    <section>
+      <h2>Decisions so far</h2>
+      <div class="decision">
+        <div class="num">04 · research</div>
+        <p class="title">What espn_api serves for past seasons and player fields</p>
+        <p>Every season back to 2016 loads with finishes, records, settings, and the draft. Expanded-roster fields live on the season roster, not box scores. Transactions from 2019 only. Seven unknowns went to the probe.</p>
+      </div>
+    </section>
+    <section>
+      <h2>Not yet specified</h2>
+      <ul class="fog-list">
+        <li><b>Phase C · draft history and transactions</b><span>waits on 07</span></li>
+        <li><b>Records page content</b><span>waits on 10</span></li>
+        <li><b>Rollover integration for the history fetch</b><span>waits on 08</span></li>
+        <li><b>Historical lineups 2018+</b><span>waits on 07</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>Drawn by hand from .scratch/06-team-manager-pages/map.md and the fifteen files under issues/ · every count above is a scan of their Status and Blocked-by lines</footer>
+</main>
