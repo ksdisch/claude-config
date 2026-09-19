@@ -58,7 +58,9 @@ Post the brief, in this order and nothing more:
 4. **Today** — every returned task in due-time order, overdue ones flagged with their
    original date. Task names only; ids go in the log file.
 5. **Parking lot** — the prior day's unworked items, one line each.
-6. One question: **which one to three of these make today a win?**
+6. **Bite** — only when the hook has a `## Bite` section: follow it. One term, one recall
+   question, nothing more. No section → no line.
+7. One question: **which one to three of these make today a win?**
 
 Kyle's answer is the must-do set. Then write the log file (format below) with Goal (from
 the hook), Must-do, and the Plan table, and arm the check-in cron (see Day mode).
@@ -69,12 +71,12 @@ part of the brief; doing work on one is day mode.
 
 ## Phase 2 — Day mode
 
-Day mode holds from the brief until `/day wrap`. Three behaviors run at once.
+Day mode holds from the brief until `/day wrap`. Four behaviors run at once.
 
 ### Log
 
 A message that reports what happened to a task is a log entry: "Santucci voicemail,
-Hometown Hero wants photos, Zach email sent." For each outcome in the message:
+Hometown Hero wants photos, Zack email sent." For each outcome in the message:
 
 1. Match it to a Plan task by name. Two candidates → ask which. No candidate → ask whether
    it is a new task (create it in the project) or a note (log only).
@@ -90,6 +92,24 @@ Hometown Hero wants photos, Zach email sent." For each outcome in the message:
 
 Questions get answers, not log lines. **Done when:** every outcome in the message has a
 log line and an applied action, or a question back.
+
+A reply to the bite's recall question is confirmed in one line and recorded exactly as the
+hook's `## Bite` section says. It is never a log line and never touches Todoist.
+
+### Brief
+
+A request for what to say on a listed dial — "brief me on X", "what do I say to X", "what's
+the opener for X" — **invokes the `call-brief` skill. Never write the briefing inline.**
+It's on-list under the Gate below (a task's own script is a direct dependency of that task),
+so it gets done, but it gets done through the skill.
+
+Writing one freehand produces loose prose in the plan-table voice, which is the wrong
+artifact: `call-brief` puts the bullets Kyle actually glances at mid-call above the script,
+and a hand-written brief drops that layer every time. One contact per invocation. If he
+names two, run it twice.
+
+The brief goes to chat, not the log. What lands under `## Log` is the outcome after he
+dials, per Log above.
 
 ### Gate
 

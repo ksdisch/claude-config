@@ -18,6 +18,10 @@ log_dir: daily/
 ## Extra morning sources
 - <source, what to read, what counts as an overnight item>
 
+## Bite
+workspace: <absolute path to a teach learning workspace>
+- <how to pick today's term, what to print, and where to record the recall answer>
+
 ## Outcome vocabulary (Kyle says → what to do)
 | Outcome | Todoist | Files / follow-through |
 |---|---|---|
@@ -34,3 +38,5 @@ Dates the vocabulary doesn't cover: ask one question, never guess.
 ## Wrap step
 1. <what Claude rebuilds or updates when the day closes>
 ```
+
+`## Bite` adds one term-of-the-day line to the brief (Phase 1, item 6); leave it out for projects with no learning workspace.
