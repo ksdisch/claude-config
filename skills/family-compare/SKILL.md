@@ -38,7 +38,7 @@ Run this when a `/retire` sweep returns `ask` on a cluster, or when Kyle already
 - **`--exclude`** — comparisons Kyle rules out on purpose, reason optional in the prose. Exclusions print in the doc's header so a later reader knows the omission was deliberate.
 - **Prose** after the flags — asserted facts and scope notes ("X is a shim over Y", "stop and ask if Z"). Confirmed cheaply in Phase 1 and listed at Gate 1 as *treated as verified*.
 
-**In scope:** anything with a file and an invocation surface — skills, commands, subagents, plugin copies, vendored or gitignored loose copies. CLAUDE.md sections, MCP servers, hooks, and settings belong to `/retire`: name the item, point there, drop it from the run.
+**In scope:** anything with a file and an invocation surface — skills, commands, subagents, plugin copies, vendored or gitignored loose copies. CLAUDE.md sections, MCP servers, hooks, and settings belong to `/retire`: name the item, point there, drop it from the run. **`/retire` may not be installed yet** — it lands on its own PR. When it is absent, say so and record the item and the reason it was dropped in the doc's exclusions, so the next sweep inherits it rather than losing it.
 
 ## Item resolution
 
@@ -64,8 +64,8 @@ Read every **item** in full now. Neighbors are read in full too, but only once G
 | index presence | row in `docs/command-skill-reference.md`, card in `docs/usage-playbook.md` — or **not eligible**, which is the honest answer for an item the index rule never covered (a vendored or gitignored copy), and a different fact from a missing row |
 | twins | the other files the name resolved to; `diff` each pair; note the plugin version |
 | roster visibility | whether the item appears in this session's own skill listing — the observable form of `disable-model-invocation` |
-| typed usage | `~/.claude/history.jsonl`: count of `display` values starting with `/<name>`, first and last date, distinct projects; the `/<plugin>:<name>` form counted separately |
-| artifacts | files the item writes or expects on disk (a map, a spec dir, a report), and whether any exist under `~/Projects` |
+| typed usage | `~/.claude/history.jsonl`: count of `display` values where `/<name>` is followed by end-of-string or a character outside `[A-Za-z0-9_-]` — an unanchored prefix match counts `/<name>-coder` into `/<name>`, and comparing similarly-named siblings is this skill's whole purpose. Record first and last date, and **how many** distinct projects; the `/<plugin>:<name>` form counted separately |
+| artifacts | files the item writes or expects on disk (a map, a spec dir, a report), and **how many** exist under `~/Projects` |
 | referrers | other skills, commands, agents, or `CLAUDE.md` text that call or name it |
 | prior arguments | files in `docs/ideas/`, `docs/adr/`, `docs/reports/` that mention it |
 
@@ -74,6 +74,8 @@ Read every **item** in full now. Neighbors are read in full too, but only once G
 Two channels can ship the same skill — a loose copy in `~/.claude/skills` firing as `/<name>`, a plugin copy firing as `/<plugin>:<name>` and appearing in the roster a second time when model-invocable. Byte-identical today does not mean identical after the next reinstall; say which it is and at what version you read it.
 
 If `skills/retire/scripts/steering_inventory.py` is present **in the repo this session is running in** — a copy on another checkout's unmerged branch does not count, and is never run — prefer it for typed *and* session-chosen usage and cite its temperature. Otherwise the history grep stands and the doc states that usage counts are typed-only.
+
+**Redaction — this doc gets committed to a public repo.** `~/.claude/history.jsonl` is machine state: its `project` values are absolute paths, and some of them name private work. The doc carries **counts, never names or paths**: "used in 5 projects", not a list; `~`-relative or repo-name-only for any path that reaches the page. This is `retire`'s standing rule for its own committed report, and it binds here for the same reason — `.gitignore` already untracks whole skills because this repo is public. Gather freely; publish counts.
 
 Confirm each asserted fact from the prose at the cheapest possible cost — a `wc`, a `diff`, a `grep`. A confirmed fact is then used as given.
 
@@ -104,19 +106,19 @@ Qualitative throughout; no numeric overlap score. Every identifier that reaches 
 
 ### Output contract
 
-The doc's last section is exactly this table:
+The doc's last section is exactly this table — its columns and verdict names track **`retire`'s implemented `skills/retire/SKILL.md`**, not its design spec, which the implementation has already moved past:
 
 ```
-| # | Item | Surface | Evidence | Proposed | Why |
+| # | Item | Surface | Evidence | Proposed | Question / why |
 |---|---|---|---|---|---|
-| 1 | `grilling` — design-tree interview engine | skill | 1,987 B · model-invocable · twin in plugin 1.2.3 (identical) · 0 typed, reached via shims · 2 referrers | keep | the only engine; retiring the loose copy needs proof the shims' bare-name call still resolves |
+| 1 | `grilling` — design-tree interview engine | skill | 1,987 B · model-invocable · twin in plugin 1.2.3 (identical) · 0 typed, reached via shims · 18 referrers | keep | the only engine; retiring the loose copy needs proof the shims' bare-name call still resolves |
 ```
 
 - **Item** — name in backticks plus a title. Never a bare id.
 - **Surface** — `skill`, `command`, `agent`, or `plugin`; the surface-qualified ledger id is `<surface>:<name>`.
 - **Evidence** — the Phase 1 fields that bear on the verdict, dot-separated, numbers included.
 - **Proposed** — one of `retire`, `keep`, `merge-into <x>`, `relocate`, `pause`, `ask`. `pause` is the verdict when the deciding comparison was excluded from this run; `ask` when the evidence is mixed with nothing excluded.
-- **Why** — one line.
+- **Question / why** — one line. **Every `ask` row carries its own specific question here**, not a restatement of the uncertainty: `ask` is a placeholder for a question, and a row that arrives at ratification without one cannot be answered.
 
 Kyle rules by row number, in `retire`'s reply grammar, when the table reaches a ratification pass. A `merge-into` verdict earns a backlog stub there; the merge itself is a later PR.
 
