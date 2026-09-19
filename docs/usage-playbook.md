@@ -699,6 +699,27 @@ rows get re-pointed to match.
   v0 draws one drill level and no arrows leaving a drilled-in view; "open the code" is a
   click-to-copy `file:line`, never embedded source.
 
+#### `family-compare`
+
+- **Run config:** Fable 5 · `xhigh` — the analysis is a chain of design calls with real
+  tradeoffs (is this pair redundant or just differently shaped? is this item an engine or a
+  shim?), and Gate 1 blocks on you.
+- **Reach for it when:**
+  - A handful of skills or commands seem to overlap and you can't say which to reach for.
+  - A `/retire` sweep came back `ask` on a cluster and the verdict needs real evidence.
+  - You want one committed doc that settles a family before the next sweep gets there.
+- **Pairs well with:** `/retire` (the wide sweep this feeds, and the ratifier of its verdicts —
+  not yet indexed here; it lands with its own PR), [`/trim-context`](#trim-context)
+  (relocates the bloat that stays), [`/prompt-optimize`](#prompt-optimize) (picks a tool for
+  one prompt rather than comparing tools).
+- **Notes:** **recommends only** — it applies no verdict and edits no compared item, including
+  vendored or gitignored copies, which it describes rather than fixes. Two gates: the neighbor
+  round (neighbors and exclusions are the one input the repo can't supply) and the review
+  proposal, which is a hard stop before merge. Every overlap claim cites a file read this
+  session; a shim gets read as carefully as an engine. Two or more items required — one item
+  is not a family. CLAUDE.md sections, MCP servers, hooks, and settings are `/retire`'s, and
+  get refused with a pointer.
+
 #### `artifacts-audit`
 
 - **Run config:** Opus 5 · `medium` — a taxonomy audit against a fixed rubric, ending in a
