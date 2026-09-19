@@ -1250,6 +1250,27 @@ session *in that repo*.
   a source failed — that becomes `COULD NOT COMPLETE` with the reason. Regression test:
   `python3 .claude/skills/sync-check/scripts/selftest.py`.
 
+#### `morning-briefs`
+
+- **Run config:** Opus 5 · `high` — the orchestrator itself decides little (which tasks are
+  dials), but every subagent it spawns is a `call-brief` run, and that is judgment about a
+  lead. Scheduled runs use the same pair; override with `MORNING_BRIEFS_MODEL`.
+- **Reach for it when:**
+  - It is a block morning and you want every brief on disk before the first dial.
+  - `/day` shows a dial with no section in today's briefs file (the gap-fill).
+  - Tomorrow's roster is set at the wrap and you want tomorrow's briefs built tonight
+    (`--date`).
+- **Pairs well with:** [`call-brief`](#call-brief) (the thing it fans out; also what
+  regenerates a stale section), the A2C `day` skill (prints the file and fills gaps),
+  [`sync-check`](#sync-check) (keeps the blocks the job reads trustworthy).
+- **Notes:** no write path into the pipeline — no Todoist write, no calendar write, no
+  Gmail draft or send — and `bin/run-morning-briefs.sh` denies every one of those tools at
+  the process boundary. The dial rule is explicit (inside a block window, no non-dial
+  marker, a phone number present); everything else lands in the file's `Skipped:` line so a
+  misclassification is visible, never silent. Parts live in `daily/briefs/YYYY-MM-DD/`; a
+  part is reused only when its task id and due time are unchanged. Regression test:
+  `python3 .claude/skills/morning-briefs/scripts/assemble_briefs.py --selftest`.
+
 #### `rebrief-a2c`
 
 - **Run config:** Sonnet 5 · `medium` — two live sweeps and a reconciliation with a fixed
