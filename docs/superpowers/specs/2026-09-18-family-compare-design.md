@@ -51,7 +51,7 @@ Trigger phrases for the description: "compare these skills / commands", "which o
 
 A bare name resolves, in order, against: `skills/<name>/SKILL.md`, `commands/<name>.md`, `agents/<name>.md` in the current repo; the same paths under the `~/.claude/skills` / `~/.claude/commands` / `~/.claude/agents` symlink targets (which may be the main checkout when the session is in a worktree); and `~/.claude/plugins/cache/**/skills/**/<name>/SKILL.md` for plugin copies. A `plugin:name` form targets the plugin copy directly. A name that resolves to more than one file is reported with every path (they are all evidence: twins are a finding) and the loose copy is treated as the invocation target unless Kyle says otherwise. A name that resolves to nothing stops and asks.
 
-Reads are read-only everywhere. In another checkout the skill runs no git command, changes no branch, writes nothing.
+Reads are read-only everywhere. In another checkout the skill runs only the read-only git queries Phase 1's evidence table needs (`git ls-files`, `git check-ignore -v`, `git log`) — it changes no branch, stages nothing, writes nothing. *(Corrected 2026-09-19, review finding F5: as first written this line forbade the git commands the Phase 1 table below requires, since an item resolved through the `~/.claude` symlink is always in another checkout. `skills/family-compare/SKILL.md` is the operative statement of this rule.)*
 
 ### Phase 1 — Inventory (read-only)
 
