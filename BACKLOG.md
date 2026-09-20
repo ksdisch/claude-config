@@ -5,6 +5,48 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Feature] retire: fleet prune lane
+- **Why:** `retire` reports vendored copies of a retired item but never edits a project repo; 16 repos (13 public) carry the global kit, and the July 2026 PII purge showed what a copy that outlives its source costs. Needs [`fleet-manifest-reconcile`](docs/ideas/fleet-manifest-reconcile.md)'s per-item manifest and its landmine list (single-line command lists, zsh refspecs, false-clean sweeps).
+- **Acceptance:** `/retire` gains a `--fleet` flag that opens one PR per downstream repo removing the retired item, with the refuse-if-unsure excision guard, and reports every repo it could not clean.
+- **Size:** L
+- **Added:** 2026-09-18
+
+### [Feature] retire: per-project CLAUDE.md lane
+- **Why:** The global lane audits `~/.claude`; the biggest per-project files (`stopwatch` 38.7k chars, `hush-gauge` 31.2k) are invisible to it, and `/trim-context` relocates without ever retiring.
+- **Acceptance:** `/retire` run at a project root inventories that repo's `CLAUDE.md` sections and `.claude/` items with the same evidence fields, scoped to that project's transcripts.
+- **Size:** M
+- **Added:** 2026-09-18
+
+### [Improvement] retire: periodic `--report` cadence
+- **Why:** The sweep is only as good as the habit of running it. A quarterly read-only report keeps "what went cold" visible without a Stop-hook tracer.
+- **Acceptance:** One `/schedule`d or calendar-reminded `/retire --report` run per quarter, with the report committed to `docs/reports/`.
+- **Size:** S
+- **Added:** 2026-09-18
+
+### [Feature] orchestrate: headless workers
+- **Why:** v1 of `/orchestrate` needs a visible window per worker. `claude -p` seats with `crossSessionInbound: accept` passed via `--settings` would remove the window for tickets nobody needs to watch. (The folder-trust dialog cost from pilot finding #10 is already gone via `scripts/pretrust.sh`.)
+- **Acceptance:** The Milestone 1 pass bar (A1–A10 in `docs/reports/2026-09-07-orchestrate-pilot.md`) holds with zero windows open.
+- **Size:** M
+- **Added:** 2026-09-08
+
+### [Exploration] orchestrate vs Agent Teams
+- **Why:** `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` ships a lead/teammate/shared-task-list shape that overlaps `/orchestrate`'s loop. Before investing further in the skill, one hour on the same fixture should say whether the built-in already covers it.
+- **Acceptance:** A `docs/reports/` note running the three-ticket pilot fixture under Agent Teams and stating whether it covers assign → Done → review → merge → index refresh, and what it lacks.
+- **Size:** S
+- **Added:** 2026-09-08
+
+### [Improvement] orchestrate: merge-conflict handling
+- **Why:** Every pilot run hit a merge conflict between sibling tickets that append to the same file (findings #8, #13). The skill's answer is "stop, tell Kyle, propose a rebase Follow-up" — correct but it costs a Kyle decision per conflict, and Kyle chose the same route all three times.
+- **Acceptance:** A conflict during a feature-branch merge is handled by the rebase Follow-up (template now in `references/messages.md`) to the same worker without a Kyle round-trip — still briefed, never silent.
+- **Size:** S
+- **Added:** 2026-09-08
+
+### [Improvement] /launch: detect Warp by presence, not by `$TERM_PROGRAM`
+- **Why:** From an Apple Terminal session `/launch` maps to the fallback path and never starts the session, even though Warp is installed and `open warp://launch/<config>` works from any process (pilot 2026-09-07, finding #11 — the orchestrator ran the Warp path by hand). `/orchestrate` needs seats opened from whatever terminal the orchestrator happens to be in.
+- **Acceptance:** `commands/launch.md` takes the Warp path when `/Applications/Warp.app` exists regardless of `$TERM_PROGRAM` (or accepts an explicit `--terminal warp`), with the fallback only when Warp is absent.
+- **Size:** S
+- **Added:** 2026-09-08
+
 ### [Feature] Session auto-close: the `/launch` companion that reaps finished sessions
 - **Why:** `/launch` (PRs #75/#76) made opening sessions one command, but nothing ever closes them — finished Warp windows/tabs accumulate on the desktop until Kyle sweeps them by hand, and the more `/launch` gets used the faster they pile up. Sessions need the ability and insight to close sessions that are *for sure* done being used. The governing asymmetry: a launch mistake costs one ⌘V; a close mistake kills live work. Full write-up in [`docs/ideas/session-auto-close.md`](docs/ideas/session-auto-close.md).
 - **Acceptance:** A plan doc in `docs/plans/` settling the four open design questions (Warp close mechanism, what "for sure done" means, where the reaper lives, consent model), then the build it specifies — or the plan session itself ships the build if it turns out light.
@@ -37,6 +79,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Re-verified 2026-08-04** (cloud doc-hygiene sweep; `git ls-tree` over freshly fetched **default branches** of all 17 public repos — branch tips and private repos not re-swept): still live. 10 public repos carry `.claude/skills/interview-prep/SKILL.md` today — blind-cite, home-base, forge-gap, decay-pin, dim-stage, ghost-patch, constellation, clinical-data-etl, stopwatch, buoy-legal — each exposing the seven dossier-path lines, and 9 of the 10 also still advertise the skill in their `CLAUDE.md`. The good news, same sweep: `mock-sql` remains fully purged — 0 files and 0 `CLAUDE.md` advertising lines on every public default branch — and every project-specific item indexed in `docs/command-skill-reference.md` was confirmed present in its repo (DogHood included, via private read), so the index's unverifiable-by-checker half is verified accurate as of this date.
 
 ### [Exploration] The Coliseum: commands earn their keep on lived-invocation evidence
+- **Status:** **Built 2026-09-18** as [`retire`](skills/retire/SKILL.md) (PR #132). Acceptance met by a different route than proposed: the Stop-hook tracer and hand-seeded `usage.jsonl` were unnecessary — the transcript corpus already carries lived-invocation evidence, read directly and cached. The bet held: 222 items inventoried, typed vs. session-chosen split, 53 rows needing a ruling.
 - **Why:** Lived-invocation data (which of the ~29 specs actually fire, overlap, or get hand-corrected) is a sharper curation signal than memory — a usage trace + `/retro` gives the repo its first subtraction pressure (A3 + A4). See [`docs/ideas/coliseum-commands-earn-their-keep.md`](docs/ideas/coliseum-commands-earn-their-keep.md) for the full write-up.
 - **Acceptance:** Prototype the credible first step (`/retro` reader over a hand-seeded `usage.jsonl`, then the Stop-hook) and judge whether the bet holds.
 - **Size:** L
@@ -145,6 +188,7 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Added:** 2026-08-20
 
 ### [Improvement] Minimal initial prompt: salience audit for always-loaded instructions
+- **Status:** **Absorbed 2026-09-18** into [`retire`](skills/retire/SKILL.md)'s CLAUDE.md lane (PR #132). The hand-run audit is now a repeatable sweep (`/retire --surface claude-md`) with per-section trigger evidence and `keep (hook)` marking hook-convertible rules at ratification. The folding decision resolved **against** `/trim-context`: that command relocates, `retire` deletes — they are different verbs and stay separate, with `relocate` verdicts handed over by name.
 - **Why:** Lost-in-the-middle means long CLAUDE.md files silently lose their middle; `/trim-context` audits size — this adds the positional-salience and hook-convertibility criteria. Full write-up in [`docs/ideas/minimal-initial-prompt.md`](docs/ideas/minimal-initial-prompt.md).
 - **Acceptance:** One hand-run audit of the global CLAUDE.md (must-hold vs guidance + ranked hook-conversion list) and a decision on folding the pass into `/trim-context`.
 - **Size:** M

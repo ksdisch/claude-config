@@ -148,7 +148,7 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 | [02](issues/02-slug.md) | Ticket title | One-line summary | ready-for-agent | 01 |
 ```
 
-`Status` values are the five triage roles (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`) for `/to-tickets` tickets. `/wayfinder` tickets use a disjoint `claimed`/`resolved` vocabulary and don't belong in this manifest at all (see below) — don't mix the two.
+`Status` values are the five triage roles (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`) for `/to-tickets` tickets, plus two orchestrator-written values — `in-progress` (claimed by a worker session; the comment names it and the branch) and `done` (merged to the feature branch) — which only `/orchestrate` sets. `/wayfinder` tickets use a disjoint `claimed`/`resolved` vocabulary and don't belong in this manifest at all (see below) — don't mix the two.
 
 **The manifest is an entry point, never the source of truth.** `/implement` and `/implement-spec` should treat `tickets.md` as an index that resolves to the issue files — read it to find which files exist and their current status, then read the issue files themselves for content (What to build / Acceptance criteria / Comments). If `tickets.md` and an issue file's `Status:` line ever disagree, the issue file wins; refresh the manifest.
 

@@ -137,12 +137,19 @@ rows get re-pointed to match.
   - Context is getting long and the remaining work would be cleaner in a fresh session.
   - You want hard-won lessons and rejected options captured so the next session doesn't
     relitigate them.
+  - Pass `--orchestrator` when the next session should **coordinate** an arc across worker
+    sessions rather than build it — it swaps the block's structure for an arc decomposition,
+    worker mechanics, gate delegation and boundaries, and lifts the ~600-word cap.
 - **Pairs well with:** [`/begin`](#begin) (what the fresh session runs first),
   [`/launch`](#launch) (opens the fresh session and loads the prompt into it),
-  [`/prompt-optimize`](#prompt-optimize) (same model/effort vocabulary, advisory only),
-  [`narrate`](#narrate) (`--audio`).
+  [`orchestrate`](#orchestrate) (`--orchestrator` checks first whether that skill already
+  covers the arc, and defers to it when it does), [`/prompt-optimize`](#prompt-optimize)
+  (same model/effort vocabulary, advisory only), [`narrate`](#narrate) (`--audio`).
 - **Notes:** it **stops the current work** after printing — that's deliberate. The
-  run-config note lands outside the paste-able block, never inside it.
+  run-config note lands outside the paste-able block, never inside it. Under
+  `--orchestrator` the run-config guidance flips to Opus 5 (1M) at `high` — a coordinator
+  reads far more than it writes — and a pick that wants Fable 5 is the signal that the
+  decomposition isn't settled enough to dispatch yet.
 
 #### `/launch`
 
@@ -532,6 +539,27 @@ rows get re-pointed to match.
   rewritten in place. It never re-architects functional source code; a behavior change is an
   ordinary edit.
 
+#### `visual-summary`
+
+- **Run config:** inherits the session · `low` — the work is picking three or four visuals
+  and rendering them; the gathering is mechanical and the analysis is deliberately shallow.
+- **Reach for it when:**
+  - You want to *see* what a session or a branch amounted to instead of reading a recap.
+  - A diff is large enough that `git diff --stat` tells you nothing about its shape.
+  - You want something glanceable to share — the page publishes as an Artifact every run.
+- **Pairs well with:** [`/wrap`](#wrap) (the written sibling — vocabulary, quiz, next moves,
+  saved in the repo where this one is archived outside it),
+  [`architecture-viewer`](#architecture-viewer) (structure of the repo, where this shows the
+  change to it), [`ship-and-route`](#ship-and-route) (routes what's next; this only depicts
+  what happened).
+- **Notes:** mode is an argument — `conversation` (default), `branch`, or `worktree`. **A
+  fresh session has no transcript**, so `conversation` only works in the session that did
+  the work; use `branch` or `worktree` otherwise. Every number on the page is measured, and
+  a section with nothing in it is omitted rather than padded. The page lands in
+  `~/Projects/_visual-summaries/`, never in the repo it describes, unless `--out` says
+  otherwise. It judges nothing — no risk flags, no next-move advice. `--no-publish`
+  keeps it local.
+
 #### `ship-and-route`
 
 - **Run config:** Fable 5 · `high` — landing decisions plus ranked next-move routing is
@@ -602,6 +630,45 @@ rows get re-pointed to match.
   skill's `references/`) supplies extra sources, outcome vocabulary, the polish list, and the
   wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
   re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
+
+---
+
+#### `orchestrate`
+
+- **Run config:** Fable 5 · `high` — every decision is a judgment about someone else's work
+  (what to assign, whether a Done is real, what review scope to propose). Workers run on
+  Opus 5 · `high`, set by the skill when it launches them.
+- **Reach for it when:**
+  - The `/to-tickets` index has independent frontier tickets and you want them built in
+    parallel by sessions you can watch, steer, and resume.
+  - You want the ticket index, not a chat transcript, to be the record of who did what.
+- **Pairs well with:** the `/to-tickets` index (what it consumes),
+  [`adversarial-review`](#adversarial-review) (the gate each Done passes),
+  [`/launch`](#launch) (opens seats in Milestone 2),
+  [`ship-and-route`](#ship-and-route) (lands the feature branch on main afterwards).
+
+#### `retire`
+
+- **Run config:** Fable 5.1 · `xhigh` — ruling on what still steers you is convention-setting
+  judgment with real tradeoffs; the counting underneath is a deterministic script that needs no
+  model at all.
+- **Reach for it when:**
+  - Sessions start heavy, or an old convention keeps steering new work and you want it *gone*,
+    not relocated.
+  - You're removing one thing and want the bookkeeping done for you — row, card, referrers,
+    ignore block, ledger: `/retire <item>`.
+  - Quarterly, or before a big config change: `/retire --report` for a read-only look at what
+    went cold. `--surface claude-md` makes "audit my CLAUDE.md" a one-liner.
+- **Pairs well with:** [`/trim-context`](#trim-context) (where every `relocate` verdict goes —
+  retire deletes, trim-context relocates),
+  [`adversarial-review`](#adversarial-review) (the gate each apply pass proposes),
+  [`/claudify-repo`](#claudify-repo) (vendored copies are reported, never pruned).
+- **Notes:** nothing is removed before you ratify its row, and unanswered rows are not applied —
+  silence is never consent. Tracked items go through branch + PR; `settings.json`, `~/.claude.json`
+  and plugin toggles change only after a per-file confirmation showing the exact edit list, with a
+  backup first. Never touches a project repo. The inventory script exits non-zero rather than
+  report a zero it didn't measure, so a broken read can't produce a false clean. Restore pointers
+  live in [`retired.md`](retired.md).
 
 ### Quality & Debugging
 
@@ -694,6 +761,27 @@ rows get re-pointed to match.
   but nothing committed. Publishing to a claude.ai Artifact is opt-in via `--publish`.
   v0 draws one drill level and no arrows leaving a drilled-in view; "open the code" is a
   click-to-copy `file:line`, never embedded source.
+
+#### `family-compare`
+
+- **Run config:** Fable 5 · `xhigh` — the analysis is a chain of design calls with real
+  tradeoffs (is this pair redundant or just differently shaped? is this item an engine or a
+  shim?), and Gate 1 blocks on you.
+- **Reach for it when:**
+  - A handful of skills or commands seem to overlap and you can't say which to reach for.
+  - A `/retire` sweep came back `ask` on a cluster and the verdict needs real evidence.
+  - You want one committed doc that settles a family before the next sweep gets there.
+- **Pairs well with:** `/retire` (the wide sweep this feeds, and the ratifier of its verdicts —
+  not yet indexed here; it lands with its own PR), [`/trim-context`](#trim-context)
+  (relocates the bloat that stays), [`/prompt-optimize`](#prompt-optimize) (picks a tool for
+  one prompt rather than comparing tools).
+- **Notes:** **recommends only** — it applies no verdict and edits no compared item, including
+  vendored or gitignored copies, which it describes rather than fixes. Two gates: the neighbor
+  round (neighbors and exclusions are the one input the repo can't supply) and the review
+  proposal, which is a hard stop before merge. Every overlap claim cites a file read this
+  session; a shim gets read as carefully as an engine. Two or more items required — one item
+  is not a family. CLAUDE.md sections, MCP servers, hooks, and settings are `/retire`'s, and
+  get refused with a pointer.
 
 #### `artifacts-audit`
 
@@ -1085,6 +1173,24 @@ rows get re-pointed to match.
   `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
   the teach skill itself is never edited.
 
+#### `mock-call`
+
+- **Run config:** Opus 5 · `medium` — the persona has to stay in character and the debrief
+  has to map each miss to the right term, which is judgment; voice turns want low latency,
+  which argues against `high`.
+- **Reach for it when:**
+  - A teach workspace has personas and you want to test whether the vocabulary survives a
+    live conversation, not a quiz.
+  - Sunday learning hour, after the `/teach` lesson.
+  - Before a real call of a type you have not made in a while.
+- **Pairs well with:** [`teach`](#teach) (builds the reference docs the persona draws on and
+  promotes terms to the glossary), [`teach-research`](#teach-research) (stocks the digests
+  the personas cite).
+- **Notes:** typed-only (`disable-model-invocation: true`). Voice needs the voicemode
+  plugin's services running (`/voicemode:status`); two failed turns fall back to text
+  automatically. Writes only `recall-log.md` and, when earned, one learning record; never
+  the glossary.
+
 ### UI & Frontend
 
 #### `match-the-mock`
@@ -1140,6 +1246,72 @@ session *in that repo*.
   there. One HARD STOP confirming the batch (all / some / none) before it touches Gmail or
   the browser; "none" ends the run cleanly. Unverified addresses get a staged draft with an
   empty `To:` and a flag. Trackers are not auto-marked sent.
+
+#### `call-brief`
+
+- **Run config:** Sonnet 5 · `medium` — four fixed sources, a fixed output shape, and a
+  reference example to match.
+- **Reach for it when:**
+  - You're about to dial one prospect and want every line you'd say written out in full.
+  - A task's script has gone stale and you need it rebuilt from the files before the call.
+- **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
+  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at), [`narrate`](#narrate)
+  (`--audio`).
+- **Notes:** one contact per run, and every spoken section comes **twice** — detailed bullets
+  to talk from, the full-sentence script blockquoted under them, same ground in the same order
+  so his eye can jump between the layers (the voicemail is script only). Numbers in the task
+  and `prospects.md` must agree or the header flags it — never resolved by picking one. Only
+  the two figures the skill names are ever spoken; every other commercial question routes to
+  the principal. `--audio [short|long]` renders a spoken version through `narrate` after the
+  brief prints: `short` (default) is the prep briefing for the walk to the car; `long` adds the
+  opener and voicemail read as written, the one place in the setup where narration is
+  deliberately verbatim. The MP3 and its script land inside the A2C folder, never the shared
+  audio dir, because both name a real prospect.
+
+#### `sync-check`
+
+- **Run config:** Opus 5 · `high` — mostly deterministic checkers, but the whitelist boundary
+  is real judgment and the thing it edits is a file full of identifiers that must never be
+  guessed. Scheduled runs use the same pair; override with `SYNC_CHECK_MODEL`.
+- **Reach for it when:**
+  - You want to trust tomorrow's calendar block without auditing it first.
+  - Several sessions have written to Todoist and you're not sure the blocks kept up.
+  - Something was corrected in `prospects.md` and you want to know where the old version
+    still lives.
+- **Pairs well with:** [`day`](#day) (the sweep is what makes the morning block trustworthy),
+  [`rebrief-a2c`](#rebrief-a2c) (re-entry after a gap; the sweep is the standing version of
+  the same reconciliation), [`replenish-a2c`](#replenish-a2c) (run the sweep after a refill).
+- **Notes:** the whitelist is **closed** and lives in
+  `.claude/skills/sync-check/references/whitelist.md`. It adds a missing row, corrects a row's
+  time, drops a plainly-transcribed dead row and flags a hand-authored one — nothing else.
+  It never changes a name, number, address or company; never deletes, merges or re-dates a
+  Todoist task; never edits a past block or a day log's Log/Wrap; and has no send path at
+  all, enforced twice (no send tool is loaded, and `bin/run-sync-check.sh` denies every send
+  tool at the process boundary). A block that reads back at 7,900+ characters is never
+  written, because at that size the read itself may be truncated. `CLEAN` is unreachable when
+  a source failed — that becomes `COULD NOT COMPLETE` with the reason. Regression test:
+  `python3 .claude/skills/sync-check/scripts/selftest.py`.
+
+#### `morning-briefs`
+
+- **Run config:** Opus 5 · `high` — the orchestrator itself decides little (which tasks are
+  dials), but every subagent it spawns is a `call-brief` run, and that is judgment about a
+  lead. Scheduled runs use the same pair; override with `MORNING_BRIEFS_MODEL`.
+- **Reach for it when:**
+  - It is a block morning and you want every brief on disk before the first dial.
+  - `/day` shows a dial with no section in today's briefs file (the gap-fill).
+  - Tomorrow's roster is set at the wrap and you want tomorrow's briefs built tonight
+    (`--date`).
+- **Pairs well with:** [`call-brief`](#call-brief) (the thing it fans out; also what
+  regenerates a stale section), the A2C `day` skill (prints the file and fills gaps),
+  [`sync-check`](#sync-check) (keeps the blocks the job reads trustworthy).
+- **Notes:** no write path into the pipeline — no Todoist write, no calendar write, no
+  Gmail draft or send — and `bin/run-morning-briefs.sh` denies every one of those tools at
+  the process boundary. The dial rule is explicit (inside a block window, no non-dial
+  marker, a phone number present); everything else lands in the file's `Skipped:` line so a
+  misclassification is visible, never silent. Parts live in `daily/briefs/YYYY-MM-DD/`; a
+  part is reused only when its task id and due time are unchanged. Regression test:
+  `python3 .claude/skills/morning-briefs/scripts/assemble_briefs.py --selftest`.
 
 #### `rebrief-a2c`
 
