@@ -41,7 +41,9 @@ __pycache__/
 # despite being unpublished. Promote to tracked (PR + adversarial review + doc
 # row/card) if the trial earns it; delete the dir and this block if not.
 skills/adhd/
-.claude/
+.claude/*
+# …except project memory: the Agent skills block (mattpocock tracker config)
+!.claude/CLAUDE.md
 
 # Matt Pocock's skills — raw upstream (mattpocock/skills, MIT), installed via
 # `npx skills` at user scope, deliberately untracked (see THIRD-PARTY.md).
