@@ -14,5 +14,5 @@
 
 ## Comments
 
-- 2026-09-18 — merged as `a8aff0b`. Ledger seeded with both tables and the manual restore procedure; read-back verified against the live parser. Reference-doc intro points at it. First live redacted report committed (329 lines). All eight sanity checks hold, two exactly at their floor (adversarial-review 158, kapture 2,635). Committed report searched for the home directory path: zero hits.
+- 2026-09-18 — merged as `09d8ddb`. Ledger seeded with both tables and the manual restore procedure; read-back verified against the live parser. Reference-doc intro points at it. First live redacted report committed (329 lines). All eight sanity checks hold, two exactly at their floor (adversarial-review 158, kapture 2,635). Committed report searched for the home directory path: zero hits.
 
