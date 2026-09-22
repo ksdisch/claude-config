@@ -15,7 +15,7 @@ Three structured modes for working with Claude Code. Type the trigger phrase to 
 **Purpose:** Start a brand new project from a rough, half-baked idea — interview it into shape before any code.
 **Trigger:** `/kickoff`, "kickoff mode", or "new project idea" (followed by the idea).
 
-When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickoff/`) — do not improvise the interview inline. The skill runs the deep, adaptive, one-question-at-a-time discovery interview (for as long as the idea needs), produces an approved kickoff brief + phased plan, and — only after I confirm at a gate — scaffolds `~/Projects/<slug>/`, a git repo, and a private GitHub repo with the brief inside. Briefs are archived in `~/Projects/_kickoffs/`. For light throwaway experiments, use `/mini` instead.
+When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickoff/`) — do not improvise the interview inline. The skill runs the deep, adaptive, one-question-at-a-time discovery interview (for as long as the idea needs), produces an approved kickoff brief + phased plan, and — only after I confirm at a gate — scaffolds `~/Projects/<slug>/`, a git repo, and a private GitHub repo with the brief inside. Briefs are archived in `~/Projects/_kickoffs/`.
 
 ---
 
@@ -80,7 +80,7 @@ When I say "new feature mode" or "feature mode", before building anything:
 **Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — wherever that note sits.** It is never appended as a new trailing slot after a spec's final element, and it never goes inside the paste. Two response shapes exist and the rule has to work for both:
 
 - `/handoff-session` puts its notes **before** the fenced block and forbids anything after it, so the path line joins the "For Kyle" briefing (slot 1) and the run-config ordering rule is untouched.
-- `ship-and-route` and `backlog-hygiene` put the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
+- `ship-and-route` puts the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
 
 A spec that fixes its order wins on *placement*; it does not win on *omission*.
 

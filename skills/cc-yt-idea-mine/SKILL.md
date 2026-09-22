@@ -363,5 +363,4 @@ deliverable.
 - **`/brainstorm`** — the capture shape (vision doc + backlog stub behind a gate) is
   deliberately the same, so ideas from videos and ideas from brainstorms groom
   identically.
-- **`backlog-hygiene`** — grooms and sequences what this skill captures.
 - **`claude-code-guide`** agent — the verification instrument at the capture gate.

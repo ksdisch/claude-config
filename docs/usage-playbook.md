@@ -156,8 +156,8 @@ rows get re-pointed to match.
 - **Run config:** inherits the session · `low` — it opens a window and starts a process;
   the judgment already happened in the run-config note it reads.
 - **Reach for it when:**
-  - You've just run `/handoff-session` (or `/ship-and-route`, `/prompt-optimize`,
-    `/backlog-hygiene`) and want the fresh session open rather than assembled by hand.
+  - You've just run `/handoff-session` (or `/ship-and-route`, `/prompt-optimize`)
+    and want the fresh session open rather than assembled by hand.
   - Pass `--send` when you want it working immediately instead of pausing on your ⌘V.
 - **Pairs well with:** [`/handoff-session`](#handoff-session) (the usual caller — `/launch` consumes its
   paste-able block and run-config note), [`/begin`](#begin) (what the launched session
@@ -226,7 +226,6 @@ rows get re-pointed to match.
     mode that matches the axis (Moonshot, QuickWin, Subtract, Harden, Premortem, Friction,
     Delight, Positioning, Reach).
 - **Pairs well with:** [`replenish`](#replenish) (runs brainstorm modes as lanes),
-  [`backlog-hygiene`](#backlog-hygiene) (sequences the survivors),
   [`kickoff`](#kickoff) (when an idea outgrows the current project).
 - **Notes:** the mode is resolved *before* steering, because the mode decides which lenses
   and which critic gate load. HARD STOP at Synthesize — nothing is captured to
@@ -244,8 +243,7 @@ rows get re-pointed to match.
     reported without check-ins.
   - You have *no* target and want the backlog triaged into ranked candidates (with heuristic
     blast radius) so you can just pick.
-- **Pairs well with:** [`backlog-hygiene`](#backlog-hygiene) (hands off the picked arc to
-  it), [`ship-and-route`](#ship-and-route) (lands what it produced),
+- **Pairs well with:** [`ship-and-route`](#ship-and-route) (lands what it produced),
   [`adversarial-review`](#adversarial-review) (the gate before its PR merges).
 - **Notes:** giving a target **is** the go-ahead — it won't stop for plan approval. It never
   merges to `main` or writes to production without an explicit say-so. Its triage phase runs
@@ -266,20 +264,6 @@ rows get re-pointed to match.
 - **Notes:** advisory only — it never executes the task. It gates on your accept/override
   before synthesizing, and the cost estimate stays in chat, never inside the prompt block.
 
-#### `/reframe-orchestrator`
-
-- **Run config:** Opus 5 · `high` — careful docs restructuring against live references, with
-  a fixed target shape; well-specified but unforgiving.
-- **Reach for it when:**
-  - A repo's `.claude/orchestrator.md` still mandates human pauses and now deadlocks against
-    autonomous runs.
-  - You want invariants and gates separated from the dispatch persona without invalidating
-    the diagrams, session-start prompts, and agent files that reference it.
-- **Pairs well with:** [`/claudify-repo`](#claudify-repo) (the flow that put repo tooling
-  there), [`adversarial-review`](#adversarial-review) (before the docs PR merges).
-- **Notes:** docs only — it won't touch source, SQL, migrations, or config, and it reframes
-  the pipeline rather than deleting it. It opens a PR and leaves the merge to you.
-
 ### Development Workflows
 
 #### `/tdd-loop`
@@ -294,20 +278,6 @@ rows get re-pointed to match.
   [`adversarial-review`](#adversarial-review) (before the merge).
 - **Notes:** the tests get committed before implementation, and the implementation-only rule
   is the point — failures are fixed in the code, never by editing the test.
-
-#### `/screenshot-iterate`
-
-- **Run config:** Opus 5 · `medium` — the loop does the correcting, so per-pass reasoning
-  depth matters less than actually looking at each screenshot.
-- **Reach for it when:**
-  - You have a visual target (mock, screenshot, reference page) and want the UI driven
-    toward it rather than described.
-  - A layout is "almost right" and the remaining diffs are only visible on screen.
-- **Pairs well with:** [`match-the-mock`](#match-the-mock) (the auto-triggering sibling —
-  same loop), [`/boot_server`](#boot_server) (gets the app reachable first),
-  `frontend-design` plugin skill (styling judgment).
-- **Notes:** needs a working browser tool (Playwright/Kapture) to navigate and capture —
-  confirm that before starting, or the loop has no eyes.
 
 #### `/smoke-test`
 
@@ -369,7 +339,6 @@ rows get re-pointed to match.
     start command.
   - Pass `live` to open the deployed page (GitHub Pages and friends) instead of localhost.
 - **Pairs well with:** [`/smoke-test`](#smoke-test) (calls it),
-  [`/screenshot-iterate`](#screenshot-iterate) (needs the app reachable),
   `run` (Claude Code's built-in launcher skill — project-aware, ships with the harness, so
   it has no file in this repo and no card here).
 - **Notes:** prefers the repo's own launcher, reuses an already-running server instead of
@@ -384,7 +353,7 @@ rows get re-pointed to match.
     the token gets generated.
   - You're onboarding a fresh clone and want the `.env` scaffolded with source comments.
 - **Pairs well with:** [`/boot_server`](#boot_server) (what you run next),
-  [`kickoff`](#kickoff) / [`mini`](#mini) (right after a scaffold).
+  [`kickoff`](#kickoff) (right after a scaffold).
 - **Notes:** it appends stubs and never clobbers an existing value — you paste the secret
   yourself.
 
@@ -398,7 +367,7 @@ rows get re-pointed to match.
     (vendored copies, not symlinks).
   - You want new repo-specific commands or skills designed around how this project actually
     works.
-- **Pairs well with:** [`kickoff`](#kickoff) / [`mini`](#mini) (post-scaffold step),
+- **Pairs well with:** [`kickoff`](#kickoff) (post-scaffold step),
   `claude-automation-recommender` plugin skill (what BRAINSTORM mode dispatches),
   [`/trim-context`](#trim-context) (vendoring adds always-loaded weight).
 - **Notes:** stages only the files it touched — never `git add -A` — and won't push unless
@@ -447,26 +416,13 @@ rows get re-pointed to match.
   - You have an idea that's real but half-baked, and building now would bake in the wrong
     assumptions.
   - You want the riskiest assumption named and turned into Milestone 0 before any code.
-- **Pairs well with:** [`mini`](#mini) (the lighter sibling for throwaway experiments),
-  [`/claudify-repo`](#claudify-repo) and [`/wiki-init`](#wiki-init) (post-scaffold; the wiki
+- **Pairs well with:** [`/claudify-repo`](#claudify-repo) and [`/wiki-init`](#wiki-init) (post-scaffold; the wiki
   is automatic), [`/prompt-optimize`](#prompt-optimize) (turn the phased plan into a build
   prompt).
 - **Notes:** one question at a time, never a wall. Hard gate before scaffolding — creating a
   public-trail GitHub repo is confirmed via `AskUserQuestion`, never a bare "go". The
   adversarial stress-test panel is opt-in, not default. "Just scaffold it, skip the
   questions" gets a compressed pass with stated assumptions, not a skipped gate.
-
-#### `mini`
-
-- **Run config:** Sonnet 5 · `medium` — a short interview and a scripted scaffold.
-- **Reach for it when:**
-  - You want to try something this weekend and a full kickoff interview would be more
-    ceremony than the idea deserves.
-  - You just need the folder, git repo, and private GitHub repo to exist so you can start.
-- **Pairs well with:** [`kickoff`](#kickoff) (the upgrade path when the idea turns out to
-  matter), [`/envsetup`](#envsetup) (right after the scaffold).
-- **Notes:** there's still a one-line spec checkpoint before it scaffolds — "skip the
-  questions" compresses it, it doesn't remove it.
 
 #### `project-wiki`
 
@@ -498,7 +454,7 @@ rows get re-pointed to match.
     to know what it is before touching it.
 - **Pairs well with:** [`/begin`](#begin) (the short-gap sibling),
   [`ship-and-route`](#ship-and-route) (where it routes dangling finishable work),
-  [`backlog-hygiene`](#backlog-hygiene) / [`replenish`](#replenish) /
+  [`replenish`](#replenish) /
   [`/autonomous-milestone`](#autonomous-milestone) (its other exits).
 - **Notes:** **it changes nothing** — no commits, stashes, rebases, pushes, merges, branch
   switches, or backlog edits, even under a blanket go-ahead; that dangling state is your
@@ -571,30 +527,11 @@ rows get re-pointed to match.
   - You want 2–3 ranked options with an explicit ultracode-benefit verdict rather than a
     vague "we could…".
 - **Pairs well with:** [`adversarial-review`](#adversarial-review) (its §1.3 gate for
-  substantial diffs), [`backlog-hygiene`](#backlog-hygiene) (when the routing needs the whole
-  corpus groomed), [`/handoff-session`](#handoff-session) (Act 3 is a starter prompt for a fresh session).
+  substantial diffs), [`/handoff-session`](#handoff-session) (Act 3 is a starter prompt for a fresh session).
 - **Notes:** invoking it **is** your per-action go-ahead to commit/push/PR/merge what's ready
   — but conditional on the review finding no issues; a blocker it can't safely resolve stops
   the flow. Never direct-pushes `main`. It blocks on the review workflow rather than
   deferring the merge to a background notification.
-
-#### `backlog-hygiene`
-
-- **Run config:** Fable 5 · `high` — pure prioritization and sequencing; producing the
-  decision *is* the deliverable.
-- **Reach for it when:**
-  - The backlog is stocked and the real question is what to do next, in what order.
-  - Items are stale, oversized, or duplicated and you want them verified before they get
-    ranked.
-  - You want the remaining mix checked for an empty axis (all build-new and no solidify, say).
-- **Pairs well with:** [`replenish`](#replenish) (when the corpus is dry, not messy),
-  [`/autonomous-milestone`](#autonomous-milestone) (builds the picked arc),
-  [`/brainstorm`](#brainstorm) (sequences its survivors),
-  [`reorient`](#reorient) (routes here after a long gap).
-- **Notes:** **builds nothing, ever** — verdicts are proposals until you approve them. Two
-  gates always survive: one steering round (appetite can't be inferred) and the decision-brief
-  hard stop. Retired items move to a Parked section; nothing is deleted. It closes with a
-  starter prompt routed to the right executor.
 
 #### `replenish`
 
@@ -605,8 +542,7 @@ rows get re-pointed to match.
   - You'd otherwise run `/brainstorm` and `bug-hunt` back to back and hand-dedupe the
     overlap.
 - **Pairs well with:** [`/brainstorm`](#brainstorm) and [`bug-hunt`](#bug-hunt) (the engines
-  it runs verbatim as lanes), [`backlog-hygiene`](#backlog-hygiene) (sequences what it
-  produced afterward).
+  it runs verbatim as lanes).
 - **Notes:** composable, not a fork — the engines' own specs stay binding and this skill owns
   only the combination. One combined steering round (compressible, never deletable) plus one
   merged hard stop. It states the total agent count before launching and hard-caps at 70.
@@ -683,8 +619,7 @@ rows get re-pointed to match.
   - You want the quality bar enforced by exit codes rather than by an agent's account of itself.
 - **Pairs well with:** [`specifier`](#specifier), [`gauntlet-coder`](#gauntlet-coder), and
   [`mutation-hardener`](#mutation-hardener) (the three stages),
-  [`adversarial-review`](#adversarial-review) (the gate the resulting branch still has to pass),
-  [`backlog-hygiene`](#backlog-hygiene) (picks the story it relays).
+  [`adversarial-review`](#adversarial-review) (the gate the resulting branch still has to pass).
 - **Notes:** it **never merges** — the branch leaves the run unmerged and goes through the repo's
   normal git workflow. Hard caps: 3 coder laps, 2 hardener laps; a cap is never raised mid-run and
   always lands in the scorecard by name. A dirty tree or a red baseline suite stops the run at
@@ -783,35 +718,6 @@ rows get re-pointed to match.
   is not a family. CLAUDE.md sections, MCP servers, hooks, and settings are `/retire`'s, and
   get refused with a pointer.
 
-#### `artifacts-audit`
-
-- **Run config:** Opus 5 · `medium` — a taxonomy audit against a fixed rubric, ending in a
-  plan.
-- **Reach for it when:**
-  - A repo's documentation has grown by accretion and you want to know what's missing versus
-    what's merely stale.
-  - You want a concrete generation + maintenance plan before writing a single README.
-- **Pairs well with:** [`artifacts-generate`](#artifacts-generate) (executes the plan it
-  writes), [`project-guide`](#project-guide) (a different lens on the same repo).
-- **Notes:** plans only — it writes no artifacts. One STOP at the project profile so the
-  audit is scoped to what this repo actually is.
-
-#### `artifacts-generate`
-
-- **Run config:** Opus 5 · `medium` — well-specified doc writing from an approved plan.
-- **Reach for it when:**
-  - `docs/artifacts-plan.md` exists and you want the next README, ADR, runbook, or diagram
-    actually written.
-  - You want a week's worth generated in one pass — batch mode picks a scope and writes
-    without per-item gates.
-- **Pairs well with:** [`artifacts-audit`](#artifacts-audit) (writes the plan it consumes),
-  [`adr-new`](#adr-new) (DogHood's numbered-ADR scaffold),
-  [`adversarial-review`](#adversarial-review) (before the docs PR merges).
-- **Notes:** two modes with very different oversight — one-at-a-time interviews, previews,
-  and asks "continue?" per item; batch interviews and writes straight through. Never modifies
-  source code, and skipped items are always listed with a reason rather than silently
-  dropped.
-
 #### `seed-hunt`
 
 - **Run config:** Fable 5 · `high` — scoring candidate papers against a living selection bar
@@ -837,27 +743,11 @@ rows get re-pointed to match.
   - You have a topic and a pile of sources and want a notebook with baseline artifacts, not
     an empty shell.
   - You want the local sidecar written so later skills know what's in there.
-- **Pairs well with:** [`notebook-assist`](#notebook-assist) (everything after
-  initialization), [`audio-series`](#audio-series) / [`video-series`](#video-series)
+- **Pairs well with:** [`audio-series`](#audio-series) / [`video-series`](#video-series)
   (episodic courses from it), [`nlm-skill`](#nlm-skill) (the CLI reference).
 - **Notes:** source selection is a preset choice (`Essentials` → `Everything`), and
   customization params are proposed with defaults rather than asked one by one. It only ever
   creates — it never deletes.
-
-#### `notebook-assist`
-
-- **Run config:** Sonnet 5 · `medium` — artifact refinement and source management inside an
-  existing notebook.
-- **Reach for it when:**
-  - You have an artifact idea in mind and want it mapped to the right type with a decent
-    focus prompt.
-  - You want ideas *derived from what's actually in the notebook*, or sources
-    added/refreshed/removed.
-- **Pairs well with:** [`notebook-init`](#notebook-init) (what created the notebook),
-  [`notebook-merge`](#notebook-merge) (when two notebooks should be one),
-  [`nlm-skill`](#nlm-skill) (the CLI reference).
-- **Notes:** brainstorm mode reads real notebook state first — it won't propose without
-  calling `notebook_describe`.
 
 #### `notebook-merge`
 
@@ -868,8 +758,7 @@ rows get re-pointed to match.
     context.
   - You want one side folded into another with artifacts regenerated from their recorded
     focus prompts.
-- **Pairs well with:** [`notebook-assist`](#notebook-assist) (tidy each side first),
-  [`notebook-init`](#notebook-init) (the sidecar format it migrates),
+- **Pairs well with:** [`notebook-init`](#notebook-init) (the sidecar format it migrates),
   [`nlm-skill`](#nlm-skill).
 - **Notes:** exactly two gates — one creation gate for the merge plan, and a **per-notebook**
   delete gate that lists by name every artifact that dies with the original. Default is
@@ -904,64 +793,6 @@ rows get re-pointed to match.
   series episodes. Blocked episodes get deferred to the sidecar with prompts intact rather
   than loop-retried against a hard quota.
 
-#### `portfolio-notebook-sync`
-
-- **Run config:** Sonnet 5 · `medium` — a checklist-scoped mechanical sync driven by the
-  sidecar manifest; the judgment calls it might face are the ones it's built to escalate
-  rather than resolve.
-- **Reach for it when:**
-  - A portfolio project just got its card and should be covered in the notebook like the
-    others (`--add <project>`).
-  - You merged a project's `/research-paper` PR and want the paper + presenter pack in the
-    notebook (`--add-paper <project>`).
-  - You've reworked portfolio docs and suspect the notebook's snapshots have gone stale.
-  - Something in the notebook cites a number the repo no longer says.
-- **Pairs well with:** [`notebook-assist`](#notebook-assist) (ad-hoc work on the same
-  notebook), [`audio-series`](#audio-series) (the season this skill appends episodes to),
-  [`research-paper`](#research-paper) (writes the paper `--add-paper` later ingests),
-  [`nlm-skill`](#nlm-skill) (the CLI/MCP reference it defers to).
-- **Notes:** `MANIFEST.md` is the contract — drift is a hash diff, never a judgment call. A
-  bare drift check will *never* onboard a project or a paper it happens to notice — it
-  reports `unpapered` and stops — and no mode changes git state or edits a file in
-  `~/Projects/portfolio` (read-only git is required — it's how `repo_sha` gets filled); an
-  unmerged branch or open PR is escalated to Kyle rather than snapshotted. The drift table
-  is always shown before anything is deleted, and URL sources are content-hashed, not just
-  liveness-checked. `--add-paper` is gated on **both** deliverables being on the project
-  repo's **default branch** — queried as `origin/<default>` after a fetch, since Kyle merges
-  the paper PR on GitHub and a local ref would still say "not landed" — and hashes and
-  ingests them with `git show` from that same tree, never from the working tree. It matches
-  two exact filenames: `docs/papers/` (plural) is `/paper-eli5`'s output about *other
-  people's* papers and is never read here. Re-running it is safe — an existing `paper` row
-  stops it rather than duplicating the source.
-
-#### `curriculum-sync`
-
-- **Run config:** Opus 5 · `high` — the mechanics are delegated, but the judgment isn't:
-  reconstructing a scope you can defend, deciding what a partial hash means, and costing a
-  multi-day quota plan are all calls a checklist can't make. Drop to Sonnet 5 · `medium` for a
-  bare drift check, which is pure table computation.
-- **Reach for it when:**
-  - You updated the repos underneath a notebook and its episodes, quizzes, study guides, or
-    hub course are now describing an older version of the work.
-  - You want to know *which* derived artifacts went stale, not regenerate all of them blindly.
-  - You're building a new notebook + course pair and want it to start life with a ledger
-    (`--new`), instead of hand-assembling three skills' output.
-  - A pair predates the ledger and needs baselining once (`--adopt`).
-- **Pairs well with:** [`portfolio-notebook-sync`](#portfolio-notebook-sync) (owns the source
-  layer this skill refuses to run on top of when it's dirty),
-  [`audio-series`](#audio-series) / [`video-series`](#video-series) (own every generation
-  mechanic), [`notebook-init`](#notebook-init) (the `--new` first step),
-  [`course-builder`](#course-builder) (owns the course contract and its syllabus gate).
-- **Notes:** `DERIVED.md` is the contract — staleness is a hash comparison, never memory of a
-  prior run, and an uncomputable basis is marked `unverified` and **treated as stale** rather
-  than guessed at. A dirty source layer is a hard stop: regenerating over stale sources bakes
-  the staleness into artifacts that then *look* current. Audio re-records at **season** level
-  by design (cross-episode consistency), which against the ~15/24h account-wide cap makes a
-  two-season refresh a multi-day plan — costed at the plan gate, never discovered mid-wave.
-  Deletion is a separate confirm from the plan approval. Cross-link repair is terminal: the
-  portfolio study path hard-references artifact ids across 37 steps, and re-recording one
-  season invalidates eight at once.
-
 #### `nlm-skill`
 
 - **Run config:** inherits the session · `low` — it's a reference guide, not a workflow.
@@ -969,7 +800,7 @@ rows get re-pointed to match.
   - You're driving NotebookLM programmatically and need exact `nlm` CLI or MCP invocations.
   - Auth broke and you need the real recovery path.
 - **Pairs well with:** every NotebookLM skill — [`notebook-init`](#notebook-init),
-  [`notebook-assist`](#notebook-assist), [`notebook-merge`](#notebook-merge),
+  [`notebook-merge`](#notebook-merge),
   [`audio-series`](#audio-series), [`video-series`](#video-series).
 - **Notes:** never `nlm chat start` — it opens an interactive REPL no agent can control. Use
   `nlm notebook query` for one-shot Q&A.
@@ -1051,7 +882,6 @@ rows get re-pointed to match.
   - You're prepping to talk about your own work and want the honest version, not a brochure.
 - **Pairs well with:** [`/wiki-backfill`](#wiki-backfill) (history mining that feeds it),
   [`reorient`](#reorient) (the short-form version when you just need to get back to work),
-  [`career-coach`](#career-coach) (its interview lens, as an actual conversation),
   [`narrate`](#narrate) (`--audio`).
 - **Notes:** honesty rules are non-negotiable — weak spots get honest context, never spin.
   Thorough mode fans out only on large repos *and* only if you've opted into orchestration;
@@ -1106,7 +936,6 @@ rows get re-pointed to match.
   for Claude Code ideas" is its lane, not a fifth mode here),
   [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
   section leads if the topic deserves a workspace),
-  [`notebook-assist`](#notebook-assist) (adds the video to a notebook as a source),
   [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
   which writes to the hub's own stores instead).
 - **Notes:** always asks which mode before generating — the four modes are different tools,
@@ -1130,8 +959,7 @@ rows get re-pointed to match.
 - **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
   URL), [`youtube-breakdown`](#youtube-breakdown) (the general four-mode sibling —
   "analyze this video" is its lane), [`/brainstorm`](#brainstorm) (same capture shape, so
-  video ideas and brainstorm ideas groom identically),
-  [`backlog-hygiene`](#backlog-hygiene) (grooms what this captures), and the
+  video ideas and brainstorm ideas groom identically), and the
   `claude-code-guide` agent (harness-provided, no card — verifies picked ideas' capability
   claims at the gate).
 - **Notes:** the report auto-saves to `~/Learning/youtube-notes/` — fixed home, no prompt.
@@ -1141,19 +969,6 @@ rows get re-pointed to match.
   never a side effect of the run.
 
 ### Personal Coaching
-
-#### `career-coach`
-
-- **Run config:** Fable 5 · `high` — MCC-level coaching is pure judgment with zero build.
-- **Reach for it when:**
-  - You feel stuck, unfulfilled, or at a crossroads and want clarity rather than advice.
-  - You want continuity across sessions — `[SNAPSHOT]` to establish state, `[UPDATE]` to
-    log what changed, `[FOCUS]` to work one thing.
-- **Pairs well with:** [`seed-hunt`](#seed-hunt) (the same "what next" energy pointed at
-  research), [`project-guide`](#project-guide) (evidence about your own work to bring into a
-  session).
-- **Notes:** one question at a time, then it stops and waits — a list of questions is an
-  interrogation. Don't expect it to hand you an answer; it's built to surface yours.
 
 #### `teach-research`
 
@@ -1165,8 +980,7 @@ rows get re-pointed to match.
     not a search.
   - A teach workspace's `RESOURCES.md` is thin, or its `## Gaps` section has grown
     (top-up mode).
-- **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this),
-  [`career-coach`](#career-coach) (when the question is *what* to learn, not how).
+- **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this).
 - **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach-research`.
   `--auto` skips the interactive pauses (mission confirm + curation gate); the mission
   interview still runs when no `MISSION.md` exists, so a truly unattended run needs
@@ -1190,26 +1004,6 @@ rows get re-pointed to match.
   plugin's services running (`/voicemode:status`); two failed turns fall back to text
   automatically. Writes only `recall-log.md` and, when earned, one learning record; never
   the glossary.
-
-### UI & Frontend
-
-#### `match-the-mock`
-
-- **Run config:** Opus 5 · `medium` — see-and-correct iteration where the loop, not a single
-  deep pass, does the converging.
-- **Reach for it when:**
-  - You've shared a design, screenshot, or reference and want the UI driven to match it.
-  - You'd otherwise describe the diff in words and hope — this one actually looks.
-- **Pairs well with:** [`/screenshot-iterate`](#screenshot-iterate) (the manual sibling —
-  same loop, invoked explicitly), [`/boot_server`](#boot_server) (get the app reachable),
-  `frontend-design` plugin skill (styling judgment).
-- **Notes:** auto-triggers when you share a visual target, so you rarely type it. Needs a
-  browser tool available to navigate and capture.
-
-## Project-Specific Items
-
-Cards for items that only exist inside their project. Run configs assume you're launching a
-session *in that repo*.
 
 ### A2C Auctions
 
@@ -1417,8 +1211,7 @@ session *in that repo*.
   - A decision was just made and you want it recorded before the reasoning evaporates.
   - You don't want to hand-check which ADR number is next or forget the README row.
 - **Pairs well with:** [`/new-scope`](#new-scope) (scope briefs name the ADRs to write),
-  [`new-migration`](#new-migration) (schema decisions usually want an ADR),
-  [`artifacts-generate`](#artifacts-generate) (the project-agnostic ADR writer).
+  [`new-migration`](#new-migration) (schema decisions usually want an ADR).
 - **Notes:** never delete an ADR — superseded and deprecated ones stay as historical record.
 
 #### `new-migration`

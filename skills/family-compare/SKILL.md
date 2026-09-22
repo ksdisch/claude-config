@@ -1,6 +1,6 @@
 ---
 name: family-compare
-description: Use when a handful of named steering items — skills, commands, subagents, plugin or vendored copies — seem to overlap, and the question is what each one actually is, when to reach for which, and what to do with each in a retirement sweep. The deep read on one named family, where /retire is the wide sweep. Triggers: "compare these skills / commands", "what's the difference between X, Y and Z", "which of these should I retire", "sort out the <name> family", "these overlap, settle it", "/family-compare". NOT for: sweeping the whole steering surface by temperature (/retire), relocating context bloat that stays (/trim-context), removing product features (/brainstorm subtract), picking a tool for one prompt (/prompt-optimize), grooming backlog items (backlog-hygiene). Recommends only — applies no verdict and edits no compared item.
+description: Use when a handful of named steering items — skills, commands, subagents, plugin or vendored copies — seem to overlap, and the question is what each one actually is, when to reach for which, and what to do with each in a retirement sweep. The deep read on one named family, where /retire is the wide sweep. Triggers: "compare these skills / commands", "what's the difference between X, Y and Z", "which of these should I retire", "sort out the <name> family", "these overlap, settle it", "/family-compare". NOT for: sweeping the whole steering surface by temperature (/retire), relocating context bloat that stays (/trim-context), removing product features (/brainstorm subtract), picking a tool for one prompt (/prompt-optimize). Recommends only — applies no verdict and edits no compared item.
 ---
 
 # Family Compare
@@ -23,7 +23,6 @@ Kyle names a **family** of steering items that seem to overlap. This skill reads
 | `/trim-context` | Relocate bloat that stays |
 | `/brainstorm subtract` | Remove product features, not steering items |
 | `/prompt-optimize` | Pick a tool for one prompt; does not compare tools |
-| `backlog-hygiene` | Groom backlog items, not tools |
 
 Run this when a `/retire` sweep returns `ask` on a cluster, or when Kyle already knows a cluster is muddled and wants it settled before the sweep gets there.
 

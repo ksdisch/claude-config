@@ -9,7 +9,6 @@ Turn an existing notebook into a structured watching curriculum: a flagship **bu
 
 ## When to use which sibling skill
 - [[notebook-init]] — create a brand-new notebook from scratch
-- [[notebook-assist]] — work with an existing notebook: refine ONE artifact (including a single video), brainstorm, manage sources
 - [[audio-series]] — episodic *audio* season; also the home of opinionated formats (debate/critique have no video equivalent)
 - **video-series** (this) — generate a whole episodic *video* series/season for an existing notebook, + optional per-episode study aids
 
