@@ -271,11 +271,15 @@ def derive(m: dict, tickets: list[dict]) -> dict:
 
     fog_links = []
     for f in m["fog"]:
+        # Only a `waits on …` clause asserts a wait. A title cited elsewhere in the
+        # bullet ("sharpened by", "ruled by") is context, not a dependency.
         linked = set()
-        for wm in re.finditer(r"waits on\s+((?:\d+(?:\s*(?:,|&|and)\s*)?)+)", f["text"], flags=re.I):
-            linked.update(int(x) for x in re.findall(r"\d+", wm.group(1)) if int(x) in by)
-        low = f["text"].lower()
-        linked.update(n for n, t in by.items() if t["title"].lower() in low)
+        for clause in re.findall(r"waits on\s+(.*?)(?:\.(?:\s|$)|;|$)", f["text"], flags=re.I | re.S):
+            nums = re.match(r"(?:\d+(?:\s*(?:,|&|and)\s*)?)+", clause)
+            if nums:
+                linked.update(int(x) for x in re.findall(r"\d+", nums.group(0)) if int(x) in by)
+            low = clause.lower()
+            linked.update(n for n, t in by.items() if t["title"].lower() in low)
         fog_links.append(sorted(linked))
     fog_order = sorted(
         range(len(m["fog"])),

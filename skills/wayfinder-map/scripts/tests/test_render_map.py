@@ -47,7 +47,7 @@ _A caveat that is not rendered._
 ## Not yet specified
 
 - **Records page.** The list waits on 04.
-- **Lineups.** Depends on Layout choice somehow.
+- **Lineups.** Sharpened by Research the API; waits on Layout choice.
 - **Unattached patch.** Nothing links here.
 
 ## Out of scope
@@ -196,6 +196,12 @@ class FogTests(Fixture):
     def test_links_by_waits_on_by_title_and_unattached(self):
         _, d, _ = self.load()
         self.assertEqual(d["fog_links"], [[4], [2], []])
+
+    def test_title_outside_waits_on_clause_does_not_link(self):
+        text = MAP.replace("waits on Layout choice.", "depends on Layout choice.")
+        (self.effort / "map.md").write_text(text, encoding="utf-8")
+        _, d, _ = self.load()
+        self.assertEqual(d["fog_links"][1], [])
 
     def test_two_links_from_one_bullet(self):
         text = MAP.replace("The list waits on 04.", "The list waits on 04, 05.")
