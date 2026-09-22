@@ -9,7 +9,6 @@ Turn an existing notebook into a structured listening curriculum: a flagship **b
 
 ## When to use which sibling skill
 - [[notebook-init]] — create a brand-new notebook from scratch
-- [[notebook-assist]] — work with an existing notebook: refine ONE artifact, brainstorm, manage sources
 - [[interview-prep]] — interview-prep notebook (has its own "Screen Ready" podcast season)
 - **audio-series** (this) — generate a whole episodic *audio* series/season for an existing notebook, + optional per-episode study aids
 - [[video-series]] — same, but *video* overviews (explainer/brief × visual styles); offers Mirror/Complement/Fresh over an existing audio season

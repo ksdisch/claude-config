@@ -1,6 +1,6 @@
 ---
 name: reorient
-description: Use when returning to a project after a real gap — days to months away — and memory of it has faded. Triggers: "I haven't touched this in a while", "catch me back up to speed", "where did I leave off / where were we", "I barely remember where things stand", "getting back into this project", "/reorient". NOT for: ordinary session starts with fresh memory (/begin), a full standalone project write-up (/project-guide), mid-session audio recaps (/catchup), or doing the next work itself — it routes to ship-and-route / backlog-hygiene / replenish / autonomous-milestone and their gates. Reads and briefs only; changes nothing.
+description: Use when returning to a project after a real gap — days to months away — and memory of it has faded. Triggers: "I haven't touched this in a while", "catch me back up to speed", "where did I leave off / where were we", "I barely remember where things stand", "getting back into this project", "/reorient". NOT for: ordinary session starts with fresh memory (/begin), a full standalone project write-up (/project-guide), mid-session audio recaps (/catchup), or doing the next work itself — it routes to ship-and-route / replenish / autonomous-milestone and their gates. Reads and briefs only; changes nothing.
 ---
 
 # Reorient
@@ -17,7 +17,7 @@ description: Use when returning to a project after a real gap — days to months
 | **`/reorient`** | Returning after a gap, memory faded — re-grounding + pipeline routing |
 | `/project-guide` | You want the full standalone guide artifact (reorient may route here) |
 | `/catchup` | Mid-session audio recap of *this* session — unrelated |
-| `ship-and-route` · `/backlog-hygiene` · `/replenish` · `/autonomous-milestone` · `systematic-debugging` | The executors reorient hands off to |
+| `ship-and-route` · `/replenish` · `/autonomous-milestone` · `systematic-debugging` | The executors reorient hands off to |
 
 ## Phase 1 — Measure the gap (silently)
 
@@ -28,7 +28,7 @@ Establish **last human activity**: `git log` dates — **separating human/sessio
 - **Identity:** `CLAUDE.md`, `README` — what this project IS, its core loop, its user.
 - **Where they left off:** ALL wrap logs inside the gap window, not just the newest (a gap can span several arcs) — their 30-second elevator versions, "Suggested next moves," and Concepts sections; any handoff doc; `git status` (dirty files with mtimes, stashes), current branch and unpushed branches, open PRs.
 - **What changed without them:** commits and merged PRs during the gap, flagged human vs automated; dependency/platform bumps called out by name — an automated deps bump is the classic silent breaker.
-- **Pipeline paper trail:** the backlog file + plan/kanban doc, latest bug-hunt and backlog-hygiene reports.
+- **Pipeline paper trail:** the backlog file + plan/kanban doc, latest bug-hunt reports.
 - **Health check — honest or absent:** if the project defines cheap, side-effect-free checks (test/build/lint from CLAUDE.md/README), run them and report the actual output. If you don't or can't run them, the brief says **"unverified"** — never "everything looks fine" without command output. Prioritize this whenever automated commits landed in the gap.
 
 ## Phase 3 — The catch-up brief
@@ -50,13 +50,12 @@ Map the evidence to routes and present 2–3 ranked options — short label, 1�
 |---|---|
 | Dangling finishable work — dirty tree, stash, unpushed branch, open PR | `ship-and-route` to land it behind its review gate (reorient merges nothing itself) |
 | Backlog dry / Planned empty | `/replenish` |
-| Backlog stocked but stale, unsequenced, or "what next" genuinely open | `/backlog-hygiene` |
 | The last wrap's (Recommended) move **still holds after re-validation** | Resume it directly — hand over a starter prompt |
 | Repo drifted so far the brief can't restore fluency | `/project-guide` first |
 
 **Two rules the routes live by:** (1) A wrap log's "(Recommended)" is a *candidate, decayed by the gap* — re-validate it against what changed (especially automated commits) and the user's possibly-changed priorities; it is never pre-authorization. (2) **Never do a routed skill's job inline** — a hand-rolled landing sequence or backlog triage inside reorient is that skill done worse, minus its gates. Multiple signals usually sequence: land dangling work first, then decide what's next.
 
-Then stop for the pick. On pick: invoke light flows (`backlog-hygiene`, `ship-and-route`, `begin`-style resume) in-session, or hand a fresh-session starter prompt for heavy ones (`/replenish`, `/autonomous-milestone`) — offer the choice. No pick → the brief stands, nothing else happens.
+Then stop for the pick. On pick: invoke light flows (`ship-and-route`, `begin`-style resume) in-session, or hand a fresh-session starter prompt for heavy ones (`/replenish`, `/autonomous-milestone`) — offer the choice. No pick → the brief stands, nothing else happens.
 
 ## Red flags — every one observed in baseline runs
 

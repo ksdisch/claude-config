@@ -273,12 +273,12 @@ Fix everything that fails and re-verify. Do not claim done until this passes.
 
   > **Portfolio notebook:** this PR is review-only and is not merged, so nothing has
   > been added anywhere. Once you merge it, the paper becomes eligible for the
-  > research-portfolio notebook — run `/portfolio-notebook-sync --add-paper <slug>`.
-  > While it sits on a branch, that command will correctly refuse it.
+  > research-portfolio notebook — add it there yourself (`nlm-skill` covers adding a
+  > source). While it sits on a branch, it is not ready to be added.
 
   Do not claim the paper "will be added automatically" or that a sync has been
-  scheduled. Neither is true: `--add-paper` reads the **default branch** and surfaces
-  what it would add for confirmation before touching the notebook. Overstating this
+  scheduled. Neither is true: nothing performs that hop — the paper reaches the notebook
+  only when someone adds it by hand, from the **default branch**, after the merge. Overstating this
   is the same failure mode the paper's own honesty framing exists to prevent.
 
 ## Definition of done

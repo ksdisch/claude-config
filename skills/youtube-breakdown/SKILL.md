@@ -193,8 +193,7 @@ Arguments."
 
 ```
 💡 The "Further Reading" above is good seed material — want me to run /teach-research to
-turn it into a stocked learning workspace, or add this video to a NotebookLM notebook as a
-source via notebook-assist?
+turn it into a stocked learning workspace?
 ```
 
 ---
@@ -318,7 +317,7 @@ would question? List 3–5.
 
 ```
 💡 The "Deeper Reading" above is good seed material — want me to run /teach-research on
-this thread, or add the video to a NotebookLM notebook via notebook-assist?
+this thread?
 ```
 
 ---
@@ -431,7 +430,7 @@ task into six he has to triage.
 - **One mode per run.** For the same transcript in multiple modes, run them sequentially
   with separate save prompts. Don't batch outputs into one file.
 - **Handoffs are offers.** Append the line and carry on to the save offer in the same turn.
-  Never *chain into* `/teach-research`, `notebook-assist`, or Todoist without an explicit
+  Never *chain into* `/teach-research` or Todoist without an explicit
   yes — that's what the offer is protecting against, not the save prompt.
 - **Frontmatter precision** — the four kebab-case `mode` values exactly.
 
@@ -442,7 +441,6 @@ task into six he has to triage.
 - **`youtube-transcript`** — supplies the text when the input is a URL.
 - **`teach-research`** / **`teach`** — where a Study Notes or Critique "Further Reading"
   section naturally leads, if the topic is worth a real learning workspace.
-- **`notebook-assist`** — adds the video to a NotebookLM notebook as a tracked source.
 
 ---
 

@@ -323,10 +323,6 @@ class ShippedSidecarTests(unittest.TestCase):
         # stops measuring the moment a heading is renamed. Keys and headings stay in lockstep.
         self.assertEqual(sorted(keys), sorted(headings))
 
-    def test_the_two_modes_the_pilot_targets_carry_real_phrase_lists(self):
-        for heading in ("Improvement Mode", "New Feature Mode"):
-            self.assertTrue(self.sidecar[heading], heading)
-
     def test_every_phrase_compiles_as_a_regex(self):
         for heading, phrases in self.sidecar.items():
             if heading.startswith("_") or phrases is None:

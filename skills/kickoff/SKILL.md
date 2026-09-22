@@ -11,10 +11,6 @@ This is the real implementation of the "Kickoff Mode" in Kyle's global CLAUDE.md
 
 **The prime directive:** get Kyle and the idea *genuinely clear* before any code. A vague idea scaffolded fast is worse than a sharp idea scaffolded slow. Bias toward more interviewing, not less.
 
-## How this differs from `/mini`
-
-`/mini` is the *light* version: 4–6 questions → throwaway scaffold under `~/Projects/mini/`. Use `/mini` for weekend experiments. Use `/kickoff` when the idea is meant to *matter* — it gets the full adaptive interview, a real brief, a phased plan, and a top-level repo under `~/Projects/<slug>/`. If partway through it's clear this is actually a throwaway, say so and offer to drop to `/mini`.
-
 ## Working style (non-negotiable — Kyle has ADHD; respect it)
 
 - **One question at a time.** Never a wall of questions. Never multiple asks in one turn. Each turn = one focused thing.
@@ -238,8 +234,7 @@ If "scaffold now":
 ## Edge cases
 
 - **Slug collides** with an existing `~/Projects/` folder or a GitHub repo: stop, say so, suggest a variant (append a meaningful word, not a number).
-- **Idea turns out throwaway-sized** mid-interview: say so, offer to drop to `/mini` instead of over-scaffolding.
-- **Idea is actually a feature for an existing project** (e.g. it belongs in `clinical-data-etl`): flag it — this might be "new feature mode" against an existing repo, not a fresh kickoff. Offer that path.
+- **Idea is actually a feature for an existing project** (e.g. it belongs in `clinical-data-etl`): flag it — that's a feature for that repo, not a fresh kickoff. Offer that path.
 - **Kyle says "just scaffold it, skip the questions":** don't. Do a compressed pass — fill the starred checklist items from whatever he's said, fill gaps with explicit *assumptions* (labeled as such), show the brief in one shot, and still run the gate. Never skip the gate; never silently create a repo.
 - **"Show me where we are":** render the readiness checklist + current partial brief, then continue.
 - **No GitHub wanted:** scaffold locally (`git init`, commit, no `gh`); note he loses remote-from-anywhere access.
@@ -248,7 +243,7 @@ If "scaffold now":
 
 - `~/.claude/skills/kickoff/SKILL.md` — this file.
 - `~/Projects/_kickoffs/` — central backlog of briefs (created on first run).
-- `~/Projects/<slug>/` — the scaffolded serious project (top-level, not under `mini/`).
+- `~/Projects/<slug>/` — the scaffolded serious project (top-level).
 - `github.com/ksdisch/<slug>` — the private repo (via `gh`, authed as `ksdisch`).
 
 ## Note on "available everywhere"

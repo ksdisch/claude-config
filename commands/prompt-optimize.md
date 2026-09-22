@@ -97,7 +97,7 @@ The archetype shapes the prompt's body — its phases, whether it runs as one li
 | **Parallel worktree batch** (`/batch`) | Built-in: researches the repo → decomposes into 5–30 **independent** units → you approve a plan → one worktree-isolated subagent per unit, each runs tests and opens its **own PR**. No inter-agent coordination. | Repo-wide *mechanical* changes that split cleanly into independent units: framework/library migrations, lib swaps, codemod-style edits, mass annotation. | `/batch <instruction>`. **Must be in a git repo.** Before recommending, verify the task is genuinely parallelizable — shared/cross-unit changes (e.g. rename a shared symbol *and* its call sites) will collide across worktrees; split those into a shared-change-first step, then batch the rest. Give a per-unit done/test bar, not a global one. |
 | **Multi-agent parallel (ultracode / Workflow)** | A custom fleet fanned out over slices via the Workflow tool — pipeline/parallel stages, adversarial verification, then synthesis. Cost not a constraint. | EPIC/HIGH *non-migration* fan-out: broad audits, exhaustive bug hunts, multi-dimension reviews, research sweeps — where you need custom phases + verification rather than PR-per-unit edits. (For repo-wide mechanical edits, prefer `/batch` above.) | Include **"ultracode"** in the prompt and/or ask for a Workflow. Prompt defines the phases (e.g. find → verify → synthesize), the fan-out unit, and the verification votes. |
 | **Autonomous milestone (hands-off)** | Give a target; it plans, builds, tests, verifies, and reports with minimal check-ins. Uses ultracode orchestration under the hood. | Well-specified work you trust it to run while you're away. | `/autonomous-milestone <target>`. Prompt front-loads acceptance criteria + scope boundaries since you won't be steering. |
-| **Visual iteration loop** | Implement → screenshot the running app → compare to the mock → fix diffs → repeat. | Building UI against a mock / design / Figma. | `/match-the-mock` or `/screenshot-iterate` with the mock attached. |
+| **Visual iteration loop** | Implement → screenshot the running app → compare to the mock → fix diffs → repeat. | Building UI against a mock / design / Figma. | No dedicated command — describe the loop in the prompt and attach the mock. |
 | **Research & synthesis** | Fan-out searches, fetch sources, adversarially verify claims, cited report. | Questions needing real, fact-checked sources. | `/deep-research <refined question>`. |
 | **Review / audit (read-only)** | Inspect a diff/PR/branch without building anything. | Code review, security pass, quality cleanup. | `/code-review:code-review` (low→**ultra**; ultra = multi-agent cloud review), `/security-review`, `/simplify`. |
 | **Recurring / scheduled** | Run a prompt on an interval or cron. | Polling, status checks, repeated maintenance. | `/loop <interval> <prompt>` (in-session) or `/schedule` (remote cron routine). |
@@ -118,14 +118,12 @@ Recommend from these. If something genuinely useful isn't here, describe the *ac
 | Review the current diff for bugs (low→ultra effort) | `/code-review:code-review` |
 | Quality cleanup (reuse/simplify/efficiency, no bug hunt) | `/simplify` |
 | Run the app / confirm a change works in reality | `/run`, `/verify` |
-| UI built against a mock, iterate to match | `/match-the-mock`, `/screenshot-iterate` |
 | Multi-source, fact-checked research report | `/deep-research` |
 | Security review of pending changes | `/security-review` |
 | Start a session / wrap a session / hand off to a fresh session | `/begin`, `/wrap`, `/handoff-session` |
 | Recurring or scheduled runs | `/loop`, `/schedule` |
 | Reduce token bloat in a repo | `/trim-context` |
 | Initialize a `CLAUDE.md` | `/init` |
-| New scratch/experiment project | `/mini` |
 | Repo-wide change split into 5–30 independent units, each its own PR | `/batch <instruction>` (must be in a git repo; units must be independent) |
 | Autonomous end-to-end build of a target | `/autonomous-milestone` |
 | Recommend Claude Code automations for a repo | `/claude-automation-recommender` |

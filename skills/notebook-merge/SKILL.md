@@ -9,7 +9,6 @@ Two facts shape everything here: NotebookLM has **no copy API** — sources move
 
 ## When to use which sibling skill
 - [[notebook-init]] — create a brand-new notebook from scratch
-- [[notebook-assist]] — work with ONE existing notebook: refine an artifact, brainstorm, manage sources
 - [[audio-series]] / [[video-series]] — generate an episodic season for an existing notebook
 - **notebook-merge** (this) — fold 2+ overlapping notebooks into one unified notebook, end to end
 

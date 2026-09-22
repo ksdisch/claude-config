@@ -3,7 +3,7 @@
 Rules for any prompt that an **Opus 5** session will consume. Consumed by
 the prompt generators when their model recommendation is Opus 5 —
 `commands/handoff.md`, `commands/prompt-optimize.md`, and the starter
-prompts of `skills/ship-and-route` and `skills/backlog-hygiene` — not loaded
+prompt of `skills/ship-and-route` — not loaded
 into sessions directly. Consumers read `~/.claude/opus5-builder-notes.md`
 (a live symlink to this canonical file) and fall back to the vendored
 `.claude/opus5-builder-notes.md` that `/claudify-repo` copies into repos —

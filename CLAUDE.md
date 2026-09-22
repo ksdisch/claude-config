@@ -6,7 +6,7 @@
 
 # Claude Code Modes
 
-Three structured modes for working with Claude Code. Type the trigger phrase to activate.
+One structured mode for working with Claude Code. Type the trigger phrase to activate.
 
 ---
 
@@ -15,39 +15,7 @@ Three structured modes for working with Claude Code. Type the trigger phrase to 
 **Purpose:** Start a brand new project from a rough, half-baked idea — interview it into shape before any code.
 **Trigger:** `/kickoff`, "kickoff mode", or "new project idea" (followed by the idea).
 
-When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickoff/`) — do not improvise the interview inline. The skill runs the deep, adaptive, one-question-at-a-time discovery interview (for as long as the idea needs), produces an approved kickoff brief + phased plan, and — only after I confirm at a gate — scaffolds `~/Projects/<slug>/`, a git repo, and a private GitHub repo with the brief inside. Briefs are archived in `~/Projects/_kickoffs/`. For light throwaway experiments, use `/mini` instead.
-
----
-
-## Improvement Mode
-
-**Purpose:** Fix, refine, or optimize something that already exists in the project but isn't working well.
-**When to use:** Something feels off — slow performance, bad UX, ugly layout, confusing flow, or a bug you can't fully describe.
-**Trigger:** Say "improvement mode" followed by what bugs you.
-
-When I say "improvement mode", before making any changes:
-- Ask me what part of the project I want to improve
-- Ask me what's wrong with it or what bugs me about it
-- Ask me what "better" looks like in my words
-- Review the current code/implementation yourself and tell me what you see
-- Propose 2-3 approaches ranked by effort vs. impact
-- Wait for me to pick one before changing anything
-
----
-
-## New Feature Mode
-
-**Purpose:** Add a new capability or feature to an existing project without breaking what's already there.
-**When to use:** You want the project to do something it doesn't do yet and need Claude Code to figure out where and how it fits.
-**Trigger:** Say "new feature mode" or "feature mode" followed by your idea.
-
-When I say "new feature mode" or "feature mode", before building anything:
-- Ask me to describe the feature in plain language
-- Ask me why I want it (what problem does it solve)
-- Review the existing project structure and tell me how/where this feature would fit
-- Flag any conflicts with how things currently work
-- Propose how it connects to existing features
-- Summarize the plan and wait for approval before writing code
+When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickoff/`) — do not improvise the interview inline. The skill runs the deep, adaptive, one-question-at-a-time discovery interview (for as long as the idea needs), produces an approved kickoff brief + phased plan, and — only after I confirm at a gate — scaffolds `~/Projects/<slug>/`, a git repo, and a private GitHub repo with the brief inside. Briefs are archived in `~/Projects/_kickoffs/`.
 
 ---
 
@@ -80,7 +48,7 @@ When I say "new feature mode" or "feature mode", before building anything:
 **Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — wherever that note sits.** It is never appended as a new trailing slot after a spec's final element, and it never goes inside the paste. Two response shapes exist and the rule has to work for both:
 
 - `/handoff-session` puts its notes **before** the fenced block and forbids anything after it, so the path line joins the "For Kyle" briefing (slot 1) and the run-config ordering rule is untouched.
-- `ship-and-route` and `backlog-hygiene` put the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
+- `ship-and-route` puts the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
 
 A spec that fixes its order wins on *placement*; it does not win on *omission*.
 
@@ -131,7 +99,7 @@ This is checked, not remembered: `scripts/check-doc-sync.py` runs as the repo's 
 
 ## Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)
 
-The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) are vendored raw upstream via `npx skills` and deliberately untracked in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next reinstall. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
+The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) reach sessions through the `mattpocock-skills@mattpocock` plugin; only `implement-spec` still sits as a loose untracked copy in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next plugin update. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
 
 **Keep one-file-per-ticket as the source of truth.** Per-ticket `Status:` / `Blocked by:` lines and `## Comments` history live only in the issue files — never collapse them into a single combined file.
 
@@ -154,7 +122,7 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 
 **`/wayfinder` does not consume this manifest.** Its frontier is defined as a scan of `issues/` for open, unblocked, unclaimed files, and its claim/resolve steps write only the issue file and `map.md` — never `tickets.md`. Reading the manifest instead of scanning risks missing a ticket the manifest hasn't caught up to. `map.md` stays wayfinder's canonical index; this convention doesn't apply to wayfinder efforts.
 
-**When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the untracked upstream template, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
+**When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the upstream template the plugin ships, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
 
 ---
 
