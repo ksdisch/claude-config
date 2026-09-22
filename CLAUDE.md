@@ -122,6 +122,8 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 
 **`/wayfinder` does not consume this manifest.** Its frontier is defined as a scan of `issues/` for open, unblocked, unclaimed files, and its claim/resolve steps write only the issue file and `map.md` — never `tickets.md`. Reading the manifest instead of scanning risks missing a ticket the manifest hasn't caught up to. `map.md` stays wayfinder's canonical index; this convention doesn't apply to wayfinder efforts.
 
+**Route render (wayfinder efforts).** After every claim, resolve, add-ticket, or wire-blocking step in a wayfinder effort, run `python3 ~/.claude/skills/wayfinder-map/scripts/render_map.py <effort-dir>`. The Stop hook that re-renders stale maps is the backstop, not the mechanism to rely on. `map.html` beside `map.md` is generated output: never hand-edited, never the source of truth. To see or share it, invoke `wayfinder-map`. When `/setup-matt-pocock-skills` scaffolds a repo that hosts wayfinder efforts, append the same render bullet under *Wayfinding operations* in its `docs/agents/issue-tracker.md`.
+
 **When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the upstream template the plugin ships, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
 
 ---
