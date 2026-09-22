@@ -99,7 +99,7 @@ This is checked, not remembered: `scripts/check-doc-sync.py` runs as the repo's 
 
 ## Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)
 
-The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) are vendored raw upstream via `npx skills` and deliberately untracked in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next reinstall. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
+The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) reach sessions through the `mattpocock-skills@mattpocock` plugin; only `implement-spec` still sits as a loose untracked copy in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next plugin update. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
 
 **Keep one-file-per-ticket as the source of truth.** Per-ticket `Status:` / `Blocked by:` lines and `## Comments` history live only in the issue files — never collapse them into a single combined file.
 
@@ -122,7 +122,7 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 
 **`/wayfinder` does not consume this manifest.** Its frontier is defined as a scan of `issues/` for open, unblocked, unclaimed files, and its claim/resolve steps write only the issue file and `map.md` — never `tickets.md`. Reading the manifest instead of scanning risks missing a ticket the manifest hasn't caught up to. `map.md` stays wayfinder's canonical index; this convention doesn't apply to wayfinder efforts.
 
-**When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the untracked upstream template, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
+**When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the upstream template the plugin ships, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
 
 ---
 

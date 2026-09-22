@@ -1005,6 +1005,11 @@ rows get re-pointed to match.
   automatically. Writes only `recall-log.md` and, when earned, one learning record; never
   the glossary.
 
+## Project-Specific Items
+
+Cards for items that only exist inside their project. Run configs assume you're launching a
+session *in that repo*.
+
 ### A2C Auctions
 
 #### `replenish-a2c`

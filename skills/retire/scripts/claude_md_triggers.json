@@ -10,8 +10,6 @@
     "is renamed; a stale key measures nothing and its section silently goes unmeasured."
   ],
   "Kickoff Mode → run the `/kickoff` skill": ["kickoff mode", "new project idea", "^\\s*/kickoff"],
-  "Improvement Mode": ["improvement mode"],
-  "New Feature Mode": ["new feature mode", "feature mode"],
   "Git Workflow": null,
   "Clarifying questions and option formatting": null,
   "Never show me a bare identifier (added 2026-08-13)": ["bare identifier", "\\bgloss"],
