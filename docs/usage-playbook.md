@@ -516,6 +516,23 @@ rows get re-pointed to match.
   otherwise. It judges nothing — no risk flags, no next-move advice. `--no-publish`
   keeps it local.
 
+#### `wayfinder-map`
+
+- **Run config:** inherits the session · `low` — the script decides everything the page
+  says; the skill only picks the effort, runs it, and publishes.
+- **Reach for it when:**
+  - You want to see what's takeable on a Wayfinder map without scanning `Blocked by:` lines.
+  - You're sharing where an effort stands — the link is stable per effort, so it can be
+    re-sent after every resolve.
+- **Pairs well with:** [`visual-summary`](#visual-summary) (what a session did, where this
+  shows where an effort stands), [`architecture-viewer`](#architecture-viewer) (the repo's
+  structure, drawn the same deterministic way).
+- **Notes:** `map.html` is generated output beside `map.md` — never hand-edited, never the
+  source of truth. Publishing is the skill's step, never the script's or the hook's; the
+  Artifact URL is recorded in the map's Notes as a `Rendered map:` line. The Stop hook is
+  installed once per machine with `scripts/install_hook.py` (backs up settings first,
+  idempotent); `--no-publish` renders only.
+
 #### `ship-and-route`
 
 - **Run config:** Fable 5 · `high` — landing decisions plus ranked next-move routing is
