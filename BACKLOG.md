@@ -11,6 +11,12 @@ live in [`docs/ideas/`](docs/ideas/).
 - **Size:** S
 - **Added:** 2026-09-21
 
+### [Fix] retire: a retired loose copy must not make its plugin-served name look dangling
+- **Why:** `dangling_names()` treats every id in the ledger's retired table as a missing route target, prefix stripped. After the 2026-09-21 sweep ledgered 25 loose mattpocock copies by bare name (`skill:code-review`, `skill:to-tickets`, …), every skill or CLAUDE.md section that names one of those — which the `mattpocock-skills` plugin still serves — carries a false `dangling` flag; 8 spurious `ask` rows appeared in the after-run.
+- **Acceptance:** names an enabled plugin registers (per `plugin_skill_canonicals`) are excluded from `dangling_names()`; a test covers a retired loose copy whose plugin canonical still exists. Directory names that merely contain an item name (`docs/backlog-hygiene/`, `~/Projects/mini/`) are a separate, smaller false-positive class worth a note in the same fix.
+- **Size:** S
+- **Added:** 2026-09-22
+
 ### [Fix] retire: a retired transcript-only connector must not be re-proposed
 - **Why:** the ledger's retired ids feed only dangling-route detection (`ledger_ids` → `dangling_names`); only a `keep` ruling suppresses a row. A claude.ai connector that lives only in old transcripts (12 such rows on 2026-09-21) can never be deleted from the corpus, so a `retire` ruling comes back as `ask` every sweep.
 - **Acceptance:** an item whose surface-qualified id is in the retired table and that still enumerates is flagged `retired` and omitted from proposals with its own line in the omissions summary; a test covers a transcript-only MCP id present in the retired table.

@@ -243,7 +243,7 @@ If "scaffold now":
 
 - `~/.claude/skills/kickoff/SKILL.md` — this file.
 - `~/Projects/_kickoffs/` — central backlog of briefs (created on first run).
-- `~/Projects/<slug>/` — the scaffolded serious project (top-level, not under `mini/`).
+- `~/Projects/<slug>/` — the scaffolded serious project (top-level).
 - `github.com/ksdisch/<slug>` — the private repo (via `gh`, authed as `ksdisch`).
 
 ## Note on "available everywhere"
