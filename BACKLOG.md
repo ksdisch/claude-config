@@ -5,6 +5,18 @@ live in [`docs/ideas/`](docs/ideas/).
 
 ## Open
 
+### [Fix] retire: read a plugin's manifest before flagging loose copies as duplicates
+- **Why:** `steering_inventory.py`'s `plugin_skills()` walks the install folder (`rglob("SKILL.md")`), so the 2026-09-21 sweep flagged all 36 loose mattpocock copies as `duplicate` when the plugin's `plugin.json` registers only 25 — the other 11 were the only reachable copies. Caught by hand before apply; the ruling split the row.
+- **Acceptance:** when `.claude-plugin/plugin.json` lists `skills`, only those paths count as shipped; the folder walk stays as the fallback for manifests without a `skills` list. A test covers a manifest that registers a subset of the folders present.
+- **Size:** S
+- **Added:** 2026-09-21
+
+### [Fix] retire: a retired transcript-only connector must not be re-proposed
+- **Why:** the ledger's retired ids feed only dangling-route detection (`ledger_ids` → `dangling_names`); only a `keep` ruling suppresses a row. A claude.ai connector that lives only in old transcripts (12 such rows on 2026-09-21) can never be deleted from the corpus, so a `retire` ruling comes back as `ask` every sweep.
+- **Acceptance:** an item whose surface-qualified id is in the retired table and that still enumerates is flagged `retired` and omitted from proposals with its own line in the omissions summary; a test covers a transcript-only MCP id present in the retired table.
+- **Size:** S
+- **Added:** 2026-09-21
+
 ### [Feature] retire: fleet prune lane
 - **Why:** `retire` reports vendored copies of a retired item but never edits a project repo; 16 repos (13 public) carry the global kit, and the July 2026 PII purge showed what a copy that outlives its source costs. Needs [`fleet-manifest-reconcile`](docs/ideas/fleet-manifest-reconcile.md)'s per-item manifest and its landmine list (single-line command lists, zsh refspecs, false-clean sweeps).
 - **Acceptance:** `/retire` gains a `--fleet` flag that opens one PR per downstream repo removing the retired item, with the refuse-if-unsure excision guard, and reports every repo it could not clean.
