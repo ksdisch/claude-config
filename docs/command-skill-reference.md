@@ -298,6 +298,28 @@ A research / learning project following a structured learning spine.
 
 ---
 
+### Life Nodes (`~/Desktop/Kyles Nodes/`)
+
+Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30 and income) as append-only JSONL, viewed through Claude artifacts. Code skills live in `.claude/skills/`; the Cowork skills ship as the `life-nodes-cowork` plugin from the vault's own `kyles-nodes` marketplace.
+
+**Skills (Claude Code)**
+
+| Skill | What it does |
+|---|---|
+| `sync` | Commits and pushes the vault with a written message, fast-forward only; reports auto-committer health and bumps the Cowork plugin's patch version when `plugins/` changed. Kyle-only. · [config →](usage-playbook.md#sync-life-nodes) |
+| `build-artifact` | Builds an artifact's page from its artifact note's Views, validates the palette in both themes, publishes it with only the `db` capability, writes `url` on first publish, then pushes every month of its data. Kyle-only. · [config →](usage-playbook.md#build-artifact-life-nodes) |
+| `rebuild-artifact` | Rewrites an artifact's database from the vault, one document per stream per month, and verifies it fresh; the fix for a stale artifact. · [config →](usage-playbook.md#rebuild-artifact-life-nodes) |
+| `audit` | Checks the vault for malformed lines, schema mismatches, broken or forked supersede chains, duplicates, dangling connections, and stale artifacts; repairs malformed lines only, one at a time on yes. · [config →](usage-playbook.md#audit-life-nodes) |
+
+**Skills (Cowork plugin `life-nodes-cowork`)**
+
+| Skill | What it does |
+|---|---|
+| `log` | Routes a message or screenshot to its nodes, appends entries to their JSONL streams after one confirm line per node, and pushes the touched months to every artifact that reads them. · [config →](usage-playbook.md#log-life-nodes) |
+| `review` | Answers questions about logged data from resolved vault entries (totals, last times, what's left today); writes nothing. · [config →](usage-playbook.md#review-life-nodes) |
+
+---
+
 ## Custom Subagents
 
 Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Other subagent types live outside this repo: `Explore` and `Plan` ship with Claude Code itself, and plugin-provided ones (e.g., `code-reviewer` from Superpowers) come with their plugin.

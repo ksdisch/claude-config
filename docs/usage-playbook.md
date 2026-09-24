@@ -1614,6 +1614,81 @@ session *in that repo*.
 
 ---
 
+### Life Nodes
+
+#### `sync` (Life Nodes)
+
+- **Run config:** inherits the session — it closes whatever Code session changed the vault.
+- **Reach for it when:**
+  - A session in the vault changed skills, notes, or an artifact note and should land now
+    with a written message instead of waiting for the hourly auto-committer.
+  - You want the auto-committer's health (last push, consecutive failures) in one line.
+- **Pairs well with:** [`build-artifact`](#build-artifact-life-nodes) (the `url` it writes
+  needs a commit), [`audit`](#audit-life-nodes) (run it first before a phase sign-off).
+- **Notes:** Kyle-only (`disable-model-invocation`). Fast-forward only: a diverged remote is
+  shown, never merged. A `plugins/` change bumps the patch version, and Cowork needs
+  **Update** pressed on the `kyles-nodes` marketplace to see it.
+
+#### `build-artifact` (Life Nodes)
+
+- **Run config:** Opus 5 · `high` — view code built from a written spec, with a palette gate
+  and a real publish.
+- **Reach for it when:**
+  - An artifact note's Views are written and the page doesn't exist yet, or the Views changed.
+  - The page needs republishing to the same `url` after a view fix.
+- **Pairs well with:** [`rebuild-artifact`](#rebuild-artifact-life-nodes) (its steps run
+  inline at the end), the bundled `dataviz` skill (the palette validator it gates on).
+- **Notes:** Kyle-only. One artifact per note, forever: a note with a `url` is always
+  republished to it. Writes only `index.html` and, on first publish, `url`.
+
+#### `rebuild-artifact` (Life Nodes)
+
+- **Run config:** Sonnet 5 · `low` — deterministic; `scripts/lifenodes.py` computes every
+  document.
+- **Reach for it when:**
+  - `log` or `audit` reports an artifact as stale.
+  - A push from Cowork failed, or entries were corrected in a way you want reflected now.
+- **Pairs well with:** [`audit`](#audit-life-nodes) (finds staleness),
+  [`build-artifact`](#build-artifact-life-nodes) (publishes first when there's no `url`).
+- **Notes:** no confirm gate: it changes no vault file and a rerun is always safe. A month
+  the vault has emptied is written with no entries, so a retraction clears.
+
+#### `audit` (Life Nodes)
+
+- **Run config:** Sonnet 5 · `medium` — script-driven checks, then careful one-line repairs.
+- **Reach for it when:**
+  - A phase's acceptance check (it's one of the lines).
+  - Something in an artifact looks wrong and you want to know whether the vault or the
+    push is at fault.
+- **Pairs well with:** [`rebuild-artifact`](#rebuild-artifact-life-nodes) (the fix it
+  offers for staleness), [`sync`](#sync-life-nodes).
+- **Notes:** report first. Its only write is repairing a malformed line in place, shown and
+  confirmed line by line; duplicates and chain problems come back as the retract line for
+  Kyle to log through `log`.
+
+#### `log` (Life Nodes)
+
+- **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
+- **Reach for it when:**
+  - Reporting anything to record: a dose, a night's Bevel screenshots, drinks, water.
+  - Correcting or scratching an entry ("actually it was 7:45").
+- **Pairs well with:** [`review`](#review-life-nodes) (asking about what was logged),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push fails).
+- **Notes:** one confirm line per node naming every assumption, then an append. Never runs
+  git and never edits an existing line.
+
+#### `review` (Life Nodes)
+
+- **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
+- **Reach for it when:**
+  - "How many…", "when did I last…", "what's left today" about logged data.
+- **Pairs well with:** [`log`](#log-life-nodes) (it hands logs back to it),
+  [`audit`](#audit-life-nodes) (when an answer shows data that looks wrong).
+- **Notes:** read-only by instruction and by `allowed-tools`; whether Cowork enforces
+  `allowed-tools` is unverified, which is why the body says it too.
+
+---
+
 ## Custom Subagents
 
 These are **explicit-dispatch only** — a skill that names them, or you asking directly.
