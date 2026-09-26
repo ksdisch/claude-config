@@ -310,6 +310,10 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 | `build-artifact` | Builds an artifact's page from its artifact note's Views, validates the palette in both themes, publishes it with only the `db` capability, writes `url` on first publish, then pushes every month of its data. Kyle-only. · [config →](usage-playbook.md#build-artifact-life-nodes) |
 | `rebuild-artifact` | Rewrites an artifact's database from the vault, one document per stream per month, and verifies it fresh; the fix for a stale artifact. · [config →](usage-playbook.md#rebuild-artifact-life-nodes) |
 | `audit` | Checks the vault for malformed lines, schema mismatches, broken or forked supersede chains, duplicates, dangling connections, and stale artifacts; repairs malformed lines only, one at a time on yes. · [config →](usage-playbook.md#audit-life-nodes) |
+| `add-node` | Runs the node interview, then writes one new node note (host, streams and their schema blocks) and its data folder, and confirms the host edge. · [config →](usage-playbook.md#add-node-life-nodes) |
+| `edit-node` | Changes a node note in place: a stream or field, a rename, a host move, prose, rules, or a rate table; stream changes are additive only once there's data. · [config →](usage-playbook.md#edit-node-life-nodes) |
+| `archive-node` | Archives a node together with the artifacts that read it, archives one artifact alone, or revives either; moves notes under `Archive/`, never `Data/`, and pushes each artifact a final status document. Kyle-only. · [config →](usage-playbook.md#archive-node-life-nodes) |
+| `design-artifact` | Ranks visualization ideas for a node's data, then interviews Kyle over the picked ideas and writes the artifact note (`reads`, Views, blank `url`) that `build-artifact` builds from. · [config →](usage-playbook.md#design-artifact-life-nodes) |
 
 **Skills (Cowork plugin `life-nodes-cowork`)**
 

@@ -1666,6 +1666,58 @@ session *in that repo*.
   confirmed line by line; duplicates and chain problems come back as the retract line for
   Kyle to log through `log`.
 
+#### `add-node` (Life Nodes)
+
+- **Run config:** Opus 5 · `high` — an interview whose schema blocks `log` validates against
+  from then on.
+- **Reach for it when:**
+  - A life area should start being tracked and has no node yet.
+- **Pairs well with:** [`edit-node`](#edit-node-life-nodes) (every later change to the note),
+  [`design-artifact`](#design-artifact-life-nodes) (once the node has data worth a page).
+- **Notes:** writes one note and `Data/<node_id>/.gitkeep`, nothing else. A missing host is
+  added first, never invented. The host edge is confirmed with `obsidian backlinks`, or
+  reported unverified.
+
+#### `edit-node` (Life Nodes)
+
+- **Run config:** Opus 5 · `high` — every stream change is checked against the lines already
+  logged before it's shown.
+- **Reach for it when:**
+  - A node needs a new stream or field, a new take-home rate, or changed rules.
+  - A node is renamed or moves under another host.
+- **Pairs well with:** [`design-artifact`](#design-artifact-life-nodes) (a view held back for
+  a node change), [`build-artifact`](#build-artifact-life-nodes) (a `## Rules` change reaches
+  a page only when it's rebuilt).
+- **Notes:** once a stream has data, only a new optional field, a new enum value, or prose is
+  allowed; a breaking change is refused and routed to a one-off migration or a new stream.
+  The Soft 30 cleaning list is data, changed from Cowork's `log`.
+
+#### `archive-node` (Life Nodes)
+
+- **Run config:** Sonnet 5 · `medium` — a shown list of moves and status pushes, then doing
+  exactly that.
+- **Reach for it when:**
+  - A node, or one artifact, is done or paused and should leave the active vault.
+  - Something archived should come back ("revive <Node>").
+- **Pairs well with:** [`audit`](#audit-life-nodes) (dangling connections afterwards),
+  [`sync`](#sync-life-nodes).
+- **Notes:** Kyle-only. Readers are found by query, never a stored list, and `Data/` never
+  moves. Unpinning or re-pinning the published page is Kyle's.
+
+#### `design-artifact` (Life Nodes)
+
+- **Run config:** Fable 5 · `high` — ranking views and settling a spec's design calls is
+  judgment work, paced by Kyle's answers.
+- **Reach for it when:**
+  - "Viz ideas for <Node>": step 1 ranks ideas and can stop there.
+  - A new artifact, or a redesign of one, needs its note written before a build.
+- **Pairs well with:** [`build-artifact`](#build-artifact-life-nodes) (builds exactly what the
+  note's Views say), [`edit-node`](#edit-node-life-nodes) (a view waiting on a field the node
+  lacks), the bundled `dataviz` skill (each idea's chart form).
+- **Notes:** writes one artifact note and never `index.html` or `url`. The name can't match a
+  node's, since `audit` would read the `reads` as an artifact reading an artifact. Samples
+  resolved entries only, because that's all the page gets.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
