@@ -1724,6 +1724,7 @@ session *in that repo*.
 - **Reach for it when:**
   - Reporting anything to record: a dose, a night's Bevel screenshots, drinks, water.
   - Correcting or scratching an entry ("actually it was 7:45").
+  - Refreshing Gearhead's scheduled shifts from Google Calendar ("pull my shifts").
 - **Pairs well with:** [`review`](#review-life-nodes) (asking about what was logged),
   [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push fails).
 - **Notes:** one confirm line per node naming every assumption, then an append. Never runs
