@@ -314,6 +314,7 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 | `edit-node` | Changes a node note in place: a stream or field, a rename, a host move, prose, rules, or a rate table; stream changes are additive only once there's data. · [config →](usage-playbook.md#edit-node-life-nodes) |
 | `archive-node` | Archives a node together with the artifacts that read it, archives one artifact alone, or revives either; moves notes under `Archive/`, never `Data/`, and pushes each artifact a final status document. Kyle-only. · [config →](usage-playbook.md#archive-node-life-nodes) |
 | `design-artifact` | Ranks visualization ideas for a node's data, then interviews Kyle over the picked ideas and writes the artifact note (`reads`, Views, blank `url`) that `build-artifact` builds from. · [config →](usage-playbook.md#design-artifact-life-nodes) |
+| `tailor-resume` | Makes Kyle's résumé for one job listing, and a cover letter when wanted, cut from the master résumé with no-AI checks for anything made up, rendered to `.docx` and PDF in the private folder; also keeps the master résumé and LinkedIn Text current on his yes. · [config →](usage-playbook.md#tailor-resume-life-nodes) |
 
 **Skills (Cowork plugin `life-nodes-cowork`)**
 

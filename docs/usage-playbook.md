@@ -1718,6 +1718,21 @@ session *in that repo*.
   node's, since `audit` would read the `reads` as an artifact reading an artifact. Samples
   resolved entries only, because that's all the page gets.
 
+#### `tailor-resume` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — picking lines for a listing and tracing a letter's
+  claims is judgment, with Kyle's yes at two stops.
+- **Reach for it when:**
+  - "Tailor my résumé for <link>", "make my résumé for Acme", "cover letter for Acme".
+  - "Add my new job", "<project> shipped", "update my LinkedIn text".
+  - An employer asks for references, or Kyle says he sent an application.
+- **Pairs well with:** [`audit`](#audit-life-nodes) (after an `applied` or `taken-down`
+  entry), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to
+  Applications & Queue), [`sync`](#sync-life-nodes).
+- **Notes:** runs in a job-search session in the vault. Tailoring only picks master lines;
+  the files carrying the contact block stay in `~/Documents/Life Nodes Private/job-search/`.
+  The look lives in its renderer, approved by Kyle in Job Search Phase 3's look sitting.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
