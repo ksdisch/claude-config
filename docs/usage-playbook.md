@@ -1733,6 +1733,24 @@ session *in that repo*.
   the files carrying the contact block stay in `~/Documents/Life Nodes Private/job-search/`.
   The look lives in its renderer, approved by Kyle in Job Search Phase 3's look sitting.
 
+#### `fill-application` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high`, in a vault session started with `claude --chrome` —
+  mapping a form's fields to the cut and the answer library and drafting screening answers
+  is judgment, with Kyle's yes on every page.
+- **Reach for it when:**
+  - "Fill this application", "fill in the Acme application", "next page".
+  - "Fix the autofill", "answer these screening questions".
+  - `tailor-resume`'s final yes, when Kyle takes its offer.
+- **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the cut it fills from,
+  and the default cut for an application with no folder), [`audit`](#audit-life-nodes)
+  (after the `applied` entry), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed
+  push to Applications & Queue).
+- **Notes:** without Chrome tools it tells Kyle to restart with `claude --chrome` and stops.
+  It never signs in, never enters an SSN, date of birth, government ID or bank details, and
+  never presses a button that moves the application on: Kyle presses it. LinkedIn Easy
+  Apply is never filled; its answers are drafted in chat.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
