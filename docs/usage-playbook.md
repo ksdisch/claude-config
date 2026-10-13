@@ -1736,8 +1736,8 @@ session *in that repo*.
 #### `fill-application` (Life Nodes)
 
 - **Run config:** Opus 5.5 · `high`, in a vault session started with `claude --chrome` —
-  mapping a form's fields to the cut and the answer library and drafting screening answers
-  is judgment, with Kyle's yes on every page.
+  mapping a form's fields to the cut and the answer library, drafting screening answers and
+  telling the sending button apart is judgment, with one ask of Kyle before it sends.
 - **Reach for it when:**
   - "Fill this application", "fill in the Acme application", "next page".
   - "Fix the autofill", "answer these screening questions".
@@ -1747,9 +1747,10 @@ session *in that repo*.
   (after the `applied` entry), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed
   push to Applications & Queue).
 - **Notes:** without Chrome tools it tells Kyle to restart with `claude --chrome` and stops.
-  It never signs in, never enters an SSN, date of birth, government ID or bank details, and
-  never presses a button that moves the application on: Kyle presses it. LinkedIn Easy
-  Apply is never filled; its answers are drafted in chat.
+  It presses every button that moves the application on itself, and the one that sends it
+  only on Kyle's yes to its one ask. It never signs in, never enters an SSN, date of birth,
+  government ID or bank details, and never guesses a fact his files don't hold. LinkedIn
+  Easy Apply is never filled; its answers are drafted in chat.
 
 #### `log` (Life Nodes)
 
