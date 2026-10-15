@@ -1,6 +1,6 @@
 ---
 name: pre-compact
-description: Checkpoint a long session before /compact so nothing settled lives only in the conversation, then give an honest "safe to compact" or "not yet, because X". Use when "/compact" arrives as a plain message mid-turn, or Kyle says "about to compact", "am I good to compact?", "checkpoint", "save state", "I'm near 150k", or types /pre-compact — even without naming the skill. Writes settled decisions, open items, deferrals, and a "Next step" line into the active skill's existing durable home (wayfinder ticket file, CONTEXT.md/ADRs, spec, issue files, branch) or a short .scratch checkpoint, commits and pushes the feature branch, and replies with SHA, settled list, what's left, and a git-checked verdict. Never runs /compact, pushes to main, merges, touches PRs, resolves a ticket awaiting confirmation, or continues the work. NOT for moving to a fresh session (/handoff-session writes a paste-able prompt and stops); this keeps the same session alive across compaction.
+description: Checkpoint a long session before /compact so nothing settled lives only in the conversation, then give an honest "safe to compact" or "not yet, because X". Use when "/compact" arrives as a plain message mid-turn, or Kyle says "about to compact", "am I good to compact?", "checkpoint" or "save state" about this session, "I'm near 150k", or types /pre-compact — even without naming the skill. Writes settled decisions, open items, deferrals, and a "Next step" line into the active skill's existing durable home (wayfinder ticket file, CONTEXT.md/ADRs, spec, issue files, branch) or a short .scratch checkpoint, commits and pushes the feature branch, and replies with SHA, settled list, what's left, and a git-checked verdict. Never runs /compact, pushes to main, merges, touches PRs, resolves a ticket awaiting confirmation, or continues the work. NOT for moving to a fresh session (/handoff-session writes a paste-able prompt and stops); this keeps the same session alive across compaction.
 ---
 
 # pre-compact — save what's settled, then say whether compacting is safe
@@ -34,8 +34,12 @@ of these fits:
 
 If the home has nowhere natural for open items and the next step (CONTEXT.md, for
 example), put those in `.scratch/<slug>/checkpoint.md` next to it. On a repeat
-checkpoint in the same session, update your earlier entry in place rather than stacking
-a second one.
+checkpoint in the same session, update your earlier entry in place, with a fresh date
+stamp marked "(updated)", rather than stacking a second one.
+
+When two skills are active at once (grill-with-docs inside a wayfinder ticket, say),
+write each piece to its natural home, terms to CONTEXT.md and decisions to ADRs, and
+make the ticket's checkpoint comment the one index that points to each of them.
 
 ## 3. Write the state down
 
@@ -71,10 +75,14 @@ map's Decisions-so-far.
 - `git push -u origin <branch>`. Never push to the default branch, merge, open or close
   a PR, or close a ticket. Those wait for Kyle. If the push fails, don't touch remote
   or upstream config; report it and hand the fix to Kyle.
+- If the folder isn't a git repo, write the checkpoint file and stop there; never run
+  `git init`. If the repo has no remote at all (`git remote` prints nothing), commit
+  and stop; never add one. Both get the on-disk verdict in step 5.
 
 ## 5. Check readiness against git, not memory
 
-Run `git status --porcelain` and `git rev-list --count @{u}..HEAD`. Then the verdict is:
+Run `git status --porcelain` and `git rev-list --count @{u}..HEAD` (skip both outside a
+git repo). Then the verdict is:
 
 - **Safe to compact** only when none of this session's files show as modified or
   untracked, the ahead count is 0, and nothing said in conversation is missing
@@ -82,6 +90,10 @@ Run `git status --porcelain` and `git rev-list --count @{u}..HEAD`. Then the ver
   skipped.
   "No upstream configured" counts as not pushed. Pushed is the bar because it puts the
   notes off this machine and in reach of other sessions.
+- **Saved to disk, not pushed** when there's nothing to push to: the folder isn't a git
+  repo, or the repo has no remote. Everything is written (and committed, if it's a
+  repo), so compacting is safe for this session, but nothing is off this machine. Say
+  exactly that. A remote that exists but rejected the push is **not yet**, not this.
 - **Not yet** otherwise, naming exactly what would be lost (e.g. "the push failed: no
   upstream", "your last answer, on rest days, isn't in the ticket yet").
 
@@ -93,7 +105,8 @@ If you mention context size, point to the status line. Never state a token count
 ## 6. Reply in this shape
 
 Name every ticket, decision, or finding by its title, or gloss any ID on first use
-(`ticket 03 (how rest days pass)`).
+(`ticket 03 (how rest days pass)`). Number settled items by the active skill's own
+question numbers (Q1, Q4, ...) when it numbered them; otherwise 1 to N.
 
 ```
 Everything from this <session kind> is saved: commit <sha>, pushed to <branch>. <If
@@ -102,8 +115,8 @@ mid-turn. Type it again now and it will." Otherwise: the verdict sentence.>
 
 Where it stands. <N> questions are settled, and <you took my recommendation on each |
 you took it on all but #k, where you chose …>:
-1. <Plain-language gist of a settled decision>
-2. ...
+<1. or Q1.> <Plain-language gist of a settled decision>
+...
 
 <Open items in this <ticket | item>, including a next question not yet asked, or
 "Nothing on this ticket is left to ask."> <Each deferral:
@@ -121,9 +134,16 @@ When the verdict is **not yet**, the first line becomes "Not yet": what would be
 (cite the local SHA if there is one) and the one step that fixes it. Keep the rest of
 the shape, and don't tell Kyle to type /compact.
 
+When the verdict is **saved to disk, not pushed**, the first line says so: "Saved to
+disk, not pushed: <not a git repo | committed locally (<sha>), no remote>. Safe to
+compact this session; nothing is off this machine." Keep the rest of the shape.
+
 ## Follow-up: "So I'm good to compact now?"
 
-Answer only that question. Rerun step 5. If it's clean, reply in one or two lines: yes,
+Answer only that question. Rerun step 5, and recheck any edit the checkpoint listed as
+open: is it still open, or written since? If it's clean, reply in one or two lines: yes,
 `<sha>` is on `origin/<branch>`, and nothing since the checkpoint exists only in
 conversation. If something new was settled after the checkpoint, save it (steps 3–4)
-and answer "Yes, now", with the new SHA. Don't repeat the full summary.
+and answer "Yes, now", naming what you just saved in a few words, with the new SHA.
+Leave out the line about other sessions' files unless their state changed. Don't repeat
+the full summary.

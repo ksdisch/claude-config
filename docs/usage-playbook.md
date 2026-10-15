@@ -512,7 +512,8 @@ rows get re-pointed to match.
   never resolves a grilling ticket before you confirm shared understanding. It pushes the
   feature branch but never touches `main`, merges, or opens PRs, and stages only files
   the session touched. The verdict comes from `git status` and the upstream ahead-count,
-  and it never claims a token count.
+  and it never claims a token count. In a folder with no git repo or no remote it never
+  creates one — it saves to disk and says "saved to disk, not pushed" instead.
 
 #### `visual-summary`
 
