@@ -495,6 +495,25 @@ rows get re-pointed to match.
   rewritten in place. It never re-architects functional source code; a behavior change is an
   ordinary edit.
 
+#### `pre-compact`
+
+- **Run config:** inherits the session · `medium` — everything it saves is already in
+  context; the judgment is only in spotting what isn't on disk yet.
+- **Reach for it when:**
+  - A Matt Pocock-style session (wayfinder, grilling, to-spec, to-tickets, implement) is
+    near ~150k and you're about to `/compact` with the work unfinished.
+  - You typed `/compact` mid-turn and it arrived as a message instead of running.
+  - You want a straight yes/no on whether compacting now would lose anything.
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (the alternative when a fresh
+  session beats compacting), [`wayfinder-map`](#wayfinder-map) (re-render after the
+  ticket is confirmed and resolved), `mattpocock-skills:grilling` (plugin — the sessions
+  it most often checkpoints).
+- **Notes:** checkpoint only — it never runs `/compact`, never continues the work, and
+  never resolves a grilling ticket before you confirm shared understanding. It pushes the
+  feature branch but never touches `main`, merges, or opens PRs, and stages only files
+  the session touched. The verdict comes from `git status` and the upstream ahead-count,
+  and it never claims a token count.
+
 #### `visual-summary`
 
 - **Run config:** inherits the session · `low` — the work is picking three or four visuals
