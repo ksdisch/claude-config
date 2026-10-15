@@ -27,10 +27,14 @@ of these fits:
 |---|---|
 | wayfinder ticket | That ticket's file under `.scratch/<effort>/issues/` — a `### Checkpoint — working notes, not the answer` entry under `## Comments`, with the date |
 | grill-with-docs / domain-modeling | `CONTEXT.md` (terms) and `docs/adr/` (decisions), matching the existing files' format |
-| to-spec | The spec file |
-| to-tickets | The issue files plus `tickets.md` |
+| to-spec | The spec file, once it's published; before that, the draft goes in `.scratch/<slug>/checkpoint.md` |
+| to-tickets | The issue files plus `tickets.md`, once Kyle approved the breakdown and it's published; before that, the draft breakdown goes in `.scratch/<slug>/checkpoint.md` |
 | implement / implement-spec | Committed work on the branch; progress notes as a comment on the ticket being built |
 | none of the above | A short `.scratch/<slug>/checkpoint.md` |
+
+Writing a spec or ticket file publishes it as `ready-for-agent`, where `/implement` or
+`/orchestrate` can pick it up. So before Kyle has approved it, don't write any issue file,
+spec file, or `tickets.md`; the draft stays in the checkpoint note.
 
 If the home has nowhere natural for open items and the next step (CONTEXT.md, for
 example), put those in `.scratch/<slug>/checkpoint.md` next to it. On a repeat
@@ -65,8 +69,11 @@ map's Decisions-so-far.
 
 ## 4. Commit and push the feature branch
 
-- Work on a feature branch. If you're on the default branch, branch first (`docs/` or
-  `feat/`, per the global git workflow).
+- Commit only onto the branch this session has been working on (one it created, or the
+  feature branch Kyle started it on). If HEAD is on the default branch, or on a branch
+  this session hasn't been working on, don't switch branches or commit. Other sessions
+  may share this checkout, and moving HEAD moves it for them too. Write the files, and
+  give the **not yet** verdict asking Kyle which branch to use.
 - Stage only files this session touched, by path. Other sessions' dirty or untracked
   files stay exactly as they are.
 - Make one checkpoint commit. Don't amend it or follow it with a polish pass.
@@ -77,7 +84,7 @@ map's Decisions-so-far.
   or upstream config; report it and hand the fix to Kyle.
 - If the folder isn't a git repo, write the checkpoint file and stop there; never run
   `git init`. If the repo has no remote at all (`git remote` prints nothing), commit
-  and stop; never add one. Both get the on-disk verdict in step 5.
+  onto this session's branch and stop; never add one. Both get the on-disk verdict in step 5.
 
 ## 5. Check readiness against git, not memory
 
@@ -95,7 +102,8 @@ git repo). Then the verdict is:
   repo), so compacting is safe for this session, but nothing is off this machine. Say
   exactly that. A remote that exists but rejected the push is **not yet**, not this.
 - **Not yet** otherwise, naming exactly what would be lost (e.g. "the push failed: no
-  upstream", "your last answer, on rest days, isn't in the ticket yet").
+  upstream", "your last answer, on rest days, isn't in the ticket yet", "nothing is
+  committed: HEAD is on main, which branch should it go on?").
 
 Other sessions' dirty files don't affect the verdict. Mention them in one line as
 left untouched.
