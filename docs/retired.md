@@ -78,6 +78,7 @@ fleet prune knows what to hunt.
 | 2026-09-21 | `hook:Stop[1][0]` | hook | command text commented out (`# DISABLED 2026-08-13 …`): a no-op that steered nothing | 0 chars · comment-only entry | `~/.claude/backups/retired-2026-09-21/settings.json.bak` | — |
 | 2026-09-21 | `hook:Stop[1][1]` | hook | command text commented out (`# DISABLED 2026-08-13 …`): a no-op that steered nothing | 0 chars · comment-only entry | `~/.claude/backups/retired-2026-09-21/settings.json.bak` | — |
 | 2026-09-21 | `memory:32-empty-dirs` | memory | 32 empty auto-memory directories left by throwaway `ytc-curator`/`ytc-repro` temp-dir sessions | 0 files in each | `~/.claude/backups/retired-2026-09-21/memory-empty/<slug>` | — |
+| 2026-10-14 | `skill:implement-spec` | skill | loose copy kept 2026-09-21 because the plugin did not register it; plugin v1.3.1 does, so it became a duplicate (call it `mattpocock-skills:implement-spec` if the bare name stops resolving) | typed 7/90d · 7 all · auto 0/0 · last 2026-10-12 · refs 1 · 34 chars | `~/.claude/backups/retired-2026-10-14/implement-spec.tar.gz` | — |
 
 ## Kept on purpose
 
@@ -92,7 +93,6 @@ Items ruled `keep` with a clause, so they aren't re-proposed. Re-open only if us
 | 2026-09-21 | `skill:research-paper` | the close-a-research-project skill; season recurs |
 | 2026-09-21 | `skill:reorient` | `day` and `onboard` route to it |
 | 2026-09-21 | `skill:nlm-skill` | a reference, not a verb — all eight notebook skills point at it |
-| 2026-09-21 | `skill:implement-spec` | the only reachable copy (the plugin does not register it); typed 2026-09-18; the global Tickets Index rule routes to it |
 | 2026-09-21 | `command:launch` | hot and the most-referenced command; top-decile size only because commands are short |
 | 2026-09-21 | `plugin:mattpocock-skills@mattpocock` | 223 picks in 90 days; the survivor of the loose-copy retirement |
 | 2026-09-21 | `plugin:claude-code-setup@claude-plugins-official` | `claudify-repo` BRAINSTORM mode invokes its recommender skill by name |

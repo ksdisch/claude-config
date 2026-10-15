@@ -47,8 +47,6 @@ skills/adhd/
 
 # Matt Pocock's skills — served by the `mattpocock-skills@mattpocock` plugin. The raw
 # `npx skills` copies that sat here untracked were retired 2026-09-21 (docs/retired.md).
-# One loose copy stays because the plugin's manifest does not register it.
 # find-skills is skills.sh's own helper, same treatment.
 skills/find-skills/
 skills/find-skills
-skills/implement-spec/
