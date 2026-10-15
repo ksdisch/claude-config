@@ -99,7 +99,7 @@ This is checked, not remembered: `scripts/check-doc-sync.py` runs as the repo's 
 
 ## Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)
 
-The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) reach sessions through the `mattpocock-skills@mattpocock` plugin; only `implement-spec` still sits as a loose untracked copy in `claude-config` (see `THIRD-PARTY.md`) — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next plugin update. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
+The mattpocock engineering skills (`setup-matt-pocock-skills`, `to-tickets`, `wayfinder`, `implement-spec`, ...) reach sessions through the `mattpocock-skills@mattpocock` plugin — I can't durably edit their templates or process steps there; any edit would be unreviewable and silently lost on the next plugin update. This section is the editable substitute: it supplements their **local-markdown** issue-tracker mode (`.scratch/<feature-slug>/issues/<NN>-<slug>.md`, one file per ticket) with a convention the upstream files don't define.
 
 **Keep one-file-per-ticket as the source of truth.** Per-ticket `Status:` / `Blocked by:` lines and `## Comments` history live only in the issue files — never collapse them into a single combined file.
 

@@ -19,10 +19,9 @@ gets a section above in the same commit.
 
 The Matt Pocock skill set (<https://github.com/mattpocock/skills>, MIT) reaches sessions
 through the `mattpocock-skills@mattpocock` plugin. The raw `npx skills` copies that used to sit
-untracked in `skills/` were retired on 2026-09-21 — see [`docs/retired.md`](docs/retired.md).
-One loose copy, `skills/implement-spec/`, stays untracked because the plugin's manifest does
-not register it — see the block in [`.gitignore`](.gitignore). Neither is published by this
-repo, so no notice is needed here. Customized forks of 15 of those skills were previously
+untracked in `skills/` were retired on 2026-09-21, and the last one, `implement-spec`, on
+2026-10-14 once the plugin began registering it — see [`docs/retired.md`](docs/retired.md).
+None is published by this repo, so no notice is needed here. Customized forks of 15 of those skills were previously
 tracked (and listed above); they were retired to git history on 2026-08-21 — recover from the
 parent of that retirement commit. If any skill is ever promoted back to tracked, it gets a
 section above in the same commit.
