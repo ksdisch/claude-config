@@ -4,21 +4,6 @@
 
 ---
 
-# Claude Code Modes
-
-One structured mode for working with Claude Code. Type the trigger phrase to activate.
-
----
-
-## Kickoff Mode → run the `/kickoff` skill
-
-**Purpose:** Start a brand new project from a rough, half-baked idea — interview it into shape before any code.
-**Trigger:** `/kickoff`, "kickoff mode", or "new project idea" (followed by the idea).
-
-When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickoff/`) — do not improvise the interview inline. The skill runs the deep, adaptive, one-question-at-a-time discovery interview (for as long as the idea needs), produces an approved kickoff brief + phased plan, and — only after I confirm at a gate — scaffolds `~/Projects/<slug>/`, a git repo, and a private GitHub repo with the brief inside. Briefs are archived in `~/Projects/_kickoffs/`.
-
----
-
 ## Git Workflow
 
 - Always create a feature branch before making changes
@@ -26,7 +11,7 @@ When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickof
 - Commit frequently with descriptive messages
 - **Keep me in the loop, don't gate on me (updated 2026-06-13).** Commit, push, open PRs, and merge them to `main` autonomously — no per-push go-ahead needed. In exchange, brief me at the point of action (what changed, commit SHA, PR link, whether you merged) and recap at session end. I'd rather be told after the fact than asked before — but nothing happens silently.
 - Still branch + PR for every change; the PR is the durable record that keeps me briefed, not a gate. Don't push straight to `main`.
-- **Review-gate proposal before autonomous merge (updated 2026-08-22; supersedes the mandatory loop added 2026-07-26).** Before merging any PR yourself, don't auto-run the `adversarial-review` loop — **propose** it: give me your honest take on whether review is warranted for this diff and at what scope — **skip / single round / full loop** — with the why (risk surface, behavioral vs. mechanical content, blast radius, test coverage). Before that take, run whatever the target repo's `## Wired gates (Preflight)` note lists — read at the merge-base, and only the gates whose inputs touch the changed files — and cite the results as Preflight evidence: a gate that measured the diff and came back clean is what lets you argue the scope down instead of defaulting to caution, a finding argues it up, and a gate that can't see the diff is *not applicable*, which argues nothing in either direction. Numeric thresholds in those gates are **agent-tuned**: agents get wider limits than humans (CRAP flags above 6 where humans conventionally run under 4), and every future numeric gate cites this sentence rather than re-deriving the principle. Interactive sessions: STOP and wait for my call; I can veto in either direction (skip a review you proposed, or run one you'd skip), and my call is final for that merge. Unattended runs: make the call yourself and record the decision + reasoning in the merge brief — never silently — with one floor: diffs touching behavioral/agent-instruction files (as defined in `adversarial-review`'s severity-and-scope reference: any `CLAUDE.md`, `skills/**`, `agents/**`, `commands/**`, hooks, or `settings*.json`) get at least a single round when I'm not around to veto. Recommendation heuristics: behavioral files, data integrity, auth, or money lean full loop; ordinary well-tested code often earns a single round; docs-only, comment-only, config-typo diffs earn a skip (the old escape hatch is now just the bottom of this spectrum). **Single round** means one reviewer dispatch → triage → judge on disputes → fix, with fixes self-verified by the author (no re-review lap) — escalate to a re-review dispatch only if the round surfaced a critical or left a coverage bound unclosed. The sole named substitute remains `ship-and-route`'s §1.3 release gate — one gate per merge, not two — which follows this same propose-first convention; future substitutes get added to this line by name. Whatever review does run, critical and should-fix findings still block the merge — fixed-and-verified (self-verified under a single-round scope), closed or downgraded by the judge, or explicitly waived by me; nice-to-haves become follow-ups listed in the PR comment.
+- **Review-gate proposal before autonomous merge (updated 2026-10-16).** Before merging any PR yourself, give me your honest take on review scope — **skip**, or **`/code-review` at a named effort level** — with the why (risk surface, behavioral vs. mechanical content, blast radius, test coverage). If the target repo's `CLAUDE.md` has a `## Wired gates (Preflight)` note, run the gates whose inputs touch the changed files and cite the results: a clean gate argues the scope down, a finding argues it up. Interactive sessions: STOP and wait for my call; I can veto in either direction, and my call is final for that merge. Unattended runs: make the call yourself and record it with the reasoning in the merge brief, with one floor: diffs touching behavioral/agent-instruction files (any `CLAUDE.md`, `skills/**`, `agents/**`, `commands/**`, hooks, or `settings*.json`) get a review. Heuristics: behavioral files, data integrity, auth, or money lean `high` or above; ordinary well-tested code earns `medium`; docs-only, comment-only, or config-typo diffs earn a skip. Correctness findings block the merge until fixed and verified, or explicitly waived by me; cleanups become follow-ups listed in the PR comment.
 - Pause and ask first only for genuinely irreversible/destructive ops: force-push, history rewrite, production deploys. Exception: deleting the remote copy of a feature branch you created and already merged via PR is routine cleanup — do it without asking (this is the same "delete branch" button GitHub offers after every merge). Still pause before deleting any other remote ref or branch — one you didn't create, one that isn't confirmed merged, a shared/long-lived branch, or a tag.
 - A specific project's `CLAUDE.md` may tighten this back (e.g. require my merge, or hold risky changes for a heads-up); the project rule wins where it does.
 
@@ -45,10 +30,7 @@ When any of those fire, **invoke the `kickoff` skill** (`~/.claude/skills/kickof
 
 **This is a presentation rule and it outranks a skill's or command's output spec.** If a template says `# · grade · verdict · one-line reason`, render it with the title column anyway. Where a skill or command writes a durable artifact for somewhere else (a PR comment, a report file), that artifact follows its own template — this rule governs what reaches *me*, in chat.
 
-**Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — wherever that note sits.** It is never appended as a new trailing slot after a spec's final element, and it never goes inside the paste. Two response shapes exist and the rule has to work for both:
-
-- `/handoff-session` puts its notes **before** the fenced block and forbids anything after it, so the path line joins the "For Kyle" briefing (slot 1) and the run-config ordering rule is untouched.
-- `ship-and-route` puts the fenced block **first** and every Kyle-facing note after it, so the path line rides with whichever of those notes cited the ID.
+**Where a spec fixes the order of a response, rule 3's path line rides with the note that referenced the IDs — wherever that note sits.** It is never appended as a new trailing slot after a spec's final element, and it never goes inside the paste. If notes come before a paste-able block, the path line joins them; if they come after it, the path line rides with whichever note cited the ID.
 
 A spec that fixes its order wins on *placement*; it does not win on *omission*.
 
@@ -56,14 +38,14 @@ A spec that fixes its order wins on *placement*; it does not win on *omission*.
 
 ## Planner/Builder Protocol (added 2026-07-27)
 
-How model choice works across my sessions: **Fable 5 plans, Opus 5 builds, Sonnet 5 grinds.**
+How model choice works across my sessions: **Fable 5.1 plans, Opus 5.5 builds, Sonnet 5.5 grinds.**
 
-- Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on Fable 5. Well-specified builds run on Opus 5. Mechanical, checklist-scoped work runs on Sonnet 5.
-- Every plan or handoff written for another session to execute ends with a **Run-config note**: recommended model + effort for that session, a one-clause why, and the literal launch command (e.g. `claude --model claude-opus-5 --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults. "Ends with" means it closes the *substance*: it comes after everything the plan or handoff has to say, is never buried mid-document, and is never folded inside a paste-able block. Pure delivery artifacts may follow it — in `/handoff-session`, on `--audio`, the audio note does, and then the paste-able block itself, both by design. Call it a **note**, never a "block", so it never reads as belonging inside that paste.
-- **Effort ladder (this protocol owns it — `/handoff-session` and `/prompt-optimize` both cite here, never each other):** `ultracode` for broad, parallelizable, want-exhaustive-coverage work (multi-agent fan-out + adversarial verify) · `max` / `xhigh` for ONE hard problem, design calls with real tradeoffs included (`max` uncapped and fast-burning, `xhigh` hard-but-bounded) · `high` for ordinary build work with judgment in it · `medium` / `low` for mechanical, checklist-scoped work. Effort is independent of the model pick.
+- Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on Fable 5.1. Well-specified builds run on Opus 5.5. Mechanical, checklist-scoped work runs on Sonnet 5.5.
+- Every plan or handoff written for another session to execute ends with a **Run-config note**: recommended model + effort for that session, a one-clause why, and the literal launch command (e.g. `claude --model claude-opus-5-5 --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults. "Ends with" means it closes the *substance*: it comes after everything the plan or handoff has to say, is never buried mid-document, and is never folded inside a paste-able block. Pure delivery artifacts, such as the paste-able block itself, may follow it. Call it a **note**, never a "block", so it never reads as belonging inside that paste.
+- **Effort ladder:** `ultracode` for broad, parallelizable, want-exhaustive-coverage work (multi-agent fan-out + adversarial verify) · `max` / `xhigh` for ONE hard problem, design calls with real tradeoffs included (`max` uncapped and fast-burning, `xhigh` hard-but-bounded) · `high` for ordinary build work with judgment in it · `medium` / `low` for mechanical, checklist-scoped work. Effort is independent of the model pick.
 - Builder sessions start **fresh from the plan file**, never from the planning session's transcript. Never recommend switching models mid-session after heavyweight planning: `/model` keeps the conversation but invalidates the per-model prompt cache — the full transcript re-ingests at uncached rates, and the build inherits deliberation noise it doesn't need.
 - **Split planner from builder only when build ≫ plan.** When the work is plan-heavy and build-light, finish it in the Fable session — a handoff would cost more than it saves.
-- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter (see `agents/silent-failure-hunter.md` and `agents/spec-miner.md` for the worked shape). Both keys are real, consumed agent-file fields — but a *misspelled* `effort:` only logs a warning and falls back to the default; it never fails the dispatch, so proofread the value.
+- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter. Both keys are real, consumed agent-file fields — but a *misspelled* `effort:` only logs a warning and falls back to the default; it never fails the dispatch, so proofread the value.
 
 ---
 
@@ -116,7 +98,7 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 | [02](issues/02-slug.md) | Ticket title | One-line summary | ready-for-agent | 01 |
 ```
 
-`Status` values are the five triage roles (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`) for `/to-tickets` tickets, plus two orchestrator-written values — `in-progress` (claimed by a worker session; the comment names it and the branch) and `done` (merged to the feature branch) — which only `/orchestrate` sets. `/wayfinder` tickets use a disjoint `claimed`/`resolved` vocabulary and don't belong in this manifest at all (see below) — don't mix the two.
+`Status` values are the five triage roles (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`) for `/to-tickets` tickets. `/wayfinder` tickets use a disjoint `claimed`/`resolved` vocabulary and don't belong in this manifest at all (see below) — don't mix the two.
 
 **The manifest is an entry point, never the source of truth.** `/implement` and `/implement-spec` should treat `tickets.md` as an index that resolves to the issue files — read it to find which files exist and their current status, then read the issue files themselves for content (What to build / Acceptance criteria / Comments). If `tickets.md` and an issue file's `Status:` line ever disagree, the issue file wins; refresh the manifest.
 
@@ -125,15 +107,3 @@ Generated index — resolves to the issue files below. Source of truth is `issue
 **Route render (wayfinder efforts).** After every claim, resolve, add-ticket, or wire-blocking step in a wayfinder effort, run `python3 ~/.claude/skills/wayfinder-map/scripts/render_map.py <effort-dir>`. The Stop hook that re-renders stale maps is the backstop, not the mechanism to rely on. `map.html` beside `map.md` is generated output: never hand-edited, never the source of truth. To see or share it, invoke `wayfinder-map`. When `/setup-matt-pocock-skills` scaffolds a repo that hosts wayfinder efforts, append the same render bullet under *Wayfinding operations* in its `docs/agents/issue-tracker.md`.
 
 **When scaffolding a new repo for local-markdown tracking**, `/setup-matt-pocock-skills` writes that repo's own `docs/agents/issue-tracker.md` from the upstream template the plugin ships, which doesn't mention this convention. Append a short "Tickets index" subsection to that file — mirroring "Also maintain a generated index" and "The manifest is an entry point, never the source of truth" above, plus the table example — so the convention is discoverable in-repo too, not just from this global file.
-
----
-
-## Project Wiki
-
-When working in a project that contains `PROJECT.md`, a `Wiki/` directory, or `HANDOFF.md`, maintain the project wiki using the `project-wiki` skill:
-- Before integrating a new source: read `PROJECT.md` and `Wiki/_index.md`, then report the proposed update scope before making broad changes
-- Record decisions in `Decisions.md`; update `HANDOFF.md` whenever work pauses or state changes
-- Make surgical updates — don't reorganize the entire wiki because a new source was added
-- Label all claims: Fact / Inference / Recommendation / Decision / Proposed / Unresolved / Contradiction
-
-New projects started via `/kickoff` automatically get a wiki initialized. To retroactively initialize all existing projects, run `/wiki-init --all`.

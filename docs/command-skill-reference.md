@@ -37,114 +37,32 @@ Available in every Claude Code session. Live in `commands/`.
 
 | Command | What it does |
 |---|---|
-| [`/begin`](../commands/begin.md) | Open a session — orients on project state (branch, recent commits, open PRs), recaps from the last `/wrap` log, offers a recall question, then routes into the project's session-start spec. · [config →](usage-playbook.md#begin) |
-| [`/wrap`](../commands/wrap.md) | End-of-session close-out — recaps the work, explains the why, builds vocabulary, quizzes via active recall, and suggests next moves. Saves a dated log to `.claude/`. · [config →](usage-playbook.md#wrap) |
-| [`/catchup`](../commands/catchup.md) | Mid-session audio catch-up — narrates the session so far (or just the most recent output) as an MP3, then keeps working. Does not end the session. · [config →](usage-playbook.md#catchup) |
-| [`/handoff-session`](../commands/handoff-session.md) | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context; `--orchestrator` writes a coordinator brief for an arc run across worker sessions instead. Also prints a plain-English "what's next & why" briefing. · [config →](usage-playbook.md#handoff-session) |
 | [`/launch`](../commands/launch.md) | Opens a new terminal window in a project directory and starts a fresh Claude Code session there, with the prompt on the clipboard (or auto-submitted via `--send`). Reads directory, model, and effort from the run-config note just produced, and names the session descriptively (`claude --name`) so it's findable in the resume picker later; `--remote` starts it as a Remote Control session so the name reaches the claude.ai/mobile lists too. · [config →](usage-playbook.md#launch) |
-| `/learn` (disabled 2026-08-21) | **Disabled** — was getting picked up accidentally over `/teach`. Mined the current session for reusable patterns and — after a confirmation gate — saved each as a proper skill (house layout + reference-doc row + playbook card), landed via branch + PR. File preserved at [`commands/learn.md.disabled`](../commands/learn.md.disabled); rename back to `learn.md` to re-enable. · [config →](usage-playbook.md#learn) |
-
-### Planning & Exploration
-
-| Command | What it does |
-|---|---|
-| [`/explore-plan`](../commands/explore-plan.md) | Explore → plan → confirm before any code. Reads relevant code, proposes 2–3 ranked approaches, and waits for approval before implementing. · [config →](usage-playbook.md#explore-plan) |
-| [`/brainstorm`](../commands/brainstorm.md) | Multi-mode structured brainstorm using blind parallel agent teams. Modes: Moonshot, QuickWin, Subtract, Harden, Premortem, Friction, Delight, Positioning, Reach. Produces vision docs + backlog stubs. · [config →](usage-playbook.md#brainstorm) |
-| `/autonomous-milestone` (disabled 2026-08-27) | **Disabled** — archived on request; not in use for now. With a target → autonomously planned/built/tested/verified end-to-end. With no target → triaged the backlog into ranked candidates, let you pick, then built. Used multi-agent ultracode orchestration. File preserved at [`commands/autonomous-milestone.md.disabled`](../commands/autonomous-milestone.md.disabled); rename back to `autonomous-milestone.md` to re-enable. Note `reorient` and `/prompt-optimize` still route to it. · [config →](usage-playbook.md#autonomous-milestone) |
-| [`/prompt-optimize`](../commands/prompt-optimize.md) | One-shot prompt rewriter — diagnoses a rough draft, recommends the right workflow archetype + model + effort level, and returns a ready-to-paste optimized prompt. Advisory only; never executes. · [config →](usage-playbook.md#prompt-optimize) |
-
-### Development Workflows
-
-| Command | What it does |
-|---|---|
-| [`/tdd-loop`](../commands/tdd-loop.md) | Test-first loop — write failing tests for a spec, confirm they fail for the right reason, commit them, then write implementation until they pass without modifying the tests. · [config →](usage-playbook.md#tdd-loop) |
-| [`/smoke-test`](../commands/smoke-test.md) | Sets up a manual smoke test — figures out what to verify, opens needed pages in Chrome, then gives you a precise do-this / see-that checklist. · [config →](usage-playbook.md#smoke-test) |
-| [`/crap-check`](../commands/crap-check.md) | Runs the target repo's own wired CRAP tooling — discovered from that repo's "Wired gates (Preflight)" note, never a guessed filename — and presents the ranked worst-functions report, flagging scores above the note's threshold (> 6 by default). Report-only: installs nothing, blocks nothing, and says plainly when a repo has nothing wired. · [config →](usage-playbook.md#crap-check) |
-| [`/trim-context`](../commands/trim-context.md) | Finds and fixes token bloat in a repo — oversized CLAUDE.md, bloated memory files, large always-loaded files, `.claude/` cruft. · [config →](usage-playbook.md#trim-context) |
-
-### Environment & Setup
-
-| Command | What it does |
-|---|---|
-| [`/boot_server`](../commands/boot_server.md) | Detects how the project is served, starts the dev server in the background, waits until ready, and opens the running page in Chrome. Pass `"live"` to open the deployed page instead. · [config →](usage-playbook.md#boot_server) |
-| [`/envsetup`](../commands/envsetup.md) | Opens the project's `.env` in your editor and the credential-generation page in Chrome, with a key stub + source comment pre-added. · [config →](usage-playbook.md#envsetup) |
-| [`/claudify-repo`](../commands/claudify-repo.md) | Vendors chosen global commands/skills into a repo (so they work in cloud/web sessions and for collaborators) and launches the recommender to design project-specific automations. · [config →](usage-playbook.md#claudify-repo) |
-| [`/wiki-init`](../commands/wiki-init.md) | Initialize a project wiki — creates PROJECT.md, HANDOFF.md, and minimum structure for the current project (no args), a specific path, or all top-level projects under ~/Projects/ (`--all`). Idempotent (never overwrites an existing wiki); lands changes via branch + PR. · [config →](usage-playbook.md#wiki-init) |
-| [`/wiki-backfill`](../commands/wiki-backfill.md) | Backfills a retroactive `Wiki/History.md` evolution narrative — mines merged PRs, git history, tags, wrap logs, and ADRs into a milestone-by-milestone, append-only history page for one project or all wiki-bearing projects (`--all`). Refuses to overwrite an existing History.md; lands changes via branch + PR. · [config →](usage-playbook.md#wiki-backfill) |
-
----
+| [`/handoff-session`](../commands/handoff-session.md) | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context; `--orchestrator` writes a coordinator brief for an arc run across worker sessions instead. Also prints a plain-English "what's next & why" briefing. · [config →](usage-playbook.md#handoff-session) |
 
 ## Global Skills
 
 Available everywhere. Live in `skills/`. Claude invokes these automatically when the context matches, or you can request them directly.
 
-### Project Kickoff & Setup
-
-| Skill | What it does |
-|---|---|
-| [`kickoff`](../skills/kickoff/SKILL.md) | Turns a raw idea into a structured launch — runs a deep adaptive discovery interview, produces an approved kickoff brief + phased plan, then scaffolds the project folder, git repo, and private GitHub repo. Automatically initializes a project wiki. · [config →](usage-playbook.md#kickoff) |
-| [`project-wiki`](../skills/project-wiki/SKILL.md) | Maintain an evidence-controlled project wiki — three modes: INIT (idempotently create PROJECT.md, HANDOFF.md, and topic pages that synthesize across sources; never overwrites, never leaves a `Wiki/` holding only an index), MAINTAIN (surgical updates when integrating sources, recording decisions, updating status, or appending History.md milestones), and BACKFILL (mine merged-PR and git history into an append-only Wiki/History.md evolution narrative). Auto-invoked in any project that has wiki sentinel files. · [config →](usage-playbook.md#project-wiki) |
-
 ### Session & Context Management
 
 | Skill | What it does |
 |---|---|
-| [`reorient`](../skills/reorient/SKILL.md) | Use when returning to a project after a real gap (days to months). Rebuilds fluency and routes the next move to the right skill. NOT for ordinary session starts (use `/begin`). · [config →](usage-playbook.md#reorient) |
-| [`onboard`](../skills/onboard/SKILL.md) | Role-played new-hire onboarding — Claude plays a senior teammate briefing you on the current project (and optionally the whole lineup) in five segments, each ending in a Q&A where it suggests the questions you ask; leaves a dated onboarding packet. · [config →](usage-playbook.md#onboard) |
-| [`reweave`](../skills/reweave/SKILL.md) | Re-integrates a follow-up answer into the original response at the source so you get one clean standalone version instead of mentally splicing the update back in. · [config →](usage-playbook.md#reweave) |
 | [`pre-compact`](../skills/pre-compact/SKILL.md) | Checkpoints a session before `/compact` — writes what's settled, open, and deferred plus a next step into the active skill's durable home, commits and pushes the feature branch, and gives an honest "safe to compact" / "not yet, because X" checked against git (or "saved to disk, not pushed" where there's no remote). Keeps the same session alive; `/handoff-session` is for moving to a fresh one. · [config →](usage-playbook.md#pre-compact) |
 | [`visual-summary`](../skills/visual-summary/SKILL.md) | Turns a conversation, a branch's diff, or an uncommitted worktree into one self-contained HTML page that's read at a glance — three to five charts and diagrams, one headline, no second block of prose. Saves to `~/Projects/_visual-summaries/` and publishes as an Artifact every run, unless `--no-publish`. · [config →](usage-playbook.md#visual-summary) |
 | [`wayfinder-map`](../skills/wayfinder-map/SKILL.md) | Draws a Wayfinder effort's map as one self-contained HTML page — the blocking graph toward the destination, takeable tickets as cards, decisions so far, and the fog — generated deterministically from `map.md` and the issue files into `map.html` beside it, and published to one stable Artifact link per effort. A Stop hook re-renders stale maps. · [config →](usage-playbook.md#wayfinder-map) |
-| [`ship-and-route`](../skills/ship-and-route/SKILL.md) | End-of-build "take it from here" flow — safely lands any outstanding git work behind a review gate, walks through findings, then routes the next move (2–3 ranked options). · [config →](usage-playbook.md#ship-and-route) |
-| [`replenish`](../skills/replenish/SKILL.md) | Use when a project's backlog has run dry — combines bug-hunt and multiple brainstorm modes as parallel lanes to refill it with bugs and new ideas in one session. · [config →](usage-playbook.md#replenish) |
-| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
-
-| [`orchestrate`](../skills/orchestrate/SKILL.md) | Runs one feature's ticket set through separate worker sessions — hands each ready ticket in `.scratch/<slug>/tickets.md` to a named worker session in its own worktree over SendMessage, waits on notify_when_idle, reviews under the standing gate, merges to the feature branch, refreshes the index. · [config →](usage-playbook.md#orchestrate) |
 | [`retire`](../skills/retire/SKILL.md) | The config's subtract verb — inventories every global steering surface (CLAUDE.md sections, constraints paragraphs, skills, commands, agents, plugins, MCP servers, hooks, output styles, auto-memory) with usage evidence, proposes a verdict per item from a fixed precedence table, applies only what you ratify row by row with full bookkeeping and a retirement ledger, and measures before → after weight. Sweep, `--report`, `--surface`, or targeted. · [config →](usage-playbook.md#retire) |
-
-### Quality & Debugging
-
-| Skill | What it does |
-|---|---|
-| [`gauntlet`](../skills/gauntlet/SKILL.md) | Relays one story through a three-stage agent pipeline — specifier → coder → mutation-hardener — where every stage ends in a gate the orchestrating session runs itself rather than takes on an agent's word. Ends in a scorecard, never a merge. · [config →](usage-playbook.md#gauntlet) |
-| [`bug-hunt`](../skills/bug-hunt/SKILL.md) | Proactively hunts for bugs you don't know about — fans out specialized finder agents, adversarially verifies every finding, and presents a ranked triage list. Optionally hands bugs to systematic-debugging. · [config →](usage-playbook.md#bug-hunt) |
-| [`adversarial-review`](../skills/adversarial-review/SKILL.md) | Pre-merge author↔reviewer↔judge loop, now propose-first — the session recommends SKIP / SINGLE ROUND / FULL LOOP with honest reasoning (Kyle decides interactively; unattended runs decide and record why); whatever runs, a zero-context reviewer files graded findings, the author triages, a judge rules on disputes, and the adjudicated summary lands as a PR comment with a CLEAR / NOT-CLEAR merge verdict. · [config →](usage-playbook.md#adversarial-review) |
+| [`reweave`](../skills/reweave/SKILL.md) | Re-integrates a follow-up answer into the original response at the source so you get one clean standalone version instead of mentally splicing the update back in. · [config →](usage-playbook.md#reweave) |
+| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
 | [`architecture-viewer`](../skills/architecture-viewer/SKILL.md) | Turns a repo into one self-contained, clickable HTML architecture map — modules as nodes, arrows from dependent to dependency, one level of click-to-expand, and a findings banner naming the cycles, hubs, and edges running against the repo's stated layering. An agent pass emits an `arch-graph/v1` JSON graph with a real `file:line` behind every edge; a validator refuses to render one whose citations don't resolve or whose modules leave source unaccounted for. Polyglot — nothing parses imports per language. · [config →](usage-playbook.md#architecture-viewer) |
-| [`family-compare`](../skills/family-compare/SKILL.md) | Deep-reads a named family of overlapping steering items — skills, commands, subagents, plugin or vendored copies — against their neighbors, and writes one reference doc settling what each is, when to reach for which, where they overlap, and what to do with each in a retirement sweep. Ends in a `retire`-format verdict table; recommends only. · [config →](usage-playbook.md#family-compare) |
-| [`seed-hunt`](../skills/seed-hunt/SKILL.md) | Post-research-project workflow — verifies the repo is truly closed, harvests lessons into the selection bar, sweeps arXiv for candidate papers, scores a shortlist, and presents a decision brief. · [config →](usage-playbook.md#seed-hunt) |
 
-### NotebookLM
+### Learning & Research
 
 | Skill | What it does |
 |---|---|
-| [`notebook-init`](../skills/notebook-init/SKILL.md) | Bootstraps a new NotebookLM notebook end-to-end — interview, source curation, creation, baseline artifact generation, local sidecar. · [config →](usage-playbook.md#notebook-init) |
-| [`notebook-merge`](../skills/notebook-merge/SKILL.md) | Merges 2+ existing notebooks into one unified notebook — migrates sources and notes, regenerates artifacts, proposes new cross-notebook synthesis, archives originals. · [config →](usage-playbook.md#notebook-merge) |
-| [`audio-series`](../skills/audio-series/SKILL.md) | Generates an episodic NotebookLM audio course from an existing notebook — a flagship "building" season plus standalones, with optional Study Guide + Quiz per episode. · [config →](usage-playbook.md#audio-series) |
-| [`video-series`](../skills/video-series/SKILL.md) | Generates an episodic NotebookLM video course from an existing notebook — same episodic structure as `audio-series` but video overviews with per-season visual style. · [config →](usage-playbook.md#video-series) |
-| [`nlm-skill`](../skills/nlm-skill/SKILL.md) | Expert guide for the `nlm` CLI and NotebookLM MCP server — use when interacting with NotebookLM programmatically. · [config →](usage-playbook.md#nlm-skill) |
-
-### Research & Writing
-
-| Skill | What it does |
-|---|---|
-| [`research-paper`](../skills/research-paper/SKILL.md) | End-of-project write-up for reproduce-and-measure research projects. From a completed repo's recorded results — produces a professional research paper and a presenter pack. · [config →](usage-playbook.md#research-paper) |
-| [`paper-eli5`](../skills/paper-eli5/SKILL.md) | Rewrites someone else's research paper into plain English 1:1 (same headings, same paragraph order, nothing summarized or dropped). Equations, tables, and inline math stay verbatim with a plain-words gloss, and every display equation also gets a "named form" — the same equation with each variable replaced by what it actually is, plus a `where:` legend — with math normalized to canonical `$…$` so `/paper-gloss` can typeset it. · [config →](usage-playbook.md#paper-eli5) |
-| [`paper-gloss`](../skills/paper-gloss/SKILL.md) | Post-processes a `paper-eli5` output into an interactive HTML artifact: AI proposes jargon terms with plain-English expansions, you trim the list, then every occurrence becomes a clickable term that reveals the expansion in a popup, plus a full-glossary toggle panel. Typesets equations and inline math as real notation instead of raw LaTeX, and renders each equation's named form and legend as a grouped block between the equation and its plain-words gloss. Delivers a `-glossed.html` file and a published claude.ai Artifact link. Pages carry a highlight-and-note annotation layer with Markdown/JSON export. Run after `/paper-eli5`; `--retrofit` repairs math and `--annotate` adds the annotation layer to an already-published page at its existing URL. · [config →](usage-playbook.md#paper-gloss) |
-| [`paper-figures`](../skills/paper-figures/SKILL.md) | Retrofits the real figure images into an already-generated `paper-eli5` output — re-finds the original source, harvests the figures (direct download or browser screenshot), and fills the `[Figure N]` placeholders in both the markdown and the glossed HTML, with one contact-sheet approval gate. Web sources only. Run after `/paper-eli5` or `/paper-gloss`. · [config →](usage-playbook.md#paper-figures) |
-| [`project-guide`](../skills/project-guide/SKILL.md) | Generates a comprehensive point-in-time guide to any project — what it is now, history of how it was built, vocabulary to discuss it fluently, and a recruiter/interview lens. · [config →](usage-playbook.md#project-guide) |
-| [`narrate`](../skills/narrate/SKILL.md) | Renders written text to speech (MP3) using local Kokoro TTS. The reusable audio-delivery engine used by catchup, handoff, and other skills. · [config →](usage-playbook.md#narrate) |
 | [`youtube-transcript`](../skills/youtube-transcript/SKILL.md) | Downloads a YouTube video's transcript with yt-dlp — manual captions, then auto-generated, with local Whisper as a gated last resort — and converts it to deduplicated plain text. · [config →](usage-playbook.md#youtube-transcript) |
 | [`youtube-breakdown`](../skills/youtube-breakdown/SKILL.md) | Turns a transcript or YouTube URL into a structured breakdown in one of four modes — Study Notes, Quick Reference, Critique, or Actionable Insights — then offers to save it under `~/Learning`. Always asks which mode first; mining a video for Claude Code ideas is `cc-yt-idea-mine`'s lane. · [config →](usage-playbook.md#youtube-breakdown) |
-| [`cc-yt-idea-mine`](../skills/cc-yt-idea-mine/SKILL.md) | Exhaustively mines a video transcript for every segment implementable in your Claude Code setup — a tiered, dedup-tagged, leverage-ranked report saved under `~/Learning`, then a gated, verified capture of picked ideas into claude-config's backlog. Proposes only; never builds. · [config →](usage-playbook.md#cc-yt-idea-mine) |
-
-### Personal Coaching
-
-| Skill | What it does |
-|---|---|
 | [`teach-research`](../skills/teach-research/SKILL.md) | Research companion for `teach` — mission interview, parallel six-modality source discovery, a curation gate, then cached digests plus a curated `RESOURCES.md` that `/teach` consumes unchanged. Typed-only (`/teach-research`); run from the learning directory. · [config →](usage-playbook.md#teach-research) |
-| [`mock-call`](../skills/mock-call/SKILL.md) | Drill a live call against a persona from a `teach` workspace — voice through voicemode or text, 6 to 10 turns in character, then an out-of-character debrief (handled, missed with the term named, one rewrite) that writes recall-log lines and, only when earned, a learning record. Typed-only (`/mock-call`); run from the learning directory. · [config →](usage-playbook.md#mock-call) |
-
----
 
 ## Project-Specific Items
 
@@ -329,12 +247,4 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 
 Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Other subagent types live outside this repo: `Explore` and `Plan` ship with Claude Code itself, and plugin-provided ones (e.g., `code-reviewer` from Superpowers) come with their plugin.
 
-| Agent | What it does |
-|---|---|
-| [`adversarial-reviewer`](../agents/adversarial-reviewer.md) | Zero-context, repo-read-only diff reviewer — anchors to HEAD, reviews the branch diff vs merge-base, writes numbered findings graded critical / should-fix / nice-to-have to the review mailbox. Never edits code. · [config →](usage-playbook.md#adversarial-reviewer) |
-| [`review-judge`](../agents/review-judge.md) | Neutral zero-context judge — rules only on author-disputed findings (upheld / overruled / downgraded / upgraded), may re-grade severity, owes deference to neither side. Appends one-paragraph rulings to the mailbox. · [config →](usage-playbook.md#review-judge) |
-| [`silent-failure-hunter`](../agents/silent-failure-hunter.md) | Read-only auditor that hunts silent failures — swallowed errors, empty catches, dangerous fallbacks, broken error propagation, missing boundary handling — over a given scope, graded on `bug-hunt`'s critical/high/medium/low rubric. It is the dedicated finder for that skill's silent-failure lens, and also runs standalone. Never edits code. · [config →](usage-playbook.md#silent-failure-hunter) |
-| [`spec-miner`](../agents/spec-miner.md) | Opus-pinned brownfield spec extractor — without a capability input it maps the repo into capabilities; with one it mines that capability into a flat Requirement/Invariant spec file with machine-parseable metadata. Writes only `openspec/specs/<capability>/spec.md`, and never overwrites an existing spec unless dispatched with `OVERWRITE=yes`. · [config →](usage-playbook.md#spec-miner) |
-| [`specifier`](../agents/specifier.md) | Turns a story into an executable-shaped spec — a Gherkin `.feature` acceptance test plus a human-POV QA procedure — grounded in the repo's existing behavior and vocabulary. Writes exactly those two files, has no Bash, and never proposes an implementation approach. Stage 1 of [`gauntlet`](../skills/gauntlet/SKILL.md); also runs standalone to sharpen a vague backlog stub. · [config →](usage-playbook.md#specifier) |
-| [`gauntlet-coder`](../agents/gauntlet-coder.md) | Builds one story to the specifier's Gherkin contract — unit tests plus implementation — running the repo's suite as it works and leaving the tree dirty for the orchestrator to commit. Scope-bound to the story; never weakens or deletes an existing test to reach green, and never edits the `.feature` file it's measured against. Stage 2 of [`gauntlet`](../skills/gauntlet/SKILL.md). · [config →](usage-playbook.md#gauntlet-coder) |
-| [`mutation-hardener`](../agents/mutation-hardener.md) | Dual-mode mutation-testing agent — `AUDIT` reports surviving mutants graded on `bug-hunt`'s rubric and edits nothing; `HARDEN` adds or strengthens tests to kill listed survivors. Implementation files are read-only in both modes, so a mutant killable only by changing implementation becomes a reported finding rather than a workaround. Stage 3 of [`gauntlet`](../skills/gauntlet/SKILL.md); also runs standalone as a read-only suite auditor. · [config →](usage-playbook.md#mutation-hardener) |
+None right now — the last two were retired 2026-10-16; see [`retired.md`](retired.md).

@@ -39,7 +39,7 @@ Keeping an item on disk but out of the steering surface because it is likely com
 _Avoid_: disable, archive, retire
 
 **Relocate**:
-Keeping an item's content but moving it out of the always-loaded surface so it loads on demand. Relocation is `/trim-context`'s verb, never `retire`'s.
+Keeping an item's content but moving it out of the always-loaded surface so it loads on demand. Relocation is a manual move, never `retire`'s verb.
 _Avoid_: trim, defer, retire
 
 **Temperature**:

@@ -33,7 +33,7 @@ of these fits:
 | none of the above | A short `.scratch/<slug>/checkpoint.md` |
 
 Writing a spec or ticket file publishes it as `ready-for-agent`, where `/implement` or
-`/orchestrate` can pick it up. So before Kyle has approved it, don't write any issue file,
+`/implement-spec` can pick it up. So before Kyle has approved it, don't write any issue file,
 spec file, or `tickets.md`; the draft stays in the checkpoint note.
 
 If the home has nowhere natural for open items and the next step (CONTEXT.md, for

@@ -1,25 +1,20 @@
 ---
 description: Generate a self-contained handoff prompt I can paste into a fresh Claude Code session to continue this work without losing context. Captures hard-won lessons, what's done, and where the plan stands. Also prints a short plain-English 'what's next & why' briefing for me, so I stay oriented across the handoff. With --orchestrator, writes a coordinator brief instead — a session that dispatches an arc to worker sessions rather than building it itself. Stops the current work after generating. Project-agnostic.
-argument-hint: "[--audio [short|long]] [--orchestrator]"
-allowed-tools: Bash, Read, Write, Glob, Grep, Task, Skill, ToolSearch, SendUserFile, mcp__plugin_voicemode_voicemode__service
+argument-hint: "[--orchestrator]"
+allowed-tools: Bash, Read, Write, Glob, Grep, Task, Skill, ToolSearch
 ---
 
 Context handoff.
 
 ## Parse `$ARGUMENTS`
-- `--audio` → after printing the handoff, also generate a spoken-audio version
-  of the brief (see "Audio narration" at the end). Optional level: `short`
-  (default) or `long`. Without `--audio`, ignore all audio steps entirely —
-  the command behaves exactly as before.
 - `--orchestrator` → the fresh session **coordinates** an arc across worker
   sessions instead of building it. Replaces the block's section structure and
   lifts the word cap; see "Orchestrator mode". What is genuinely unchanged: the
   **slot ordering**, the rule that notes stay outside the block, **redaction**,
   and the **honesty rules**. What is *not*: the notes' content. The "For Kyle"
-  briefing, the run-config note, the party-line `--kickoff` line, the `--audio`
-  script and the Opus-5 builder notes each draw on a section this mode replaces,
-  and "What the replaced sections fed" says where each reads from instead.
-  Composable with `--audio` through that map.
+  briefing, the run-config note, the party-line `--kickoff` line and the
+  Opus-5 builder notes each draw on a section this mode replaces, and "What the
+  replaced sections fed" says where each reads from instead.
 
 I'm stopping here to switch to a fresh Claude Code session. Generate a
 self-contained prompt I can paste into a new session so it picks up exactly
@@ -50,8 +45,7 @@ prompt box. Before the block, in this order: (1) the "For Kyle" briefing (see
 "'For Kyle' briefing" below), then (2) the short run-config recommendation
 described in "Run-config recommendation" below (3–5 lines), then (3) the
 one-line note-written line **only in a party-line project** (see "Party-line
-handoff note"), then (4) the audio note **only if `--audio` was passed** (see
-"Audio narration") — all OUTSIDE the block, notes to me, not part of the
+handoff note") — all OUTSIDE the block, notes to me, not part of the
 paste-able prompt; none of these pollute the block. Then the fenced block, with
 nothing after it. Once it's printed, **STOP** — do not continue the current
 work and do not ask "what's next." I'll start a fresh session.
@@ -99,9 +93,9 @@ mode" and use its sections instead. Everything else in this file still applies.
 
 6. **Suggested skills** — name which of the fresh session's available skills
    apply to the next concrete action, one bullet each: skill name + why it
-   fits (e.g. "adversarial-review — this PR is ready to merge and hasn't
-   been reviewed yet", "gauntlet — next backlog item is a fresh story, not a
-   bugfix"). The fresh session already has the full skill catalog in its own
+   fits (e.g. "code-review — this PR is ready to merge and hasn't
+   been reviewed yet", "mattpocock-skills:tdd — next backlog item is a fresh
+   story, not a bugfix"). The fresh session already has the full skill catalog in its own
    system reminder; the value here is narrowing it, not listing it — skip
    any skill that's a generic fit for "writing code" and name only the ones
    this specific next step calls for. Omit the section entirely if nothing
@@ -154,28 +148,17 @@ can hold in its head, and the coordination (gates, merges, tracker updates) is
 real work in its own right. A single well-specified change is not an arc — write
 an ordinary handoff for it.
 
-### 1. First check whether `/orchestrate` already covers it
+### 1. Confirm it is an arc
 
-`/orchestrate` (`~/.claude/skills/orchestrate/SKILL.md`) is the existing runtime
-for exactly this. **It fits when all four hold:**
+Write the full brief below only when all three hold:
 
-- the tracker is a local-markdown one — `.scratch/<slug>/tickets.md` plus
-  `issues/`;
-- the specs live in those ticket files, not in the brief you are about to write;
-- the frontier is genuinely wider than one, so seats buy wall-clock;
+- the work splits into units a separate session can hold in its head;
+- the frontier is genuinely wider than one, so parallel workers buy wall-clock;
 - every step in the arc is agent-shaped — nothing waits on Kyle's credentials,
   hardware, or physical presence.
 
-**All four → write a thin brief.** Name the slug, the branch, anything
-repo-specific `/orchestrate` cannot infer, and tell the session to run
-`/orchestrate <feature-slug> [--seats N]`. Do not restate its mechanics; it owns
-them and a copy will drift. Say in the "For Kyle" briefing that you did this and
-why.
-
-**Any one fails → write the full brief below**, and say in the "For Kyle"
-briefing which of the four failed. That is the honest reason a hand-written
-orchestrator exists for this arc, and it is also the bug report: a fit test that
-keeps failing the same way is an argument for extending `/orchestrate`.
+If any one fails, write an ordinary handoff instead and say in the "For Kyle"
+briefing which condition failed.
 
 ### 2. Verify the mechanics — never recall them
 
@@ -188,11 +171,13 @@ all. **Run the checks; quote what came back.**
   `disable-model-invocation: true` cannot be invoked on a worker's behalf — the
   worker's first prompt must *literally begin* with `/<skill-name>`, and the
   spec follows on the lines after it. Check before asserting it either way —
-  `grep -m1 '^disable-model-invocation:' ~/.claude/skills/<name>/SKILL.md` — and
-  grep rather than eyeballing a line range, since frontmatter length varies. As
-  of 2026-09-09, 22 of the installed skills carry the flag (`implement`,
-  `to-tickets`, `wayfinder`, `handoff`, …), so it is the common case, not an
-  exotic one; recount rather than trusting that number. If the flag is absent,
+  find the skill's file first, since plugin skills live under the plugin cache,
+  not `~/.claude/skills/` — `find ~/.claude/skills ~/.claude/plugins/cache -path
+  '*/<name>/SKILL.md'` — then `grep -m1 '^disable-model-invocation:'` that file,
+  rather than eyeballing a line range, since frontmatter length varies. **No file
+  found means unknown, never absent**: say so and check again before asserting
+  either way. Plugin skills such as `implement`, `to-tickets` and `wayfinder`
+  commonly carry the flag, so it is the common case, not an exotic one. If the flag is absent,
   say so — a brief that demands the literal-first-line ritual where it isn't
   needed wastes a turn.
 - **Cross-session tools.** `ListAgents` and `SendMessage` are usually deferred:
@@ -215,8 +200,7 @@ all. **Run the checks; quote what came back.**
   stop rule halting for a turn; the worst is that the most recent block in a
   fresh orchestrator session is *the coordinator brief Kyle pasted in*, so worker
   one is auto-submitted the entire arc decomposition while Verified-start reports
-  a perfectly healthy launch. `/orchestrate` states it outright
-  (`orchestrate/SKILL.md:79-81`) and this path must too.
+  a perfectly healthy launch. The brief must state this outright.
   **This is also what makes the first-prompt rule above satisfiable**: where the
   worker must fire a `disable-model-invocation` skill, the printed block's first
   line has to be `/<skill-name>`, with the spec on the lines after it. The two
@@ -314,10 +298,9 @@ restart or a compaction; the issue, its comments, and the PR do not.
 
 ### 4. What the replaced sections fed
 
-Replacing the block's structure is not a local change. **Five things outside the
+Replacing the block's structure is not a local change. **Four things outside the
 block read the default sections** — the "For Kyle" briefing, the run-config note,
-the party-line `--kickoff` value, the `--audio` script and the Opus-5 builder
-notes — and every one needs an orchestrator source or it has no defined input.
+the party-line `--kickoff` value and the Opus-5 builder notes — and every one needs an orchestrator source or it has no defined input.
 This table is authoritative: when a future section is added to this file that
 consumes the default structure, add its row here rather than discovering the gap
 in a generated brief.
@@ -327,15 +310,10 @@ in a generated brief.
 | "For Kyle" briefing | "Where the plan stands" (the next concrete action) | **"The arc"** — the next unit to be dispatched and what it unblocks |
 | Run-config note | the model-pick guidance | **§5 below**, which overrides it |
 | Party-line `--kickoff` | the next concrete action from "Where the plan stands" | **the first unit to dispatch**, as one imperative line under the same constraints (no newlines, no leading `--`, ~160 chars, no apostrophes) |
-| `--audio` `short` | the Overview | **Role + "The arc"** — what this arc is and how it is split, 2–4 spoken sentences |
-| `--audio` `long` | the Overview plus "Where the plan stands" | **those plus "Ask Kyle when"** — so the listener knows what will stop for them |
 | Opus-5 notes, "complete spec up front" | plan file in the Overview; done-bar in "Where the plan stands" | **source-of-truth file in "Orient first"; done-bar in "When the arc is done"** |
 | Opus-5 notes, delegation cap | final bullets of "Where the plan stands" | **omitted** — see the carve-out in "Opus 5 builder handoffs" |
 | Opus-5 notes, deliverable length | final bullets of "Where the plan stands" | **"When the arc is done"** |
 
-The "For Kyle" briefing also gains one obligation under this flag — §1's fit-test
-result, in a clause — so its budget goes to **5–7 lines / ~150 words**. Nothing
-else about it changes.
 
 ### 5. Run-config for an orchestrator session
 
@@ -345,11 +323,11 @@ note's shape, placement and launch-command rule are unchanged.
 Orchestrator sessions read far more than they write — worker reports, review
 mailboxes, diffs, tracker threads — while the judgment stays bounded (gate
 scope, triage, spec-vs-code calls) because this session already did the design.
-That is **Opus 5 (1M context)** at **`high`**: `claude --model
-'claude-opus-5[1m]' --effort high`. Go to `xhigh` only when the gates are
+That is **Opus 5.5 (1M context)** at **`high`**: `claude --model
+'claude-opus-5-5[1m]' --effort high`. Go to `xhigh` only when the gates are
 genuinely hard — a live account, money, or a security surface.
 
-**If the pick wants to be Fable 5, the arc isn't ready to orchestrate.** Needing
+**If the pick wants to be Fable 5.1, the arc isn't ready to orchestrate.** Needing
 a planner in the coordinator's seat means the decomposition is still open, and
 dispatching workers against an unsettled decomposition wastes their work. Say
 that in the run-config note and recommend finishing the design first.
@@ -472,8 +450,7 @@ is to keep me oriented and engaged across the session boundary, the way a projec
 
 > **📋 For Kyle — what the next session will build, and why**
 
-Cover, in 4–6 lines / ~120 words max (5–7 / ~150 under `--orchestrator`, which
-adds a clause):
+Cover, in 4–6 lines / ~120 words max:
 - **What** it's about to build — the next chunk of work, in plain language.
 - **How** — the approach in one sentence (the shape of it, not step-by-step).
 - **Why** — the reasoning/motive: why this, why now, what it unblocks or proves.
@@ -481,7 +458,7 @@ adds a clause):
 Voice: explain it like I'm sharp but new to the jargon — plain English, define any term the
 first time, clearer not longer. It's the plain-English distillation of "Where the plan stands"
 (the next concrete action) — the forward-looking "what's coming + why," not a recap of what's
-done. Under `--orchestrator` it distils **"The arc"** instead and adds the fit-test clause —
+done. Under `--orchestrator` it distils **"The arc"** instead —
 see "What the replaced sections fed". If the next step is genuinely uncertain or pending my
 decision, say that plainly instead of inventing a plan.
 
@@ -501,14 +478,14 @@ not on this session's work. Use this shape:
 
 - **Model:** pick by the nature of the next session's work, per the
   "Planner/Builder Protocol" in CLAUDE.md —
-  - **Fable 5** (`claude-fable-5`): judgment-first work — planning, design
+  - **Fable 5.1** (`claude-fable-5-1`): judgment-first work — planning, design
     calls with real tradeoffs, adoption/triage decisions, convention-setting.
     The thinking dwarfs the typing.
-  - **Opus 5** (`claude-opus-5`): a well-specified build — a plan already says
+  - **Opus 5.5** (`claude-opus-5-5`): a well-specified build — a plan already says
     what to do; the session mostly implements, tests, and lands it. Add
     "(1M context)" whenever the fresh session must read a lot of source /
     long docs / a big plan to orient.
-  - **Sonnet 5** (`claude-sonnet-5`): mechanical, checklist-scoped work a
+  - **Sonnet 5.5** (`claude-sonnet-5-5`): mechanical, checklist-scoped work a
     careful junior could follow — template-driven file generation, rename
     sweeps, doc-formatting passes.
   - Split rule: if this handoff carries a settled plan, recommend a builder
@@ -544,9 +521,9 @@ not on this session's work. Use this shape:
     straightforward test add (`low` for purely templated/repetitive). Don't
     pay for reasoning the task doesn't need.
 - **Launch command (required):** close the note with the literal command, e.g.
-  `claude --model claude-opus-5 --effort high`. For the 1M-context variant the
+  `claude --model claude-opus-5-5 --effort high`. For the 1M-context variant the
   model ID contains brackets, which zsh globs — always quote it:
-  `claude --model 'claude-opus-5[1m]' --effort high`. Both flags are
+  `claude --model 'claude-opus-5-5[1m]' --effort high`. Both flags are
   per-invocation only — my saved defaults stay untouched. Always print both
   flags explicitly, even if you suspect they match my current defaults: the
   explicit command is correct whatever the defaults are, and I may paste it
@@ -592,33 +569,3 @@ structure, the derivability rule, and the ~600-word cap all still govern:
 The notes shape the paste-able prompt only — the "For Kyle" briefing and
 run-config note are unaffected. If neither notes copy exists, say so in the
 run-config note and write the block normally.
-
-## Audio narration (only if `--audio` was passed)
-
-Generate a spoken version of the brief so I can listen to it on a walk instead
-of reading the block. Render the MP3 BEFORE printing the code block; its chat
-note (path + play command) goes after the run-config note, so the paste-able
-block stays the last thing in the output. It never changes the other sections'
-content.
-
-1. **Write a speakable script** — NOT the paste-able block (that's written for a
-   fresh AI; reading its scaffolding aloud is useless). Condense for the ear:
-   - `short` (default): just the **Overview** — what this work is and what's
-     being continued, in 2–4 spoken sentences (~90s).
-   - `long`: the Overview **plus Where the plan stands** — the next concrete
-     action, anything blocked, and any decision pending me (~3–4 min).
-   - Under `--orchestrator` neither section exists; "What the replaced sections
-     fed" gives the substitute source for each level.
-   - Follow the narrate skill's "Writing for the ear" rules: no Markdown, expand
-     paths/branches/PR numbers into speech, drop commit SHAs and command blocks,
-     open with "Here's where things stand…" and close on the one next thing.
-2. **Hand it to the `narrate` skill** (`~/.claude/skills/narrate/`) with
-   `voice=am_adam` and `out` = next to wherever this project saves session
-   artifacts if there's a convention, else
-   `~/Projects/_audio/<ISO-date>-<project>-handoff.mp3`. The skill ensures Kokoro
-   is up, renders the MP3, and `SendUserFile`s it to me.
-3. **One line in chat** with the saved path, then — on its own line, in a fenced
-   code block — a ready-to-run play command: `afplay "<full-path>"` (the real
-   absolute path). That way I can copy-paste it to listen if I want to, or ignore
-   it. If Kokoro is unavailable, say so plainly — the text handoff still stands;
-   don't claim an MP3 exists if it doesn't (and print no play command).

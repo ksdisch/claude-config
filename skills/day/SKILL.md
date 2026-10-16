@@ -1,6 +1,6 @@
 ---
 name: day
-description: Use when Kyle is starting, resuming, or wrapping a working day driven by one Todoist project — "/day", "/day <project>", "/day wrap", "start my day", "what's on today", "log that", "wrap the day". Briefs today's tasks, then keeps the session in day mode: logs outcomes he reports in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. NOT for multi-day re-entry after a gap (reorient, rebrief-a2c), coding-session bookends (/begin, /wrap), bulk Todoist cleanup or triage (separate skill), or sending anything.
+description: Use when Kyle is starting, resuming, or wrapping a working day driven by one Todoist project — "/day", "/day <project>", "/day wrap", "start my day", "what's on today", "log that", "wrap the day". Briefs today's tasks, then keeps the session in day mode: logs outcomes he reports in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. NOT for multi-day re-entry after a gap (rebrief-a2c), bulk Todoist cleanup or triage (separate skill), or sending anything.
 ---
 
 # Day

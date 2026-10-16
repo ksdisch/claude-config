@@ -9,8 +9,7 @@ description: >-
   "youtube breakdown", "break down this video", "analyze this video", "summarize this
   transcript", "study notes for this video", "critique this video", "what should I do with
   this video", "transcript breakdown", or any request to turn video content into structured
-  notes about the video's own material. NOT for mining a video for Claude Code / config /
-  automation ideas — that's cc-yt-idea-mine.
+  notes about the video's own material.
 ---
 
 # YouTube Breakdown
@@ -485,5 +484,4 @@ _Originally created 2026-04-22 as a vault-native skill; forked for home-base's L
 2026-06-06. Merged into this repo 2026-08-19 as the global version: the four mode prompts
 are unchanged, while save handling moved to `~/Learning` with a per-run destination prompt,
 URL input routes through `youtube-transcript` instead of `WebFetch`, and the `learn-next` /
-`add-task` handoffs were repointed at `teach-research`, `notebook-assist`, and the Todoist
-MCP. The home-base fork stays separate — it writes to the hub's own stores._
+`add-task` handoffs were repointed at `teach-research` and the Todoist MCP. The home-base fork stays separate — it writes to the hub's own stores._

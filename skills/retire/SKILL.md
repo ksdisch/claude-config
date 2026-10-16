@@ -1,6 +1,6 @@
 ---
 name: retire
-description: The config's subtract verb. Inventories every global steering surface with usage evidence, proposes a verdict per item, applies only what Kyle ratifies row by row, and measures before → after weight. Forms: `/retire` (sweep), `--report` (read-only), `--surface <name>` (one lane), `/retire <item>…` (targeted). Use when Kyle types /retire or says "retire", "cleanse my config", "declutter claude code", "what can I get rid of", "prune my skills", "what's steering my sessions". NOT for relocating content that stays (/trim-context) or pruning vendored copies in other repos (reported, never edited).
+description: The config's subtract verb. Inventories every global steering surface with usage evidence, proposes a verdict per item, applies only what Kyle ratifies row by row, and measures before → after weight. Forms: `/retire` (sweep), `--report` (read-only), `--surface <name>` (one lane), `/retire <item>…` (targeted). Use when Kyle types /retire or says "retire", "cleanse my config", "declutter claude code", "what can I get rid of", "prune my skills", "what's steering my sessions". NOT for relocating content that stays (a manual move) or pruning vendored copies in other repos (reported, never edited).
 ---
 
 # Retire
@@ -124,7 +124,7 @@ is reported — never a partial removal.
 - `merge-into <id>` → **write a backlog stub naming source and target and remove nothing.** The
   merge PR lands both halves and writes the ledger line "merged into `<id>`". Until then the
   item stays on the surface.
-- `relocate` → list under "Hand to /trim-context" in the PR body. Make no edit.
+- `relocate` → list under "Relocate by hand" in the PR body. Make no edit.
 - `keep (hook)` → keep the rule, write a backlog stub to convert it to a hook later.
 
 Untracked settings files get **one confirmation per file per pass**, showing the exact edit list,
@@ -153,7 +153,7 @@ try to produce it yourself.
 
 `python3 scripts/check-doc-sync.py` must pass. Commit per surface
 (`chore(retire): remove <item> — <why>`), push, and open the PR carrying: the ratification table
-as ruled, the before → after table, the ledger diff, "Hand to /trim-context", doc-mention edits
+as ruled, the before → after table, the ledger diff, "Relocate by hand", doc-mention edits
 under their own heading, and "Downstream copies (report only)" naming each retired item's vendored
 repos. Then propose the review scope and, interactively, **stop** for Kyle's call. Brief him at the
 point of action: what changed, commit SHAs, PR link.
@@ -174,7 +174,7 @@ point of action: what changed, commit SHAs, PR link.
 
 | Situation | Hand to |
 |---|---|
-| `relocate` verdict | `/trim-context` — by name, with no edit made here |
+| `relocate` verdict | the PR body's "Relocate by hand" list — no edit made here |
 | `merge-into` verdict | a backlog stub; the merge PR removes the item |
 | a kept rule marked hook-convertible | a backlog stub; converting is its own change |
 | retired item has vendored copies | the ledger line and the PR body; a future fleet prune |

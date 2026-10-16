@@ -1765,6 +1765,9 @@ def build_inventory(cfg: Config) -> Inventory:
     corpus = build_corpus(cfg.config_repo, cfg.claude_home)
     mention_corpus = build_mention_corpus(cfg.config_repo, tracked, corpus)
     missing = missing_names(cfg.config_repo)
+    # A retired loose copy whose name an enabled plugin still ships resolves to the plugin's
+    # skill, so a route to it is live, not dangling.
+    missing -= set(plugin_skill_canonicals(plugins or enumerate_plugins(cfg.claude_home)))
     kept = kept_ids(cfg.config_repo)
 
     for it in items:

@@ -9,7 +9,6 @@
     "never fired. Re-check the keys against `grep -n -E '^#{2,3} ' CLAUDE.md` when a heading",
     "is renamed; a stale key measures nothing and its section silently goes unmeasured."
   ],
-  "Kickoff Mode → run the `/kickoff` skill": ["kickoff mode", "new project idea", "^\\s*/kickoff"],
   "Git Workflow": null,
   "Clarifying questions and option formatting": null,
   "Never show me a bare identifier (added 2026-08-13)": ["bare identifier", "\\bgloss"],
@@ -17,6 +16,5 @@
   "Reference Doc Maintenance": ["reference doc", "playbook card", "check-doc-sync"],
   "When to update": null,
   "Format rules": null,
-  "Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)": ["/to-tickets", "tickets\\.md", "/implement-spec", "/wayfinder"],
-  "Project Wiki": ["/wiki-init", "/wiki-backfill", "project-wiki", "handoff\\.md"]
+  "Local-Markdown Issue Tracker: Tickets Index (added 2026-08-22)": ["/to-tickets", "tickets\\.md", "/implement-spec", "/wayfinder"]
 }

@@ -1,6 +1,6 @@
 ---
 name: architecture-viewer
-description: Turn a repo into a clickable architecture map — one self-contained HTML page where modules are nodes, arrows point from dependent to dependency, and a module with submodules opens one level down. An agent pass reads the tree and emits an `arch-graph/v1` JSON graph (modules, edges, and a real file:line behind every edge), a validator refuses to render a graph whose citations don't resolve or whose modules leave source unaccounted for, and the page ends with what the structure actually says — cycles, hubs, and edges running against the repo's stated layering. "Open the code" is a click-to-copy `file:line`, never embedded source. Polyglot: nothing parses imports per language. Use when Kyle types /architecture-viewer, or says "map this repo's architecture", "show me the module structure", "where do the dependencies run", "draw the dependency graph", "I want to review the architecture, not the code", "are there any dependency cycles here" — even if he doesn't name the skill. NOT for prose about a project (project-guide), catching up after a gap (reorient), or enforcing dependency rules (that's the module-dependency-rules-checker's job, which reads the same graph this skill writes).
+description: Turn a repo into a clickable architecture map — one self-contained HTML page where modules are nodes, arrows point from dependent to dependency, and a module with submodules opens one level down. An agent pass reads the tree and emits an `arch-graph/v1` JSON graph (modules, edges, and a real file:line behind every edge), a validator refuses to render a graph whose citations don't resolve or whose modules leave source unaccounted for, and the page ends with what the structure actually says — cycles, hubs, and edges running against the repo's stated layering. "Open the code" is a click-to-copy `file:line`, never embedded source. Polyglot: nothing parses imports per language. Use when Kyle types /architecture-viewer, or says "map this repo's architecture", "show me the module structure", "where do the dependencies run", "draw the dependency graph", "I want to review the architecture, not the code", "are there any dependency cycles here" — even if he doesn't name the skill. NOT for enforcing dependency rules (that's the module-dependency-rules-checker's job, which reads the same graph this skill writes).
 ---
 
 # Architecture Viewer — read the structure instead of the code
@@ -214,7 +214,7 @@ python3 skills/architecture-viewer/scripts/render_map.py <graph.json> -o <map.ht
 
 The page is produced whole by the script — there is nothing to hand-author, and
 nothing in it should be hand-edited afterwards. It already satisfies the house
-self-contained-artifact rules that `paper-gloss` sets out: one file, no external
+self-contained-artifact rules: one file, no external
 resource of any kind, CSS variables themed for light and dark with
 `data-theme` overriding the media query, and every string from the graph inserted
 as text rather than markup.

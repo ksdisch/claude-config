@@ -21,14 +21,6 @@ statsig/
 telemetry/
 reviews/
 
-# Deliberately local-only: this skill and the reference-doc sections that named
-# them describe private job-search / health projects, and this repo is public.
-# skills/ is symlinked into ~/.claude as a whole directory, so an untracked skill
-# here still loads normally — it just isn't published. Trade-off: a fresh clone on
-# a new machine won't have it.
-skills/interview-prep/
-skills/mock-panel/
-
 # Python bytecode from skill scripts
 __pycache__/
 *.pyc
@@ -36,17 +28,7 @@ __pycache__/
 # Playwright MCP scratch output (screenshots, snapshots, console logs)
 .playwright-mcp/
 
-# Trialing untracked before full adoption: the ADHD divergent-ideation skill
-# (vendored from UditAkhourii/adhd, MIT). Loads globally via the skills/ symlink
-# despite being unpublished. Promote to tracked (PR + adversarial review + doc
-# row/card) if the trial earns it; delete the dir and this block if not.
-skills/adhd/
 .claude/*
 # …except project memory: the Agent skills block (mattpocock tracker config)
 !.claude/CLAUDE.md
 
-# Matt Pocock's skills — served by the `mattpocock-skills@mattpocock` plugin. The raw
-# `npx skills` copies that sat here untracked were retired 2026-09-21 (docs/retired.md).
-# find-skills is skills.sh's own helper, same treatment.
-skills/find-skills/
-skills/find-skills
