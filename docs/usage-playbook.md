@@ -15,15 +15,15 @@ The `Run config` line is a model plus an effort level. Both come from the **Plan
 protocol** in [`../CLAUDE.md`](../CLAUDE.md), which is the source of truth — this is a
 restatement for convenience, not a second authority:
 
-- **Fable 5** plans — judgment-first work: design calls with real tradeoffs, triage and
-  routing, coaching, convention-setting. **Opus 5** builds — well-specified implementation
-  and synthesis-heavy writing. **Sonnet 5** grinds — mechanical, checklist-scoped work.
+- **Fable 5.1** plans — judgment-first work: design calls with real tradeoffs, triage and
+  routing, coaching, convention-setting. **Opus 5.5** builds — well-specified implementation
+  and synthesis-heavy writing. **Sonnet 5.5** grinds — mechanical, checklist-scoped work.
 - **Effort** (independent of the model): `ultracode` = broad parallelizable fan-out with
   adversarial verify · `max` / `xhigh` = ONE hard problem, or a design call with real
   tradeoffs · `high` = ordinary build work with judgment in it · `medium` / `low` =
   mechanical and checklist-scoped.
 - Launch flags are per-invocation and never touch saved defaults:
-  `claude --model claude-opus-5 --effort high`.
+  `claude --model claude-opus-5-5 --effort high`.
 - **"inherits the session"** means the item runs inside a session you're already in and
   isn't worth switching models for — `/launch`, `pre-compact`, `visual-summary`. Everything
   else names a config because it's worth launching a session *for*.
@@ -121,6 +121,25 @@ rows get re-pointed to match.
   that the launcher can't verify up front — a failed start gets reported honestly with
   the command to run by hand.
 
+#### `/handoff-session`
+
+- **Run config:** inherits the session · `medium` — mostly summarization, but it ends on a
+  real run-config judgment for the next session.
+- **Reach for it when:**
+  - Context is getting long and the remaining work would be cleaner in a fresh session.
+  - You want hard-won lessons and rejected options captured so the next session doesn't
+    relitigate them.
+  - Pass `--orchestrator` when the next session should **coordinate** an arc across worker
+    sessions rather than build it — it swaps the block's structure for an arc decomposition,
+    worker mechanics, gate delegation and boundaries, and lifts the ~600-word cap.
+- **Pairs well with:** [`/launch`](#launch) (opens the fresh session and loads the prompt
+  into it).
+- **Notes:** it **stops the current work** after printing — that's deliberate. The
+  run-config note lands outside the paste-able block, never inside it. Under
+  `--orchestrator` the run-config guidance flips to Opus 5.5 (1M) at `high` — a coordinator
+  reads far more than it writes — and a pick that wants Fable 5.1 is the signal that the
+  decomposition isn't settled enough to dispatch yet.
+
 ## Global Skills
 
 ### Session & Context Management
@@ -191,8 +210,7 @@ rows get re-pointed to match.
     ignore block, ledger: `/retire <item>`.
   - Quarterly, or before a big config change: `/retire --report` for a read-only look at what
     went cold. `--surface claude-md` makes "audit my CLAUDE.md" a one-liner.
-- **Pairs well with:** [`adversarial-review`](#adversarial-review) (the gate each apply pass
-  proposes).
+- **Pairs well with:** `/code-review` (the built-in review each apply pass proposes).
 - **Notes:** nothing is removed before you ratify its row, and unanswered rows are not applied —
   silence is never consent. Tracked items go through branch + PR; `settings.json`, `~/.claude.json`
   and plugin toggles change only after a per-file confirmation showing the exact edit list, with a
@@ -200,27 +218,124 @@ rows get re-pointed to match.
   report a zero it didn't measure, so a broken read can't produce a false clean. Restore pointers
   live in [`retired.md`](retired.md).
 
-### Quality & Debugging
+#### `reweave`
 
-#### `adversarial-review`
-
-- **Run config:** Opus 5 · `high` — author triage and dispute judgment on a real diff. Its
-  reviewer and judge subagents are already Opus-pinned, so effort here buys *your* side of
-  the dialogue.
+- **Run config:** inherits the session · `medium` — the answer is already in context; never
+  switch sessions to fold it in.
 - **Reach for it when:**
-  - Any PR is about to merge — this is the standing pre-merge gate in the global git
-    workflow.
-  - You want a zero-context second set of eyes that actively tries to refute the change.
-- **Pairs well with:** [`adversarial-reviewer`](#adversarial-reviewer) and
-  [`review-judge`](#review-judge) (the agents it dispatches).
-- **Notes:** propose-first (2026-08-22) — the run opens with an honest SKIP / SINGLE ROUND /
-  FULL LOOP recommendation; you decide interactively (either-direction veto), unattended runs
-  decide and record why, with a floor of at least a single round for
-  behavioral/agent-instruction diffs (CLAUDE.md, skills, agents, commands, hooks,
-  settings*.json). Hard STOP at triage — you can flip verdicts
-  or waive findings by name, and a waiver is recorded verbatim. Hard cap of 3 reviewer
-  dispatches per run. Any skip is stated in the merge brief, never silent. Findings land as
-  a PR comment with a CLEAR / NOT-CLEAR verdict.
+  - You got an explanation, asked a follow-up, and now want one clean standalone version
+    instead of splicing the two in your head.
+  - A plan or design doc on disk needs a decision threaded through every dependent section,
+    not appended as an addendum.
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (a reweaved plan hands off
+  cleanly).
+- **Notes:** output lands where the target lived — a chat answer returns to chat, a file gets
+  rewritten in place. It never re-architects functional source code; a behavior change is an
+  ordinary edit.
+
+#### `day`
+
+- **Run config:** Opus 5 · `medium` — sits resident all day; the gate needs judgment (is this
+  polish or progress?) but every action is rule-following against a written list. Sonnet 5
+  is fine on a light day.
+- **Reach for it when:**
+  - You're starting a working day driven by one Todoist project and want today's list
+    briefed, a must-do set pinned, and a running log as you report outcomes in plain language.
+  - You know you'll drift into tooling or polish mid-morning and want one-line pushback plus
+    hourly pace check-ins.
+  - The day is over and you want what slipped re-dated and the record written.
+- **Pairs well with:** [`rebrief-a2c`](#rebrief-a2c) (run it first after a gap of more than
+  a day).
+- **Notes:** one Todoist project per run; the project hook (`.claude/day.md`, template in the
+  skill's `references/`) supplies extra sources, outcome vocabulary, the polish list, and the
+  wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
+  re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
+
+#### `architecture-viewer`
+
+- **Run config:** Opus 5 · `high` — the extraction is judgment (what counts as a module,
+  where a runtime dependency hides), and `high` is what buys the runtime edges an import
+  parser would never find. Drop to `medium` for a re-map after correcting the grouping;
+  the boundaries are already decided by then.
+- **Reach for it when:**
+  - You want to review the *structure* rather than the code — "where do the dependencies
+    actually run", before a redesign or a big refactor.
+  - You suspect a dependency cycle, or want to know which module is the expensive one to
+    change.
+  - A repo's stated layering rule (in its `CLAUDE.md` or README) needs checking against
+    what the tree really does.
+- **Pairs well with:** [`visual-summary`](#visual-summary) (what a session or branch did,
+  where this is the repo's standing structure).
+- **Notes:** no approval gate on the module boundaries, on purpose — the map is cheap to
+  regenerate, so it renders first and you correct the grouping after looking. The
+  validator is a hard gate: it opens every cited file and checks the line is in range,
+  and it fails when modules leave source unaccounted for. **Never lower `--min-coverage`
+  to make a run pass** — that number exists to catch the directory the extraction never
+  noticed. Output lands in the target repo's `docs/architecture/` unless `--out` says
+  otherwise, and a target repo that isn't the one you're working in gets files written
+  but nothing committed. Publishing to a claude.ai Artifact is opt-in via `--publish`.
+  v0 draws one drill level and no arrows leaving a drilled-in view; "open the code" is a
+  click-to-copy `file:line`, never embedded source.
+
+### Learning & Research
+
+#### `youtube-transcript`
+
+- **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
+  decision (is Whisper worth it?) is Kyle's, not the model's.
+- **Reach for it when:**
+  - You have a YouTube URL and want the text — to read, to grep, or to feed something else.
+  - A video has no captions at all and you're willing to spend CPU on local Whisper.
+- **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (the usual consumer — it
+  calls this skill automatically for URL input, so you rarely invoke this one directly),
+  [`teach-research`](#teach-research) (a talk's transcript is a legitimate source).
+- **Notes:** needs `yt-dlp`, which is **not currently installed** — first run will offer
+  `brew install yt-dlp`. Whisper is gated behind an explicit yes with the duration and
+  audio size quoted, because it's the only step that costs real bandwidth and CPU.
+  Conversion runs through `scripts/vtt-to-text.py`, which dedupes **per cue** rather than
+  over a window of output lines — rollup captions repeat whatever is still on screen, so
+  the overlap is a cue-boundary property, and any line-count window either misses it or
+  eats the short utterances ("Yeah.", "Right.") that recur legitimately in interviews. The
+  video title reaches the script through `--title-file` rather than the command line,
+  because a title containing `$` or a backtick would otherwise execute.
+
+#### `youtube-breakdown`
+
+- **Run config:** Opus 5 · `high` — the four mode prompts are synthesis-heavy writing, and
+  Critique mode in particular is real analytical work rather than summarization.
+- **Reach for it when:**
+  - You watched (or want to triage) a video and want structured notes rather than a
+    summary — Study Notes to retain it, Quick Reference to decide if it's worth the time,
+    Critique to pressure-test a contrarian claim, Actionable Insights to leave with a plan.
+  - You have a transcript from anywhere and want the same four-mode treatment.
+- **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
+  URL),
+  [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  section leads if the topic deserves a workspace),
+  [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
+  which writes to the hub's own stores instead).
+- **Notes:** always asks which mode before generating — the four modes are different tools,
+  not lengths, and the auto-router that would pick for you is specced but deliberately off.
+  Saving asks for the destination every run: it proposes `~/Learning/youtube-notes/` and
+  lists the real teach workspaces under `~/Learning/` as alternatives, since filing a
+  breakdown into one puts it where `/teach` will read it. One mode per run.
+
+#### `teach-research`
+
+- **Run config:** Opus 5 · `high` — the skill's own finder/cacher fan-out does the parallel
+  work; the session around it is orchestration plus synthesis-heavy digesting.
+- **Reach for it when:**
+  - You're about to start learning a topic with `/teach` and want the workspace stocked
+    first — mission captured, sources vetted, digests cached — so lesson one is a lesson,
+    not a search.
+  - A teach workspace's `RESOURCES.md` is thin, or its `## Gaps` section has grown
+    (top-up mode).
+- **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this).
+- **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach-research`.
+  `--auto` skips the interactive pauses (mission confirm + curation gate); the mission
+  interview still runs when no `MISSION.md` exists, so a truly unattended run needs
+  `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
+  the teach skill itself is never edited.
 
 ## Project-Specific Items
 
@@ -499,7 +614,7 @@ session *in that repo*.
   - You want the guard-hook-safe PR recipe rather than rediscovering why a heredoc failed.
 - **Pairs well with:** [`/verify`](#verify) (produces the Verification block for the PR
   body), [`/new-scope`](#new-scope) (the brief it links and reads gates from),
-  [`adversarial-review`](#adversarial-review) (the review gate before a merge).
+  `/code-review` (the review gate before a merge).
 - **Notes:** **it explicitly does not merge.** Stages explicit paths only, pushes and opens
   the PR as separate steps (a guard hook false-positives otherwise), and self-stamps the gate
   tier when no audit exists.
@@ -791,7 +906,7 @@ session *in that repo*.
   - You want the branch, commit, push, and PR done to house convention in one pass.
 - **Pairs well with:** [`/run-tests`](#run-tests) (feeds the pre-flight),
   [`/fix-bug`](#fix-bug) (the usual upstream),
-  [`adversarial-review`](#adversarial-review) (the gate before merging).
+  `/code-review` (the gate before merging).
 - **Notes:** STOPs at merge etiquette by default — never merges or pushes `main` without an
   explicit go-ahead **for this PR**; blanket prior approvals don't carry over. CI gates PRs
   only, which is exactly why the direct-push path stays closed.
@@ -948,31 +1063,5 @@ These are **explicit-dispatch only** — a skill that names them, or you asking 
 Their config is **pinned in the agent file's frontmatter**, so there's nothing for you to
 choose: the cards state what's pinned and who dispatches them.
 
-### `adversarial-reviewer`
+None right now — the last two were retired 2026-10-16; see [`retired.md`](retired.md).
 
-- **Pinned config:** `model: opus`, no effort override — it inherits the dispatching
-  session's effort.
-- **Dispatched by:** [`adversarial-review`](#adversarial-review), Phases 1 and 5, with
-  `REPO_PATH`, `DEFAULT_BRANCH`, `MAILBOX_PATH`, and `ROUND`.
-- **Reach for it when:** you're running the review loop. Don't launch it ad hoc for a general
-  review — it expects a mailbox and a round number, and the loop is what makes its findings
-  actionable.
-- **Pairs well with:** [`review-judge`](#review-judge) (rules on what you dispute),
-  [`adversarial-review`](#adversarial-review) (the loop that owns it).
-- **Notes:** zero-context by design — the author's context is exactly what hides the bug. The
-  diff is its subject, the whole repo its evidence. The mailbox is the **only** file it may
-  write; it never touches the repo or runs a mutating git command. On round ≥ 2 it verifies
-  each `FIXED-IN` fix as VERIFIED or REOPENED.
-
-### `review-judge`
-
-- **Pinned config:** `model: opus`, no effort override.
-- **Dispatched by:** [`adversarial-review`](#adversarial-review), Phase 3 — and only if
-  disputes exist.
-- **Reach for it when:** you disputed a finding with evidence and want a neutral read rather
-  than a standoff.
-- **Pairs well with:** [`adversarial-reviewer`](#adversarial-reviewer) (whose claims it
-  rules on), [`adversarial-review`](#adversarial-review).
-- **Notes:** owes deference to neither side, and rules only on disputes — it raises no new
-  findings. "Valid but unimportant" is **DOWNGRADED**, not overruled: true findings don't get
-  erased to unblock a merge. Mailbox-only writes.

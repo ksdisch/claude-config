@@ -38,6 +38,7 @@ Available in every Claude Code session. Live in `commands/`.
 | Command | What it does |
 |---|---|
 | [`/launch`](../commands/launch.md) | Opens a new terminal window in a project directory and starts a fresh Claude Code session there, with the prompt on the clipboard (or auto-submitted via `--send`). Reads directory, model, and effort from the run-config note just produced, and names the session descriptively (`claude --name`) so it's findable in the resume picker later; `--remote` starts it as a Remote Control session so the name reaches the claude.ai/mobile lists too. · [config →](usage-playbook.md#launch) |
+| [`/handoff-session`](../commands/handoff-session.md) | Generates a self-contained handoff prompt you can paste into a fresh session to continue work without losing context; `--orchestrator` writes a coordinator brief for an arc run across worker sessions instead. Also prints a plain-English "what's next & why" briefing. · [config →](usage-playbook.md#handoff-session) |
 
 ## Global Skills
 
@@ -51,12 +52,17 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`visual-summary`](../skills/visual-summary/SKILL.md) | Turns a conversation, a branch's diff, or an uncommitted worktree into one self-contained HTML page that's read at a glance — three to five charts and diagrams, one headline, no second block of prose. Saves to `~/Projects/_visual-summaries/` and publishes as an Artifact every run, unless `--no-publish`. · [config →](usage-playbook.md#visual-summary) |
 | [`wayfinder-map`](../skills/wayfinder-map/SKILL.md) | Draws a Wayfinder effort's map as one self-contained HTML page — the blocking graph toward the destination, takeable tickets as cards, decisions so far, and the fog — generated deterministically from `map.md` and the issue files into `map.html` beside it, and published to one stable Artifact link per effort. A Stop hook re-renders stale maps. · [config →](usage-playbook.md#wayfinder-map) |
 | [`retire`](../skills/retire/SKILL.md) | The config's subtract verb — inventories every global steering surface (CLAUDE.md sections, constraints paragraphs, skills, commands, agents, plugins, MCP servers, hooks, output styles, auto-memory) with usage evidence, proposes a verdict per item from a fixed precedence table, applies only what you ratify row by row with full bookkeeping and a retirement ledger, and measures before → after weight. Sweep, `--report`, `--surface`, or targeted. · [config →](usage-playbook.md#retire) |
+| [`reweave`](../skills/reweave/SKILL.md) | Re-integrates a follow-up answer into the original response at the source so you get one clean standalone version instead of mentally splicing the update back in. · [config →](usage-playbook.md#reweave) |
+| [`day`](../skills/day/SKILL.md) | Daily bookend for one Todoist project — briefs today's tasks, pins a must-do set, logs outcomes as you report them in plain language, gates off-list and polish requests, posts hourly pace check-ins, and wraps by re-dating what slipped. A project hook (`.claude/day.md`) adds sources, vocabulary, and a wrap step. · [config →](usage-playbook.md#day) |
+| [`architecture-viewer`](../skills/architecture-viewer/SKILL.md) | Turns a repo into one self-contained, clickable HTML architecture map — modules as nodes, arrows from dependent to dependency, one level of click-to-expand, and a findings banner naming the cycles, hubs, and edges running against the repo's stated layering. An agent pass emits an `arch-graph/v1` JSON graph with a real `file:line` behind every edge; a validator refuses to render one whose citations don't resolve or whose modules leave source unaccounted for. Polyglot — nothing parses imports per language. · [config →](usage-playbook.md#architecture-viewer) |
 
-### Quality & Debugging
+### Learning & Research
 
 | Skill | What it does |
 |---|---|
-| [`adversarial-review`](../skills/adversarial-review/SKILL.md) | Pre-merge author↔reviewer↔judge loop, now propose-first — the session recommends SKIP / SINGLE ROUND / FULL LOOP with honest reasoning (Kyle decides interactively; unattended runs decide and record why); whatever runs, a zero-context reviewer files graded findings, the author triages, a judge rules on disputes, and the adjudicated summary lands as a PR comment with a CLEAR / NOT-CLEAR merge verdict. · [config →](usage-playbook.md#adversarial-review) |
+| [`youtube-transcript`](../skills/youtube-transcript/SKILL.md) | Downloads a YouTube video's transcript with yt-dlp — manual captions, then auto-generated, with local Whisper as a gated last resort — and converts it to deduplicated plain text. · [config →](usage-playbook.md#youtube-transcript) |
+| [`youtube-breakdown`](../skills/youtube-breakdown/SKILL.md) | Turns a transcript or YouTube URL into a structured breakdown in one of four modes — Study Notes, Quick Reference, Critique, or Actionable Insights — then offers to save it under `~/Learning`. Always asks which mode first; mining a video for Claude Code ideas is `cc-yt-idea-mine`'s lane. · [config →](usage-playbook.md#youtube-breakdown) |
+| [`teach-research`](../skills/teach-research/SKILL.md) | Research companion for `teach` — mission interview, parallel six-modality source discovery, a curation gate, then cached digests plus a curated `RESOURCES.md` that `/teach` consumes unchanged. Typed-only (`/teach-research`); run from the learning directory. · [config →](usage-playbook.md#teach-research) |
 
 ## Project-Specific Items
 
@@ -241,7 +247,4 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 
 Global subagents live in `agents/` (symlinked to `~/.claude/agents/`). These are explicit-dispatch only — launched by a skill that names them or by explicit request, never auto-delegated. Other subagent types live outside this repo: `Explore` and `Plan` ship with Claude Code itself, and plugin-provided ones (e.g., `code-reviewer` from Superpowers) come with their plugin.
 
-| Agent | What it does |
-|---|---|
-| [`adversarial-reviewer`](../agents/adversarial-reviewer.md) | Zero-context, repo-read-only diff reviewer — anchors to HEAD, reviews the branch diff vs merge-base, writes numbered findings graded critical / should-fix / nice-to-have to the review mailbox. Never edits code. · [config →](usage-playbook.md#adversarial-reviewer) |
-| [`review-judge`](../agents/review-judge.md) | Neutral zero-context judge — rules only on author-disputed findings (upheld / overruled / downgraded / upgraded), may re-grade severity, owes deference to neither side. Appends one-paragraph rulings to the mailbox. · [config →](usage-playbook.md#review-judge) |
+None right now — the last two were retired 2026-10-16; see [`retired.md`](retired.md).

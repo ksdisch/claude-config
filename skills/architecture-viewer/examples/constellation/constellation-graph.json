@@ -1,0 +1,501 @@
+{
+  "schema": "arch-graph/v1",
+  "repo": {
+    "name": "constellation",
+    "root": "/Users/kyledisch/Projects/constellation",
+    "commit": "604a42211f8d6b933adcfd6a006494c779e82aef",
+    "generated": "2026-08-20",
+    "extractor": "architecture-viewer agent pass"
+  },
+  "roots": ["src", "server", "scripts"],
+  "excluded": ["src/vite-env.d.ts"],
+  "notes": [
+    "Edges were mapped from production source only. The colocated `*.test.ts` files count toward coverage (they live inside the module they test) but their imports are not drawn — a test depends on what it tests, which the map already shows.",
+    "`src/vite-env.d.ts` is excluded: it is a Vite ambient type shim with no module of its own.",
+    "Both `src/game/net` and `src/phone/net` hard-code `RELAY_PORT = 3081` and their own `serverUrl()`. The two runtime arrows into `server` are drawn from separate, near-identical copies of that knowledge."
+  ],
+  "modules": [
+    {
+      "id": "src/game",
+      "name": "game",
+      "parent": null,
+      "path": "src/game",
+      "layer": "client",
+      "file_count": 34,
+      "summary": "Phaser 3 laptop client — the astronaut platformer, its scenes, entities, planet data and local progression.",
+      "anchors": [
+        { "file": "src/game/main.ts", "line": 2, "label": "scene registration — the whole client's entry point" },
+        { "file": "src/game/scenes/Planet.ts", "line": 2, "label": "the gameplay scene; imports from six of the seven sibling submodules" }
+      ]
+    },
+    {
+      "id": "src/game/entities",
+      "name": "entities",
+      "parent": "src/game",
+      "path": "src/game/entities",
+      "layer": "client",
+      "file_count": 2,
+      "summary": "Thin sprite-wrapping classes (Astronaut, Enemy) with per-frame update behaviour."
+    },
+    {
+      "id": "src/game/juice",
+      "name": "juice",
+      "parent": "src/game",
+      "path": "src/game/juice",
+      "layer": "client",
+      "file_count": 11,
+      "summary": "Procedural SFX, music, mute state, persisted settings, and the scene-bound particle/shake applier."
+    },
+    {
+      "id": "src/game/main.ts",
+      "name": "main.ts",
+      "parent": "src/game",
+      "path": "src/game/main.ts",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "Composition root for the laptop client: builds the Phaser config and registers every scene."
+    },
+    {
+      "id": "src/game/net",
+      "name": "net",
+      "parent": "src/game",
+      "path": "src/game/net",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "The game's WebSocket client — opens the relay connection and speaks the wire protocol.",
+      "anchors": [
+        { "file": "src/game/net/client.ts", "line": 23, "label": "where the laptop client actually dials the relay" }
+      ]
+    },
+    {
+      "id": "src/game/planets",
+      "name": "planets",
+      "parent": "src/game",
+      "path": "src/game/planets",
+      "layer": "client",
+      "file_count": 7,
+      "summary": "Data-driven planet configs plus the ordered registry whose array order is the progression."
+    },
+    {
+      "id": "src/game/progression",
+      "name": "progression",
+      "parent": "src/game",
+      "path": "src/game/progression",
+      "layer": "client",
+      "file_count": 6,
+      "summary": "Save/load of progress and telemetry, hub node state, and the end-of-run portrait."
+    },
+    {
+      "id": "src/game/scenes",
+      "name": "scenes",
+      "parent": "src/game",
+      "path": "src/game/scenes",
+      "layer": "client",
+      "file_count": 4,
+      "summary": "The four Phaser scenes — Boot, Lobby, Hub, Planet — where all the wiring lands."
+    },
+    {
+      "id": "src/game/testBridge.ts",
+      "name": "testBridge.ts",
+      "parent": "src/game",
+      "path": "src/game/testBridge.ts",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "The `?test=1` bridge: injectable input and state providers so scenes can be driven from outside."
+    },
+    {
+      "id": "src/phone",
+      "name": "phone",
+      "parent": null,
+      "path": "src/phone",
+      "layer": "client",
+      "file_count": 22,
+      "summary": "React 19 phone client — the Starglow companion: puzzles, spellbook, talent constellation.",
+      "anchors": [
+        { "file": "src/phone/App.tsx", "line": 3, "label": "the single stateful component every phone feature hangs off" }
+      ]
+    },
+    {
+      "id": "src/phone/App.tsx",
+      "name": "App.tsx",
+      "parent": "src/phone",
+      "path": "src/phone/App.tsx",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "Composition root for the phone: owns connection state, routes to puzzles, applies talents."
+    },
+    {
+      "id": "src/phone/components",
+      "name": "components",
+      "parent": "src/phone",
+      "path": "src/phone/components",
+      "layer": "client",
+      "file_count": 13,
+      "summary": "Presentational React components — room join, spellbook, talent tree, and the four puzzle games with their pure logic."
+    },
+    {
+      "id": "src/phone/net",
+      "name": "net",
+      "parent": "src/phone",
+      "path": "src/phone/net",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "The phone's WebSocket client — opens the relay connection and speaks the wire protocol.",
+      "anchors": [
+        { "file": "src/phone/net/client.ts", "line": 24, "label": "where the phone actually dials the relay" }
+      ]
+    },
+    {
+      "id": "src/phone/puzzleThemes.ts",
+      "name": "puzzleThemes.ts",
+      "parent": "src/phone",
+      "path": "src/phone/puzzleThemes.ts",
+      "layer": "client",
+      "file_count": 1,
+      "summary": "Per-planet colour palettes every puzzle component reads to theme itself."
+    },
+    {
+      "id": "src/phone/talents",
+      "name": "talents",
+      "parent": "src/phone",
+      "path": "src/phone/talents",
+      "layer": "client",
+      "file_count": 4,
+      "summary": "The talent node table and the stardust save that tracks which nodes are unlocked."
+    },
+    {
+      "id": "src/shared",
+      "name": "shared",
+      "parent": null,
+      "path": "src/shared",
+      "layer": "contract",
+      "file_count": 1,
+      "summary": "The wire protocol — one file of message types both clients, the relay and the smoke harness all speak.",
+      "anchors": [
+        { "file": "src/shared/protocol.ts", "line": 1, "label": "the entire shared surface of the system" }
+      ]
+    },
+    {
+      "id": "server",
+      "name": "server",
+      "parent": null,
+      "path": "server",
+      "layer": "relay",
+      "file_count": 5,
+      "summary": "Node + `ws` relay: room lifecycle and allowlist peer-forwarding by room code, with no game logic.",
+      "anchors": [
+        { "file": "server/relay.ts", "line": 1, "label": "the pure forwarding policy — the one place message types are renamed" },
+        { "file": "server/server.ts", "line": 46, "label": "the WebSocket server both clients connect to" }
+      ]
+    },
+    {
+      "id": "scripts",
+      "name": "scripts",
+      "parent": null,
+      "path": "scripts",
+      "layer": "tooling",
+      "file_count": 1,
+      "summary": "Dev harnesses — the smoke test that boots the real relay and asserts a co-op round trip.",
+      "anchors": [
+        { "file": "scripts/smoke-relay.ts", "line": 110, "label": "spawns the real relay process — a dependency no import parser would see" }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "src/game/entities",
+      "to": "src/game/testBridge.ts",
+      "kind": "import",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/entities/Astronaut.ts", "line": 2, "text": "import { getTestInput } from '../testBridge';" }
+      ]
+    },
+    {
+      "from": "src/game/entities",
+      "to": "src/game/juice",
+      "kind": "import",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/entities/Astronaut.ts", "line": 3, "text": "import { playCue } from '../juice/audio';" }
+      ]
+    },
+    {
+      "from": "src/game/main.ts",
+      "to": "src/game/scenes",
+      "kind": "import",
+      "count": 4,
+      "evidence": [
+        { "file": "src/game/main.ts", "line": 2, "text": "import { BootScene } from './scenes/Boot';" },
+        { "file": "src/game/main.ts", "line": 5, "text": "import { PlanetScene } from './scenes/Planet';" }
+      ]
+    },
+    {
+      "from": "src/game/net",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/net/client.ts", "line": 1, "text": "import type { ClientToServerMsg, ServerToClientMsg } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/game/net",
+      "to": "server",
+      "kind": "runtime",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/net/client.ts", "line": 23, "text": "const ws = new WebSocket(serverUrl());" }
+      ]
+    },
+    {
+      "from": "src/game/planets",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/planets/planet1.ts", "line": 9, "text": "import type { PuzzleTheme } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/game/progression",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 2,
+      "evidence": [
+        { "file": "src/game/progression/portrait.ts", "line": 1, "text": "import type { PowerId } from '../../shared/protocol';" },
+        { "file": "src/game/progression/save.ts", "line": 2, "text": "import type { PowerId } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/game/progression",
+      "to": "src/game/planets",
+      "kind": "import",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/progression/save.ts", "line": 1, "text": "import { PLANETS } from '../planets/registry';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/juice",
+      "kind": "import",
+      "count": 9,
+      "evidence": [
+        { "file": "src/game/scenes/Boot.ts", "line": 6, "text": "import { setMuted } from '../juice/mute';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 11, "text": "import { JuiceController } from '../juice/effects';" },
+        { "file": "src/game/scenes/Hub.ts", "line": 8, "text": "import { addMuteButton } from '../juice/muteButton';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/progression",
+      "kind": "import",
+      "count": 6,
+      "evidence": [
+        { "file": "src/game/scenes/Boot.ts", "line": 3, "text": "import { loadProgress } from '../progression/save';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 8, "text": "import { buildPortrait } from '../progression/portrait';" },
+        { "file": "src/game/scenes/Hub.ts", "line": 5, "text": "import { nodeStateFor } from '../progression/nodeStateFor';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/planets",
+      "kind": "import",
+      "count": 4,
+      "evidence": [
+        { "file": "src/game/scenes/Boot.ts", "line": 4, "text": "import { PLANETS } from '../planets/registry';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 6, "text": "import type { PlanetConfig } from '../planets/planet1';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/net",
+      "kind": "import",
+      "count": 3,
+      "evidence": [
+        { "file": "src/game/scenes/Boot.ts", "line": 2, "text": "import { GameNetClient } from '../net/client';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 4, "text": "import type { GameNetClient } from '../net/client';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/testBridge.ts",
+      "kind": "import",
+      "count": 3,
+      "evidence": [
+        { "file": "src/game/scenes/Hub.ts", "line": 6, "text": "import { isTestMode, setBridgeProviders } from '../testBridge';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 10, "text": "import { isTestMode, setBridgeProviders } from '../testBridge';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/game/entities",
+      "kind": "import",
+      "count": 2,
+      "evidence": [
+        { "file": "src/game/scenes/Planet.ts", "line": 2, "text": "import { Astronaut } from '../entities/Astronaut';" },
+        { "file": "src/game/scenes/Planet.ts", "line": 3, "text": "import { Enemy } from '../entities/Enemy';" }
+      ]
+    },
+    {
+      "from": "src/game/scenes",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/scenes/Planet.ts", "line": 5, "text": "import type { PowerId } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/game/testBridge.ts",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/testBridge.ts", "line": 1, "text": "import type { PowerId } from '../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/game/testBridge.ts",
+      "to": "src/game/progression",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/game/testBridge.ts", "line": 2, "text": "import type { PlanetTelemetry } from './progression/save';" }
+      ]
+    },
+    {
+      "from": "src/phone/App.tsx",
+      "to": "src/phone/components",
+      "kind": "import",
+      "count": 11,
+      "evidence": [
+        { "file": "src/phone/App.tsx", "line": 4, "text": "import { Spellbook } from './components/Spellbook';" },
+        { "file": "src/phone/App.tsx", "line": 6, "text": "import { QuickMath } from './components/puzzles/QuickMath';" },
+        { "file": "src/phone/App.tsx", "line": 20, "text": "import { QUICK_MATH_TOTAL_SECONDS } from './components/puzzles/quickMathLogic';" }
+      ]
+    },
+    {
+      "from": "src/phone/App.tsx",
+      "to": "src/phone/talents",
+      "kind": "import",
+      "count": 2,
+      "evidence": [
+        { "file": "src/phone/App.tsx", "line": 11, "text": "import { tuningFor, strengthFor, type PuzzleOverrides, type TalentId } from './talents/talents';" }
+      ]
+    },
+    {
+      "from": "src/phone/App.tsx",
+      "to": "src/phone/net",
+      "kind": "import",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/App.tsx", "line": 10, "text": "import { PhoneNetClient } from './net/client';" }
+      ]
+    },
+    {
+      "from": "src/phone/App.tsx",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/App.tsx", "line": 19, "text": "import type { PowerId, PuzzleTheme } from '../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/phone/components",
+      "to": "src/phone/puzzleThemes.ts",
+      "kind": "import",
+      "count": 4,
+      "evidence": [
+        { "file": "src/phone/components/puzzles/QuickMath.tsx", "line": 3, "text": "import { paletteFor } from '../../puzzleThemes';" },
+        { "file": "src/phone/components/puzzles/Trivia.tsx", "line": 3, "text": "import { paletteFor } from '../../puzzleThemes';" }
+      ]
+    },
+    {
+      "from": "src/phone/components",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 5,
+      "evidence": [
+        { "file": "src/phone/components/Spellbook.tsx", "line": 1, "text": "import type { PowerId } from '../../shared/protocol';" },
+        { "file": "src/phone/components/puzzles/PhaseAlign.tsx", "line": 2, "text": "import type { PuzzleTheme } from '../../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/phone/components",
+      "to": "src/phone/talents",
+      "kind": "import",
+      "count": 2,
+      "evidence": [
+        { "file": "src/phone/components/TalentTree.tsx", "line": 1, "text": "import { TALENTS, type TalentNode, type TalentKind, type TalentId } from '../talents/talents';" },
+        { "file": "src/phone/components/TalentTree.tsx", "line": 2, "text": "import { canUnlock, type TalentState } from '../talents/save';" }
+      ]
+    },
+    {
+      "from": "src/phone/net",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/net/client.ts", "line": 1, "text": "import type { ClientToServerMsg, ServerToClientMsg } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/phone/net",
+      "to": "server",
+      "kind": "runtime",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/net/client.ts", "line": 24, "text": "const ws = new WebSocket(serverUrl());" }
+      ]
+    },
+    {
+      "from": "src/phone/puzzleThemes.ts",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/puzzleThemes.ts", "line": 1, "text": "import type { PuzzleTheme } from '../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "src/phone/talents",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "src/phone/talents/talents.ts", "line": 1, "text": "import type { PowerId } from '../../shared/protocol';" }
+      ]
+    },
+    {
+      "from": "server",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 2,
+      "evidence": [
+        { "file": "server/relay.ts", "line": 1, "text": "import type { ClientToServerMsg, ServerToClientMsg } from '../src/shared/protocol';" },
+        { "file": "server/server.ts", "line": 3, "text": "import type { ServerToClientMsg } from '../src/shared/protocol';" }
+      ]
+    },
+    {
+      "from": "scripts",
+      "to": "src/shared",
+      "kind": "type-only",
+      "count": 1,
+      "evidence": [
+        { "file": "scripts/smoke-relay.ts", "line": 30, "text": "import type { ClientToServerMsg, ServerToClientMsg } from '../src/shared/protocol';" }
+      ]
+    },
+    {
+      "from": "scripts",
+      "to": "server",
+      "kind": "runtime",
+      "count": 1,
+      "evidence": [
+        { "file": "scripts/smoke-relay.ts", "line": 110, "text": "const relay = spawn('npx', ['tsx', 'server/server.ts'], {" }
+      ]
+    }
+  ]
+}

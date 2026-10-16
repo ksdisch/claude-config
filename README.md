@@ -35,8 +35,6 @@ skill and the subagent it dispatches — which is the clearest look at how the p
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Instructions loaded into literally every session |
 | [`operating-constraints.md`](operating-constraints.md) | Scope, honesty, and act-vs-assess guardrails |
-| [`adversarial-review`](skills/adversarial-review/SKILL.md) | Author, reviewer, and judge argue before a merge |
-| [`adversarial-reviewer`](agents/adversarial-reviewer.md) | The zero-context subagent that review loop dispatches |
 | [`pre-compact`](skills/pre-compact/SKILL.md) | Saves what's settled before `/compact` and says whether it's safe |
 | [`/launch`](commands/launch.md) | Opens a fresh session in a new terminal with the prompt ready |
 
@@ -89,9 +87,9 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 
 | Path | What | Linked into `~/.claude/`? |
 |---|---|---|
-| [`commands/`](commands/) | Global slash commands — [`/launch`](commands/launch.md) | ✅ |
-| [`skills/`](skills/) | Global skills — [`adversarial-review`](skills/adversarial-review/SKILL.md), [`pre-compact`](skills/pre-compact/SKILL.md), [`retire`](skills/retire/SKILL.md), [`visual-summary`](skills/visual-summary/SKILL.md), [`wayfinder-map`](skills/wayfinder-map/SKILL.md) | ✅ |
-| [`agents/`](agents/) | Global subagents — [`adversarial-reviewer`](agents/adversarial-reviewer.md), [`review-judge`](agents/review-judge.md) | ✅ |
+| [`commands/`](commands/) | Global slash commands — [`/launch`](commands/launch.md), [`/handoff-session`](commands/handoff-session.md) | ✅ |
+| [`skills/`](skills/) | Global skills — [`architecture-viewer`](skills/architecture-viewer/SKILL.md), [`day`](skills/day/SKILL.md), [`pre-compact`](skills/pre-compact/SKILL.md), [`retire`](skills/retire/SKILL.md), [`visual-summary`](skills/visual-summary/SKILL.md), [`wayfinder-map`](skills/wayfinder-map/SKILL.md), [`reweave`](skills/reweave/SKILL.md), [`teach-research`](skills/teach-research/SKILL.md), [`youtube-breakdown`](skills/youtube-breakdown/SKILL.md), [`youtube-transcript`](skills/youtube-transcript/SKILL.md) | ✅ |
+| [`agents/`](agents/) | Global subagents — none right now | ✅ |
 | [`CLAUDE.md`](CLAUDE.md) | Global instructions loaded into every session | ✅ |
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
 | [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules for builder prompts (its two callers were retired 2026-10-16; nothing loads it now). Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
@@ -158,7 +156,7 @@ model: opus
    gitignored files can never be linked into `~/.claude/` — the guardrail that keeps secrets
    and machine-local state out. It also means `git add` is what makes a new item live.
 
-Branch + PR for every change, and run [`adversarial-review`](skills/adversarial-review/SKILL.md)
+Branch + PR for every change, and propose a `/code-review` pass
 before merging — the same rule this repo ships everywhere else.
 
 ## Third-party content

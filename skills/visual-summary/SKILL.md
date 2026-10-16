@@ -1,7 +1,7 @@
 ---
 name: visual-summary
 argument-hint: "[conversation|branch|worktree] [--out <dir>] [--no-publish]"
-description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page to `~/Projects/_visual-summaries/` and publishes it as a claude.ai Artifact every run (`--no-publish` keeps it local). Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written prose recap, a paste-able prompt for a fresh session (mattpocock-skills:handoff), or judging whether a diff is safe to merge (adversarial-review).
+description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page to `~/Projects/_visual-summaries/` and publishes it as a claude.ai Artifact every run (`--no-publish` keeps it local). Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written prose recap, a paste-able prompt for a fresh session (mattpocock-skills:handoff), or judging whether a diff is safe to merge (/code-review).
 ---
 
 # Visual Summary — one page, read at a glance
@@ -121,7 +121,7 @@ Checkable bounds, because "minimal text" loses to the drift toward explaining.
 ## What it deliberately does not do
 
 - **No judgment on the work.** It shows what happened; it does not grade the diff,
-  flag risk, or recommend a next move. Review is `adversarial-review`'s job.
+  flag risk, or recommend a next move. Review is `/code-review`'s job.
 - **No cross-session history.** One conversation, one branch, or one tree. It
   never reads past session logs to assemble a longer story.
 - **No live page.** Static HTML. It does not refresh, poll, or track state.
