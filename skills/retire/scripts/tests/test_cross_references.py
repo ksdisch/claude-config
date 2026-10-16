@@ -294,6 +294,23 @@ class LedgerReadBackTests(XrefCase):
         self.assertEqual(self.items_by_id(payload)["skill:alpha"]["routes_to_missing"], ["old"])
 
 
+    def test_a_retired_name_an_enabled_plugin_still_ships_is_not_dangling(self):
+        # The fixture's enabled plugin ships `tdd`; a loose copy of it was retired.
+        ledger = self.cfg.config_repo / "docs/retired.md"
+        ledger.write_text(ledger.read_text().replace(
+            "| 2026-01-01 | skill:zeta |",
+            "| 2026-01-02 | skill:tdd | skill | plugin serves it | 0 | backup | — |\n"
+            "| 2026-01-01 | skill:zeta |"))
+        self.steering_file("skills/alpha/SKILL.md",
+                           "---\nname: alpha\ndescription: Alpha.\n---\nRun `/tdd`, then `/zeta`.\n")
+        rc, payload, _ = self.run_json("--surface", "skill")
+        self.assertEqual(rc, si.EXIT_OK)
+        self.assertIn("tdd", si.missing_names(self.cfg.config_repo))
+        routes = self.items_by_id(payload)["skill:alpha"]["routes_to_missing"]
+        self.assertIn("zeta", routes)
+        self.assertNotIn("tdd", routes)
+
+
 class VendoredCopyTests(XrefCase):
     def test_skills_commands_and_agents_are_found_by_file_in_a_projects_dot_claude(self):
         write(self.cfg.projects_root / "repoC/.claude/agents/judge.md", "vendored judge\n")
