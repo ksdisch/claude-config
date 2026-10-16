@@ -135,6 +135,8 @@ fleet prune knows what to hunt.
 | 2026-10-15 | `agent:silent-failure-hunter` | agent | outside the keep set (built-ins + mattpocock-skills); Kyle's 2026-10-15 sweep | typed —/90d · — all · auto 1/1 · trig —/— · last 2026-07-28 · refs 3 · 675 chars | `git show 9a15246^:agents/silent-failure-hunter.md` | — |
 | 2026-10-15 | `agent:spec-miner` | agent | outside the keep set (built-ins + mattpocock-skills); Kyle's 2026-10-15 sweep | typed —/90d · — all · auto 0/0 · trig —/— · last — · refs 1 · 715 chars | `git show 9a15246^:agents/spec-miner.md` | — |
 | 2026-10-15 | `agent:specifier` | agent | outside the keep set (built-ins + mattpocock-skills); Kyle's 2026-10-15 sweep | typed —/90d · — all · auto 1/1 · trig —/— · last 2026-08-21 · refs 2 · 543 chars | `git show 9a15246^:agents/specifier.md` | — |
+| 2026-10-15 | ``claude-md:Kickoff Mode → run the `/kickoff` skill`` | claude-md | routes to `skill:kickoff`, retired in 9a15246; the "Claude Code Modes" heading above it held nothing else | trig 1/3 · last 2026-08-01 · refs 0 · 717 chars | `git show 4cb66db^:CLAUDE.md` (was lines 7–21) | — |
+| 2026-10-15 | `claude-md:Project Wiki` | claude-md | routes to `skill:project-wiki` and `/wiki-init`, retired in 9a15246 | trig 37/38 · last 2026-08-22 · refs 2 · 749 chars | `git show 4cb66db^:CLAUDE.md` (was lines 131–139) | DogHood, bandmark, blind-cite, buoy-legal, clinical-data-etl, constellation, decay-pin, dim-stage, focus-coach, forge-gap, ghost-patch, home-base, hush-gauge, intake-manifold, job-search-mas, job-search-toolkit, lossy-wall, mute-map, new-game-project-idea, party-line, personal-health-elt, stopwatch, trajectory-otel |
 
 ## Kept on purpose
 
