@@ -116,7 +116,6 @@ A planet-and-powers interactive puzzle game.
 | Command | What it does |
 |---|---|
 | `/verify-planet` | Headlessly verifies a planet end-to-end via Playwright MCP and the `?test=1` bridge — boots the game, runs the AUTONOMY.md playbook subset for that planet, and reports per-step PASS/FAIL + overall verdict. · [config →](usage-playbook.md#verify-planet) |
-| `/moonshot` | Deprecated alias — now the "Moonshot" mode of `/brainstorm`. Prefer `/brainstorm` going forward. · [config →](usage-playbook.md#moonshot) |
 
 ---
 

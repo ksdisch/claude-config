@@ -530,15 +530,6 @@ session *in that repo*.
   rather than faking a boot. It polls state and never sleeps, asserts on state fields and
   **never pixels**, and skips negatives that don't apply to the planet under test.
 
-#### `/moonshot`
-
-- **Run config:** deprecated — use `/brainstorm` (retired) in Moonshot mode and take its
-  card's config (Fable 5 · `ultracode`).
-- **Reach for it when:** never, by preference. It still works as an alias that pins
-  `/brainstorm` to Moonshot and skips the mode pick, but the multi-mode command is the one to
-  reach for.
-- **Pairs well with:** `/brainstorm` (retired) (what it now delegates to entirely).
-
 ### DogHood
 
 #### `adr-new`
