@@ -1,7 +1,7 @@
 ---
 name: visual-summary
 argument-hint: "[conversation|branch|worktree] [--out <dir>] [--no-publish]"
-description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page to `~/Projects/_visual-summaries/` and publishes it as a claude.ai Artifact every run (`--no-publish` keeps it local). Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written prose recap, a paste-able prompt for a fresh session (mattpocock-skills:handoff), or judging whether a diff is safe to merge (/code-review).
+description: Use when Kyle wants to SEE what happened instead of reading about it — one self-contained HTML page summarizing a conversation, a branch, or an uncommitted worktree as charts, diagrams, and short labels instead of prose. Saves the page to `~/Projects/_visual-summaries/` and publishes it as a claude.ai Artifact every run (`--no-publish` keeps it local). Triggers: "/visual-summary", "visual summary", "summarize this visually", "make me a picture of what we did", "chart what changed on this branch", "show me the shape of this work", "one-page summary of the diff". NOT for: a written prose recap, a module dependency map (architecture-viewer), a paste-able prompt for a fresh session (/handoff-session), or judging whether a diff is safe to merge (/code-review).
 ---
 
 # Visual Summary — one page, read at a glance
@@ -96,7 +96,7 @@ Checkable bounds, because "minimal text" loses to the drift toward explaining.
 4. **Write one self-contained HTML file.** No external resource of any kind, so
    the file opens from disk years from now. Default path, when `--out` is absent:
    `~/Projects/_visual-summaries/YYYY-MM-DD-<project>-<slug>.html` — outside the
-   repo being summarized, the way `~/Projects/_kickoffs/` archives briefs. `<project>` is a
+   repo being summarized. `<project>` is a
    short tag for the repo, `<slug>` a 3–5 word kebab-case title. **The page never lands in a
    repo by default**: it is generated output, no repo ignores it, and a
    `conversation` page carries a private session's contents into whatever tree it

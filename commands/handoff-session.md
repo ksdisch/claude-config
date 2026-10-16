@@ -150,8 +150,15 @@ an ordinary handoff for it.
 
 ### 1. Confirm it is an arc
 
-Write the full brief below only when the test above holds. If it doesn't, write
-an ordinary handoff instead and say why in the "For Kyle" briefing.
+Write the full brief below only when all three hold:
+
+- the work splits into units a separate session can hold in its head;
+- the frontier is genuinely wider than one, so parallel workers buy wall-clock;
+- every step in the arc is agent-shaped — nothing waits on Kyle's credentials,
+  hardware, or physical presence.
+
+If any one fails, write an ordinary handoff instead and say in the "For Kyle"
+briefing which condition failed.
 
 ### 2. Verify the mechanics — never recall them
 
@@ -164,11 +171,13 @@ all. **Run the checks; quote what came back.**
   `disable-model-invocation: true` cannot be invoked on a worker's behalf — the
   worker's first prompt must *literally begin* with `/<skill-name>`, and the
   spec follows on the lines after it. Check before asserting it either way —
-  `grep -m1 '^disable-model-invocation:' ~/.claude/skills/<name>/SKILL.md` — and
-  grep rather than eyeballing a line range, since frontmatter length varies. As
-  of 2026-09-09, 22 of the installed skills carry the flag (`implement`,
-  `to-tickets`, `wayfinder`, `handoff`, …), so it is the common case, not an
-  exotic one; recount rather than trusting that number. If the flag is absent,
+  find the skill's file first, since plugin skills live under the plugin cache,
+  not `~/.claude/skills/` — `find ~/.claude/skills ~/.claude/plugins/cache -path
+  '*/<name>/SKILL.md'` — then `grep -m1 '^disable-model-invocation:'` that file,
+  rather than eyeballing a line range, since frontmatter length varies. **No file
+  found means unknown, never absent**: say so and check again before asserting
+  either way. Plugin skills such as `implement`, `to-tickets` and `wayfinder`
+  commonly carry the flag, so it is the common case, not an exotic one. If the flag is absent,
   say so — a brief that demands the literal-first-line ritual where it isn't
   needed wastes a turn.
 - **Cross-session tools.** `ListAgents` and `SendMessage` are usually deferred:

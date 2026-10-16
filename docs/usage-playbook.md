@@ -97,8 +97,8 @@ rows get re-pointed to match.
   - A handoff or plan just ended with a paste-able prompt and a run-config note,
     and you want the fresh session open rather than assembled by hand.
   - Pass `--send` when you want it working immediately instead of pausing on your ⌘V.
-- **Pairs well with:** `mattpocock-skills:handoff` (plugin — writes the paste-able prompt
-  `/launch` opens).
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (writes the paste-able prompt
+  and run-config note `/launch` opens).
 - **Notes:** the prompt lands on the clipboard on **every** path, including failures, so a
   misfired launch costs one ⌘V rather than a regenerated handoff. Only Warp on macOS can
   truly auto-start the session; other terminals get the window plus the command to run, said
@@ -153,7 +153,7 @@ rows get re-pointed to match.
     near ~150k and you're about to `/compact` with the work unfinished.
   - You typed `/compact` mid-turn and it arrived as a message instead of running.
   - You want a straight yes/no on whether compacting now would lose anything.
-- **Pairs well with:** `mattpocock-skills:handoff` (plugin — the alternative when a fresh
+- **Pairs well with:** [`/handoff-session`](#handoff-session) (the alternative when a fresh
   session beats compacting), [`wayfinder-map`](#wayfinder-map) (re-render after the
   ticket is confirmed and resolved), `mattpocock-skills:grilling` (plugin — the sessions
   it most often checkpoints).

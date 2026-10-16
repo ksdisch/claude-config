@@ -1,12 +1,10 @@
 # OPUS 5 BUILDER NOTES
 
 Rules for any prompt that an **Opus 5** session will consume. Consumed by
-the prompt generators when their model recommendation is Opus 5 —
-`commands/handoff.md`, `commands/prompt-optimize.md`, and the starter
-prompt of `skills/ship-and-route` — not loaded
-into sessions directly. Consumers read `~/.claude/opus5-builder-notes.md`
-(a live symlink to this canonical file) and fall back to the vendored
-`.claude/opus5-builder-notes.md` that `/claudify-repo` copies into repos —
+`commands/handoff-session.md` when its model recommendation is Opus 5 — not
+loaded into sessions directly. It reads `~/.claude/opus5-builder-notes.md`
+(a live symlink to this canonical file) and falls back to a vendored
+`.claude/opus5-builder-notes.md` in the repo when one exists —
 the fallback exists for cloud/web sessions, where `~/.claude/` is absent;
 it is a point-in-time snapshot, so it never outranks the symlink locally.
 Distilled from Anthropic's [Prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)

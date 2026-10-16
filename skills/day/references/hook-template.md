@@ -12,7 +12,7 @@ project: <Todoist project name>
 project_id: <Todoist project id>
 window: <working hours, e.g. Mon–Fri 08:00–11:00; where to read today's actual window if it varies>
 goal: <the standing goal every day serves, one line>
-reentry: </skill to run after a gap of more than a day, e.g. /rebrief-a2c or /reorient>
+reentry: </skill to run after a gap of more than a day, e.g. /rebrief-a2c>
 log_dir: daily/
 
 ## Extra morning sources
