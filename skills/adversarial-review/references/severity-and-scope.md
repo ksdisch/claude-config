@@ -1,6 +1,6 @@
 # Severity grades and the escape hatch
 
-Orchestrator-side calibration: how findings gate the merge, and which diffs may skip the loop. (What the reviewer *hunts for* lives in the reviewer's own brief — `agents/adversarial-reviewer.md` in the claude-config checkout, installed at `~/.claude/agents/` — so the brief stays self-contained for the fallback launch path. Consistent in spirit with `bug-hunt`'s severity reference, but this file is the authority for merge-gate decisions.)
+Orchestrator-side calibration: how findings gate the merge, and which diffs may skip the loop. (What the reviewer *hunts for* lives in the reviewer's own brief — `agents/adversarial-reviewer.md` in the claude-config checkout, installed at `~/.claude/agents/` — so the brief stays self-contained for the fallback launch path. This file is the authority for merge-gate decisions.)
 
 ## The three grades
 

@@ -10,9 +10,7 @@
 
 The canonical source lives here; [`~/.claude/`](install.sh) symlinks to it, so editing in
 either place is the same file and any new command/skill/agent I create lands in git
-automatically. This is also the **upstream** that my
-[`/claudify-repo`](commands/claudify-repo.md) flow vendors copies of into individual
-project repos.
+automatically. Older copies vendored into individual project repos came from here too.
 
 ## What's in here
 
@@ -39,15 +37,14 @@ skill and the subagent it dispatches — which is the clearest look at how the p
 | [`operating-constraints.md`](operating-constraints.md) | Scope, honesty, and act-vs-assess guardrails |
 | [`adversarial-review`](skills/adversarial-review/SKILL.md) | Author, reviewer, and judge argue before a merge |
 | [`adversarial-reviewer`](agents/adversarial-reviewer.md) | The zero-context subagent that review loop dispatches |
-| `/autonomous-milestone` | **Disabled 2026-08-27** — plan, build, test, verify, report, unattended. Preserved at [`commands/autonomous-milestone.md.disabled`](commands/autonomous-milestone.md.disabled) |
-| [`kickoff`](skills/kickoff/SKILL.md) | Half-baked idea → interviewed → scaffolded repo |
-| [`/handoff-session`](commands/handoff-session.md) | Portable prompt to continue in a fresh session |
-| [`/claudify-repo`](commands/claudify-repo.md) | Vendors these into any other repo |
+| [`pre-compact`](skills/pre-compact/SKILL.md) | Saves what's settled before `/compact` and says whether it's safe |
+| [`/launch`](commands/launch.md) | Opens a fresh session in a new terminal with the prompt ready |
+
+Everything else comes from Claude Code's built-ins and the `mattpocock-skills` plugin; what was removed and how to restore it is in [`docs/retired.md`](docs/retired.md).
 
 ## How it works
 
-Two distribution paths out of one canonical source — symlinked onto this machine, copied
-into other repos.
+One canonical source, symlinked onto this machine.
 
 ```mermaid
 flowchart TD
@@ -59,16 +56,15 @@ flowchart TD
 
     SRC -->|"install.sh"| HOME
     HOME --> SESSION
-    HOME -->|"/claudify-repo"| PROJ
+    HOME -.->|"older vendored copies"| PROJ
     PROJ --> ELSE
 ```
 
-- **Symlinked, not copied.** `~/.claude/commands/tdd-loop.md` and `commands/tdd-loop.md` are the same
+- **Symlinked, not copied.** `~/.claude/commands/launch.md` and `commands/launch.md` are the same
   inode. Edit either one; commit from here.
 - **Whole directories are linked**, so a new skill goes live on `git pull` with no
   re-install.
-- **Vendored copies can drift.** `/claudify-repo` *copies* into a project's `.claude/` so
-  the tooling works in cloud sessions and for collaborators — those copies don't track
+- **Vendored copies can drift.** Copies already in a project's `.claude/` don't track
   upstream.
 
 ## Install on a new machine
@@ -85,8 +81,6 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
   has nothing to link and the script exits with an error.
 - It **warns loudly if you run it from a non-`main` branch**, since `~/.claude` would then
   reflect unmerged work.
-- Run it before [`/claudify-repo`](commands/claudify-repo.md) — that command vendors *out
-  of* `~/.claude/`, so it finds nothing until the symlinks exist.
 - It also points this clone's `core.hooksPath` at [`.githooks/`](.githooks/), which activates
   the [`pre-push`](.githooks/pre-push) sync check. Until you run it, the check exists in the
   clone but nothing calls it.
@@ -95,12 +89,12 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 
 | Path | What | Linked into `~/.claude/`? |
 |---|---|---|
-| [`commands/`](commands/) | Global slash commands — [`/tdd-loop`](commands/tdd-loop.md), [`/begin`](commands/begin.md), [`/wrap`](commands/wrap.md), [`/brainstorm`](commands/brainstorm.md), … | ✅ |
-| [`skills/`](skills/) | Global skills — [`kickoff`](skills/kickoff/SKILL.md), [`bug-hunt`](skills/bug-hunt/SKILL.md), [`ship-and-route`](skills/ship-and-route/SKILL.md), … | ✅ |
-| [`agents/`](agents/) | Global subagents — [`adversarial-reviewer`](agents/adversarial-reviewer.md), [`review-judge`](agents/review-judge.md), [`silent-failure-hunter`](agents/silent-failure-hunter.md), [`spec-miner`](agents/spec-miner.md) | ✅ |
+| [`commands/`](commands/) | Global slash commands — [`/launch`](commands/launch.md) | ✅ |
+| [`skills/`](skills/) | Global skills — [`adversarial-review`](skills/adversarial-review/SKILL.md), [`pre-compact`](skills/pre-compact/SKILL.md), [`retire`](skills/retire/SKILL.md), [`visual-summary`](skills/visual-summary/SKILL.md), [`wayfinder-map`](skills/wayfinder-map/SKILL.md) | ✅ |
+| [`agents/`](agents/) | Global subagents — [`adversarial-reviewer`](agents/adversarial-reviewer.md), [`review-judge`](agents/review-judge.md) | ✅ |
 | [`CLAUDE.md`](CLAUDE.md) | Global instructions loaded into every session | ✅ |
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
-| [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules folded into generated builder prompts by `/handoff-session` and `/prompt-optimize`. Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
+| [`opus5-builder-notes.md`](opus5-builder-notes.md) | Opus 5 prompting rules for builder prompts (its two callers were retired 2026-10-16; nothing loads it now). Top-level files are linked individually — re-run `install.sh` once after pulling the commit that adds this | ✅ |
 | [`statusline-command.sh`](statusline-command.sh) | Custom statusline — model, effort, context %, cost, rate limits | ✅ |
 | [`install.sh`](install.sh) | The symlink installer | ❌ `DENY` |
 | [`scripts/`](scripts/) | Repo-maintenance checks — [`check-doc-sync.py`](scripts/check-doc-sync.py) verifies the index ⇄ playbook stay 1:1 | ❌ `DENY` |

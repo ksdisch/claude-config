@@ -1,6 +1,6 @@
 ---
 name: pre-compact
-description: Checkpoint a long session before /compact so nothing settled lives only in the conversation, then give an honest "safe to compact" or "not yet, because X". Use when "/compact" arrives as a plain message mid-turn, or Kyle says "about to compact", "am I good to compact?", "checkpoint" or "save state" about this session, "I'm near 150k", or types /pre-compact — even without naming the skill. Writes settled decisions, open items, deferrals, and a "Next step" line into the active skill's existing durable home (wayfinder ticket file, CONTEXT.md/ADRs, spec, issue files, branch) or a short .scratch checkpoint, commits and pushes the feature branch, and replies with SHA, settled list, what's left, and a git-checked verdict. Never runs /compact, pushes to main, merges, touches PRs, resolves a ticket awaiting confirmation, or continues the work. NOT for moving to a fresh session (/handoff-session writes a paste-able prompt and stops); this keeps the same session alive across compaction.
+description: Checkpoint a long session before /compact so nothing settled lives only in the conversation, then give an honest "safe to compact" or "not yet, because X". Use when "/compact" arrives as a plain message mid-turn, or Kyle says "about to compact", "am I good to compact?", "checkpoint" or "save state" about this session, "I'm near 150k", or types /pre-compact — even without naming the skill. Writes settled decisions, open items, deferrals, and a "Next step" line into the active skill's existing durable home (wayfinder ticket file, CONTEXT.md/ADRs, spec, issue files, branch) or a short .scratch checkpoint, commits and pushes the feature branch, and replies with SHA, settled list, what's left, and a git-checked verdict. Never runs /compact, pushes to main, merges, touches PRs, resolves a ticket awaiting confirmation, or continues the work. NOT for moving to a fresh session (mattpocock-skills:handoff does that); this keeps the same session alive across compaction.
 ---
 
 # pre-compact — save what's settled, then say whether compacting is safe
@@ -33,7 +33,7 @@ of these fits:
 | none of the above | A short `.scratch/<slug>/checkpoint.md` |
 
 Writing a spec or ticket file publishes it as `ready-for-agent`, where `/implement` or
-`/orchestrate` can pick it up. So before Kyle has approved it, don't write any issue file,
+`/implement-spec` can pick it up. So before Kyle has approved it, don't write any issue file,
 spec file, or `tickets.md`; the draft stays in the checkpoint note.
 
 If the home has nowhere natural for open items and the next step (CONTEXT.md, for

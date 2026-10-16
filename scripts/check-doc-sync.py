@@ -194,7 +194,7 @@ def tracked_items(rev: str | None) -> tuple[dict[str, str], list[str]] | None:
     """`(item file → the row name it must appear under, every path considered)`.
 
     Sourced from git, so a skill kept out of this public repo on purpose
-    (`skills/interview-prep/` is gitignored) is excluded because git doesn't
+    (a gitignored skill folder) is excluded because git doesn't
     list it — not because of an exemption list that would silently drift.
     Returns None when git can't answer, which the caller reports rather than
     treating as "nothing to check". The second element lets the caller warn

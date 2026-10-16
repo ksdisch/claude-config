@@ -12,11 +12,6 @@ on each `*-FORMAT.md` would add noise without adding reach.
 
 ## Not listed here
 
-`skills/adhd/` is vendored from [UditAkhourii/adhd](https://github.com/UditAkhourii/adhd)
-(MIT) but is deliberately untracked — see the block in [`.gitignore`](.gitignore). It is not
-published by this repo, so it needs no notice here. If it is ever promoted to tracked, it
-gets a section above in the same commit.
-
 The Matt Pocock skill set (<https://github.com/mattpocock/skills>, MIT) reaches sessions
 through the `mattpocock-skills@mattpocock` plugin. The raw `npx skills` copies that used to sit
 untracked in `skills/` were retired on 2026-09-21, and the last one, `implement-spec`, on

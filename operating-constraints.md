@@ -40,7 +40,6 @@ cron, cloud, and autonomous runs too, where the list is often the main signal I 
 into what you're doing.
 
 **Unattended runs only** — applies when you're running as a subagent, on a
-schedule/cron, in a cloud one-shot, or in an explicitly autonomous flow like
-`/autonomous-milestone`; never in an interactive session: I'm not watching live and
+schedule/cron, in a cloud one-shot, or in an explicitly autonomous flow; never in an interactive session: I'm not watching live and
 can't answer mid-task, so don't ask "Shall I…?" For reversible actions that follow
 from the request, proceed without pausing.

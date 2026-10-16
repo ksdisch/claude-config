@@ -6,9 +6,8 @@ allowed-tools: Bash, Read, Write
 
 Launch a fresh Claude Code session in a new terminal window.
 
-This is the last mile of `/handoff-session`, `/ship-and-route`, and `/prompt-optimize` —
-each ends with a paste-able prompt plus a recommended model
-and effort. This command turns that into an open window with the session running
+This is the last mile of a handoff or plan that ends with a paste-able prompt plus a
+recommended model and effort. This command turns that into an open window with the session running
 and the prompt one ⌘V away.
 
 It launches a session; it never does the work itself. After reporting, **stop** —
@@ -37,9 +36,8 @@ Six values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
    run-config note or handoff in this conversation; that is often *not* the
    current session's cwd. Fall back to cwd only if nothing names a directory.
    Must be absolute and must exist.
-2. **Model** — the model ID from the most recent run-config note. Some producers
-   name the model rather than its ID (`/prompt-optimize` emits
-   `RUN WITH: [Model] · [effort] effort`); resolve those against the
+2. **Model** — the model ID from the most recent run-config note. Some notes
+   name the model rather than its ID (`RUN WITH: [Model] · [effort] effort`); resolve those against the
    Planner/Builder Protocol in `CLAUDE.md` — Fable 5 → `claude-fable-5`, Opus 5 →
    `claude-opus-5`, Opus 5 1M → `claude-opus-5[1m]`, Sonnet 5 → `claude-sonnet-5`.
 3. **Effort** — the effort level from the same note, one of `low`, `medium`,

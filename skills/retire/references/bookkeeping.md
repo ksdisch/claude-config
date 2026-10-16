@@ -66,7 +66,7 @@ Run in order. Verify each step before starting the next. A step that cannot comp
 
 1. Show Kyle the exact span first — the heading through the line before the next same-level
    heading — so he sees what goes.
-2. Delete it. (A `relocate` ruling means hand to `/trim-context` and delete nothing.)
+2. Delete it. (A `relocate` ruling means list it under "Relocate by hand" and delete nothing.)
 3. Referrers: a prompt-type hook naming the section is a **settings edit** — per-file
    confirmation, backup first. Other sections cross-referencing it get the sentence excised.
 4. Ledger line. Restore = `git show <sha>^:CLAUDE.md`, with the old line span in Why.
