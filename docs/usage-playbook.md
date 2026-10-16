@@ -310,7 +310,7 @@ rows get re-pointed to match.
   - You have a transcript from anywhere and want the same four-mode treatment.
 - **Pairs well with:** [`youtube-transcript`](#youtube-transcript) (supplies the text for a
   URL),
-  [`teach-research`](#teach-research) / [`teach`](#teach) (where a "Further Reading"
+  [`teach-research`](#teach-research) / `teach` (where a "Further Reading"
   section leads if the topic deserves a workspace),
   [`youtube-breakdown` (home-base)](#youtube-breakdown-home-base) (the hub-native fork,
   which writes to the hub's own stores instead).
@@ -330,7 +330,7 @@ rows get re-pointed to match.
     not a search.
   - A teach workspace's `RESOURCES.md` is thin, or its `## Gaps` section has grown
     (top-up mode).
-- **Pairs well with:** [`teach`](#teach) (the consumer — run it right after this).
+- **Pairs well with:** `teach` (the consumer — run it right after this).
 - **Notes:** typed-only (`disable-model-invocation: true`) — fires only on `/teach-research`.
   `--auto` skips the interactive pauses (mission confirm + curation gate); the mission
   interview still runs when no `MISSION.md` exists, so a truly unattended run needs
@@ -357,7 +357,7 @@ session *in that repo*.
     memory.
 - **Pairs well with:** [`stage-a2c`](#stage-a2c) (stages what this drafts),
   [`rebrief-a2c`](#rebrief-a2c) (reconciles what actually happened afterward),
-  [`replenish`](#replenish) (the coding original this refactors).
+  `replenish` (retired) (the coding original this refactors).
 - **Notes:** the project's house rules are gates, not suggestions — a do-not-contact list, a
   never-re-add ruled-out list, channel-specific pitch framing, and no invented contact
   addresses. Two gates: one combined steering round (compressible, never deletable) and one
@@ -386,7 +386,7 @@ session *in that repo*.
   - You're about to dial one prospect and want every line you'd say written out in full.
   - A task's script has gone stale and you need it rebuilt from the files before the call.
 - **Pairs well with:** the A2C `day` skill (logs the outcome the brief sets up),
-  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at), [`narrate`](#narrate)
+  [`stage-a2c`](#stage-a2c) (the chaser the voicemail section points at), `narrate` (retired)
   (`--audio`).
 - **Notes:** one contact per run, and every spoken section comes **twice** — detailed bullets
   to talk from, the full-sentence script blockquoted under them, same ground in the same order
@@ -455,7 +455,7 @@ session *in that repo*.
     reality.
 - **Pairs well with:** [`stage-a2c`](#stage-a2c) (the unsent queue it surfaces),
   [`replenish-a2c`](#replenish-a2c) (when the rebrief shows the pipeline is thin),
-  [`reorient`](#reorient) (the coding equivalent of this move).
+  `reorient` (retired) (the coding equivalent of this move).
 - **Notes:** sent mail is the tiebreaker over the files. Ambiguous records are marked
   "unconfirmed" and raised as questions — never resolved by guessing. One hard gate covers
   every write (status updates, gap-fill tasks, reply-path drafts), and drafts are staged,
@@ -472,8 +472,8 @@ session *in that repo*.
     layers it touches.
   - The source introduces a new analytical subject and may need its own star schema.
 - **Pairs well with:** [`new-dbt-model`](#new-dbt-model) (the smaller downstream scaffold),
-  [`/tdd-loop`](#tdd-loop) (the tests step),
-  [`spec-miner`](#spec-miner) (if the pipeline's contracts need writing down).
+  `/tdd-loop` (retired) (the tests step),
+  `spec-miner` (retired) (if the pipeline's contracts need writing down).
 - **Notes:** ingestion is idempotent by design — a re-run is a no-op and existing rows aren't
   overwritten.
 
@@ -525,19 +525,19 @@ session *in that repo*.
     playing it yourself.
   - You want the negative tests (the ones that prove a gate actually gates) run consistently.
 - **Pairs well with:** [`new-planet`](#new-planet) (what it verifies),
-  [`/smoke-test`](#smoke-test) (the manual, project-agnostic counterpart).
+  `/smoke-test` (retired) (the manual, project-agnostic counterpart).
 - **Notes:** needs the dev server running and the pinned Playwright MCP; it stops and says so
   rather than faking a boot. It polls state and never sleeps, asserts on state fields and
   **never pixels**, and skips negatives that don't apply to the planet under test.
 
 #### `/moonshot`
 
-- **Run config:** deprecated — use [`/brainstorm`](#brainstorm) in Moonshot mode and take its
+- **Run config:** deprecated — use `/brainstorm` (retired) in Moonshot mode and take its
   card's config (Fable 5 · `ultracode`).
 - **Reach for it when:** never, by preference. It still works as an alias that pins
   `/brainstorm` to Moonshot and skips the mode pick, but the multi-mode command is the one to
   reach for.
-- **Pairs well with:** [`/brainstorm`](#brainstorm) (what it now delegates to entirely).
+- **Pairs well with:** `/brainstorm` (retired) (what it now delegates to entirely).
 
 ### DogHood
 
@@ -586,7 +586,7 @@ session *in that repo*.
   - The docs claim things the git history doesn't support, or vice versa.
   - You want the drift shown before anything is edited.
 - **Pairs well with:** [`/scheduled-reconcile`](#scheduled-reconcile) (the unattended weekly
-  twin), [`project-wiki`](#project-wiki) (the wiki equivalent of the same discipline).
+  twin), `project-wiki` (retired) (the wiki equivalent of the same discipline).
 - **Notes:** ground truth comes from the code and git, never from another doc's claim about
   the code. It never deletes rows — completed items stay — and it raises genuine uncertainty
   as a question instead of "fixing" it by guessing.
@@ -627,7 +627,7 @@ session *in that repo*.
     check, pgTAP, the RLS auditor — without over- or under-running.
   - You want a paste-ready Verification block for the PR body.
 - **Pairs well with:** [`/ship`](#ship) (pastes its output),
-  [`/smoke-test`](#smoke-test) (the manual half),
+  `/smoke-test` (retired) (the manual half),
   [`new-migration`](#new-migration) (what pulls in the database checks).
 - **Notes:** checks are **cumulative** — every matching row runs, not just the most specific.
   It never reports a check as passed unless it ran in this session, and environment
@@ -663,7 +663,7 @@ session *in that repo*.
   - You want the score and listened status logged so the planner has signal.
 - **Pairs well with:** [`course-builder`](#course-builder) (authors the quizzes),
   [`review-next`](#review-next) (reads what this logs),
-  [`audio-series`](#audio-series) (what you just listened to).
+  `audio-series` (retired) (what you just listened to).
 - **Notes:** grading, the answer key, and every database write belong to the backing CLI —
   it never grades in its head or reveals answers early. Hints don't cost score.
 
@@ -687,7 +687,7 @@ session *in that repo*.
   - You want the output saved hub-native and, optionally, promoted into a tracked topic.
 - **Pairs well with:** [`course-builder`](#course-builder) (video notes as course input),
   [`catalog-doctor`](#catalog-doctor) (checks the catalog afterward),
-  [`nlm-skill`](#nlm-skill) (the gated NotebookLM bridge).
+  `nlm-skill` (retired) (the gated NotebookLM bridge).
 - **Notes:** it confirms the mode rather than auto-picking silently, never invents citations
   or facts absent from the transcript, and stays read-only toward NotebookLM sidecars.
 
@@ -701,7 +701,7 @@ session *in that repo*.
   - A topic disappeared from the hub and you need to know which layer lost it.
 - **Pairs well with:** [`api-types-sync`](#api-types-sync) (the other reconciliation),
   [`review-next`](#review-next) (both read the same stores),
-  [`video-series`](#video-series) / [`audio-series`](#audio-series) (what generated the
+  `video-series` (retired) / `audio-series` (retired) (what generated the
   artifacts it checks).
 - **Notes:** read-only in both directions — it never writes to sidecars or under the
   NotebookLM projects directory, and never runs a mutating `nlm` subcommand. It reports the
@@ -921,9 +921,9 @@ session *in that repo*.
   - A stage in the learning spine is done and the concepts are still fresh enough to be
     tested on.
   - You want the documentation *and* to find out what you can't actually explain yet.
-- **Pairs well with:** [`/wrap`](#wrap) (the project-agnostic version of the same instinct),
-  [`seed-hunt`](#seed-hunt) (what runs when the whole project closes),
-  [`research-paper`](#research-paper) (the end-of-project write-up).
+- **Pairs well with:** `/wrap` (retired) (the project-agnostic version of the same instinct),
+  `seed-hunt` (retired) (what runs when the whole project closes),
+  `research-paper` (retired) (the end-of-project write-up).
 - **Notes:** never describes code it hasn't read. Stages docs by name (never `git add -A`)
   and merges the docs PR on the remote.
 
