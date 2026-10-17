@@ -1024,6 +1024,97 @@ session *in that repo*.
   node's, since `audit` would read the `reads` as an artifact reading an artifact. Samples
   resolved entries only, because that's all the page gets.
 
+#### `tailor-resume` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — picking lines for a listing and tracing a letter's
+  claims is judgment, with Kyle's yes at two stops.
+- **Reach for it when:**
+  - "Tailor my résumé for <link>", "make my résumé for Acme", "cover letter for Acme".
+  - "Add my new job", "<project> shipped", "update my LinkedIn text".
+  - An employer asks for references, or Kyle says he sent an application.
+- **Pairs well with:** [`audit`](#audit-life-nodes) (after an `applied` or `taken-down`
+  entry), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to
+  Applications & Queue), [`sync`](#sync-life-nodes).
+- **Notes:** runs in a job-search session in the vault. Tailoring only picks master lines;
+  the files carrying the contact block stay in `~/Documents/Life Nodes Private/job-search/`.
+  The look lives in its renderer, approved by Kyle in Job Search Phase 3's look sitting.
+
+#### `fill-application` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high`, in a vault session started with `claude --chrome` —
+  mapping a form's fields to the cut and the answer library, drafting screening answers and
+  telling the sending button apart is judgment, with one ask of Kyle before it sends.
+- **Reach for it when:**
+  - "Fill this application", "fill in the Acme application", "next page".
+  - "Fix the autofill", "answer these screening questions".
+  - `tailor-resume`'s final yes, when Kyle takes its offer.
+- **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the cut it fills from,
+  and the default cut for an application with no folder), [`audit`](#audit-life-nodes)
+  (after the `applied` entry), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed
+  push to Applications & Queue).
+- **Notes:** without Chrome tools it tells Kyle to restart with `claude --chrome` and stops.
+  It presses every button that moves the application on itself, and the one that sends it
+  only on Kyle's yes to its one ask. It never signs in, never enters an SSN, date of birth,
+  government ID or bank details, and never guesses a fact his files don't hold. LinkedIn
+  Easy Apply is never filled; its answers are drafted in chat.
+
+#### `check-fit` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — weighing a listing against Kyle's criteria and the
+  master résumé is judgment, and its hard stops have to hold.
+- **Reach for it when:**
+  - "Is this a fit: <link>", "fit check this", "score this listing".
+- **Pairs well with:** [`hunt-listings`](#hunt-listings-life-nodes) (runs this check on
+  everything it finds), [`tailor-resume`](#tailor-resume-life-nodes) (the next step for an
+  apply), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to
+  Applications & Queue).
+- **Notes:** runs in a job-search session in the vault. Of the private folder it reads only
+  `fit-limits.md`, and says the pay floor and where Kyle lives only in chat; a verdict alone
+  writes nothing, and no queued entry carries pay.
+
+#### `hunt-listings` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — fit-checking a hunt's finds and choosing what fills
+  the queue is judgment; the LinkedIn sweep needs a session started with `claude --chrome`.
+- **Reach for it when:**
+  - "Find me listings", "sweep Rush's board", "sweep my LinkedIn feed".
+  - "Show my queue", "queue this: <link>", "pass on the Acme listing".
+- **Pairs well with:** [`check-fit`](#check-fit-life-nodes) (the verdict every find gets),
+  [`watch-employers`](#watch-employers-life-nodes) (the boards a hunt sweeps),
+  [`tailor-resume`](#tailor-resume-life-nodes) (the next step for a queued listing),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to Applications & Queue).
+- **Notes:** a hunt fills only the queue's empty slots, up to 20, and writes on Kyle's yes;
+  a `taken-down` entry is written without asking. The LinkedIn sweep reads only his jobs feed
+  and listing pages and presses nothing. No JSearch or Adzuna.
+
+#### `watch-employers` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — proposing which employers to watch, each with a reason,
+  is judgment; the edits themselves are scripted and wait on Kyle's yes.
+- **Reach for it when:**
+  - "Watch Rush's board", "stop watching Rush".
+  - "Refresh my watched employers", or when "show my queue" says a refresh is due.
+- **Pairs well with:** [`hunt-listings`](#hunt-listings-life-nodes) (sweeps every watched
+  board), [`audit`](#audit-life-nodes), [`sync`](#sync-life-nodes).
+- **Notes:** edits only `## Watched employers` in place, sets the note's `updated` and reads
+  it back; writes no entry and reads nothing private. The first pass picks from the spec's
+  candidate list, never Strata, Commure or Epic Systems.
+
+#### `prep-interview` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — the dossier's do-not-assert list, the deck's answers
+  and a drill's critique are judgment; runs without `--chrome` and installs nothing.
+- **Reach for it when:**
+  - "Prep me for Acme", "I have a screen with Acme Thursday".
+  - "Make the deck", "drill me", "mock me", "debrief Acme", "add a story".
+- **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the sent résumé the
+  dossier checks), [`fill-application`](#fill-application-life-nodes) (the `form.md` it reads),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to Applications & Queue).
+- **Notes:** each job runs only on request and writes on Kyle's yes. Dossiers, decks and
+  debriefs live in the application's private folder; its only vault writes are `applications`
+  entries and Interview Stories. A deck is checked for names and pay before every publish.
+  NotebookLM is retired from prep.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
