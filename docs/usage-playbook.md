@@ -1794,6 +1794,21 @@ session *in that repo*.
   it back; writes no entry and reads nothing private. The first pass picks from the spec's
   candidate list, never Strata, Commure or Epic Systems.
 
+#### `prep-interview` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — the dossier's do-not-assert list, the deck's answers
+  and a drill's critique are judgment; runs without `--chrome` and installs nothing.
+- **Reach for it when:**
+  - "Prep me for Acme", "I have a screen with Acme Thursday".
+  - "Make the deck", "drill me", "mock me", "debrief Acme", "add a story".
+- **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the sent résumé the
+  dossier checks), [`fill-application`](#fill-application-life-nodes) (the `form.md` it reads),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to Applications & Queue).
+- **Notes:** each job runs only on request and writes on Kyle's yes. Dossiers, decks and
+  debriefs live in the application's private folder; its only vault writes are `applications`
+  entries and Interview Stories. A deck is checked for names and pay before every publish.
+  NotebookLM is retired from prep.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
