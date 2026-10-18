@@ -187,14 +187,16 @@ all. **Run the checks; quote what came back.**
   workers reply to. If Kyle renames the session mid-arc, the addressable name may
   not change; the brief should say to re-check rather than assume.
 - **Worktrees.** One per worker, branched off the integration branch, e.g.
-  `git worktree add -b <branch> .claude/worktrees/<name> <base>`. Confirm
+  `git worktree add -b <branch> .claude/worktrees/<dir> <base>`, where `<dir>`
+  is a kebab-case slug with no spaces — never the worker's session name, which
+  has spaces and would split `/launch`'s path argument. Confirm
   `.claude/worktrees/` is ignored (`.gitignore` or `.git/info/exclude`) and say
   so; an unignored worktree shows up as untracked noise in every worker's
   `git status` and in the orchestrator's own untouched checks.
 - **Opening sessions — and the prompt, which is not an argument.** `/launch`
   takes **no prompt parameter**. It resolves the prompt as "the paste-able block
   this session most recently printed, with the fence markers stripped"
-  (`commands/launch.md:52`). So the brief must tell the orchestrator to **print
+  (`commands/launch.md`, "Resolve inputs" item 4). So the brief must tell the orchestrator to **print
   the worker's spec as a fenced block immediately before invoking `/launch`** —
   that block *is* the first prompt. Omit that and the best case is `/launch`'s
   stop rule halting for a turn; the worst is that the most recent block in a
@@ -206,9 +208,16 @@ all. **Run the checks; quote what came back.**
   line has to be `/<skill-name>`, with the spec on the lines after it. The two
   rules only compose that way — state them together, never three bullets apart.
   The invocation itself: `/launch <absolute-worktree-path> --model <id> --effort
-  <level> --name <worker-name> --send`. Every flag there is real, and `/launch`
+  <level> --name '<worker-name>' --send`. Every flag there is real, and `/launch`
   verifies a new PID plus working directory plus command line, so a session that
-  didn't start is reported, not assumed.
+  didn't start is reported, not assumed. The worker name follows `/launch`'s
+  session-name rule (`commands/launch.md`, "Resolve inputs" item 5), e.g.
+  `job-search p5t24 retire-job-scanner`. The name is also the worker's
+  `SendMessage` address (spaces in it are fine), so it must be unique: before
+  each launch, check `ListAgents`, and if the name is already taken — a second
+  worker on the same ticket, a re-dispatch, two unticketed workers on the same
+  task — append `-2`, `-3`, … to the task part (`job-search p5t24
+  retire-job-scanner-2`).
 - **Waiting.** `SendMessage` with `notify_when_idle: true`. Never poll.
 
 ### 3. Sections, in order, inside the code block
