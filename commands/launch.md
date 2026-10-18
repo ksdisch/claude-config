@@ -45,15 +45,35 @@ Six values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
 4. **Prompt** — the paste-able block this session most recently printed, with the
    fence markers stripped. Never include the "For Kyle" briefing or run-config
    note; those are notes to Kyle, not part of the prompt.
-5. **Session name** — a short descriptive title for the new session, so the resume
+5. **Session name** — a descriptive title for the new session, so the resume
    picker and session lists show what it's for instead of an auto-generated name.
-   Derive it from the task the prompt describes: kebab-case, 2–5 words, leading
-   with the project when the directory isn't obvious from the task
-   (`doghood-stripe-webhooks`, `wiki-backfill-all-projects`). This is never a stop
-   rule — a name is always derivable, worst case `<repo-basename>-handoff`. The
-   same string becomes the Warp tab title in step 5 — and, under `--remote`, the
-   Remote Control session title — so the paste target and every session list agree
-   on what to call this session.
+   It follows Kyle's convention: up to three parts, **separated by single spaces**,
+   `<project> [<code>] <task>` — e.g. `job-search p5t23 hunt-listings`.
+   - **project** — the effort, not the repo: the `<feature-slug>` of any
+     `.scratch/<feature-slug>/` path in the prompt or run-config note, with a
+     `-phase-<N>` suffix dropped (`job-search-phase-5` → `job-search`). No tracker
+     path → the effort the prompt names; failing that, the repo basename (the main
+     checkout's, not a worktree directory's).
+   - **code** — only when the work maps to tickets: `p<phase>t<ticket>`. The phase
+     comes from the slug's `-phase-<N>` or "Phase N" in the prompt; the ticket from
+     `issues/<NN>-…` filenames or "ticket NN" mentions, leading zeros dropped. A
+     contiguous range is `p5t24-27`, scattered tickets `p5t3,7`, an effort with no
+     phase `t14`. No ticket → omit the part entirely, never a placeholder.
+   - **task** — kebab-case, 1–4 words: the skill the prompt says to run, without
+     its slash (`hunt-listings`, `code-review`); otherwise a verb-object for what
+     the session does (`retire-job-scanner`) — never the ticket's full filename
+     slug.
+
+   For example: `job-search p5t24-27 retire-job-scanner`, `data-automation t14
+   chart-sleep`, `claude-config launch-session-naming`, `ff-2026-league-site
+   code-review`. Keep to lowercase letters, digits, hyphens and commas, with single
+   spaces between parts — that set stays safe unquoted in step 5's YAML, as
+   `--remote-control`'s positional, and in step 7's prefix check. This is never a
+   stop rule — a name is always derivable, worst case `<repo-basename> handoff`.
+   `--name` overrides the whole derived name verbatim. The same string becomes the
+   Warp tab title in step 5 — and, under `--remote`, the Remote Control session
+   title — so the paste target and every session list agree on what to call this
+   session.
 6. **Mode** — paste (default), auto-submit (`--send`), or Remote Control
    (`--remote`); the `--send`/`--remote` conflict resolves per the parse rules.
 

@@ -194,7 +194,7 @@ all. **Run the checks; quote what came back.**
 - **Opening sessions — and the prompt, which is not an argument.** `/launch`
   takes **no prompt parameter**. It resolves the prompt as "the paste-able block
   this session most recently printed, with the fence markers stripped"
-  (`commands/launch.md:52`). So the brief must tell the orchestrator to **print
+  (`commands/launch.md`, "Resolve inputs" item 4). So the brief must tell the orchestrator to **print
   the worker's spec as a fenced block immediately before invoking `/launch`** —
   that block *is* the first prompt. Omit that and the best case is `/launch`'s
   stop rule halting for a turn; the worst is that the most recent block in a
@@ -206,9 +206,13 @@ all. **Run the checks; quote what came back.**
   line has to be `/<skill-name>`, with the spec on the lines after it. The two
   rules only compose that way — state them together, never three bullets apart.
   The invocation itself: `/launch <absolute-worktree-path> --model <id> --effort
-  <level> --name <worker-name> --send`. Every flag there is real, and `/launch`
+  <level> --name '<worker-name>' --send`. Every flag there is real, and `/launch`
   verifies a new PID plus working directory plus command line, so a session that
-  didn't start is reported, not assumed.
+  didn't start is reported, not assumed. The worker name follows `/launch`'s
+  session-name rule (`commands/launch.md`, "Resolve inputs" item 5) — the
+  worker's ticket code keeps names distinct (`job-search p5t24 retire-job-scanner`);
+  a worker with no ticket takes `worker-<N>` as its task part. The name is also
+  the worker's `SendMessage` address, and spaces in it are fine.
 - **Waiting.** `SendMessage` with `notify_when_idle: true`. Never poll.
 
 ### 3. Sections, in order, inside the code block
