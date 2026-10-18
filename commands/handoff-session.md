@@ -187,7 +187,9 @@ all. **Run the checks; quote what came back.**
   workers reply to. If Kyle renames the session mid-arc, the addressable name may
   not change; the brief should say to re-check rather than assume.
 - **Worktrees.** One per worker, branched off the integration branch, e.g.
-  `git worktree add -b <branch> .claude/worktrees/<name> <base>`. Confirm
+  `git worktree add -b <branch> .claude/worktrees/<dir> <base>`, where `<dir>`
+  is a kebab-case slug with no spaces — never the worker's session name, which
+  has spaces and would split `/launch`'s path argument. Confirm
   `.claude/worktrees/` is ignored (`.gitignore` or `.git/info/exclude`) and say
   so; an unignored worktree shows up as untracked noise in every worker's
   `git status` and in the orchestrator's own untouched checks.
@@ -209,10 +211,13 @@ all. **Run the checks; quote what came back.**
   <level> --name '<worker-name>' --send`. Every flag there is real, and `/launch`
   verifies a new PID plus working directory plus command line, so a session that
   didn't start is reported, not assumed. The worker name follows `/launch`'s
-  session-name rule (`commands/launch.md`, "Resolve inputs" item 5) — the
-  worker's ticket code keeps names distinct (`job-search p5t24 retire-job-scanner`);
-  a worker with no ticket takes `worker-<N>` as its task part. The name is also
-  the worker's `SendMessage` address, and spaces in it are fine.
+  session-name rule (`commands/launch.md`, "Resolve inputs" item 5), e.g.
+  `job-search p5t24 retire-job-scanner`. The name is also the worker's
+  `SendMessage` address (spaces in it are fine), so it must be unique: before
+  each launch, check `ListAgents`, and if the name is already taken — a second
+  worker on the same ticket, a re-dispatch, two unticketed workers on the same
+  task — append `-2`, `-3`, … to the task part (`job-search p5t24
+  retire-job-scanner-2`).
 - **Waiting.** `SendMessage` with `notify_when_idle: true`. Never poll.
 
 ### 3. Sections, in order, inside the code block

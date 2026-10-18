@@ -18,7 +18,10 @@ don't continue the current session's task.
 - *(none)* → infer everything from this conversation (see Resolve inputs).
 - A path → the target directory, overriding what was inferred.
 - `--model <id>` / `--effort <level>` → override the inferred run config.
-- `--name <session-name>` → override the derived session name.
+- `--name <session-name>` → override the derived session name. Session names
+  contain spaces, so a multi-word name arrives quoted (`--name 'job-search p5t24
+  retire-job-scanner'`); the value is everything inside the quotes, with the
+  quotes themselves stripped.
 - `--remote` → start the session in Remote Control mode, so the session (under its
   descriptive name) also appears in the claude.ai and mobile-app session lists and
   can be steered from the phone. Without it, the name shows only in
@@ -49,23 +52,27 @@ Six values are needed. Take each from `$ARGUMENTS` when given, otherwise infer:
    picker and session lists show what it's for instead of an auto-generated name.
    It follows Kyle's convention: up to three parts, **separated by single spaces**,
    `<project> [<code>] <task>` — e.g. `job-search p5t23 hunt-listings`.
-   - **project** — the effort, not the repo: the `<feature-slug>` of any
-     `.scratch/<feature-slug>/` path in the prompt or run-config note, with a
-     `-phase-<N>` suffix dropped (`job-search-phase-5` → `job-search`). No tracker
-     path → the effort the prompt names; failing that, the repo basename (the main
-     checkout's, not a worktree directory's).
-   - **code** — only when the work maps to tickets: `p<phase>t<ticket>`. The phase
-     comes from the slug's `-phase-<N>` or "Phase N" in the prompt; the ticket from
-     `issues/<NN>-…` filenames or "ticket NN" mentions, leading zeros dropped. A
-     contiguous range is `p5t24-27`, scattered tickets `p5t3,7`, an effort with no
-     phase `t14`. No ticket → omit the part entirely, never a placeholder.
+   Every part describes the work **this session is assigned**. Prompts also cite
+   blockers, closed tickets, `tickets.md` rows and other efforts for context;
+   none of those feed the name.
+   - **project** — the effort, not the repo: the `<feature-slug>` of the
+     `.scratch/<feature-slug>/` the assigned work lives in, with a `-phase-<N>`
+     suffix dropped (`job-search-phase-5` → `job-search`). No tracker path → the
+     effort the prompt names, kebab-cased (`Life Nodes` → `life-nodes`); failing
+     that, the repo basename (the main checkout's, not a worktree directory's).
+   - **code** — only when the assigned work maps to tickets: `p<phase>t<ticket>`.
+     The phase comes from that slug's `-phase-<N>`, else the "Phase N" the
+     assigned work is in; the ticket from the assigned `issues/<NN>-…` file or
+     "ticket NN", leading zeros dropped. A contiguous range is `p5t24-27`,
+     scattered tickets `p5t3,7`, an effort with no phase `t14`. No ticket → omit
+     the part entirely, never a placeholder.
    - **task** — kebab-case, 1–4 words: the skill the prompt says to run, without
      its slash (`hunt-listings`, `code-review`); otherwise a verb-object for what
      the session does (`retire-job-scanner`) — never the ticket's full filename
      slug.
 
    For example: `job-search p5t24-27 retire-job-scanner`, `data-automation t14
-   chart-sleep`, `claude-config launch-session-naming`, `ff-2026-league-site
+   chart-sleep`, `claude-config name-launch-sessions`, `ff-2026-league-site
    code-review`. Keep to lowercase letters, digits, hyphens and commas, with single
    spaces between parts — that set stays safe unquoted in step 5's YAML, as
    `--remote-control`'s positional, and in step 7's prefix check. This is never a
