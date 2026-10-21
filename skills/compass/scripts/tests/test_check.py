@@ -103,6 +103,38 @@ class FrontmatterTests(CheckCase):
         rc, report = self.check(VALID.replace("workspace:\n", ""))
         self.assertEqual(rc, 0, report)
 
+    def test_a_topic_seeded_from_a_teach_workspace_passes(self):
+        # What `--from ~/Learning/rust/MISSION.md` writes once Kyle accepts the proposal: the
+        # workspace link, the accepted why, open starter questions, a one-line log entry.
+        seeded = """\
+---
+topic: Rust lifetimes
+why: Read borrow-checker errors in work PRs without guessing.
+status: open
+workspace: ~/Learning/rust lifetimes
+created: 2026-10-20
+updated: 2026-10-20
+---
+
+# Rust lifetimes
+
+## Questions
+
+### Q1: What does a lifetime annotation constrain?
+- status: open
+- last recalled:
+
+### Q2: When does the compiler need one written out?
+- status: open
+- last recalled:
+
+## Session log
+- 2026-10-20 — Started from ~/Learning/rust lifetimes/MISSION.md; logged Q1, Q2.
+"""
+        rc, report = self.check(seeded)
+        self.assertEqual(rc, 0, report)
+        self.assertEqual(report, {"valid": True, "violations": []})
+
     def test_an_empty_why_counts_as_missing(self):
         self.assertViolation(VALID.replace("why: I review", "why:\nx: I review"),
                              "frontmatter-field")
