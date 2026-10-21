@@ -13,9 +13,9 @@ the topic never starts from zero.
 - File format (the contract): `references/file-format.md`. Read it before the first write of a
   session.
 - Helper: `python3 ~/.claude/skills/compass/scripts/compass.py check <file>` — read-only, JSON out,
-  exit 0 only when the file is valid. The helper never writes; you do all writing. Its `match` and
-  `list` subcommands read the folder (see *Resolve the topic* and *List topics*); `recall` picks
-  the warm-up questions (see *Recall warm-up*).
+  exit 0 only when the file is valid; you do all writing. Its `match` and `list` subcommands
+  read the folder (see *Resolve the topic* and *List topics*); `recall` picks the warm-up
+  questions (see *Recall warm-up*).
 
 ## Prime directives
 
@@ -61,7 +61,7 @@ A bare `/compass` with no topic is *List topics*.
 1. Read the topic file. Open with one orienting glance: the topic, its why, the counts per
    status (`3 open · 4 answered · 1 parked · 0 prereq`), and the next open question by *Ordering*
    — its number and text. Then run *Recall warm-up* before any new question. After it, if
-   nothing is open or prereq, say so and ask what confuses him now.
+   nothing is open or prereq, offer both doors as in *Close a topic* step 1.
 2. Continue the loop from that question (*Answer*), or take new confusion through *Form
    questions*.
 3. This is a new session: its first write appends a new dated entry to the session log, even
@@ -268,8 +268,7 @@ authors; your why is reading errors."
 
 ## Ordering
 
-When choosing the next question, consider only `prereq` and `open` questions; answered and
-parked questions are never offered.
+When choosing the next question, consider only `prereq` and `open` questions.
 
 1. **Prereq first.** Any `prereq` question comes before every open one — the one blocking the
    question Kyle was on, else the lowest-numbered.
