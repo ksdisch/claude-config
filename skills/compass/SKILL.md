@@ -1,6 +1,6 @@
 ---
 name: compass
-description: Run the confusion-compass learning loop on any topic, concept or tool, with one durable markdown file per topic in ~/Learning/compass/. `/compass <topic>` starts a topic by capturing why Kyle is learning it, turns his loose confusion into numbered questions he confirms, and answers the next open question tight and with cited sources (web search, local files, the repo at hand). The topic file is rewritten and validated by `scripts/compass.py check` after every change. Use when Kyle types /compass, or says "compass this", "start a compass topic", "I'm confused about X, help me learn it", "turn my confusion into questions" — even without naming the skill. NOT for building a teach workspace (teach-research), breaking down a video (youtube-breakdown), or a reference page of what a session covered (session-reference).
+description: Run the confusion-compass learning loop on any topic, concept or tool, with one durable markdown file per topic in ~/Learning/compass/. `/compass <topic>` resumes the topic it fuzzy-matches (asking when several match, offering a new topic when none do) or starts one by capturing why Kyle is learning it, turns his loose confusion into numbered questions he confirms, and answers the next open question tight and with cited sources (web search, local files, the repo at hand). A bare `/compass` lists every topic with its counts, status and last-touched date. The topic file is rewritten and validated by `scripts/compass.py check` after every change. Use when Kyle types /compass, or says "compass this", "start a compass topic", "I'm confused about X, help me learn it", "turn my confusion into questions" — even without naming the skill. NOT for building a teach workspace (teach-research), breaking down a video (youtube-breakdown), or a reference page of what a session covered (session-reference).
 ---
 
 # Compass
@@ -13,7 +13,8 @@ the topic never starts from zero.
 - File format (the contract): `references/file-format.md`. Read it before the first write of a
   session.
 - Helper: `python3 ~/.claude/skills/compass/scripts/compass.py check <file>` — read-only, JSON out,
-  exit 0 only when the file is valid. The helper never writes; you do all writing.
+  exit 0 only when the file is valid. The helper never writes; you do all writing. Its `match` and
+  `list` subcommands read the folder (see *Resolve the topic* and *List topics*).
 
 ## Prime directives
 
@@ -32,12 +33,45 @@ the topic never starts from zero.
 
 `/compass <topic>`:
 
-1. Derive the slug: lowercase; letters and digits kept; every run of anything else becomes one
-   `-`; no leading or trailing `-`; cut to about 60 characters at a hyphen. `Rust lifetimes &
-   borrows` → `rust-lifetimes-borrows`.
-2. Create `~/Learning/compass/` if it doesn't exist.
-3. If `<slug>.md` exists, read it and continue the loop from its next open question (see
-   *Ordering*). Otherwise start a new topic.
+1. Run `python3 ~/.claude/skills/compass/scripts/compass.py match "<topic>"`. It matches the
+   query case-insensitively against every topic's slug and display name and prints
+   `{"result": "single" | "several" | "none", "matches": [{"slug", "topic", "status"}]}`.
+2. Act on `result`:
+   - **`single`** → *Resume* `~/Learning/compass/<slug>.md`.
+   - **`several`** → show the candidates (display name and slug) and ask which one Kyle meant.
+     Resume the one he picks; never guess.
+   - **`none`** → say nothing matched and offer to start "<topic>" as a new topic. Create
+     nothing until he says yes; if he says no or corrects a typo, run `match` again on what he
+     gives you.
+3. Starting a new topic: create `~/Learning/compass/` if it doesn't exist, and derive the slug:
+   lowercase; letters and digits kept; every run of anything else becomes one `-`; no leading or
+   trailing `-`; cut to about 60 characters at a hyphen. `Rust lifetimes & borrows` →
+   `rust-lifetimes-borrows`. Then *Start a new topic*.
+
+A bare `/compass` with no topic is *List topics*.
+
+## Resume
+
+1. Read the topic file. Open with one orienting glance: the topic, its why, the counts per
+   status (`3 open · 4 answered · 1 parked · 0 prereq`), and the next open question by *Ordering*
+   — its number and text. If nothing is open or prereq, say so and ask what confuses him now.
+2. Continue the loop from that question (*Answer*), or take new confusion through *Form
+   questions*.
+3. This is a new session: its first write appends a new dated entry to the session log, even
+   when an entry for today already exists from an earlier session (see *Session log*).
+
+## List topics
+
+Bare `/compass`: run `python3 ~/.claude/skills/compass/scripts/compass.py list` and print one row
+per topic from its `topics` records, in the order given:
+
+| Topic | Why | Open | Answered | Parked | Prereq | Status | Last touched |
+|---|---|---|---|---|---|---|---|
+
+Topic is the display name with the slug after it in backticks; Why is the record's shortened
+`why` as given; Last touched is `last_touched`. With no topics, say there are none yet and that
+`/compass <topic>` starts one. Then ask which topic to pick up; his answer goes through *Resolve
+the topic*.
 
 ## Start a new topic
 

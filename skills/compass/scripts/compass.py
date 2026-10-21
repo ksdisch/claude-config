@@ -6,6 +6,14 @@ or read error):
 
   check <file>   Validate one topic file against references/file-format.md and report every
                  violation as {"valid": bool, "violations": [{"rule", "line", "message"}]}.
+  list           One record per topic in the compass folder: {"topics": [{"slug", "topic",
+                 "why" (shortened), "counts": {status: n}, "status", "last_touched"}]}, open
+                 topics first, then closed, each newest-touched first.
+  match <query>  Resolve a query against slugs and display names, case-insensitively:
+                 {"result": "single" | "several" | "none", "matches": [{"slug", "topic",
+                 "status"}]}.
+
+`list` and `match` read `--dir` (default ~/Learning/compass); a missing folder holds no topics.
 
 The file format is the contract; references/file-format.md is its prose definition and this
 parser is its executable one. Keep the two in step.
@@ -17,6 +25,9 @@ import sys
 from pathlib import Path
 
 EXIT_OK, EXIT_INVALID, EXIT_ERROR = 0, 1, 2
+
+DEFAULT_DIR = "~/Learning/compass"
+WHY_LIMIT = 60
 
 FRONTMATTER_REQUIRED = ("topic", "why", "status", "created", "updated")
 FRONTMATTER_OPTIONAL = ("workspace",)
@@ -284,12 +295,97 @@ def cmd_check(args) -> int:
     return EXIT_OK if valid else EXIT_INVALID
 
 
+def read_topic(path: Path) -> dict:
+    """Summarize one topic file leniently: list and match must work on a file check rejects."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    scratch = Report()
+    fields, _, body_start = parse_frontmatter(lines, scratch)
+    counts = dict.fromkeys(QUESTION_STATUSES, 0)
+    for section in parse_body(lines, body_start):
+        if section["name"] == "Questions":
+            for q in parse_questions(section["lines"], scratch):
+                status = q["fields"].get("status")
+                if status in counts:
+                    counts[status] += 1
+    return {"slug": path.stem, "topic": fields.get("topic") or path.stem,
+            "why": shorten(fields.get("why", "")), "counts": counts,
+            "status": fields.get("status", ""), "last_touched": fields.get("updated", "")}
+
+
+def shorten(text: str, limit: int = WHY_LIMIT) -> str:
+    """Cut at the last word boundary within the limit and mark the cut with an ellipsis."""
+    if len(text) <= limit:
+        return text
+    cut = text[:limit + 1].rpartition(" ")[0] or text[:limit]
+    return cut.rstrip(" ,;:.-—") + "…"
+
+
+def read_topics(folder) -> list:
+    root = Path(folder).expanduser()
+    if not root.is_dir():
+        return []
+    topics = [read_topic(p) for p in sorted(root.glob("*.md")) if p.is_file()]
+    topics.sort(key=lambda t: t["slug"])
+    topics.sort(key=lambda t: t["last_touched"], reverse=True)
+    topics.sort(key=lambda t: t["status"] == "closed")
+    return topics
+
+
+def cmd_list(args) -> int:
+    try:
+        topics = read_topics(args.dir)
+    except OSError as exc:
+        print(json.dumps({"error": f"cannot read {exc.filename}: {exc.strerror}"}))
+        return EXIT_ERROR
+    print(json.dumps({"topics": topics}, indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+def words(text: str) -> list:
+    return [w for w in re.split(r"[^0-9a-z]+", text.casefold()) if w]
+
+
+def match_topics(query: str, topics: list) -> dict:
+    """An exact slug or display name wins outright; otherwise every query word must appear
+    somewhere in the slug or the display name."""
+    wanted = words(query)
+    slug_form, name_form = "-".join(wanted), query.strip().casefold()
+    exact = [t for t in topics if t["slug"] == slug_form or t["topic"].casefold() == name_form]
+    hits = exact if len(exact) == 1 else [
+        t for t in topics
+        if all(w in f"{t['slug']} {t['topic'].casefold()}" for w in wanted)]
+    result = "none" if not hits else "single" if len(hits) == 1 else "several"
+    return {"result": result,
+            "matches": [{"slug": t["slug"], "topic": t["topic"], "status": t["status"]}
+                        for t in hits]}
+
+
+def cmd_match(args) -> int:
+    if not words(args.query):
+        print(json.dumps({"error": "match needs a query with at least one letter or digit"}))
+        return EXIT_ERROR
+    try:
+        topics = read_topics(args.dir)
+    except OSError as exc:
+        print(json.dumps({"error": f"cannot read {exc.filename}: {exc.strerror}"}))
+        return EXIT_ERROR
+    print(json.dumps(match_topics(args.query, topics), indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="compass.py", description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
     p_check = sub.add_parser("check", help="validate one topic file")
     p_check.add_argument("file")
     p_check.set_defaults(func=cmd_check)
+    p_list = sub.add_parser("list", help="one record per topic in the compass folder")
+    p_list.add_argument("--dir", default=DEFAULT_DIR)
+    p_list.set_defaults(func=cmd_list)
+    p_match = sub.add_parser("match", help="resolve a query to a topic")
+    p_match.add_argument("query")
+    p_match.add_argument("--dir", default=DEFAULT_DIR)
+    p_match.set_defaults(func=cmd_match)
     args = parser.parse_args(argv)
     return args.func(args)
 

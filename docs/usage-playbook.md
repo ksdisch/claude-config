@@ -348,13 +348,16 @@ rows get re-pointed to match.
     next time.
   - Something confuses you and you can't yet say what; the skill turns the loose feeling
     into specific questions you confirm before they're logged.
+  - You're coming back to a topic: `/compass <partial name>` resumes it with its counts and
+    next open question, and a bare `/compass` lists every topic to pick from.
 - **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (a breakdown often leaves the
   confusion compass picks up), [`teach-research`](#teach-research) / `teach` (the heavier
   path when a topic deserves a whole workspace).
 - **Notes:** one flat folder, `~/Learning/compass/`, one `<slug>.md` per topic; the format is
   pinned in `skills/compass/references/file-format.md` and enforced by
   `scripts/compass.py check`, which the skill runs after every write and must pass before the
-  loop continues. The helper is read-only — the skill does all writing — and compass never
+  loop continues. `compass.py match` resolves a partial name and `compass.py list` builds the
+  listing. The helper is read-only — the skill does all writing — and compass never
   writes into a teach workspace or a file it was seeded from.
 
 ## Project-Specific Items
