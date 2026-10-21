@@ -337,6 +337,26 @@ rows get re-pointed to match.
   `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
   the teach skill itself is never edited.
 
+#### `compass`
+
+- **Run config:** Opus 5.5 · `high` — the loop's value is answer quality: grounded, cited,
+  aimed at one question, which is synthesis with judgment in it rather than grinding.
+  `claude --model claude-opus-5-5 --effort high`
+- **Reach for it when:**
+  - You're learning a library, concept or mechanism and the questions keep evaporating
+    between sessions — you want them written down, answered with sources, and still there
+    next time.
+  - Something confuses you and you can't yet say what; the skill turns the loose feeling
+    into specific questions you confirm before they're logged.
+- **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (a breakdown often leaves the
+  confusion compass picks up), [`teach-research`](#teach-research) / `teach` (the heavier
+  path when a topic deserves a whole workspace).
+- **Notes:** one flat folder, `~/Learning/compass/`, one `<slug>.md` per topic; the format is
+  pinned in `skills/compass/references/file-format.md` and enforced by
+  `scripts/compass.py check`, which the skill runs after every write and must pass before the
+  loop continues. The helper is read-only — the skill does all writing — and compass never
+  writes into a teach workspace or a file it was seeded from.
+
 ## Project-Specific Items
 
 Cards for items that only exist inside their project. Run configs assume you're launching a
