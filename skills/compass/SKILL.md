@@ -48,6 +48,33 @@ the topic never starts from zero.
    and a `## Session log` with today's entry (`- YYYY-MM-DD — Started.`). Run `check`.
 3. Ask what confuses him.
 
+## Seed from a file (`--from`)
+
+`/compass <topic> --from <path>` starts a topic from context Kyle already wrote down: a teach
+workspace's `MISSION.md`, a youtube-breakdown note, any notes file. The seed file is read-only.
+
+1. **Only when starting.** If the topic resolves to an existing file, refuse with one line and
+   carry on as a normal resume: "`--from` only seeds a new topic; <topic> already exists, so I'm
+   resuming it." Never fold the seed into an existing topic.
+2. **Read the seed.** If the path can't be read, say so and fall back to *Start a new topic*.
+3. **Find the workspace.** The seed belongs to a teach workspace when its own folder, or a parent
+   folder up to and including `~/Learning`, holds a `MISSION.md` (`research/` digests sit one
+   level below it). That folder is the workspace; record its path, with `~` for the home folder.
+   Otherwise `workspace:` stays empty.
+4. **Propose, don't decide.** From the seed, draft a one-line why in Kyle's terms and three to
+   five starter questions (one idea each, numbered `Q1`… as they'd be logged). Show both, along
+   with the workspace link if there is one, and ask him to accept or edit. Nothing is written
+   until he answers. If he rejects the drafted why, ask the why as in *Start a new topic*.
+5. **Write.** Once he's settled, write the file as in *Start a new topic* step 2, with the
+   accepted why, `workspace:` set as found, the accepted questions logged `status: open` with an
+   empty `last recalled:`, and a session-log entry `- YYYY-MM-DD — Started from <seed path>;
+   logged Q1–Qn.` Then run `check`.
+6. **Continue** with *Answer* on the first open question, or take new confusion through *Form
+   questions*.
+
+Never write into the seed file, the workspace, or anything inside it (prime directive 5). The
+topic file links to the workspace; the workspace never learns about the topic.
+
 ## Form questions
 
 1. Kyle describes his confusion loosely. Convert it into specific, answerable questions — one
