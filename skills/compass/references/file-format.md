@@ -1,6 +1,6 @@
 # Compass topic file format
 
-One markdown file per topic, in the flat folder `~/Learning/compass/`, named `<slug>.md`. The file
+One markdown file per topic, in the flat folder `~/Learning/compass/`, named `<slug>.md` (a slug already taken gets the first free `-2`, `-3`, … suffix). The file
 is the source of truth. `scripts/compass.py check <file>` is the executable version of this page;
 when the two disagree, fix whichever is wrong in the same change.
 
@@ -124,21 +124,21 @@ for a missing section. Exit 0 when valid, 1 when not, 2 when the file can't be r
 |---|---|
 | `frontmatter-missing` | No opening `---`, or it's never closed |
 | `frontmatter-syntax` | A frontmatter line isn't `key: value` |
-| `frontmatter-field` | A required key is missing or empty |
-| `frontmatter-date` | `created`/`updated` isn't `YYYY-MM-DD` |
+| `frontmatter-field` | A required key is missing or empty, or a key is unknown or repeated |
+| `frontmatter-date` | `created`/`updated` isn't a real `YYYY-MM-DD` date |
 | `topic-status` | `status` isn't `open` or `closed` |
 | `section-unknown` / `section-duplicate` / `section-order` / `section-missing` | Section shape |
 | `closed-needs-close-out` | Closed topic without a non-empty Close-out |
 | `close-out-on-open` | Close-out present on an open topic |
 | `session-log-entry` | A log line that isn't `- YYYY-MM-DD …` or an indented continuation |
-| `question-heading` | A `###` under Questions that isn't `Q<number>: <text>` |
+| `question-heading` | A `###` under Questions that isn't `Q<number>: <text>`, or has empty text |
 | `tree-number` | A malformed tree number (`Q0`, `Q1.0`, `Q01`, `Q1..2`) |
 | `tree-duplicate` | Two questions share a number |
 | `tree-orphan` | A child whose parent number doesn't exist |
-| `question-field` | Unknown, repeated, or stray line among a question's fields |
-| `question-subsection` | A `####` other than Answer or Sources |
+| `question-field` | Unknown, repeated, missing `last recalled`, misplaced (`answered by` off an answered question, `park reason` off a parked one), or stray line under Questions |
+| `question-subsection` | A `####` other than Answer or Sources, a repeated one, or one on a question that isn't answered |
 | `question-status` | Missing status, or not one of the four |
-| `last-recalled-date` | Non-empty `last recalled` that isn't `YYYY-MM-DD` |
+| `last-recalled-date` | Non-empty `last recalled` that isn't a real `YYYY-MM-DD` date |
 | `answered-by` | Answered question without `answered by: claude` or `kyle` |
 | `answered-needs-answer` | Answered question without a non-empty Answer |
 | `answered-needs-sources` | Answered question without a non-empty Sources list |

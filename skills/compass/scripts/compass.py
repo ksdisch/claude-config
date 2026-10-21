@@ -27,6 +27,7 @@ The file format is the contract; references/file-format.md is its prose definiti
 parser is its executable one. Keep the two in step.
 """
 import argparse
+import datetime
 import json
 import re
 import sys
@@ -49,7 +50,7 @@ SECTION_ORDER = ("Overview", "Questions", "Close-out", "Session log")
 REQUIRED_SECTIONS = ("Questions", "Session log")
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-FENCE = re.compile(r"^\s*(```|~~~)")
+FENCE = re.compile(r"^\s*(`{3,}|~{3,})(.*)$")
 H2 = re.compile(r"^##\s+(.*?)\s*$")
 H3 = re.compile(r"^###\s+(.*?)\s*$")
 H4 = re.compile(r"^####\s+(.*?)\s*$")
@@ -57,6 +58,17 @@ QUESTION_HEADING = re.compile(r"^Q([0-9.]+)\s*:\s*(.*)$")
 TREE_NUMBER = re.compile(r"^[1-9][0-9]*(\.[1-9][0-9]*)*$")
 FIELD = re.compile(r"^-\s+([A-Za-z][A-Za-z ]*?)\s*:\s*(.*?)\s*$")
 LOG_ENTRY = re.compile(r"^-\s+(\d{4}-\d{2}-\d{2})\b")
+
+
+def is_date(text: str) -> bool:
+    """YYYY-MM-DD and a real calendar date."""
+    if not DATE.match(text):
+        return False
+    try:
+        datetime.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
 
 
 class Report:
@@ -69,13 +81,19 @@ class Report:
 
 def strip_fences(lines):
     """Yield (lineno, text, in_fence) so headings inside code blocks are never structure."""
-    in_fence = False
+    opener = None
     for i, text in enumerate(lines, start=1):
-        if FENCE.match(text):
+        m = FENCE.match(text)
+        if m and opener is None:
+            opener = m.group(1)
             yield i, text, True
-            in_fence = not in_fence
             continue
-        yield i, text, in_fence
+        if (m and opener and m.group(1)[0] == opener[0] and len(m.group(1)) >= len(opener)
+                and not m.group(2).strip()):
+            opener = None
+            yield i, text, True
+            continue
+        yield i, text, opener is not None
 
 
 def parse_frontmatter(lines, report):
@@ -95,6 +113,11 @@ def parse_frontmatter(lines, report):
         if not sep:
             report.add("frontmatter-syntax", idx + 1, f"frontmatter line is not 'key: value': {text!r}")
             continue
+        if key in fields:
+            report.add("frontmatter-field", idx + 1, f"frontmatter key '{key}' appears twice")
+        elif key not in FRONTMATTER_REQUIRED + FRONTMATTER_OPTIONAL:
+            report.add("frontmatter-field", idx + 1, f"unknown frontmatter key '{key}' (known: "
+                       f"{', '.join(FRONTMATTER_REQUIRED + FRONTMATTER_OPTIONAL)})")
         fields[key] = value.strip()
         where[key] = idx + 1
     report.add("frontmatter-missing", 1, "frontmatter block is never closed with '---'")
@@ -134,10 +157,18 @@ def parse_questions(section_lines, report):
             questions.append(q)
             continue
         if q is None:
+            if text.strip():
+                report.add("question-field", lineno,
+                           f"stray line outside any '### Q<number>: <text>' question: {text!r}")
             continue
         h4 = None if in_fence else H4.match(text)
         if h4:
             sub = h4.group(1)
+            if sub in q["subsections"]:
+                report.add("question-subsection", lineno,
+                           f"Q{q['number']}: subsection '#### {sub}' appears twice")
+                q["subsections"][sub]["lines"].extend(["", text])
+                continue
             q["subsections"][sub] = {"line": lineno, "lines": []}
             continue
         if sub is not None:
@@ -158,6 +189,10 @@ def parse_questions(section_lines, report):
 
 def check_question(q, report):
     label, fields = f"Q{q['number']}", q["fields"]
+    if not q["text"]:
+        report.add("question-heading", q["line"], f"{label}: question text is empty")
+    if "last recalled" not in fields:
+        report.add("question-field", q["line"], f"{label}: missing '- last recalled:' field")
     for key in fields:
         if key not in QUESTION_FIELDS:
             report.add("question-field", q["field_lines"][key],
@@ -174,7 +209,7 @@ def check_question(q, report):
         report.add("question-status", q["field_lines"]["status"],
                    f"{label}: status {status!r} is not one of {', '.join(QUESTION_STATUSES)}")
     recalled = fields.get("last recalled")
-    if recalled and not DATE.match(recalled):
+    if recalled and not is_date(recalled):
         report.add("last-recalled-date", q["field_lines"]["last recalled"],
                    f"{label}: 'last recalled' must be empty or YYYY-MM-DD, got {recalled!r}")
     if status == "answered":
@@ -192,6 +227,17 @@ def check_question(q, report):
         if not items:
             report.add("answered-needs-sources", q["line"],
                        f"{label}: answered questions need a '#### Sources' list with at least one item")
+    if status != "answered":
+        if "answered by" in fields:
+            report.add("question-field", q["field_lines"]["answered by"],
+                       f"{label}: '- answered by:' is only for answered questions")
+        for name, sub in q["subsections"].items():
+            if name in QUESTION_SUBSECTIONS:
+                report.add("question-subsection", sub["line"],
+                           f"{label}: '#### {name}' is only for answered questions")
+    if status != "parked" and "park reason" in fields:
+        report.add("question-field", q["field_lines"]["park reason"],
+                   f"{label}: '- park reason:' is only for parked questions")
     if status == "parked" and not fields.get("park reason"):
         report.add("parked-needs-reason", q["line"],
                    f"{label}: parked questions need a non-empty '- park reason:'")
@@ -208,7 +254,7 @@ def check_frontmatter(fields, field_lines, report):
                    f"topic status {status!r} is not one of {', '.join(TOPIC_STATUSES)}")
     for key in ("created", "updated"):
         value = fields.get(key)
-        if value and not DATE.match(value):
+        if value and not is_date(value):
             report.add("frontmatter-date", field_lines[key],
                        f"frontmatter '{key}' must be YYYY-MM-DD, got {value!r}")
 
@@ -269,7 +315,8 @@ def check_sections(sections, topic_status, report):
     if log is not None:
         for lineno, text, _ in log["lines"]:
             continuation = text[:1] in (" ", "\t")
-            if text.strip() and not continuation and not LOG_ENTRY.match(text):
+            entry = LOG_ENTRY.match(text)
+            if text.strip() and not continuation and not (entry and is_date(entry.group(1))):
                 report.add("session-log-entry", lineno,
                            f"session log lines must read '- YYYY-MM-DD — <what moved>': {text!r}")
     return by_name
@@ -298,7 +345,7 @@ class ReadError(Exception):
 def read_text(path: Path) -> str:
     """The one place a topic file is read, so every subcommand fails the same way."""
     try:
-        return path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8-sig")
     except OSError as exc:
         raise ReadError(f"cannot read {path}: {exc.strerror}") from exc
     except UnicodeDecodeError as exc:
@@ -359,7 +406,7 @@ def read_topics(folder):
         return [], []
     topics, skipped = [], []
     for p in sorted(root.glob("*.md")):
-        if not p.is_file():
+        if p.name.startswith(".") or not p.is_file():
             continue
         try:
             topics.append(read_topic(p))
@@ -381,8 +428,23 @@ def cmd_list(args) -> int:
     return EXIT_OK
 
 
+WORD_SYMBOLS = "#+"
+
+
 def words(text: str) -> list:
-    return [w for w in re.split(r"[^0-9a-z]+", text.casefold()) if w]
+    """Runs of Unicode letters and digits, casefolded. '#' and '+' stay part of a word so
+    'C#' and 'C++' remain distinct from each other and from 'C'."""
+    out, cur = [], ""
+    for ch in text.casefold():
+        if ch.isalnum() or (ch in WORD_SYMBOLS and cur):
+            cur += ch
+        else:
+            if cur:
+                out.append(cur)
+            cur = ""
+    if cur:
+        out.append(cur)
+    return out
 
 
 def match_topics(query: str, topics: list) -> dict:
@@ -405,7 +467,7 @@ def match_topics(query: str, topics: list) -> dict:
 
 
 def cmd_match(args) -> int:
-    if not words(args.query):
+    if not any(ch.isalnum() for ch in args.query):
         print(json.dumps({"error": "match needs a query with at least one letter or digit"}))
         return EXIT_ERROR
     try:

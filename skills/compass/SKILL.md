@@ -52,7 +52,8 @@ the topic never starts from zero.
 3. Starting a new topic: create `~/Learning/compass/` if it doesn't exist, and derive the slug:
    lowercase; letters and digits kept; every run of anything else becomes one `-`; no leading or
    trailing `-`; cut to about 60 characters at a hyphen. `Rust lifetimes & borrows` →
-   `rust-lifetimes-borrows`. Then *Start a new topic*.
+   `rust-lifetimes-borrows`. If `<slug>.md` already exists, add the first free numeric suffix
+   (`-2`, `-3`, …); never overwrite an existing file. Then *Start a new topic*.
 
 A bare `/compass` with no topic is *List topics*.
 
