@@ -82,6 +82,33 @@ the topic*.
    and a `## Session log` with today's entry (`- YYYY-MM-DD — Started.`). Run `check`.
 3. Ask what confuses him.
 
+## Seed from a file (`--from`)
+
+`/compass <topic> --from <path>` starts a topic from context Kyle already wrote down: a teach
+workspace's `MISSION.md`, a youtube-breakdown note, any notes file. The seed file is read-only.
+
+1. **Only when starting.** If the topic resolves to an existing file, refuse with one line and
+   carry on as a normal resume: "`--from` only seeds a new topic; <topic> already exists, so I'm
+   resuming it." Never fold the seed into an existing topic.
+2. **Read the seed.** If the path can't be read, say so and fall back to *Start a new topic*.
+3. **Find the workspace.** The seed belongs to a teach workspace when its own folder, or a parent
+   folder up to and including `~/Learning`, holds a `MISSION.md` (`research/` digests sit one
+   level below it). That folder is the workspace; record its path, with `~` for the home folder.
+   Otherwise `workspace:` stays empty.
+4. **Propose, don't decide.** From the seed, draft a one-line why in Kyle's terms and three to
+   five starter questions (one idea each, numbered `Q1`… as they'd be logged). Show both, along
+   with the workspace link if there is one, and ask him to accept or edit. Nothing is written
+   until he answers. If he rejects the drafted why, ask the why as in *Start a new topic*.
+5. **Write.** Once he's settled, write the file as in *Start a new topic* step 2, with the
+   accepted why, `workspace:` set as found, the accepted questions logged `status: open` with an
+   empty `last recalled:`, and a session-log entry `- YYYY-MM-DD — Started from <seed path>;
+   logged Q1–Qn.` Then run `check`.
+6. **Continue** with *Answer* on the first open question, or take new confusion through *Form
+   questions*.
+
+Never write into the seed file, the workspace, or anything inside it (prime directive 5). The
+topic file links to the workspace; the workspace never learns about the topic.
+
 ## Form questions
 
 1. Kyle describes his confusion loosely. Convert it into specific, answerable questions — one
@@ -106,10 +133,55 @@ Answer the next open question by default — don't ask which one.
 4. Ask whether it landed, then move to the next open question or take new confusion back
    through *Form questions*.
 
+## Let me try
+
+On any question, Kyle can say "let me try" (or "let me answer that", "I'll take this one") and
+answer it himself first. The question is the one on the table, or the one he names by number.
+
+1. **Hand it over.** Name the question and wait. Give no answer, hint or outline before his
+   attempt. If he gives up partway ("just tell me"), go to *Answer* and log `answered by: claude`.
+2. **Check it against sources.** Ground the check exactly as you would ground an answer — his
+   attempt is a claim to verify, not a source. Split it into what holds up and what doesn't.
+3. **Reply: affirm, then correct.** Say specifically what he got right. Correct each wrong or
+   missing piece in a sentence or two, each with its source. Don't rewrite a right answer into
+   your own words.
+4. **Log it.** `#### Answer` is his answer as checked: what held up, then a `Correction:` line
+   per fix (none when it all held up). `#### Sources` lists what the check rested on — at least
+   one, even when he was entirely right. `status: answered`, `answered by: kyle`. Write, `check`.
+5. **Never log a wrong attempt uncorrected.** Every error in his attempt is either fixed in the
+   logged Answer or the question isn't logged as answered. If he disputes a correction, look
+   again; if the sources still don't settle it, leave the question `open`, write no Answer, and
+   say what would settle it.
+
+## Follow-ups
+
+Follow-ups come out of an answer — Claude's or Kyle's checked one — or out of Kyle's reaction to
+it ("wait, then why…").
+
+1. **Convert and confirm.** Turn them into questions the way *Form questions* does: one idea
+   each, shown to Kyle, logged only once he confirms or edits them.
+2. **Number them under their parent.** The parent is the question whose answer produced the
+   follow-up — a follow-up of Q3's answer is Q3.n, one of Q3.1's is Q3.1.n — using the parent's
+   next free child number (one above its highest existing child). A question that isn't about
+   any logged question is a new top-level one.
+3. **Numbers are stable for life.** Never renumber, never reuse a number, never move a question
+   to another parent. If one turns out to belong elsewhere, leave it and log the right question
+   fresh under the right parent.
+4. **Log** each as `status: open` with an empty `last recalled:`, placed after the parent's last
+   descendant so the file reads in tree order. Write, `check`.
+
 ## Ordering
 
-The next question is the first `prereq` question, else the open question that most directly
-serves the why. Say which one you picked when it isn't simply the lowest-numbered open one.
+When choosing the next question, consider only `prereq` and `open` questions; answered and
+parked questions are never offered.
+
+1. **Prereq first.** Any `prereq` question comes before every open one — the one blocking the
+   question Kyle was on, else the lowest-numbered.
+2. **Then by the why.** Rank open questions by how directly answering them serves the stored
+   `why`. Break ties by tree order (Q1.2 before Q2).
+3. **Say why when it isn't obvious.** When the pick isn't simply the lowest-numbered open
+   question, name it and give the reason in one clause ("Q4 next — it's the one your why turns
+   on"). Kyle naming a question by number overrides the order.
 
 ## Session log
 
