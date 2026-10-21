@@ -113,7 +113,8 @@ topic file links to the workspace; the workspace never learns about the topic.
 
 1. Kyle describes his confusion loosely. Convert it into specific, answerable questions — one
    idea each, phrased so an answer could settle it. Number them as they'd be logged (next free
-   top-level numbers, per the format's numbering rule).
+   top-level numbers, per the format's numbering rule). No questions, confusion that amounts to
+   "what is any of this?", or a question that drifts from the why: see *Loop defenses*.
 2. Show the list and ask him to confirm or edit. Apply his edits; drop what he drops.
 3. Log only the confirmed questions, each `status: open` with an empty `last recalled:`.
    Write, `check`.
@@ -124,7 +125,8 @@ Answer the next open question by default — don't ask which one.
 
 1. **Ground it.** Use what the question needs: web search and fetch for current or external
    facts, local files Kyle points at, and the repo you're in (read and grep) when the question is
-   about code. Memory alone is not a source.
+   about code. Memory alone is not a source. If it can't be answered usefully — a missing
+   prerequisite, or a source that's the problem — go to *Loop defenses* first.
 2. **Keep it tight and aimed at the question asked** — the smallest answer that settles it, a few
    short paragraphs at most. Don't survey the topic or answer neighbouring questions.
 3. **Cite.** Give the answer in chat with its sources, then log it: `#### Answer` with the answer,
@@ -169,6 +171,63 @@ it ("wait, then why…").
    fresh under the right parent.
 4. **Log** each as `status: open` with an empty `last recalled:`, placed after the parent's last
    descendant so the file reads in tree order. Write, `check`.
+
+## Loop defenses
+
+Four ways the loop stalls, each with its defense. All of them happen inside the session, in
+your own words; never hand any of this off to another skill.
+
+### No questions
+
+When Kyle says he has no questions ("makes sense", "nothing yet", "I think I get it"), don't
+move on or summarize. Ask the trigger prompt, framed against the stored why: "What does this
+change about why you're learning <topic> — <why, in his words>?" Push once more if he still has
+nothing ("what would you do differently now when you <why>?"). Whatever confusion it surfaces
+goes through *Form questions*. Nothing is written unless it produces questions.
+
+### Too new: the overview
+
+When Kyle's confusion amounts to "what is any of this?" — he can't name a specific question, or
+every question he offers is the whole topic — offer an overview first: "You're new enough that a
+short map would help before questions. Want one?" Write nothing unless he says yes.
+
+1. **Ground it** as you would an answer (*Answer* step 1) and keep it short: five to eight key
+   ideas, each a numbered line with the term in bold and one sentence; a `How they connect:`
+   paragraph of a few sentences; a `Sources:` line followed by one bullet per source.
+2. **Write it** into `## Overview`, above `## Questions`. If the file already has an overview,
+   revise that one in place; never add a second. Write, `check`.
+3. **Ask again, straight away:** "With that map, what's confusing?" His answer goes through
+   *Form questions*. The overview is a map for forming questions, not reading to finish.
+
+### Drift: park and unpark
+
+The why is the filter. When a question doesn't serve the why — while converting confusion in
+*Form questions*, choosing the next question, or logging a follow-up — propose parking it with
+a one-line reason that names the gap against the why: "Park Q4? Variance matters for library
+authors; your why is reading errors."
+
+1. **Park only on confirmation.** If he says no, it stays as it is (or is logged `open`). If the
+   question has open follow-ups under it, propose parking them in the same breath; each needs
+   its own yes.
+2. **Log it.** `status: parked` and `- park reason: <the one line>`, kept in the file. A question
+   that drifted before it was ever logged is logged straight as parked. Write, `check`.
+3. **Unpark on request.** When he asks ("unpark Q4", "let's do the variance one"), set it back to
+   `status: open`, remove its `park reason` line, and note it in the session log (`Unparked Q4:
+   <why it matters now>`). Write, `check`. It joins the queue under *Ordering*.
+
+### Unproductive confusion: prereqs and bad sources
+
+1. **Missing prerequisite.** When a question can't be answered usefully because Kyle is missing
+   something it depends on, say so plainly before answering anything: "Q3 won't land until you
+   know what a NetworkPolicy is." Log the missing piece as a new question numbered under the one
+   it blocks (the next free child, per *Follow-ups* step 2), `status: prereq`, with an empty
+   `last recalled:`, and note it in the session log (`Q3 blocked; logged Q3.1 (prereq)`). Write,
+   `check`. It is now at the top of the queue (*Ordering*): answer it next. Once it's answered,
+   go back to the question it blocked.
+2. **Bad source.** When the source Kyle is learning from is the problem — wrong, out of date,
+   skips the step he's stuck on — say so and name what's wrong with it, with evidence. Suggest
+   a better source (title + URL or path) for that specific gap, and note the swap in the
+   session log. Don't relabel his confusion as his fault when the material is at fault.
 
 ## Ordering
 

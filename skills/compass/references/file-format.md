@@ -71,7 +71,9 @@ why are fine.
 
 `##` headings, in this order. Anything before the first `##` (the `# <topic>` title) is ignored.
 
-1. `## Overview` — optional.
+1. `## Overview` — optional; at most one, revised in place. Five to eight numbered key ideas
+   (term in bold, one sentence each), a `How they connect:` paragraph, then a `Sources:` line
+   and a bullet per source. `check` treats its body as free text.
 2. `## Questions` — required, may be empty.
 3. `## Close-out` — required and non-empty when `status: closed`; must be absent when `open`.
 4. `## Session log` — required, may be empty. Each entry is `- YYYY-MM-DD — <what moved>`;
@@ -100,7 +102,7 @@ Each question is a `###` heading, at the same level no matter how deep it nests:
   | `status` | always | `open`, `answered`, `parked` or `prereq` |
   | `last recalled` | always written (may be empty) | empty until first recalled, then `YYYY-MM-DD` |
   | `answered by` | `answered` | `claude`, or `kyle` (Kyle answered first and Claude checked it) |
-  | `park reason` | `parked` | one line: why it drifts from the why |
+  | `park reason` | `parked` | one line: why it drifts from the why; removed on unpark |
 
 - **Subsections.** Only for answered questions, after the fields:
   - `#### Answer` — non-empty. For `answered by: kyle`, this is Kyle's answer as checked: what
