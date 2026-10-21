@@ -99,6 +99,36 @@ class MatchCase(unittest.TestCase):
                                str(self.root)], capture_output=True, text=True)
         self.assertEqual(proc.returncode, 2)
 
+    def test_a_file_that_is_not_utf8_is_skipped_and_reported(self):
+        self.add("rust-lifetimes", "Rust lifetimes")
+        (self.root / "rust-cafe.md").write_bytes(
+            topic_file("Rust cafe").encode().replace(b"cafe", b"caf\xe9"))  # Latin-1 bytes
+        proc = subprocess.run([sys.executable, str(SCRIPT), "match", "rust", "--dir",
+                               str(self.root)], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        out = json.loads(proc.stdout)
+        self.assertEqual((out["result"], [m["slug"] for m in out["matches"]]),
+                         ("single", ["rust-lifetimes"]))
+        self.assertEqual([s["file"] for s in out["skipped"]], ["rust-cafe.md"])
+
+    # Query words match whole words or word prefixes, never the middle of a word.
+
+    def populate_words(self):
+        self.populate()
+        self.add("git-rebasing", "Git rebasing")
+
+    def test_a_short_word_does_not_match_inside_other_words(self):
+        self.populate_words()
+        self.assertEqual(self.match("in"), ("none", []))
+
+    def test_word_prefixes_match(self):
+        self.populate_words()
+        self.assertEqual(self.match("kube net"), ("single", ["k8s-networking"]))
+
+    def test_the_middle_of_a_word_does_not_match(self):
+        self.populate_words()
+        self.assertEqual(self.match("time"), ("none", []))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -34,9 +34,12 @@ the topic never starts from zero.
 
 `/compass <topic>`:
 
-1. Run `python3 ~/.claude/skills/compass/scripts/compass.py match "<topic>"`. It matches the
-   query case-insensitively against every topic's slug and display name and prints
-   `{"result": "single" | "several" | "none", "matches": [{"slug", "topic", "status"}]}`.
+1. Run `python3 ~/.claude/skills/compass/scripts/compass.py match "<topic>"`. Each query word
+   must be a whole word, or the start of one, in a topic's slug or display name
+   (case-insensitive). It prints `{"result": "single" | "several" | "none", "matches": [{"slug",
+   "topic", "status"}], "skipped": [{"file", "error"}]}`. Name each `skipped` file and its error
+   in one line: it is a topic file the helper couldn't read (not UTF-8, say), so it can't match
+   until Kyle fixes it.
 2. Act on `result`:
    - **`single`** → *Resume* `~/Learning/compass/<slug>.md`, or *Reopen* it when its `status`
      is `closed`.
@@ -102,8 +105,9 @@ closed):
 |---|---|---|---|---|
 
 Leave out a table that would be empty. Topic is the display name with the slug after it in
-backticks; Why is the record's shortened `why` as given; Last touched is `last_touched`. With no
-topics, say there are none yet and that `/compass <topic>` starts one. Then ask which topic to
+backticks; Why is the record's shortened `why` as given; Last touched is `last_touched`. Under
+the tables, name each `skipped` file and its error, as in *Resolve the topic*. With no topics,
+say there are none yet and that `/compass <topic>` starts one. Then ask which topic to
 pick up; his answer goes through *Resolve the topic*.
 
 ## Start a new topic

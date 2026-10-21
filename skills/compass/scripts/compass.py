@@ -2,23 +2,26 @@
 """Helper for the compass skill: reads topic files, never writes them.
 
 Subcommands (JSON on stdout; exit 0 on success, 1 when `check` finds violations, 2 on a usage
-or read error):
+or read error, including a file that is not UTF-8):
 
   check <file>   Validate one topic file against references/file-format.md and report every
                  violation as {"valid": bool, "violations": [{"rule", "line", "message"}]}.
   list           One record per topic in the compass folder: {"topics": [{"slug", "topic",
-                 "why" (shortened), "counts": {status: n}, "status", "last_touched"}]}, open
-                 topics first, then closed, each newest-touched first.
-  match <query>  Resolve a query against slugs and display names, case-insensitively:
+                 "why" (shortened), "counts": {status: n}, "status", "last_touched"}],
+                 "skipped": [{"file", "error"}]}, open topics first, then closed, each
+                 newest-touched first.
+  match <query>  Resolve a query against slugs and display names, case-insensitively, each query
+                 word matching a whole word or the start of one:
                  {"result": "single" | "several" | "none", "matches": [{"slug", "topic",
-                 "status"}]}.
+                 "status"}], "skipped": [{"file", "error"}]}.
   recall <file> [n]
                  Up to n (default 3) answered questions for the resume warm-up, never recalled
                  first, then oldest last-recalled date, ties by tree number:
                  {"questions": [{"number", "text", "last_recalled"}]}; empty when none is
                  answered.
 
-`list` and `match` read `--dir` (default ~/Learning/compass); a missing folder holds no topics.
+`list` and `match` read `--dir` (default ~/Learning/compass); a missing folder holds no topics,
+and a file that cannot be read lands in `skipped` instead of failing the whole folder.
 
 The file format is the contract; references/file-format.md is its prose definition and this
 parser is its executable one. Keep the two in step.
@@ -105,7 +108,7 @@ def parse_body(lines, start):
         if lineno <= start:
             continue
         m = None if in_fence else H2.match(text)
-        if m and not text.startswith("###"):
+        if m:
             current = {"name": m.group(1), "line": lineno, "lines": []}
             sections.append(current)
         elif current is not None:
@@ -118,7 +121,7 @@ def parse_questions(section_lines, report):
     questions, q, sub = [], None, None
     for lineno, text, in_fence in section_lines:
         h3 = None if in_fence else H3.match(text)
-        if h3 and not text.startswith("####"):
+        if h3:
             sub = None
             m = QUESTION_HEADING.match(h3.group(1))
             if not m:
@@ -288,12 +291,27 @@ def check_text(text: str) -> Report:
     return report
 
 
+class ReadError(Exception):
+    """A topic file that cannot be read as UTF-8 text; str() is the message to print."""
+
+
+def read_text(path: Path) -> str:
+    """The one place a topic file is read, so every subcommand fails the same way."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ReadError(f"cannot read {path}: {exc.strerror}") from exc
+    except UnicodeDecodeError as exc:
+        raise ReadError(f"cannot read {path}: not UTF-8 text "
+                        f"(byte {exc.start}: {exc.reason})") from exc
+
+
 def cmd_check(args) -> int:
     path = Path(args.file).expanduser()
     try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        print(json.dumps({"error": f"cannot read {path}: {exc.strerror}"}))
+        text = read_text(path)
+    except ReadError as exc:
+        print(json.dumps({"error": str(exc)}))
         return EXIT_ERROR
     report = check_text(text)
     valid = not report.violations
@@ -301,18 +319,26 @@ def cmd_check(args) -> int:
     return EXIT_OK if valid else EXIT_INVALID
 
 
-def read_topic(path: Path) -> dict:
-    """Summarize one topic file leniently: list and match must work on a file check rejects."""
-    lines = path.read_text(encoding="utf-8").splitlines()
+def parse_lenient(path: Path):
+    """Read and parse a topic file without judging it: (frontmatter fields, questions).
+    list, match and recall must work on a file check rejects, so violations are discarded.
+    Raises ReadError when the file cannot be read."""
+    lines = read_text(path).splitlines()
     scratch = Report()
     fields, _, body_start = parse_frontmatter(lines, scratch)
+    questions = [q for section in parse_body(lines, body_start) if section["name"] == "Questions"
+                 for q in parse_questions(section["lines"], scratch)]
+    return fields, questions
+
+
+def read_topic(path: Path) -> dict:
+    """Summarize one topic file for list and match."""
+    fields, questions = parse_lenient(path)
     counts = dict.fromkeys(QUESTION_STATUSES, 0)
-    for section in parse_body(lines, body_start):
-        if section["name"] == "Questions":
-            for q in parse_questions(section["lines"], scratch):
-                status = q["fields"].get("status")
-                if status in counts:
-                    counts[status] += 1
+    for q in questions:
+        status = q["fields"].get("status")
+        if status in counts:
+            counts[status] += 1
     return {"slug": path.stem, "topic": fields.get("topic") or path.stem,
             "why": shorten(fields.get("why", "")), "counts": counts,
             "status": fields.get("status", ""), "last_touched": fields.get("updated", "")}
@@ -326,24 +352,32 @@ def shorten(text: str, limit: int = WHY_LIMIT) -> str:
     return cut.rstrip(" ,;:.-—") + "…"
 
 
-def read_topics(folder) -> list:
+def read_topics(folder):
+    """(topics, skipped): one unreadable file is reported in skipped, never fatal to the rest."""
     root = Path(folder).expanduser()
     if not root.is_dir():
-        return []
-    topics = [read_topic(p) for p in sorted(root.glob("*.md")) if p.is_file()]
+        return [], []
+    topics, skipped = [], []
+    for p in sorted(root.glob("*.md")):
+        if not p.is_file():
+            continue
+        try:
+            topics.append(read_topic(p))
+        except ReadError as exc:
+            skipped.append({"file": p.name, "error": str(exc)})
     topics.sort(key=lambda t: t["slug"])
     topics.sort(key=lambda t: t["last_touched"], reverse=True)
     topics.sort(key=lambda t: t["status"] == "closed")
-    return topics
+    return topics, skipped
 
 
 def cmd_list(args) -> int:
     try:
-        topics = read_topics(args.dir)
+        topics, skipped = read_topics(args.dir)
     except OSError as exc:
         print(json.dumps({"error": f"cannot read {exc.filename}: {exc.strerror}"}))
         return EXIT_ERROR
-    print(json.dumps({"topics": topics}, indent=2, ensure_ascii=False))
+    print(json.dumps({"topics": topics, "skipped": skipped}, indent=2, ensure_ascii=False))
     return EXIT_OK
 
 
@@ -352,14 +386,18 @@ def words(text: str) -> list:
 
 
 def match_topics(query: str, topics: list) -> dict:
-    """An exact slug or display name wins outright; otherwise every query word must appear
-    somewhere in the slug or the display name."""
+    """An exact slug or display name wins outright; otherwise every query word must be a
+    whole word, or the start of one, in the slug or the display name ("lifetime" finds
+    "Rust lifetimes"; "in" does not find "networking")."""
     wanted = words(query)
     slug_form, name_form = "-".join(wanted), query.strip().casefold()
     exact = [t for t in topics if t["slug"] == slug_form or t["topic"].casefold() == name_form]
-    hits = exact if len(exact) == 1 else [
-        t for t in topics
-        if all(w in f"{t['slug']} {t['topic'].casefold()}" for w in wanted)]
+
+    def hit(t):
+        have = words(f"{t['slug']} {t['topic']}")
+        return all(any(h.startswith(w) for h in have) for w in wanted)
+
+    hits = exact if len(exact) == 1 else [t for t in topics if hit(t)]
     result = "none" if not hits else "single" if len(hits) == 1 else "several"
     return {"result": result,
             "matches": [{"slug": t["slug"], "topic": t["topic"], "status": t["status"]}
@@ -371,11 +409,12 @@ def cmd_match(args) -> int:
         print(json.dumps({"error": "match needs a query with at least one letter or digit"}))
         return EXIT_ERROR
     try:
-        topics = read_topics(args.dir)
+        topics, skipped = read_topics(args.dir)
     except OSError as exc:
         print(json.dumps({"error": f"cannot read {exc.filename}: {exc.strerror}"}))
         return EXIT_ERROR
-    print(json.dumps(match_topics(args.query, topics), indent=2, ensure_ascii=False))
+    print(json.dumps({**match_topics(args.query, topics), "skipped": skipped},
+                     indent=2, ensure_ascii=False))
     return EXIT_OK
 
 
@@ -386,14 +425,9 @@ def tree_key(number: str) -> tuple:
 
 def recall_questions(path: Path, n: int) -> list:
     """Answered questions for the warm-up: never recalled first, then oldest recall date, ties
-    by tree number. Lenient like read_topic: a file check rejects still yields its answered
-    questions."""
-    lines = path.read_text(encoding="utf-8").splitlines()
-    scratch = Report()
-    _, _, body_start = parse_frontmatter(lines, scratch)
-    answered = [q for section in parse_body(lines, body_start) if section["name"] == "Questions"
-                for q in parse_questions(section["lines"], scratch)
-                if q["fields"].get("status") == "answered"]
+    by tree number. A file check rejects still yields its answered questions."""
+    _, questions = parse_lenient(path)
+    answered = [q for q in questions if q["fields"].get("status") == "answered"]
     answered.sort(key=lambda q: (bool(q["fields"].get("last recalled")),
                                  q["fields"].get("last recalled", ""), tree_key(q["number"])))
     return [{"number": q["number"], "text": q["text"],
@@ -404,8 +438,8 @@ def cmd_recall(args) -> int:
     path = Path(args.file).expanduser()
     try:
         questions = recall_questions(path, args.n)
-    except OSError as exc:
-        print(json.dumps({"error": f"cannot read {path}: {exc.strerror}"}))
+    except ReadError as exc:
+        print(json.dumps({"error": str(exc)}))
         return EXIT_ERROR
     print(json.dumps({"questions": questions}, indent=2, ensure_ascii=False))
     return EXIT_OK

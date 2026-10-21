@@ -101,6 +101,25 @@ class ListCase(unittest.TestCase):
         (self.root / "notes.txt").write_text("not a topic")
         self.assertEqual([r["slug"] for r in self.run_list()], ["rust-lifetimes"])
 
+    def test_a_file_that_is_not_utf8_is_skipped_and_reported(self):
+        self.write("rust-lifetimes", topic_file())
+        (self.root / "latin1.md").write_bytes(
+            topic_file(topic="Cafe").encode().replace(b"Cafe", b"Caf\xe9"))  # Latin-1 bytes
+        proc = subprocess.run([sys.executable, str(SCRIPT), "list", "--dir", str(self.root)],
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        out = json.loads(proc.stdout)
+        self.assertEqual([r["slug"] for r in out["topics"]], ["rust-lifetimes"])
+        [skipped] = out["skipped"]
+        self.assertEqual(skipped["file"], "latin1.md")
+        self.assertIn("UTF-8", skipped["error"])
+
+    def test_nothing_skipped_when_every_file_reads(self):
+        self.write("rust-lifetimes", topic_file())
+        proc = subprocess.run([sys.executable, str(SCRIPT), "list", "--dir", str(self.root)],
+                              capture_output=True, text=True)
+        self.assertEqual(json.loads(proc.stdout)["skipped"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -111,6 +111,14 @@ class RecallCase(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
         self.assertIn("error", json.loads(proc.stdout))
 
+    def test_a_file_that_is_not_utf8_exits_2_with_an_error(self):
+        self.file.write_bytes(topic_file(questions=question("1")).encode()
+                              .replace(b"Rust", b"Caf\xe9"))  # Latin-1 bytes
+        proc = subprocess.run([sys.executable, str(SCRIPT), "recall", str(self.file)],
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertIn("UTF-8", json.loads(proc.stdout)["error"])
+
 
 if __name__ == "__main__":
     unittest.main()
