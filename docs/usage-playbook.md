@@ -356,9 +356,11 @@ rows get re-pointed to match.
 - **Notes:** one flat folder, `~/Learning/compass/`, one `<slug>.md` per topic; the format is
   pinned in `skills/compass/references/file-format.md` and enforced by
   `scripts/compass.py check`, which the skill runs after every write and must pass before the
-  loop continues. `compass.py match` resolves a partial name and `compass.py list` builds the
-  listing. The helper is read-only — the skill does all writing — and compass never
-  writes into a teach workspace or a file it was seeded from.
+  loop continues. `compass.py match` resolves a partial name, `compass.py list` builds the
+  listing, and `compass.py recall` picks the answered questions a resume warms up on from
+  memory (never recalled first, then the oldest recall). The helper is read-only — the skill
+  does all writing — and compass never writes into a teach workspace or a file it was seeded
+  from.
 
 ## Project-Specific Items
 
