@@ -74,6 +74,8 @@ why are fine.
 1. `## Overview` — optional.
 2. `## Questions` — required, may be empty.
 3. `## Close-out` — required and non-empty when `status: closed`; must be absent when `open`.
+   Reopening moves its text into the session log as an indented continuation of the reopen
+   entry, so a reopened file loses nothing.
 4. `## Session log` — required, may be empty. Each entry is `- YYYY-MM-DD — <what moved>`;
    an indented line continues the entry above it.
 
