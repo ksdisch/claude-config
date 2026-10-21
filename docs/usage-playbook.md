@@ -337,6 +337,40 @@ rows get re-pointed to match.
   `MISSION.md` to already exist. Writes only `MISSION.md`, `RESOURCES.md`, and `research/` —
   the teach skill itself is never edited.
 
+### Review & Quality
+
+#### `blast-radius`
+
+- **Run config:** Opus 5.5 · `high` — finding where grep stops and writing the proof script
+  is build work with judgment in it; one safety fact, not a fan-out.
+- **Reach for it when:**
+  - A small diff you don't trust is heading for a merge, and you want the review-gate
+    proposal to rest on a proven fact rather than a hunch.
+  - Someone asks "what could this break?" about a change that touches a library call, a
+    wire format, a DB column, or teardown timing.
+- **Pairs well with:** `/code-review` (built-in; it reviews the diff, this checks outside it —
+  run `/code-review xhigh` too when the change is wide).
+- **Notes:** typed-only (`disable-model-invocation: true`). The deliverable is the one safety
+  fact, proven or marked unproven — a proven fact argues a review scope down, a confirmed
+  risk argues it up. Proof scripts go in the scratchpad unless they're worth keeping as a
+  test.
+
+#### `correct`
+
+- **Run config:** Fable 5.1 · `high` — picking the highest enforcement level that actually
+  works for each mistake class is a judgment call; the fixes themselves are small.
+- **Reach for it when:**
+  - You've corrected an agent for the same mistake twice in one repo.
+  - A skill or `CLAUDE.md` in a project lists known false alarms or gotchas that could become
+    checks instead of prose (stopwatch's `/fix-bug` list is the first candidate).
+- **Pairs well with:** [`retire`](#retire) (retire subtracts prose rules; this converts them
+  into enforcers), `/code-review` (built-in; the `CLAUDE.md` rule table makes every run a
+  behavioral-file change).
+- **Notes:** typed-only (`disable-model-invocation: true`). Runs in a project repo, one commit
+  per mistake class on a feature branch + PR. Every new check must fail on a real past mistake
+  before it counts. Exceptions go on the offending line with a reason, an expiry, and your
+  approval.
+
 ## Project-Specific Items
 
 Cards for items that only exist inside their project. Run configs assume you're launching a

@@ -64,6 +64,13 @@ Available everywhere. Live in `skills/`. Claude invokes these automatically when
 | [`youtube-breakdown`](../skills/youtube-breakdown/SKILL.md) | Turns a transcript or YouTube URL into a structured breakdown in one of four modes — Study Notes, Quick Reference, Critique, or Actionable Insights — then offers to save it under `~/Learning`. Always asks which mode first; mining a video for Claude Code ideas is `cc-yt-idea-mine`'s lane. · [config →](usage-playbook.md#youtube-breakdown) |
 | [`teach-research`](../skills/teach-research/SKILL.md) | Research companion for `teach` — mission interview, parallel six-modality source discovery, a curation gate, then cached digests plus a curated `RESOURCES.md` that `/teach` consumes unchanged. Typed-only (`/teach-research`); run from the learning directory. · [config →](usage-playbook.md#teach-research) |
 
+### Review & Quality
+
+| Skill | What it does |
+|---|---|
+| [`blast-radius`](../skills/blast-radius/SKILL.md) | Finds what a change breaks outside its diff — library source, wire formats, teardown timing, code three hops away — and proves the one fact the change is safe because of by running real code, graded on a five-step confidence ladder. Typed-only (`/blast-radius`); vendored from pstack. · [config →](usage-playbook.md#blast-radius) |
+| [`correct`](../skills/correct/SKILL.md) | Turns the mistakes agents keep repeating in a repo into enforced structure — architecture, then types, then a lint whose error names the fix, then a test, docs last — proves each check fails on a real past mistake, and keeps a rule ↔ enforcer table in the repo's `CLAUDE.md`. The additive counterpart to `retire`. Typed-only (`/correct`); vendored from pstack. · [config →](usage-playbook.md#correct) |
+
 ## Project-Specific Items
 
 Items only available inside their respective project.
