@@ -14,7 +14,8 @@ the topic never starts from zero.
   session.
 - Helper: `python3 ~/.claude/skills/compass/scripts/compass.py check <file>` — read-only, JSON out,
   exit 0 only when the file is valid. The helper never writes; you do all writing. Its `match` and
-  `list` subcommands read the folder (see *Resolve the topic* and *List topics*).
+  `list` subcommands read the folder (see *Resolve the topic* and *List topics*); `recall` picks
+  the warm-up questions (see *Recall warm-up*).
 
 ## Prime directives
 
@@ -54,11 +55,33 @@ A bare `/compass` with no topic is *List topics*.
 
 1. Read the topic file. Open with one orienting glance: the topic, its why, the counts per
    status (`3 open · 4 answered · 1 parked · 0 prereq`), and the next open question by *Ordering*
-   — its number and text. If nothing is open or prereq, say so and ask what confuses him now.
+   — its number and text. Then run *Recall warm-up* before any new question. After it, if
+   nothing is open or prereq, say so and ask what confuses him now.
 2. Continue the loop from that question (*Answer*), or take new confusion through *Form
    questions*.
 3. This is a new session: its first write appends a new dated entry to the session log, even
    when an entry for today already exists from an earlier session (see *Session log*).
+
+## Recall warm-up
+
+Resume opens by rehearsing older answers from memory, before any new question.
+
+1. **Pick.** Run `python3 ~/.claude/skills/compass/scripts/compass.py recall <file>`. It prints
+   up to three answered questions, already in order (never recalled first, then oldest
+   `last recalled`, ties by tree number): `{"questions": [{"number", "text", "last_recalled"}]}`.
+   An empty list means nothing is answered: no warm-up, and say nothing about it.
+2. **Offer the skip.** One line: "Warm-up — n questions from earlier. Answer from memory, or say
+   skip." "Skip" ends the warm-up whenever he says it; questions not yet asked get no date.
+3. **Ask from memory.** One question at a time: its number and text only. Show nothing of the
+   logged Answer or Sources and give no hint before he answers.
+4. **Then show the logged answer.** Once he has answered (or says he doesn't remember), show the
+   logged Answer and say in a sentence what he got and what he missed. The logged answer is the
+   reference; don't re-research it or rewrite it here. If his recall turns up new confusion, take
+   it through *Follow-ups* after the warm-up.
+5. **Record it.** Right after each one, set that question's `- last recalled:` to today, bump
+   `updated`, write, `check` — before asking the next, so a mid-way skip keeps what was done.
+   Record it even when he couldn't remember: the date marks the rehearsal. The session-log entry
+   notes it (`Recalled Q1, Q2.1.`).
 
 ## List topics
 

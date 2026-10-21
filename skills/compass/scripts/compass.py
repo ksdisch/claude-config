@@ -12,6 +12,11 @@ or read error):
   match <query>  Resolve a query against slugs and display names, case-insensitively:
                  {"result": "single" | "several" | "none", "matches": [{"slug", "topic",
                  "status"}]}.
+  recall <file> [n]
+                 Up to n (default 3) answered questions for the resume warm-up, never recalled
+                 first, then oldest last-recalled date, ties by tree number:
+                 {"questions": [{"number", "text", "last_recalled"}]}; empty when none is
+                 answered.
 
 `list` and `match` read `--dir` (default ~/Learning/compass); a missing folder holds no topics.
 
@@ -28,6 +33,7 @@ EXIT_OK, EXIT_INVALID, EXIT_ERROR = 0, 1, 2
 
 DEFAULT_DIR = "~/Learning/compass"
 WHY_LIMIT = 60
+RECALL_DEFAULT = 3
 
 FRONTMATTER_REQUIRED = ("topic", "why", "status", "created", "updated")
 FRONTMATTER_OPTIONAL = ("workspace",)
@@ -373,6 +379,45 @@ def cmd_match(args) -> int:
     return EXIT_OK
 
 
+def tree_key(number: str) -> tuple:
+    """Tree order: Q1 < Q1.2 < Q2 < Q10. Lenient, so a malformed number still sorts."""
+    return tuple(int(part) if part.isdigit() else 0 for part in number.split("."))
+
+
+def recall_questions(path: Path, n: int) -> list:
+    """Answered questions for the warm-up: never recalled first, then oldest recall date, ties
+    by tree number. Lenient like read_topic: a file check rejects still yields its answered
+    questions."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    scratch = Report()
+    _, _, body_start = parse_frontmatter(lines, scratch)
+    answered = [q for section in parse_body(lines, body_start) if section["name"] == "Questions"
+                for q in parse_questions(section["lines"], scratch)
+                if q["fields"].get("status") == "answered"]
+    answered.sort(key=lambda q: (bool(q["fields"].get("last recalled")),
+                                 q["fields"].get("last recalled", ""), tree_key(q["number"])))
+    return [{"number": q["number"], "text": q["text"],
+             "last_recalled": q["fields"].get("last recalled", "")} for q in answered[:n]]
+
+
+def cmd_recall(args) -> int:
+    path = Path(args.file).expanduser()
+    try:
+        questions = recall_questions(path, args.n)
+    except OSError as exc:
+        print(json.dumps({"error": f"cannot read {path}: {exc.strerror}"}))
+        return EXIT_ERROR
+    print(json.dumps({"questions": questions}, indent=2, ensure_ascii=False))
+    return EXIT_OK
+
+
+def positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"n must be a positive integer, got {text}")
+    return value
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="compass.py", description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -386,6 +431,10 @@ def main(argv=None) -> int:
     p_match.add_argument("query")
     p_match.add_argument("--dir", default=DEFAULT_DIR)
     p_match.set_defaults(func=cmd_match)
+    p_recall = sub.add_parser("recall", help="answered questions for the resume warm-up")
+    p_recall.add_argument("file")
+    p_recall.add_argument("n", nargs="?", type=positive_int, default=RECALL_DEFAULT)
+    p_recall.set_defaults(func=cmd_recall)
     args = parser.parse_args(argv)
     return args.func(args)
 
