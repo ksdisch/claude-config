@@ -38,9 +38,11 @@ the topic never starts from zero.
    query case-insensitively against every topic's slug and display name and prints
    `{"result": "single" | "several" | "none", "matches": [{"slug", "topic", "status"}]}`.
 2. Act on `result`:
-   - **`single`** → *Resume* `~/Learning/compass/<slug>.md`.
-   - **`several`** → show the candidates (display name and slug) and ask which one Kyle meant.
-     Resume the one he picks; never guess.
+   - **`single`** → *Resume* `~/Learning/compass/<slug>.md`, or *Reopen* it when its `status`
+     is `closed`.
+   - **`several`** → show the candidates (display name and slug, with "(closed)" after a closed
+     one) and ask which one Kyle meant. Resume the one he picks — or *Reopen* it if closed;
+     never guess.
    - **`none`** → say nothing matched and offer to start "<topic>" as a new topic. Create
      nothing until he says yes; if he says no or corrects a typo, run `match` again on what he
      gives you.
@@ -86,15 +88,23 @@ Resume opens by rehearsing older answers from memory, before any new question.
 ## List topics
 
 Bare `/compass`: run `python3 ~/.claude/skills/compass/scripts/compass.py list` and print one row
-per topic from its `topics` records, in the order given:
+per topic from its `topics` records, in the order given — open topics first, closed ones after.
+Open topics go in the main table:
 
 | Topic | Why | Open | Answered | Parked | Prereq | Status | Last touched |
 |---|---|---|---|---|---|---|---|
 
-Topic is the display name with the slug after it in backticks; Why is the record's shortened
-`why` as given; Last touched is `last_touched`. With no topics, say there are none yet and that
-`/compass <topic>` starts one. Then ask which topic to pick up; his answer goes through *Resolve
-the topic*.
+Closed topics go in a separate table under a **Closed** label, so finished work doesn't crowd
+what's active, with only the columns that still mean something (Last touched is the day it
+closed):
+
+| Topic | Why | Answered | Parked | Last touched |
+|---|---|---|---|---|
+
+Leave out a table that would be empty. Topic is the display name with the slug after it in
+backticks; Why is the record's shortened `why` as given; Last touched is `last_touched`. With no
+topics, say there are none yet and that `/compass <topic>` starts one. Then ask which topic to
+pick up; his answer goes through *Resolve the topic*.
 
 ## Start a new topic
 
@@ -264,6 +274,42 @@ parked questions are never offered.
 3. **Say why when it isn't obvious.** When the pick isn't simply the lowest-numbered open
    question, name it and give the reason in one clause ("Q4 next — it's the one your why turns
    on"). Kyle naming a question by number overrides the order.
+
+## Close a topic
+
+A topic closes only when Kyle says so. An empty queue is the cue to offer closing, never a reason
+to close.
+
+1. **Offer it when the queue empties.** Whenever no question is `open` or `prereq` — after an
+   answer, after a park, or on resume — say so and put both doors in front of him: "Nothing's
+   open on <topic>. To close it, answer your why in two or three sentences, in your own words:
+   *<why>*. Or tell me what's confusing you now." New confusion goes through *Form questions*;
+   "not yet" or anything else leaves the topic open. Answering the prompt is his say-so.
+2. **Kyle asks to close with questions still open.** Name each open and prereq question and ask
+   whether to park it (with a one-line reason, logged only on his confirmation) or keep going.
+   Offer the why prompt once none is open or prereq.
+3. **Take his answer as given.** Don't rewrite or polish it. If it contradicts a logged answer,
+   say which one in a line and let him revise; what he settles on is the close-out.
+4. **Write.** Add `## Close-out` between Questions and Session log holding his answer verbatim,
+   set `status: closed`, bump `updated`, and note it in this session's log entry (`…; closed.`).
+   Every question stays as it is — parked ones keep their status and reason. Write, `check`.
+5. Confirm in one line that it's closed, and that `/compass <topic>` reopens it.
+
+## Reopen
+
+`/compass <topic>` that resolves to a closed topic.
+
+1. **Offer, don't assume.** Say it's closed, show its Close-out and its counts, and ask whether
+   to reopen it. Nothing is written until he says yes. If he says no, leave the file untouched.
+2. **Reopen without losing anything.** Set `status: open` and bump `updated`. The format allows
+   no Close-out on an open topic, so move it into the session log rather than delete it: this
+   session's entry reads `- YYYY-MM-DD — Reopened. Earlier close-out:` with the Close-out text
+   below it verbatim, each line indented two spaces. Then remove the `## Close-out` section.
+   Nothing else changes — every question, answer, park reason and recall date stays. Write,
+   `check`.
+3. **Continue as in *Resume*** — orient him, then take new confusion through *Form questions*.
+   Later writes this session revise the reopen entry (`Reopened; logged Q4. Earlier
+   close-out:`) and keep the indented close-out under it.
 
 ## Session log
 
