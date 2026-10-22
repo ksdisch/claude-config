@@ -933,8 +933,8 @@ session *in that repo*.
     your yes.
 - **Pairs well with:** [`build-artifact`](#build-artifact-life-nodes) (the `url` it writes
   needs a commit), [`audit`](#audit-life-nodes) (run it first before a phase sign-off).
-- **Notes:** Kyle-only (`disable-model-invocation`). Fast-forward only: a diverged remote is
-  shown, never merged. A `plugins/` change bumps the patch version, and Cowork needs
+- **Notes:** Kyle-only (`disable-model-invocation`). Fast-forward only, unless the remote has
+  diverged and Kyle says yes to a merge commit; a conflict is shown, never resolved. A `plugins/` change bumps the patch version, and Cowork needs
   **Update** pressed on the `kyles-nodes` marketplace to see it.
 
 #### `build-artifact` (Life Nodes)

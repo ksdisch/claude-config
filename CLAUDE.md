@@ -20,7 +20,9 @@
 
 ## Never hand me a `!` command (added 2026-10-22)
 
-I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never tell me to type a shell command, whether with `!` here or in a terminal. When a command needs my say-so, ask in chat and run it yourself on my yes; my yes is the gate, and any permission prompt that follows I can answer remotely. A skill that reserves a command for me ("the merge is Kyle's") means ask before running it, not hand it to me; it doesn't turn anything else a skill reserves for me (signing in, pressing submit) into something to offer. The only exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): say so, and offer a non-interactive route if one exists (a token, `--with-token`, a device code).
+I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never hand me a shell command to run that you could run yourself in this session. When one needs my say-so (under the Git Workflow rules above, or a skill's own gate), ask in chat and run it yourself on my yes; my yes is the gate, and any permission prompt that follows I can answer remotely. This adds no new gates: what you'd run without asking, keep running without asking. A skill that reserves a command for me ("the merge is Kyle's") means ask before running it, not hand it to me, unless a project rule says I must do it myself; then say so, and I'll do it. It doesn't turn anything else a skill reserves for me (signing in, pressing submit) into something to offer.
+
+Not hand-offs, and still wanted: the `code <path>` / `open <path>` line from the bare-identifier rule, and the launch command in a Run-config note, since both are for me to use later, not steps this session is waiting on. The one real exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): lead with a non-interactive route if one exists (a token via `--with-token`), and only then say it needs a terminal.
 
 ## Never show me a bare identifier (added 2026-08-13)
 
