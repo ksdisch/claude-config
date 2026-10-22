@@ -18,6 +18,12 @@
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
 
+## Never hand me a `!` command (added 2026-10-22)
+
+I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never hand me a shell command to run that you could run yourself in this session. When one needs my say-so (under the Git Workflow rules above, or a skill's own gate), ask in chat and run it yourself on my yes; my yes is the gate, and any permission prompt that follows I can answer remotely. If a hook or the auto-mode classifier still denies it after my yes, report the denial; don't fall back to handing me the command. This adds no new gates: what you'd run without asking, keep running without asking. A skill that reserves a command for me ("the merge is Kyle's") means ask before running it, not hand it to me. It never unlocks what a skill says "never" to, and when a project rule says I must do something myself, say so and move on without waiting on me mid-session. It doesn't turn anything else a skill reserves for me (signing in, pressing submit) into something to offer.
+
+Not hand-offs, and still wanted: the `code <path>` / `open <path>` line from the bare-identifier rule, and the launch command in a Run-config note, since both are for me to use later, not steps this session is waiting on. The one real exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): lead with a route that works without a terminal and keeps secrets out of chat (a device code I approve in a browser) if one exists, and only then say it needs a terminal. Never ask me to paste a token or password into chat.
+
 ## Never show me a bare identifier (added 2026-08-13)
 
 **An ID you put in front of me is a pointer into a document I don't have open.** `F2`, `D31`, `S1.4`, `T3`, "slice C" — each is a label whose meaning lives somewhere else, and I can't memorize them across sessions. A table of `# · grade · verdict` tells me the shape of a decision without telling me what I'm deciding, so I either approve blind or go hunting. Neither is what I'm paying attention for.
