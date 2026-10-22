@@ -20,7 +20,7 @@
 
 ## Never hand me a `!` command (added 2026-10-22)
 
-I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never tell me to type a shell command, whether with `!` here or in a terminal. When a command needs my say-so, ask in chat and run it yourself on my yes; my yes is the gate, and any permission prompt that follows I can answer remotely. A skill or rule that says an action "is Kyle's" means ask me, not hand it to me. The only exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): say so, and offer a non-interactive route if one exists (a token, `--with-token`, a device code).
+I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never tell me to type a shell command, whether with `!` here or in a terminal. When a command needs my say-so, ask in chat and run it yourself on my yes; my yes is the gate, and any permission prompt that follows I can answer remotely. A skill that reserves a command for me ("the merge is Kyle's") means ask before running it, not hand it to me; it doesn't turn anything else a skill reserves for me (signing in, pressing submit) into something to offer. The only exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): say so, and offer a non-interactive route if one exists (a token, `--with-token`, a device code).
 
 ## Never show me a bare identifier (added 2026-08-13)
 
