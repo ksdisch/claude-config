@@ -18,6 +18,10 @@
 ## Clarifying questions and option formatting
 - Ask 1–3 high-leverage clarifying questions up front whenever a prompt is ambiguous or uses fuzzy terminology — I prefer alignment over rework. When offering options: give each a short label, a 1–2 sentence merits/tradeoffs description, and mark your "(Recommended)" pick. If you assume rather than ask, surface the assumptions before acting on them.
 
+## Never hand me a `!` command (added 2026-10-22)
+
+I often continue sessions over Remote Control, which can't run `!`-prefixed commands. So never tell me to type a shell command, whether with `!` here or in a terminal. When a command needs my say-so, ask in chat and run it yourself on my yes; the permission prompt is the gate, and I can answer that remotely. A skill or rule that says an action "is Kyle's" means ask me, not hand it to me. The only exception is a command that truly needs an interactive TTY (an interactive login such as `gh auth login`): say so, and offer a non-interactive route if one exists (a token, `--with-token`, a device code).
+
 ## Never show me a bare identifier (added 2026-08-13)
 
 **An ID you put in front of me is a pointer into a document I don't have open.** `F2`, `D31`, `S1.4`, `T3`, "slice C" — each is a label whose meaning lives somewhere else, and I can't memorize them across sessions. A table of `# · grade · verdict` tells me the shape of a decision without telling me what I'm deciding, so I either approve blind or go hunting. Neither is what I'm paying attention for.

@@ -224,7 +224,7 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 
 | Skill | What it does |
 |---|---|
-| `sync` | Commits and pushes the vault with a written message, fast-forward only; reports auto-committer health and bumps the Cowork plugin's patch version when `plugins/` changed. Kyle-only. · [config →](usage-playbook.md#sync-life-nodes) |
+| `sync` | Commits and pushes the vault with a written message, fast-forward only unless Kyle says yes to merging diverged branches; reports auto-committer health and bumps the Cowork plugin's patch version when `plugins/` changed. Kyle-only. · [config →](usage-playbook.md#sync-life-nodes) |
 | `build-artifact` | Builds an artifact's page from its artifact note's Views, validates the palette in both themes, publishes it with only the `db` capability, writes `url` on first publish, then pushes every month of its data. Kyle-only. · [config →](usage-playbook.md#build-artifact-life-nodes) |
 | `rebuild-artifact` | Rewrites an artifact's database from the vault, one document per stream per month, and verifies it fresh; the fix for a stale artifact. · [config →](usage-playbook.md#rebuild-artifact-life-nodes) |
 | `audit` | Checks the vault for malformed lines, schema mismatches, broken or forked supersede chains, duplicates, dangling connections, and stale artifacts; repairs malformed lines only, one at a time on yes. · [config →](usage-playbook.md#audit-life-nodes) |

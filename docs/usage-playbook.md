@@ -929,6 +929,8 @@ session *in that repo*.
   - A session in the vault changed skills, notes, or an artifact note and should land now
     with a written message instead of waiting for the hourly auto-committer.
   - You want the auto-committer's health (last push, consecutive failures) in one line.
+  - The auto-committer reports `diverged`: sync shows both sides and runs the merge on
+    your yes.
 - **Pairs well with:** [`build-artifact`](#build-artifact-life-nodes) (the `url` it writes
   needs a commit), [`audit`](#audit-life-nodes) (run it first before a phase sign-off).
 - **Notes:** Kyle-only (`disable-model-invocation`). Fast-forward only: a diverged remote is
