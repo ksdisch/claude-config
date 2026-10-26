@@ -350,6 +350,9 @@ rows get re-pointed to match.
     into specific questions you confirm before they're logged.
   - You're coming back to a topic: `/compass <partial name>` resumes it with its counts and
     next open question, and a bare `/compass` lists every topic to pick from.
+  - You want to see a topic at a glance: `/compass <topic> --map` draws the overview as a
+    concept map and the questions as a tree coloured by status, published to one stable
+    Artifact link per topic.
 - **Pairs well with:** [`youtube-breakdown`](#youtube-breakdown) (a breakdown often leaves the
   confusion compass picks up), [`teach-research`](#teach-research) / `teach` (the heavier
   path when a topic deserves a whole workspace).
@@ -358,9 +361,10 @@ rows get re-pointed to match.
   `scripts/compass.py check`, which the skill runs after every write and must pass before the
   loop continues. `compass.py match` resolves a partial name, `compass.py list` builds the
   listing, and `compass.py recall` picks the answered questions a resume warms up on from
-  memory (never recalled first, then the oldest recall). The helper is read-only — the skill
-  does all writing — and compass never writes into a teach workspace or a file it was seeded
-  from.
+  memory (never recalled first, then the oldest recall). `compass.py render` draws the
+  `<slug>.html` map beside a topic file after every passing `check`; it is the one file the
+  helper writes, and it never touches the topic file itself. Otherwise the skill does all
+  writing, and compass never writes into a teach workspace or a file it was seeded from.
 
 ## Project-Specific Items
 

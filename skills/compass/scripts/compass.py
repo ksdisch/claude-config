@@ -19,6 +19,11 @@ or read error, including a file that is not UTF-8):
                  first, then oldest last-recalled date, ties by tree number:
                  {"questions": [{"number", "text", "last_recalled"}]}; empty when none is
                  answered.
+  render <file>  Check the file, then draw it as one self-contained <slug>.html beside it: the
+                 Overview's ideas as a concept map (edges from its `Links:` list) and the
+                 question tree coloured by status. Writes only that HTML, never the topic file:
+                 {"written": path}; a file check rejects prints the check report, exits 1 and
+                 writes nothing.
 
 `list` and `match` read `--dir` (default ~/Learning/compass); a missing folder holds no topics,
 and a file that cannot be read lands in `skipped` instead of failing the whole folder.
@@ -29,7 +34,9 @@ parser is its executable one. Keep the two in step.
 import argparse
 import datetime
 import json
+import math
 import re
+from html import escape
 import sys
 from pathlib import Path
 
@@ -40,7 +47,7 @@ WHY_LIMIT = 60
 RECALL_DEFAULT = 3
 
 FRONTMATTER_REQUIRED = ("topic", "why", "status", "created", "updated")
-FRONTMATTER_OPTIONAL = ("workspace",)
+FRONTMATTER_OPTIONAL = ("workspace", "map")
 TOPIC_STATUSES = ("open", "closed")
 QUESTION_STATUSES = ("open", "answered", "parked", "prereq")
 ANSWERED_BY = ("claude", "kyle")
@@ -58,6 +65,10 @@ QUESTION_HEADING = re.compile(r"^Q([0-9.]+)\s*:\s*(.*)$")
 TREE_NUMBER = re.compile(r"^[1-9][0-9]*(\.[1-9][0-9]*)*$")
 FIELD = re.compile(r"^-\s+([A-Za-z][A-Za-z ]*?)\s*:\s*(.*?)\s*$")
 LOG_ENTRY = re.compile(r"^-\s+(\d{4}-\d{2}-\d{2})\b")
+IDEA = re.compile(r"^\d+\.\s+\*\*(.+?)\*\*\s*[—–:-]?\s*(.*?)\s*$")
+LINK = re.compile(r"^-\s+(\S.*?)\s+→\s+(\S.*?):\s+(\S.*?)\s*$")
+BULLET = re.compile(r"^\s*[-*]\s+(\S.*?)\s*$")
+URL = re.compile(r"https?://[^\s<>\"']+")
 
 
 def is_date(text: str) -> bool:
@@ -243,6 +254,66 @@ def check_question(q, report):
                    f"{label}: parked questions need a non-empty '- park reason:'")
 
 
+def parse_overview(section_lines, report):
+    """Parse the Overview into {ideas: [{term, text}], connect, links: [{source, target,
+    label, line}], sources}. The prose stays free text; only the `Links:` list is checked:
+    one `- <term> → <term>: <label>` bullet per line, both ends bolded idea terms, no self-link."""
+    ideas, connect, links, sources, mode = [], [], [], [], None
+    for lineno, text, in_fence in section_lines:
+        line = text.strip()
+        if in_fence:
+            continue
+        if line == "Links:":
+            mode = "links"
+            continue
+        if line == "Sources:":
+            mode = "sources"
+            continue
+        if line.startswith("How they connect:"):
+            mode = "connect"
+            connect.append(line[len("How they connect:"):].strip())
+            continue
+        if mode == "links":
+            if not line:
+                continue
+            m = LINK.match(line)
+            if m:
+                links.append({"source": m.group(1), "target": m.group(2),
+                              "label": m.group(3), "line": lineno})
+            else:
+                report.add("overview-link", lineno,
+                           f"a Links line must read '- <term> → <term>: <label>': {text!r}")
+            continue
+        if mode == "sources":
+            b = BULLET.match(text)
+            if b:
+                sources.append(b.group(1))
+            continue
+        if mode == "connect" and line:
+            connect.append(line)
+            continue
+        if mode == "connect":
+            mode = None
+        m = IDEA.match(line)
+        if m:
+            ideas.append({"term": m.group(1).strip(), "text": m.group(2)})
+    terms = {idea["term"].casefold(): idea["term"] for idea in ideas}
+    for link in links:
+        for end in ("source", "target"):
+            name = link[end]
+            if name.casefold() not in terms:
+                report.add("overview-link", link["line"],
+                           f"link end '{name}' is not a bolded key idea "
+                           f"(known: {', '.join(terms.values()) or 'none'})")
+            else:
+                link[end] = terms[name.casefold()]
+        if link["source"].casefold() == link["target"].casefold():
+            report.add("overview-link", link["line"],
+                       f"'{link['source']}' links to itself")
+    return {"ideas": ideas, "connect": " ".join(c for c in connect if c), "links": links,
+            "sources": sources}
+
+
 def check_frontmatter(fields, field_lines, report):
     for key in FRONTMATTER_REQUIRED:
         if not fields.get(key):
@@ -330,6 +401,8 @@ def check_text(text: str) -> Report:
         check_frontmatter(fields, field_lines, report)
     sections = parse_body(lines, body_start)
     by_name = check_sections(sections, fields.get("status"), report)
+    if "Overview" in by_name:
+        parse_overview(by_name["Overview"]["lines"], report)
     if "Questions" in by_name:
         questions = parse_questions(by_name["Questions"]["lines"], report)
         check_tree(questions, report)
@@ -507,6 +580,287 @@ def cmd_recall(args) -> int:
     return EXIT_OK
 
 
+# ---------------------------------------------------------------- render
+#
+# Geometry is computed here and the page only draws: ideas sit on an ellipse in Overview
+# order, clockwise from the top, so the same file always renders to the same bytes. The page
+# is one file with no script, no external URL and system fonts, themed light and dark through
+# CSS variables, and every string from the topic file is escaped.
+
+MAP_W, MAP_H = 760, 500
+MAP_RX, MAP_RY = 270, 190
+NODE_CHARS, NODE_CHAR_W, NODE_LINE_H, NODE_PAD = 16, 7.4, 17, 12
+NODE_MIN_W, NODE_MAX_W = 96, 172
+LABEL_CHARS = 30
+PAIR_OFFSET = 9
+LABEL_CHAR_W, LABEL_H = 6.2, 15
+LABEL_SPOTS = (0.5, 0.38, 0.62, 0.28, 0.72)
+
+
+def wrap(text: str, width: int) -> list:
+    """Greedy word wrap; a word longer than the width gets a line of its own."""
+    lines, cur = [], ""
+    for word in text.split():
+        if cur and len(cur) + 1 + len(word) > width:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = f"{cur} {word}" if cur else word
+    return lines + [cur] if cur else lines
+
+
+def fmt(n: float) -> str:
+    return f"{n:.1f}".rstrip("0").rstrip(".")
+
+
+def clip(cx, cy, hw, hh, dx, dy):
+    """Where the ray from a box's centre along (dx, dy) leaves the box."""
+    ts = [t for t in ((hw / abs(dx)) if dx else None, (hh / abs(dy)) if dy else None) if t]
+    t = min(ts) if ts else 0
+    return cx + dx * t, cy + dy * t
+
+
+def overlaps(a, b) -> bool:
+    """Two (x0, y0, x1, y1) boxes intersect."""
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+def concept_svg(overview: dict) -> str:
+    ideas, links = overview["ideas"], overview["links"]
+    n = len(ideas)
+    nodes = {}
+    for i, idea in enumerate(ideas):
+        angle = -math.pi / 2 + 2 * math.pi * i / n
+        lines = wrap(idea["term"], NODE_CHARS)
+        w = min(NODE_MAX_W, max(NODE_MIN_W, max(len(l) for l in lines) * NODE_CHAR_W + 2 * NODE_PAD))
+        h = len(lines) * NODE_LINE_H + 2 * NODE_PAD - 6
+        nodes[idea["term"]] = {"x": MAP_W / 2 + MAP_RX * math.cos(angle),
+                               "y": MAP_H / 2 + MAP_RY * math.sin(angle),
+                               "w": w, "h": h, "lines": lines, "text": idea["text"]}
+    pairs = {(l["source"], l["target"]) for l in links}
+    taken = [(nd["x"] - nd["w"] / 2 - 4, nd["y"] - nd["h"] / 2 - 4,
+              nd["x"] + nd["w"] / 2 + 4, nd["y"] + nd["h"] / 2 + 4) for nd in nodes.values()]
+    edges, labels = [], []
+    for link in links:
+        a, b = nodes[link["source"]], nodes[link["target"]]
+        dx, dy = b["x"] - a["x"], b["y"] - a["y"]
+        length = math.hypot(dx, dy) or 1
+        ux, uy = dx / length, dy / length
+        ox, oy = (-uy * PAIR_OFFSET, ux * PAIR_OFFSET) if (link["target"], link["source"]) in pairs else (0, 0)
+        x1, y1 = clip(a["x"], a["y"], a["w"] / 2 + 4, a["h"] / 2 + 4, ux, uy)
+        x2, y2 = clip(b["x"], b["y"], b["w"] / 2 + 6, b["h"] / 2 + 6, -ux, -uy)
+        x1, y1, x2, y2 = x1 + ox, y1 + oy, x2 + ox, y2 + oy
+        full = f"{link['source']} → {link['target']}: {link['label']}"
+        edges.append(f'<line class="edge" x1="{fmt(x1)}" y1="{fmt(y1)}" x2="{fmt(x2)}" '
+                     f'y2="{fmt(y2)}" marker-end="url(#arrow)"><title>{escape(full)}</title></line>')
+        label = link["label"] if len(link["label"]) <= LABEL_CHARS else \
+            link["label"][:LABEL_CHARS - 1].rstrip() + "…"
+        # The first spot along the edge whose label box clears every node and earlier label;
+        # the midpoint when none does.
+        half = len(label) * LABEL_CHAR_W / 2
+        spots = [(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t) for t in LABEL_SPOTS]
+        lx, ly = next(((x, y) for x, y in spots
+                       if not any(overlaps((x - half, y - LABEL_H / 2, x + half, y + LABEL_H / 2), box)
+                                  for box in taken)), spots[0])
+        taken.append((lx - half, ly - LABEL_H / 2, lx + half, ly + LABEL_H / 2))
+        labels.append(f'<text class="edge-label" x="{fmt(lx)}" y="{fmt(ly + 4)}" '
+                      f'text-anchor="middle"><title>{escape(full)}</title>{escape(label)}</text>')
+    boxes = []
+    for term, nd in nodes.items():
+        x, y = nd["x"] - nd["w"] / 2, nd["y"] - nd["h"] / 2
+        top = nd["y"] - (len(nd["lines"]) - 1) * NODE_LINE_H / 2 + 5
+        spans = "".join(f'<tspan x="{fmt(nd["x"])}" y="{fmt(top + k * NODE_LINE_H)}">{escape(l)}</tspan>'
+                        for k, l in enumerate(nd["lines"]))
+        boxes.append(f'<g class="node"><title>{escape(term)}: {escape(nd["text"])}</title>'
+                     f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(nd["w"])}" height="{fmt(nd["h"])}" rx="7"/>'
+                     f'<text text-anchor="middle">{spans}</text></g>')
+    return (f'<svg viewBox="0 0 {MAP_W} {MAP_H}" role="img" aria-label="Concept map of the key ideas">'
+            '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" '
+            'markerHeight="7" orient="auto-start-reverse"><path class="arrow" d="M0 0L10 5L0 10z"/>'
+            '</marker></defs>' + "".join(edges) + "".join(boxes) + "".join(labels) + "</svg>")
+
+
+def source_html(item: str) -> str:
+    m = URL.search(item)
+    if not m:
+        return escape(item)
+    url = m.group(0).rstrip(".,;)")
+    end = m.start() + len(url)
+    return (escape(item[:m.start()]) + f'<a href="{escape(url)}">{escape(url)}</a>'
+            + escape(item[end:]))
+
+
+def tree_html(questions: list) -> str:
+    children = {}
+    for q in sorted(questions, key=lambda q: tree_key(q["number"])):
+        children.setdefault(q["number"].rpartition(".")[0], []).append(q)
+
+    def branch(parent: str) -> str:
+        items = []
+        for q in children.get(parent, []):
+            f, status = q["fields"], q["fields"].get("status", "")
+            meta = []
+            if status == "answered":
+                meta.append(f"answered by {escape(f.get('answered by', ''))}")
+            if f.get("last recalled"):
+                meta.append(f"recalled {escape(f['last recalled'])}")
+            if status == "parked":
+                meta.append(f"parked: {escape(f.get('park reason', ''))}")
+            if status == "prereq":
+                meta.append("prerequisite: answer this first")
+            meta_html = f'<p class="meta">{" · ".join(meta)}</p>' if meta else ""
+            items.append(f'<li class="q" data-status="{escape(status)}"><div class="q-row">'
+                         f'<span class="chip">{escape(status)}</span>'
+                         f'<span class="num">Q{escape(q["number"])}</span>'
+                         f'<span class="q-text">{escape(q["text"])}</span></div>{meta_html}'
+                         f'{branch(q["number"])}</li>')
+        return f'<ul class="tree">{"".join(items)}</ul>' if items else ""
+
+    return branch("") or '<p class="empty">No questions yet.</p>'
+
+
+PAGE_CSS = """
+/* Layout: one reading column; the concept map scrolls sideways inside its own frame on a phone. */
+:root {
+  --ground: #f5f7f8; --panel: #ffffff; --ink: #18232b; --ink-soft: #4d5b66; --rule: #d7dee3;
+  --accent: #1f6f78; --edge: #7d8f9b;
+  --s-open: #2f5fb3; --s-answered: #2c7a4b; --s-parked: #7a828a; --s-prereq: #a35f00;
+  --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --data: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #11181d; --panel: #18222a; --ink: #e3e9ed; --ink-soft: #9fb0bc; --rule: #2c3a44;
+    --accent: #5fb8c1; --edge: #6f8492;
+    --s-open: #7ea6f0; --s-answered: #6cc28f; --s-parked: #98a2ab; --s-prereq: #e2a24a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #11181d; --panel: #18222a; --ink: #e3e9ed; --ink-soft: #9fb0bc; --rule: #2c3a44;
+  --accent: #5fb8c1; --edge: #6f8492;
+  --s-open: #7ea6f0; --s-answered: #6cc28f; --s-parked: #98a2ab; --s-prereq: #e2a24a;
+  color-scheme: dark;
+}
+body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 15px;
+  line-height: 1.55; margin: 0; }
+main { max-width: 820px; margin: 0 auto; padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px; }
+header { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow, section > h2, footer { font-family: var(--data); font-size: 12px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 34px; line-height: 1.15; margin: 0;
+  text-wrap: balance; }
+.why { margin: 0; max-width: 65ch; }
+.why b { color: var(--accent); font-weight: 600; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--data); font-size: 13px;
+  color: var(--ink-soft); }
+.counts span { font-variant-numeric: tabular-nums; }
+.counts .count { color: var(--ink); font-weight: 600; }
+section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.map-frame { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+  overflow-x: auto; }
+.map-frame svg { display: block; width: 100%; min-width: 600px; height: auto; }
+.node rect { fill: var(--ground); stroke: var(--accent); stroke-width: 1.5; }
+.node text { fill: var(--ink); font-family: var(--body); font-size: 13.5px; font-weight: 600; }
+.edge { stroke: var(--edge); stroke-width: 1.4; fill: none; }
+.arrow { fill: var(--edge); }
+.edge-label { fill: var(--ink-soft); font-family: var(--body); font-size: 11.5px;
+  paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; }
+.ideas { margin: 0; padding-left: 1.6em; display: flex; flex-direction: column; gap: 6px;
+  max-width: 65ch; }
+.ideas b { font-weight: 600; }
+.connect { margin: 0; max-width: 65ch; color: var(--ink-soft); }
+.connect b { color: var(--ink); font-weight: 600; }
+.sources { margin: 0; padding-left: 1.2em; font-size: 13px; color: var(--ink-soft);
+  overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tree .tree { margin-top: 8px; padding-left: 18px; border-left: 1px solid var(--rule); }
+.q-row { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.q-text { min-width: 0; overflow-wrap: anywhere; }
+.num { font-family: var(--data); font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums; }
+.chip { flex: none; width: 74px; text-align: center; font-family: var(--data); font-size: 11px;
+  letter-spacing: 0.04em; border-radius: 999px; padding: 1px 0; border: 1px solid currentColor; }
+.q[data-status="open"] > .q-row .chip { color: var(--s-open); }
+.q[data-status="answered"] > .q-row .chip { color: var(--s-answered); }
+.q[data-status="parked"] > .q-row .chip { color: var(--s-parked); }
+.q[data-status="parked"] > .q-row .q-text { color: var(--ink-soft); }
+.q[data-status="prereq"] > .q-row .chip { color: var(--s-prereq); font-weight: 600; }
+.meta { margin: 2px 0 0 84px; font-size: 13px; color: var(--ink-soft); }
+.empty { margin: 0; color: var(--ink-soft); }
+footer { border-top: 1px solid var(--rule); padding-top: 14px; text-transform: none;
+  letter-spacing: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) { h1 { font-size: 27px; } .chip { width: 64px; } .meta { margin-left: 0; } }
+"""
+
+
+def render_page(path: Path, text: str) -> str:
+    lines = text.splitlines()
+    scratch = Report()
+    fields, _, body_start = parse_frontmatter(lines, scratch)
+    sections = {s["name"]: s for s in parse_body(lines, body_start)}
+    questions = parse_questions(sections["Questions"]["lines"], scratch)
+    counts = dict.fromkeys(QUESTION_STATUSES, 0)
+    for q in questions:
+        counts[q["fields"]["status"]] += 1
+    topic = fields["topic"]
+
+    parts = [f'<header><p class="eyebrow">Compass map · topic {escape(fields["status"])}</p>'
+             f'<h1>{escape(topic)}</h1><p class="why"><b>Why</b> {escape(fields["why"])}</p>'
+             '<div class="counts">'
+             + "".join(f'<span><span class="count" data-count="{s}">{counts[s]}</span> {s}</span>'
+                       for s in QUESTION_STATUSES)
+             + "</div></header>"]
+    if "Overview" in sections:
+        ov = parse_overview(sections["Overview"]["lines"], scratch)
+        body = []
+        if ov["ideas"]:
+            body.append(f'<div class="map-frame">{concept_svg(ov)}</div>')
+            body.append('<ol class="ideas">' + "".join(
+                f'<li><b>{escape(i["term"])}</b> — {escape(i["text"])}</li>' for i in ov["ideas"])
+                + "</ol>")
+        if ov["connect"]:
+            body.append(f'<p class="connect"><b>How they connect:</b> {escape(ov["connect"])}</p>')
+        if ov["sources"]:
+            body.append('<ul class="sources">' + "".join(
+                f"<li>{source_html(s)}</li>" for s in ov["sources"]) + "</ul>")
+        parts.append('<section><h2>Overview</h2>' + "".join(body) + "</section>")
+    parts.append(f'<section><h2>Questions</h2>{tree_html(questions)}</section>')
+    parts.append(f'<footer>Drawn by compass.py render from {escape(path.name)}, last updated '
+                 f'{escape(fields["updated"])}. Edit the topic file, never this page.</footer>')
+    return ("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            '<meta name="claude:viewport-fit-sides" content="cover">\n'
+            f"<title>{escape(topic)}</title>\n<style>{PAGE_CSS}</style>\n</head>\n<body>\n<main>"
+            + "".join(parts) + "</main>\n</body>\n</html>\n")
+
+
+def cmd_render(args) -> int:
+    path = Path(args.file).expanduser()
+    try:
+        text = read_text(path)
+    except ReadError as exc:
+        print(json.dumps({"error": str(exc)}))
+        return EXIT_ERROR
+    report = check_text(text)
+    if report.violations:
+        print(json.dumps({"valid": False, "violations": report.violations}, indent=2))
+        return EXIT_INVALID
+    out = path.with_suffix(".html")
+    try:
+        out.write_text(render_page(path, text), encoding="utf-8")
+    except OSError as exc:
+        print(json.dumps({"error": f"cannot write {out}: {exc.strerror}"}))
+        return EXIT_ERROR
+    print(json.dumps({"written": str(out)}, ensure_ascii=False))
+    return EXIT_OK
+
+
 def positive_int(text: str) -> int:
     value = int(text)
     if value < 1:
@@ -531,6 +885,9 @@ def main(argv=None) -> int:
     p_recall.add_argument("file")
     p_recall.add_argument("n", nargs="?", type=positive_int, default=RECALL_DEFAULT)
     p_recall.set_defaults(func=cmd_recall)
+    p_render = sub.add_parser("render", help="draw the topic as <slug>.html beside it")
+    p_render.add_argument("file")
+    p_render.set_defaults(func=cmd_render)
     args = parser.parse_args(argv)
     return args.func(args)
 

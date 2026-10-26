@@ -1,6 +1,6 @@
 ---
 name: compass
-description: Run the confusion-compass learning loop on any topic, concept or tool, one markdown file per topic in ~/Learning/compass/. `/compass <topic>` resumes a fuzzy-matched topic with a recall warm-up on older answers, reopens a closed one, or starts one by capturing why Kyle is learning it (`--from <file>` drafts the why and starter questions from his notes). It turns loose confusion into numbered questions he confirms, answers the next one tight with cited sources, checks his own attempt when he says "let me try", and logs follow-ups under their parent. When the loop stalls it asks a trigger prompt against the why, offers a short overview, parks off-why questions (and unparks them), logs missing prereqs, and flags a bad source. It closes a topic only on his say-so. A bare `/compass` lists every topic. Use when Kyle types /compass, or says "compass this", "I'm confused about X, help me learn it", "turn my confusion into questions" — even without naming the skill. NOT for a teach workspace (teach-research), a video breakdown (youtube-breakdown), or a reference page of what a session covered (session-reference).
+description: Run the confusion-compass learning loop on any topic, concept or tool, one markdown file per topic in ~/Learning/compass/. `/compass <topic>` resumes a fuzzy-matched topic with a recall warm-up on older answers, reopens a closed one, or starts one by capturing why Kyle is learning it (`--from <file>` drafts the why and starter questions from his notes). It turns loose confusion into numbered questions he confirms, answers the next one tight with cited sources, checks his own attempt when he says "let me try", and logs follow-ups under their parent. When the loop stalls it asks a trigger prompt against the why, offers a short overview, parks off-why questions (and unparks them), logs missing prereqs, and flags a bad source. It closes a topic only on his say-so. `--map` draws the topic as one page — its key ideas as a concept map and its question tree coloured by status. A bare `/compass` lists every topic. Use when Kyle types /compass, or says "compass this", "I'm confused about X, help me learn it", "turn my confusion into questions" — even without naming the skill. NOT for a teach workspace (teach-research), a video breakdown (youtube-breakdown), or a reference page of what a session covered (session-reference).
 ---
 
 # Compass
@@ -15,7 +15,7 @@ the topic never starts from zero.
 - Helper: `python3 ~/.claude/skills/compass/scripts/compass.py check <file>` — read-only, JSON out,
   exit 0 only when the file is valid; you do all writing. Its `match` and `list` subcommands
   read the folder (see *Resolve the topic* and *List topics*); `recall` picks the warm-up
-  questions (see *Recall warm-up*).
+  questions (see *Recall warm-up*); `render` draws the topic's map page (see *Map*).
 
 ## Prime directives
 
@@ -26,9 +26,11 @@ the topic never starts from zero.
 4. **Write, then check, after every change.** Every new question, answer and status change is
    written to the file immediately, with `updated` bumped to today, then `check` runs. If `check`
    reports anything, fix the file and re-run until it exits 0 before saying anything else to Kyle.
-   Never continue the loop on a file that fails `check`.
-5. **Write only topic files.** Never write into a teach workspace, a file a topic was seeded from,
-   or anywhere outside `~/Learning/compass/`.
+   Never continue the loop on a file that fails `check`. Once it exits 0, run
+   `compass.py render <file>` so the topic's map page stays current (see *Map*).
+5. **Write only topic files and their maps.** Never write into a teach workspace, a file a topic
+   was seeded from, or anywhere outside `~/Learning/compass/`. The one file besides `<slug>.md`
+   is the `<slug>.html` that `render` draws beside it.
 
 ## Resolve the topic
 
@@ -231,7 +233,9 @@ short map would help before questions. Want one?" Write nothing unless he says y
 
 1. **Ground it** as you would an answer (*Answer* step 1) and keep it short: five to eight key
    ideas, each a numbered line with the term in bold and one sentence; a `How they connect:`
-   paragraph of a few sentences; a `Sources:` line followed by one bullet per source.
+   paragraph of a few sentences; a `Links:` line followed by one bullet per relation that
+   paragraph names, `- <term> → <term>: <short label>`, both ends bolded terms (these become
+   the map's edges); a `Sources:` line followed by one bullet per source.
 2. **Write it** into `## Overview`, above `## Questions`. If the file already has an overview,
    revise that one in place; never add a second. Write, `check`.
 3. **Ask again, straight away:** "With that map, what's confusing?" His answer goes through
@@ -314,6 +318,28 @@ to close.
 3. **Continue as in *Resume*** — orient him, then take new confusion through *Form questions*.
    Later writes this session revise the reopen entry (`Reopened; logged Q4. Earlier
    close-out:`) and keep the indented close-out under it.
+
+## Map (`--map`)
+
+`/compass <topic> --map` shows the topic as one page: the overview's key ideas as a concept map
+with an arrow per `Links:` bullet, and the question tree coloured by status. The page is drawn
+from the topic file by a script, so it can't drift from it: **never hand-edit `<slug>.html`.**
+
+1. **Resolve** the topic as in *Resolve the topic*. On `none`, create nothing.
+2. **Render:** `python3 ~/.claude/skills/compass/scripts/compass.py render <file>`. It checks the
+   file first, then writes `<slug>.html` beside it and prints `{"written": <path>}`. Exit 1 means
+   `check` failed and nothing was written: fix the file as in prime directive 4, then render
+   again. Exit 2 is a file it can't read or write; report it and stop.
+3. **Publish** to one stable Artifact per topic, its link kept in the frontmatter `map:` key.
+   - **`map:` holds a link:** read that artifact first with the Artifact tool's `read` action (a
+     publish to an artifact this conversation hasn't read is refused), then publish
+     `<slug>.html` with `url` set to it.
+   - **`map:` is empty or absent:** publish `<slug>.html` fresh (icon `map`), then write the
+     link into `map:` and run `check`. Recording the link doesn't bump `updated` or add a
+     session-log entry; it's bookkeeping, not progress on the topic.
+4. **Deliver** in three lines: the local path, the Artifact link, and the counts per status.
+   Then carry on wherever the loop was. An overview with no `Links:` draws its ideas without
+   arrows; offer to add them, writing only on his yes (as in *Too new: the overview*).
 
 ## Session log
 

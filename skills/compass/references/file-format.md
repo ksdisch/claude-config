@@ -12,6 +12,7 @@ topic: Rust lifetimes
 why: I review Rust PRs at work and need to read borrow-checker errors without guessing.
 status: open
 workspace:
+map:
 created: 2026-10-18
 updated: 2026-10-20
 ---
@@ -19,7 +20,7 @@ updated: 2026-10-20
 # Rust lifetimes
 
 ## Overview
-(optional: 5–8 key ideas, how they connect, sources)
+(optional: 5–8 key ideas, how they connect, links, sources)
 
 ## Questions
 
@@ -64,6 +65,7 @@ why are fine.
 | `why` | yes | Why Kyle is learning it, one line |
 | `status` | yes | `open` or `closed` |
 | `workspace` | no | Path to a linked teach workspace (link only; compass never writes there) |
+| `map` | no | Link to the topic's published map Artifact, written the first time `--map` publishes it |
 | `created` | yes | `YYYY-MM-DD` |
 | `updated` | yes | `YYYY-MM-DD`, bumped on every write |
 
@@ -72,8 +74,19 @@ why are fine.
 `##` headings, in this order. Anything before the first `##` (the `# <topic>` title) is ignored.
 
 1. `## Overview` — optional; at most one, revised in place. Five to eight numbered key ideas
-   (term in bold, one sentence each), a `How they connect:` paragraph, then a `Sources:` line
-   and a bullet per source. `check` treats its body as free text.
+   (term in bold, one sentence each), a `How they connect:` paragraph, an optional `Links:` line
+   with one bullet per relation, then a `Sources:` line and a bullet per source. `check` treats
+   the prose as free text and checks only the links:
+
+   ```
+   Links:
+   - Deep module → Interface: keeps it small
+   - Interface → Implementation: is the cost of reaching
+   ```
+
+   Each bullet is `- <term> → <term>: <label>`, with `→` (not `->`). Both ends name a bolded
+   key idea, matched case-insensitively, and an idea never links to itself. `compass.py render`
+   draws each bullet as a labelled arrow on the topic's map.
 2. `## Questions` — required, may be empty.
 3. `## Close-out` — required and non-empty when `status: closed`; must be absent when `open`.
    Reopening moves its text into the session log as an indented continuation of the reopen
@@ -143,3 +156,11 @@ for a missing section. Exit 0 when valid, 1 when not, 2 when the file can't be r
 | `answered-needs-answer` | Answered question without a non-empty Answer |
 | `answered-needs-sources` | Answered question without a non-empty Sources list |
 | `parked-needs-reason` | Parked question without a park reason |
+| `overview-link` | A `Links:` bullet that isn't `- <term> → <term>: <label>`, names an end that isn't a bolded key idea, or links an idea to itself |
+
+## The rendered map
+
+`compass.py render <file>` checks the file, then writes `<slug>.html` beside it, the only file
+compass writes besides topic files. It is generated output: never hand-edited, never the source of
+truth, and ignored by `list` and `match`, which read only `*.md`. A file `check` rejects is not
+rendered.
