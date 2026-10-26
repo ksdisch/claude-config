@@ -67,7 +67,7 @@ why are fine.
 | `workspace` | no | Path to a linked teach workspace (link only; compass never writes there) |
 | `map` | no | Link to the topic's published map Artifact, written the first time `--map` publishes it |
 | `created` | yes | `YYYY-MM-DD` |
-| `updated` | yes | `YYYY-MM-DD`, bumped on every write |
+| `updated` | yes | `YYYY-MM-DD`, bumped on every write except recording the `map:` link |
 
 ## Sections
 
@@ -156,6 +156,7 @@ for a missing section. Exit 0 when valid, 1 when not, 2 when the file can't be r
 | `answered-needs-answer` | Answered question without a non-empty Answer |
 | `answered-needs-sources` | Answered question without a non-empty Sources list |
 | `parked-needs-reason` | Parked question without a park reason |
+| `overview-idea` | Two bolded key ideas share a term (compared case-insensitively) |
 | `overview-link` | A `Links:` bullet that isn't `- <term> → <term>: <label>`, names an end that isn't a bolded key idea, or links an idea to itself |
 
 ## The rendered map

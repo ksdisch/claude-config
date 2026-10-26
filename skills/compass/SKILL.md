@@ -13,7 +13,8 @@ the topic never starts from zero.
 - File format (the contract): `references/file-format.md`. Read it before the first write of a
   session.
 - Helper: `python3 ~/.claude/skills/compass/scripts/compass.py check <file>` — read-only, JSON out,
-  exit 0 only when the file is valid; you do all writing. Its `match` and `list` subcommands
+  exit 0 only when the file is valid. You write the topic files; the helper's one write is
+  `render`'s generated `<slug>.html` beside them. Its `match` and `list` subcommands
   read the folder (see *Resolve the topic* and *List topics*); `recall` picks the warm-up
   questions (see *Recall warm-up*); `render` draws the topic's map page (see *Map*).
 
@@ -325,7 +326,10 @@ to close.
 with an arrow per `Links:` bullet, and the question tree coloured by status. The page is drawn
 from the topic file by a script, so it can't drift from it: **never hand-edit `<slug>.html`.**
 
-1. **Resolve** the topic as in *Resolve the topic*. On `none`, create nothing.
+1. **Resolve** the topic: drop `--map` and run `match` on the words left, as in *Resolve the
+   topic*, but on `single` go straight to step 2. No *Resume*, recall warm-up or session-log
+   entry; drawing the map isn't a session. On `several`, ask which one; on `none`, create
+   nothing.
 2. **Render:** `python3 ~/.claude/skills/compass/scripts/compass.py render <file>`. It checks the
    file first, then writes `<slug>.html` beside it and prints `{"written": <path>}`. Exit 1 means
    `check` failed and nothing was written: fix the file as in prime directive 4, then render

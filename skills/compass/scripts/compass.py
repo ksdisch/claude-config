@@ -65,7 +65,9 @@ QUESTION_HEADING = re.compile(r"^Q([0-9.]+)\s*:\s*(.*)$")
 TREE_NUMBER = re.compile(r"^[1-9][0-9]*(\.[1-9][0-9]*)*$")
 FIELD = re.compile(r"^-\s+([A-Za-z][A-Za-z ]*?)\s*:\s*(.*?)\s*$")
 LOG_ENTRY = re.compile(r"^-\s+(\d{4}-\d{2}-\d{2})\b")
-IDEA = re.compile(r"^\d+\.\s+\*\*(.+?)\*\*\s*[—–:-]?\s*(.*?)\s*$")
+IDEA = re.compile(r"^\d+\.\s+\*\*\s*(\S.*?)\s*\*\*\s*[—–:-]?\s*(.*?)\s*$")
+# An Overview sub-heading, bolded or not: `Links:` and `**Links:**` both start the list.
+OVERVIEW_HEAD = re.compile(r"^\**(Links|Sources|How they connect):\**\s*(.*?)\s*$")
 LINK = re.compile(r"^-\s+(\S.*?)\s+→\s+(\S.*?):\s+(\S.*?)\s*$")
 BULLET = re.compile(r"^\s*[-*]\s+(\S.*?)\s*$")
 URL = re.compile(r"https?://[^\s<>\"']+")
@@ -263,15 +265,11 @@ def parse_overview(section_lines, report):
         line = text.strip()
         if in_fence:
             continue
-        if line == "Links:":
-            mode = "links"
-            continue
-        if line == "Sources:":
-            mode = "sources"
-            continue
-        if line.startswith("How they connect:"):
-            mode = "connect"
-            connect.append(line[len("How they connect:"):].strip())
+        head = OVERVIEW_HEAD.match(line)
+        if head:
+            mode = {"Links": "links", "Sources": "sources"}.get(head.group(1), "connect")
+            if mode == "connect":
+                connect.append(head.group(2))
             continue
         if mode == "links":
             if not line:
@@ -296,8 +294,15 @@ def parse_overview(section_lines, report):
             mode = None
         m = IDEA.match(line)
         if m:
-            ideas.append({"term": m.group(1).strip(), "text": m.group(2)})
-    terms = {idea["term"].casefold(): idea["term"] for idea in ideas}
+            ideas.append({"term": m.group(1), "text": m.group(2), "line": lineno})
+    terms = {}
+    for idea in ideas:
+        key = idea["term"].casefold()
+        if key in terms:
+            report.add("overview-idea", idea["line"],
+                       f"key idea '{idea['term']}' repeats '{terms[key]}'; each term names one idea")
+        else:
+            terms[key] = idea["term"]
     for link in links:
         for end in ("source", "target"):
             name = link[end]
@@ -598,9 +603,17 @@ LABEL_SPOTS = (0.5, 0.38, 0.62, 0.28, 0.72)
 
 
 def wrap(text: str, width: int) -> list:
-    """Greedy word wrap; a word longer than the width gets a line of its own."""
+    """Greedy word wrap; a word longer than the width is cut into width-long pieces."""
     lines, cur = [], ""
     for word in text.split():
+        while len(word) > width:
+            if cur:
+                lines.append(cur)
+                cur = ""
+            lines.append(word[:width])
+            word = word[width:]
+        if not word:
+            continue
         if cur and len(cur) + 1 + len(word) > width:
             lines.append(cur)
             cur = word
@@ -684,7 +697,10 @@ def source_html(item: str) -> str:
     m = URL.search(item)
     if not m:
         return escape(item)
-    url = m.group(0).rstrip(".,;)")
+    url = m.group(0).rstrip(".,;")
+    # A closing ')' belongs to the URL only when it closes a '(' inside it, as Wikipedia's do.
+    while url.endswith(")") and url.count(")") > url.count("("):
+        url = url[:-1].rstrip(".,;")
     end = m.start() + len(url)
     return (escape(item[:m.start()]) + f'<a href="{escape(url)}">{escape(url)}</a>'
             + escape(item[end:]))

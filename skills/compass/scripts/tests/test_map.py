@@ -157,6 +157,21 @@ class LinksCheckTests(MapCase):
         self.assertIn("overview-link", self.rules(topic(overview=bad)))
 
 
+    def test_a_bold_links_heading_is_still_checked(self):
+        bold = OVERVIEW.replace("Links:\n", "**Links:**\n").replace(
+            "- Deep module → Interface", "- Deep module → Abstraction")
+        self.assertIn("overview-link", self.rules(topic(overview=bold)))
+        rc, _, html = self.render(topic(overview=OVERVIEW.replace("Links:\n", "**Links:**\n")))
+        self.assertEqual(rc, 0)
+        self.assertEqual(html.count('class="edge"'), 4)
+
+    def test_two_ideas_with_the_same_term_are_reported(self):
+        for dup in ("**Interface**", "**interface**"):
+            with self.subTest(dup=dup):
+                bad = OVERVIEW.replace("**Module**", dup)
+                self.assertIn("overview-idea", self.rules(topic(overview=bad)))
+
+
 class MapKeyTests(MapCase):
     def test_the_map_key_is_optional_and_known(self):
         with_map = topic().replace(
@@ -255,6 +270,28 @@ class RenderTests(MapCase):
         _, _, html = self.render(topic(overview=hostile))
         self.assertNotIn('href="javascript', html)
         self.assertIn('href="https://blog.pragmaticengineer.com/', html)
+
+    def test_a_blank_bold_term_is_not_an_idea_and_render_succeeds(self):
+        blank = OVERVIEW.replace("5. **Shallow module**", "5. ** **")
+        rc, out, html = self.render(topic(overview=blank.replace(
+            "- Shallow module → Interface: exposes nearly everything\n", "")))
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(html.count('class="node"'), 4)
+
+    def test_a_long_single_word_term_is_broken_to_fit_its_box(self):
+        long_term = "Supercalifragilisticexpialidocious"
+        _, _, html = self.render(topic(overview=OVERVIEW.replace("**Module**", f"**{long_term}**")))
+        spans = re.findall(r"<tspan[^>]*>([^<]*)</tspan>", html)
+        self.assertEqual("".join(s for s in spans if s in long_term and len(s) > 1)[:len(long_term)],
+                         long_term)
+        self.assertTrue(all(len(s) <= 16 for s in spans), spans)
+
+    def test_a_url_keeps_its_own_closing_parenthesis(self):
+        wiki = OVERVIEW.replace("Sources:\n", "Sources:\n- Wiki — https://en.wikipedia.org/wiki/Deep_(module)\n"
+                                "- Aside (see https://example.com/a).\n")
+        _, _, html = self.render(topic(overview=wiki))
+        self.assertIn('href="https://en.wikipedia.org/wiki/Deep_(module)"', html)
+        self.assertIn('href="https://example.com/a"', html)
 
     def test_list_and_match_ignore_the_rendered_page(self):
         self.render(topic())
