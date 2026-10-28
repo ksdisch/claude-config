@@ -1118,6 +1118,19 @@ session *in that repo*.
   entries and Interview Stories. A deck is checked for names and pay before every publish.
   NotebookLM is retired from prep.
 
+#### `job-mail` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — reading mail into stage moves and drafting notes are
+  judgment; runs without `--chrome` and installs nothing.
+- **Reach for it when:**
+  - "Any replies?", "check my job mail", "check the last 30 days".
+  - "Follow up with Acme", "thank-you note for Acme".
+- **Pairs well with:** [`prep-interview`](#prep-interview-life-nodes) (its debrief hands off
+  the thank-you note), [`hunt-listings`](#hunt-listings-life-nodes) ("queue this" for a
+  recruiter's job), [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push).
+- **Notes:** Gmail stays read-only except one saved draft on Kyle's yes; nothing is sent,
+  labelled or marked read. Its log is `~/Library/Application Support/kyles-nodes/job-mail-log.jsonl`.
+
 #### `log` (Life Nodes)
 
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
