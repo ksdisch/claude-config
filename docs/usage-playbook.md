@@ -1118,6 +1118,18 @@ session *in that repo*.
   entries and Interview Stories. A deck is checked for names and pay before every publish.
   NotebookLM is retired from prep.
 
+#### `plan-training` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high` — interviews, progression and placement are judgment;
+  run it in the vault on `main`, and it needs the Google Calendar connector.
+- **Reach for it when:**
+  - "Plan my training", "plan my next block", "re-plan the year", "my race changed to…".
+  - "Take in my marks", "fix my training calendar", "what happened last block?".
+- **Pairs well with:** [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push to
+  Training Plan fails), [`audit`](#audit-life-nodes) (checks what it wrote).
+- **Notes:** one yes per screen; only take-in and `calendar-ids` write without one. Never
+  runs git, and a no-workout run's distance is never written.
+
 #### `job-mail` (Life Nodes)
 
 - **Run config:** Opus 5.5 · `high` — reading mail into stage moves and drafting notes are
