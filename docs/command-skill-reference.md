@@ -245,8 +245,8 @@ Kyle's Obsidian vault for logging life data (doses, sleep, drinks, later Soft 30
 
 | Skill | What it does |
 |---|---|
-| `log` | Routes a message or screenshot to its nodes, appends entries to their JSONL streams after one confirm line per node, and pushes the touched months to every artifact that reads them. On "pull my shifts", also reads Gearhead shifts from Google Calendar, read-only. · [config →](usage-playbook.md#log-life-nodes) |
-| `review` | Answers questions about logged data from resolved vault entries (totals, last times, what's left today); writes nothing. · [config →](usage-playbook.md#review-life-nodes) |
+| `log` | Routes a message or screenshot to its nodes, appends entries to their JSONL streams after one confirm line per node, and pushes the touched months to every artifact that reads them. Training news and planning asks get one line pointing at Training Plan or `plan-training`, and no entry. On "pull my shifts", also reads Gearhead shifts from Google Calendar, read-only. · [config →](usage-playbook.md#log-life-nodes) |
+| `review` | Answers questions about logged data from resolved vault entries (totals, last times, what's left today) and questions about the training plan; writes nothing. · [config →](usage-playbook.md#review-life-nodes) |
 
 ---
 
