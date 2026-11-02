@@ -1150,6 +1150,7 @@ session *in that repo*.
   - Reporting anything to record: a dose, a night's Bevel screenshots, drinks, water.
   - Correcting or scratching an entry ("actually it was 7:45").
   - Refreshing Gearhead's scheduled shifts from Google Calendar ("pull my shifts").
+  - Reporting training news: it points results at Training Plan and planning at `plan-training`, and writes no Training entry.
 - **Pairs well with:** [`review`](#review-life-nodes) (asking about what was logged),
   [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push fails).
 - **Notes:** one confirm line per node naming every assumption, then an append. Never runs
@@ -1160,10 +1161,12 @@ session *in that repo*.
 - **Run config:** runs in Cowork, in the Life Nodes project; not launched from Claude Code.
 - **Reach for it when:**
   - "How many…", "when did I last…", "what's left today" about logged data.
+  - Plan questions: "what's my run today?", "planned through?".
 - **Pairs well with:** [`log`](#log-life-nodes) (it hands logs back to it),
   [`audit`](#audit-life-nodes) (when an answer shows data that looks wrong).
-- **Notes:** read-only by instruction and by `allowed-tools`; whether Cowork enforces
-  `allowed-tools` is unverified, which is why the body says it too.
+- **Notes:** read-only by instruction. `allowed-tools` limits its shell, but its `ArtifactData`
+  entry, there for Training Plan's marks, can't be narrowed to reads, and whether Cowork
+  enforces `allowed-tools` is unverified, so the body's rule is the one that holds.
 
 ---
 
