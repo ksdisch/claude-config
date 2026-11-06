@@ -1086,7 +1086,7 @@ session *in that repo*.
   [`watch-employers`](#watch-employers-life-nodes) (the boards a hunt sweeps),
   [`tailor-resume`](#tailor-resume-life-nodes) (the next step for a queued listing),
   [`rebuild-artifact`](#rebuild-artifact-life-nodes) (a failed push to Applications & Queue).
-- **Notes:** a hunt fills only the queue's empty slots, up to 20, and writes on Kyle's yes;
+- **Notes:** a hunt fills only the queue's empty slots, up to 30, and writes on Kyle's yes;
   a `taken-down` entry is written without asking. The LinkedIn sweep reads only his jobs feed
   and listing pages and presses nothing. No JSearch or Adzuna.
 
