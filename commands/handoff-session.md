@@ -332,11 +332,12 @@ note's shape, placement and launch-command rule are unchanged.
 Orchestrator sessions read far more than they write — worker reports, review
 mailboxes, diffs, tracker threads — while the judgment stays bounded (gate
 scope, triage, spec-vs-code calls) because this session already did the design.
-That is **Opus 5.5 (1M context)** at **`high`**: `claude --model
-'claude-opus-5-5[1m]' --effort high`. Go to `xhigh` only when the gates are
-genuinely hard — a live account, money, or a security surface.
+That is the **builder** at **`high`**, taking its model ID from the lineup table
+in CLAUDE.md's "Planner/Builder Protocol": `claude --model <builder ID> --effort
+high`. Go to `xhigh` only when the gates are genuinely hard — a live account,
+money, or a security surface.
 
-**If the pick wants to be Fable 5.1, the arc isn't ready to orchestrate.** Needing
+**If the pick wants to be the planner, the arc isn't ready to orchestrate.** Needing
 a planner in the coordinator's seat means the decomposition is still open, and
 dispatching workers against an unsettled decomposition wastes their work. Say
 that in the run-config note and recommend finishing the design first.
@@ -485,22 +486,22 @@ paste-able prompt (the fresh session can't set its own model/effort). Base the
 pick on the *nature of the next concrete action* from "Where the plan stands,"
 not on this session's work. Use this shape:
 
-- **Model:** pick by the nature of the next session's work, per the
-  "Planner/Builder Protocol" in CLAUDE.md —
-  - **Fable 5.1** (`claude-fable-5-1`): judgment-first work — planning, design
-    calls with real tradeoffs, adoption/triage decisions, convention-setting.
-    The thinking dwarfs the typing.
-  - **Opus 5.5** (`claude-opus-5-5`): a well-specified build — a plan already says
-    what to do; the session mostly implements, tests, and lands it. Add
-    "(1M context)" whenever the fresh session must read a lot of source /
-    long docs / a big plan to orient.
-  - **Sonnet 5.5** (`claude-sonnet-5-5`): mechanical, checklist-scoped work a
-    careful junior could follow — template-driven file generation, rename
-    sweeps, doc-formatting passes.
-  - Split rule: if this handoff carries a settled plan, recommend a builder
-    (Opus/Sonnet); if the next session must still decide or design, recommend
-    Fable. And split only when build ≫ plan — for plan-heavy/build-light work,
-    say so and recommend finishing in one Fable session instead.
+- **Model:** pick a role by the nature of the next session's work, per the
+  "Planner/Builder Protocol" in CLAUDE.md, then name the model and ID that the
+  protocol's lineup table assigns to that role. Never write a model name or ID
+  from memory. The table is the only source —
+  - **Planner:** judgment-first work — planning, design calls with real
+    tradeoffs, adoption/triage decisions, convention-setting. The thinking
+    dwarfs the typing.
+  - **Builder:** a well-specified build — a plan already says what to do; the
+    session mostly implements, tests, and lands it.
+  - **Grinder:** mechanical, checklist-scoped work a careful junior could
+    follow — template-driven file generation, rename sweeps, doc-formatting
+    passes.
+  - Split rule: if this handoff carries a settled plan, recommend the builder
+    or grinder; if the next session must still decide or design, recommend
+    the planner. And split only when build ≫ plan — for plan-heavy/build-light
+    work, say so and recommend finishing in one planner session instead.
 - **Effort:** independent of the model pick, and drawn from the **effort ladder in
   CLAUDE.md's "Planner/Builder Protocol"** — that's the ladder's owner; the rungs
   below are its expansion, not a second ladder. Name exactly ONE, using only the
@@ -529,16 +530,17 @@ not on this session's work. Use this shape:
     edit, a doc update, wiring a module per a fixed checklist, a
     straightforward test add (`low` for purely templated/repetitive). Don't
     pay for reasoning the task doesn't need.
-- **Launch command (required):** close the note with the literal command, e.g.
-  `claude --model claude-opus-5-5 --effort high`. For the 1M-context variant the
-  model ID contains brackets, which zsh globs — always quote it:
-  `claude --model 'claude-opus-5-5[1m]' --effort high`. Both flags are
+- **Launch command (required):** close the note with the literal command, with
+  the model ID taken from the lineup table, e.g. `claude --model <builder ID>
+  --effort high`. If a model ID ever contains brackets (a `[1m]` variant), zsh
+  globs them — always single-quote it, e.g.
+  `claude --model 'claude-opus-4-6[1m]' --effort high`. Both flags are
   per-invocation only — my saved defaults stay untouched. Always print both
   flags explicitly, even if you suspect they match my current defaults: the
   explicit command is correct whatever the defaults are, and I may paste it
   into a machine or profile whose defaults differ.
 - **Why (one clause):** tie the pick to the specific next action you named, so I
-  can sanity-check it — e.g. "Opus 5 at max: 3 findings in 2 files, each just
+  can sanity-check it — e.g. "Builder at max: 3 findings in 2 files, each just
   needs verify-against-HEAD + a minimal fix; too narrow to want fan-out."
 
 Keep it terse, like the rest of the handoff. If the next action is genuinely

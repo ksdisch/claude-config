@@ -11,19 +11,22 @@ Every reference-doc row links to its card here with `config →`.
 
 ## Legend — reading a Run config
 
-The `Run config` line is a model plus an effort level. Both come from the **Planner/Builder
+The `Run config` line is a role plus an effort level. Both come from the **Planner/Builder
 protocol** in [`../CLAUDE.md`](../CLAUDE.md), which is the source of truth — this is a
-restatement for convenience, not a second authority:
+restatement for convenience, not a second authority. Cards name the role, never the model:
+the protocol's lineup table is the one place that says which model, and which model ID,
+fills each role today.
 
-- **Fable 5.1** plans — judgment-first work: design calls with real tradeoffs, triage and
-  routing, coaching, convention-setting. **Opus 5.5** builds — well-specified implementation
-  and synthesis-heavy writing. **Sonnet 5.5** grinds — mechanical, checklist-scoped work.
+- The **Planner** plans — judgment-first work: design calls with real tradeoffs, triage and
+  routing, coaching, convention-setting. The **Builder** builds — well-specified
+  implementation and synthesis-heavy writing. The **Grinder** grinds — mechanical,
+  checklist-scoped work.
 - **Effort** (independent of the model): `ultracode` = broad parallelizable fan-out with
   adversarial verify · `max` / `xhigh` = ONE hard problem, or a design call with real
   tradeoffs · `high` = ordinary build work with judgment in it · `medium` / `low` =
   mechanical and checklist-scoped.
 - Launch flags are per-invocation and never touch saved defaults:
-  `claude --model claude-opus-5-5 --effort high`.
+  `claude --model <ID from the lineup table> --effort high`.
 - **"inherits the session"** means the item runs inside a session you're already in and
   isn't worth switching models for — `/launch`, `pre-compact`, `visual-summary`. Everything
   else names a config because it's worth launching a session *for*.
@@ -136,8 +139,8 @@ rows get re-pointed to match.
   into it).
 - **Notes:** it **stops the current work** after printing — that's deliberate. The
   run-config note lands outside the paste-able block, never inside it. Under
-  `--orchestrator` the run-config guidance flips to Opus 5.5 (1M) at `high` — a coordinator
-  reads far more than it writes — and a pick that wants Fable 5.1 is the signal that the
+  `--orchestrator` the run-config guidance flips to the Builder at `high` — a coordinator
+  reads far more than it writes — and a pick that wants the Planner is the signal that the
   decomposition isn't settled enough to dispatch yet.
 
 ## Global Skills
@@ -200,7 +203,7 @@ rows get re-pointed to match.
 
 #### `retire`
 
-- **Run config:** Fable 5.1 · `xhigh` — ruling on what still steers you is convention-setting
+- **Run config:** Planner · `xhigh` — ruling on what still steers you is convention-setting
   judgment with real tradeoffs; the counting underneath is a deterministic script that needs no
   model at all.
 - **Reach for it when:**
@@ -235,8 +238,8 @@ rows get re-pointed to match.
 
 #### `day`
 
-- **Run config:** Opus 5 · `medium` — sits resident all day; the gate needs judgment (is this
-  polish or progress?) but every action is rule-following against a written list. Sonnet 5
+- **Run config:** Builder · `medium` — sits resident all day; the gate needs judgment (is this
+  polish or progress?) but every action is rule-following against a written list. The Grinder
   is fine on a light day.
 - **Reach for it when:**
   - You're starting a working day driven by one Todoist project and want today's list
@@ -253,7 +256,7 @@ rows get re-pointed to match.
 
 #### `architecture-viewer`
 
-- **Run config:** Opus 5 · `high` — the extraction is judgment (what counts as a module,
+- **Run config:** Builder · `high` — the extraction is judgment (what counts as a module,
   where a runtime dependency hides), and `high` is what buys the runtime edges an import
   parser would never find. Drop to `medium` for a re-map after correcting the grouping;
   the boundaries are already decided by then.
@@ -281,7 +284,7 @@ rows get re-pointed to match.
 
 #### `youtube-transcript`
 
-- **Run config:** Sonnet 5 · `low` — a fixed fallback chain with no judgment in it. The one
+- **Run config:** Grinder · `low` — a fixed fallback chain with no judgment in it. The one
   decision (is Whisper worth it?) is Kyle's, not the model's.
 - **Reach for it when:**
   - You have a YouTube URL and want the text — to read, to grep, or to feed something else.
@@ -301,7 +304,7 @@ rows get re-pointed to match.
 
 #### `youtube-breakdown`
 
-- **Run config:** Opus 5 · `high` — the four mode prompts are synthesis-heavy writing, and
+- **Run config:** Builder · `high` — the four mode prompts are synthesis-heavy writing, and
   Critique mode in particular is real analytical work rather than summarization.
 - **Reach for it when:**
   - You watched (or want to triage) a video and want structured notes rather than a
@@ -322,7 +325,7 @@ rows get re-pointed to match.
 
 #### `teach-research`
 
-- **Run config:** Opus 5 · `high` — the skill's own finder/cacher fan-out does the parallel
+- **Run config:** Builder · `high` — the skill's own finder/cacher fan-out does the parallel
   work; the session around it is orchestration plus synthesis-heavy digesting.
 - **Reach for it when:**
   - You're about to start learning a topic with `/teach` and want the workspace stocked
@@ -346,7 +349,7 @@ session *in that repo*.
 
 #### `replenish-a2c`
 
-- **Run config:** Opus 5 · `ultracode` for a full multi-lane refill — it runs a
+- **Run config:** Builder · `ultracode` for a full multi-lane refill — it runs a
   pipeline-audit lane plus N prospecting-lens lanes and an independent default-skeptical
   verifier pass, which is fan-out + adversarial verify. Drop to `high` for a single-lens
   top-up.
@@ -366,7 +369,7 @@ session *in that repo*.
 
 #### `stage-a2c`
 
-- **Run config:** Sonnet 5 · `medium` — reconcile the unsent queue, reuse or write the
+- **Run config:** Grinder · `medium` — reconcile the unsent queue, reuse or write the
   draft, stage per channel. Rule-following work with outward-facing stakes.
 - **Reach for it when:**
   - Prospects are found and drafted but the messages are still sitting there unsent.
@@ -380,7 +383,7 @@ session *in that repo*.
 
 #### `call-brief`
 
-- **Run config:** Sonnet 5 · `medium` — four fixed sources, a fixed output shape, and a
+- **Run config:** Grinder · `medium` — four fixed sources, a fixed output shape, and a
   reference example to match.
 - **Reach for it when:**
   - You're about to dial one prospect and want every line you'd say written out in full.
@@ -401,7 +404,7 @@ session *in that repo*.
 
 #### `sync-check`
 
-- **Run config:** Opus 5 · `high` — mostly deterministic checkers, but the whitelist boundary
+- **Run config:** Builder · `high` — mostly deterministic checkers, but the whitelist boundary
   is real judgment and the thing it edits is a file full of identifiers that must never be
   guessed. Scheduled runs use the same pair; override with `SYNC_CHECK_MODEL`.
 - **Reach for it when:**
@@ -425,7 +428,7 @@ session *in that repo*.
 
 #### `morning-briefs`
 
-- **Run config:** Opus 5 · `high` — the orchestrator itself decides little (which tasks are
+- **Run config:** Builder · `high` — the orchestrator itself decides little (which tasks are
   dials), but every subagent it spawns is a `call-brief` run, and that is judgment about a
   lead. Scheduled runs use the same pair; override with `MORNING_BRIEFS_MODEL`.
 - **Reach for it when:**
@@ -446,7 +449,7 @@ session *in that repo*.
 
 #### `rebrief-a2c`
 
-- **Run config:** Sonnet 5 · `medium` — two live sweeps and a reconciliation with a fixed
+- **Run config:** Grinder · `medium` — two live sweeps and a reconciliation with a fixed
   tiebreaker rule.
 - **Reach for it when:**
   - You're coming back after time away and need to know what actually happened before doing
@@ -465,7 +468,7 @@ session *in that repo*.
 
 #### `add-source`
 
-- **Run config:** Opus 5 · `high` — end-to-end pipeline wiring across schema, loader, raw
+- **Run config:** Builder · `high` — end-to-end pipeline wiring across schema, loader, raw
   table, dbt staging, and possibly a new star. Well-specified, many touch-points.
 - **Reach for it when:**
   - A brand-new raw data source needs to land in the pipeline without hand-tracing which
@@ -479,7 +482,7 @@ session *in that repo*.
 
 #### `new-dbt-model`
 
-- **Run config:** Sonnet 5 · `low` — a convention-following scaffold with a fixed checklist.
+- **Run config:** Grinder · `low` — a convention-following scaffold with a fixed checklist.
 - **Reach for it when:**
   - You need a model in the right layer with the right prefix and the paired `schema.yml`
     entry, without rediscovering the house pattern.
@@ -493,7 +496,7 @@ session *in that repo*.
 
 #### `new-planet`
 
-- **Run config:** Sonnet 5 · `low` — a contract-following scaffold modeled on an existing
+- **Run config:** Grinder · `low` — a contract-following scaffold modeled on an existing
   exemplar.
 - **Reach for it when:**
   - The planet is already designed (id, name, hint, gate layout) and you just need every
@@ -507,7 +510,7 @@ session *in that repo*.
 
 #### `new-power`
 
-- **Run config:** Sonnet 5 · `low` — the same multi-sided scaffold shape.
+- **Run config:** Grinder · `low` — the same multi-sided scaffold shape.
 - **Reach for it when:**
   - A new astronaut power needs its protocol literal, Spellbook tile, puzzle component,
     registration, and cast handler all wired in one pass.
@@ -518,7 +521,7 @@ session *in that repo*.
 
 #### `/verify-planet`
 
-- **Run config:** Sonnet 5 · `medium` — a scripted Playwright verification against a
+- **Run config:** Grinder · `medium` — a scripted Playwright verification against a
   documented playbook.
 - **Reach for it when:**
   - A planet is scaffolded and you want a headless per-step PASS/FAIL verdict rather than
@@ -534,7 +537,7 @@ session *in that repo*.
 
 #### `adr-new`
 
-- **Run config:** Sonnet 5 · `low` — numbered-template scaffold with an index row.
+- **Run config:** Grinder · `low` — numbered-template scaffold with an index row.
 - **Reach for it when:**
   - A decision was just made and you want it recorded before the reasoning evaporates.
   - You don't want to hand-check which ADR number is next or forget the README row.
@@ -544,7 +547,7 @@ session *in that repo*.
 
 #### `new-migration`
 
-- **Run config:** Sonnet 5 · `medium` — boilerplate scaffolding, but the RLS and privacy
+- **Run config:** Grinder · `medium` — boilerplate scaffolding, but the RLS and privacy
   content deserves attention.
 - **Reach for it when:**
   - A schema change needs a timestamped migration with RLS-by-default rather than
@@ -559,7 +562,7 @@ session *in that repo*.
 
 #### `/new-scope`
 
-- **Run config:** Sonnet 5 · `low` — a template scaffold from the canonical brief format.
+- **Run config:** Grinder · `low` — a template scaffold from the canonical brief format.
 - **Reach for it when:**
   - You're starting a unit of shippable work and want the brief that becomes exactly one PR.
   - You want the privacy / no-go check and the ADR list forced into the plan up front.
@@ -572,7 +575,7 @@ session *in that repo*.
 
 #### `/reconcile-backlog`
 
-- **Run config:** Sonnet 5 · `medium` — a fixed cross-check and a drift table.
+- **Run config:** Grinder · `medium` — a fixed cross-check and a drift table.
 - **Reach for it when:**
   - The docs claim things the git history doesn't support, or vice versa.
   - You want the drift shown before anything is edited.
@@ -584,7 +587,7 @@ session *in that repo*.
 
 #### `/scheduled-reconcile`
 
-- **Run config:** Sonnet 5 · `medium` — the same reconcile, wrapped for an unattended weekly
+- **Run config:** Grinder · `medium` — the same reconcile, wrapped for an unattended weekly
   run.
 - **Reach for it when:**
   - You want doc drift caught on a schedule instead of noticing it at ship time.
@@ -597,7 +600,7 @@ session *in that repo*.
 
 #### `/ship`
 
-- **Run config:** Sonnet 5 · `medium` — a gate-aware commit → push → PR recipe with a fixed
+- **Run config:** Grinder · `medium` — a gate-aware commit → push → PR recipe with a fixed
   decision table.
 - **Reach for it when:**
   - Work is done and you want it landed with the blast-radius tier stamped and the
@@ -612,7 +615,7 @@ session *in that repo*.
 
 #### `/verify`
 
-- **Run config:** Sonnet 5 · `medium` — deterministic path→check mapping.
+- **Run config:** Grinder · `medium` — deterministic path→check mapping.
 - **Reach for it when:**
   - You need to know which checks this specific diff actually requires — typecheck, deno
     check, pgTAP, the RLS auditor — without over- or under-running.
@@ -628,7 +631,7 @@ session *in that repo*.
 
 #### `course-builder`
 
-- **Run config:** Opus 5 · `high` — plan-then-autonomous authoring of every material after
+- **Run config:** Builder · `high` — plan-then-autonomous authoring of every material after
   one approval. It fans out one subagent per module on its own, so you don't need `ultracode`
   to get the parallelism.
 - **Reach for it when:**
@@ -660,7 +663,7 @@ session *in that repo*.
 
 #### `review-next`
 
-- **Run config:** Sonnet 5 · `low` — read-only ranking out of the progress store.
+- **Run config:** Grinder · `low` — read-only ranking out of the progress store.
 - **Reach for it when:**
   - You have 20 minutes and want the shakiest material surfaced instead of re-reading what
     you already know.
@@ -671,7 +674,7 @@ session *in that repo*.
 
 #### `youtube-breakdown` (home-base)
 
-- **Run config:** Sonnet 5 · `medium` — a transcript into one of four fixed output formats.
+- **Run config:** Grinder · `medium` — a transcript into one of four fixed output formats.
 - **Reach for it when:**
   - A video has real content and you want Study Notes, a Quick Reference, a Critique, or
     Actionable Insights out of it — not a summary.
@@ -684,7 +687,7 @@ session *in that repo*.
 
 #### `catalog-doctor`
 
-- **Run config:** Sonnet 5 · `low` — a read-only drift report against a documented
+- **Run config:** Grinder · `low` — a read-only drift report against a documented
   definition of correct.
 - **Reach for it when:**
   - The hub's catalog and what NotebookLM actually holds have drifted and you want the delta
@@ -700,7 +703,7 @@ session *in that repo*.
 
 #### `api-types-sync`
 
-- **Run config:** Sonnet 5 · `medium` — mechanical type reconciliation with a house style to
+- **Run config:** Grinder · `medium` — mechanical type reconciliation with a house style to
   preserve.
 - **Reach for it when:**
   - Backend Pydantic models changed and the frontend types are now lying.
@@ -712,7 +715,7 @@ session *in that repo*.
 
 #### `/build-course`
 
-- **Run config:** Opus 5 · `high` — a thin entry point to
+- **Run config:** Builder · `high` — a thin entry point to
   [`course-builder`](#course-builder); same config as the skill.
 - **Reach for it when:**
   - You want to start a course by naming a topic and level rather than describing the whole
@@ -837,7 +840,7 @@ session *in that repo*.
 
 #### `/add-panel`
 
-- **Run config:** Sonnet 5 · `low` — a registered scaffold plus the four wiring touch-points
+- **Run config:** Grinder · `low` — a registered scaffold plus the four wiring touch-points
   and a cache bump.
 - **Reach for it when:**
   - You want a new Rhythm Insights panel that's actually registered, slotted, documented, and
@@ -850,7 +853,7 @@ session *in that repo*.
 
 #### `/new-engine-module`
 
-- **Run config:** Sonnet 5 · `low` — a wiring scaffold with a fixed four-point checklist.
+- **Run config:** Grinder · `low` — a wiring scaffold with a fixed four-point checklist.
 - **Reach for it when:**
   - A new `js/<name>.js` module needs its script tag at the right load-order slot, the
     CLAUDE.md file-map entry, the service-worker ASSETS entry, and a cache bump.
@@ -863,7 +866,7 @@ session *in that repo*.
 
 #### `/fix-bug`
 
-- **Run config:** Opus 5 · `high` — root-cause debugging against known-failure playbooks;
+- **Run config:** Builder · `high` — root-cause debugging against known-failure playbooks;
   ordinary build work with real diagnostic judgment.
 - **Reach for it when:**
   - Something's broken in Tempo and you want the false alarms ruled out first (a stale
@@ -877,7 +880,7 @@ session *in that repo*.
 
 #### `/run-tests`
 
-- **Run config:** Sonnet 5 · `low` — diff-driven suite selection with a documented
+- **Run config:** Grinder · `low` — diff-driven suite selection with a documented
   adjudication rule.
 - **Reach for it when:**
   - You want the right suites for what you changed, not all of them or the wrong one.
@@ -889,7 +892,7 @@ session *in that repo*.
 
 #### `/ship-pr`
 
-- **Run config:** Sonnet 5 · `medium` — a Definition-of-Done pre-flight plus house-convention
+- **Run config:** Grinder · `medium` — a Definition-of-Done pre-flight plus house-convention
   PR mechanics.
 - **Reach for it when:**
   - Work meets the DoD and you want the guard checks pre-run instead of discovering them in
@@ -906,7 +909,7 @@ session *in that repo*.
 
 #### `/document-stage`
 
-- **Run config:** Opus 5 · `medium` — teaching plus recall synthesis over a stage you just
+- **Run config:** Builder · `medium` — teaching plus recall synthesis over a stage you just
   finished.
 - **Reach for it when:**
   - A stage in the learning spine is done and the concepts are still fresh enough to be
@@ -940,7 +943,7 @@ session *in that repo*.
 
 #### `build-artifact` (Life Nodes)
 
-- **Run config:** Opus 5 · `high` — view code built from a written spec, with a palette gate
+- **Run config:** Builder · `high` — view code built from a written spec, with a palette gate
   and a real publish.
 - **Reach for it when:**
   - An artifact note's Views are written and the page doesn't exist yet, or the Views changed.
@@ -952,7 +955,7 @@ session *in that repo*.
 
 #### `rebuild-artifact` (Life Nodes)
 
-- **Run config:** Sonnet 5 · `low` — deterministic; `scripts/lifenodes.py` computes every
+- **Run config:** Grinder · `low` — deterministic; `scripts/lifenodes.py` computes every
   document.
 - **Reach for it when:**
   - `log` or `audit` reports an artifact as stale.
@@ -964,7 +967,7 @@ session *in that repo*.
 
 #### `audit` (Life Nodes)
 
-- **Run config:** Sonnet 5 · `medium` — script-driven checks, then careful one-line repairs.
+- **Run config:** Grinder · `medium` — script-driven checks, then careful one-line repairs.
 - **Reach for it when:**
   - A phase's acceptance check (it's one of the lines).
   - Something in an artifact looks wrong and you want to know whether the vault or the
@@ -977,7 +980,7 @@ session *in that repo*.
 
 #### `add-node` (Life Nodes)
 
-- **Run config:** Opus 5 · `high` — an interview whose schema blocks `log` validates against
+- **Run config:** Builder · `high` — an interview whose schema blocks `log` validates against
   from then on.
 - **Reach for it when:**
   - A life area should start being tracked and has no node yet.
@@ -989,7 +992,7 @@ session *in that repo*.
 
 #### `edit-node` (Life Nodes)
 
-- **Run config:** Opus 5 · `high` — every stream change is checked against the lines already
+- **Run config:** Builder · `high` — every stream change is checked against the lines already
   logged before it's shown.
 - **Reach for it when:**
   - A node needs a new stream or field, a new take-home rate, or changed rules.
@@ -1003,7 +1006,7 @@ session *in that repo*.
 
 #### `archive-node` (Life Nodes)
 
-- **Run config:** Sonnet 5 · `medium` — a shown list of moves and status pushes, then doing
+- **Run config:** Grinder · `medium` — a shown list of moves and status pushes, then doing
   exactly that.
 - **Reach for it when:**
   - A node, or one artifact, is done or paused and should leave the active vault.
@@ -1015,7 +1018,7 @@ session *in that repo*.
 
 #### `design-artifact` (Life Nodes)
 
-- **Run config:** Fable 5 · `high` — ranking views and settling a spec's design calls is
+- **Run config:** Planner · `high` — ranking views and settling a spec's design calls is
   judgment work, paced by Kyle's answers.
 - **Reach for it when:**
   - "Viz ideas for <Node>": step 1 ranks ideas and can stop there.
@@ -1029,7 +1032,7 @@ session *in that repo*.
 
 #### `tailor-resume` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — picking lines for a listing and tracing a letter's
+- **Run config:** Builder · `high` — picking lines for a listing and tracing a letter's
   claims is judgment, with Kyle's yes at two stops.
 - **Reach for it when:**
   - "Tailor my résumé for <link>", "make my résumé for Acme", "cover letter for Acme".
@@ -1044,7 +1047,7 @@ session *in that repo*.
 
 #### `fill-application` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high`, in a vault session started with `claude --chrome` —
+- **Run config:** Builder · `high`, in a vault session started with `claude --chrome` —
   mapping a form's fields to the cut and the answer library, drafting screening answers and
   telling the sending button apart is judgment, with one ask of Kyle before it sends.
 - **Reach for it when:**
@@ -1063,7 +1066,7 @@ session *in that repo*.
 
 #### `check-fit` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — weighing a listing against Kyle's criteria and the
+- **Run config:** Builder · `high` — weighing a listing against Kyle's criteria and the
   master résumé is judgment, and its hard stops have to hold.
 - **Reach for it when:**
   - "Is this a fit: <link>", "fit check this", "score this listing".
@@ -1077,7 +1080,7 @@ session *in that repo*.
 
 #### `hunt-listings` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — fit-checking a hunt's finds and choosing what fills
+- **Run config:** Builder · `high` — fit-checking a hunt's finds and choosing what fills
   the queue is judgment; the LinkedIn sweep needs a session started with `claude --chrome`.
 - **Reach for it when:**
   - "Find me listings", "sweep Rush's board", "sweep my LinkedIn feed".
@@ -1092,7 +1095,7 @@ session *in that repo*.
 
 #### `watch-employers` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — proposing which employers to watch, each with a reason,
+- **Run config:** Builder · `high` — proposing which employers to watch, each with a reason,
   is judgment; the edits themselves are scripted and wait on Kyle's yes.
 - **Reach for it when:**
   - "Watch Rush's board", "stop watching Rush".
@@ -1105,7 +1108,7 @@ session *in that repo*.
 
 #### `prep-interview` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — the dossier's do-not-assert list, the deck's answers
+- **Run config:** Builder · `high` — the dossier's do-not-assert list, the deck's answers
   and a drill's critique are judgment; runs without `--chrome` and installs nothing.
 - **Reach for it when:**
   - "Prep me for Acme", "I have a screen with Acme Thursday".
@@ -1120,7 +1123,7 @@ session *in that repo*.
 
 #### `plan-training` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — interviews, progression and placement are judgment;
+- **Run config:** Builder · `high` — interviews, progression and placement are judgment;
   run it in the vault on `main`, and it needs the Google Calendar connector.
 - **Reach for it when:**
   - "Plan my training", "plan my next block", "re-plan the year", "my race changed to…".
@@ -1132,7 +1135,7 @@ session *in that repo*.
 
 #### `job-mail` (Life Nodes)
 
-- **Run config:** Opus 5.5 · `high` — reading mail into stage moves and drafting notes are
+- **Run config:** Builder · `high` — reading mail into stage moves and drafting notes are
   judgment; runs without `--chrome` and installs nothing.
 - **Reach for it when:**
   - "Any replies?", "check my job mail", "check the last 30 days".
