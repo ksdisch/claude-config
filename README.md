@@ -88,7 +88,7 @@ up any pre-existing real files to `*.pre-claude-config.<timestamp>` before linki
 | Path | What | Linked into `~/.claude/`? |
 |---|---|---|
 | [`commands/`](commands/) | Global slash commands — [`/launch`](commands/launch.md), [`/handoff-session`](commands/handoff-session.md) | ✅ |
-| [`skills/`](skills/) | Global skills — [`architecture-viewer`](skills/architecture-viewer/SKILL.md), [`day`](skills/day/SKILL.md), [`pre-compact`](skills/pre-compact/SKILL.md), [`retire`](skills/retire/SKILL.md), [`visual-summary`](skills/visual-summary/SKILL.md), [`wayfinder-map`](skills/wayfinder-map/SKILL.md), [`reweave`](skills/reweave/SKILL.md), [`teach-research`](skills/teach-research/SKILL.md), [`youtube-breakdown`](skills/youtube-breakdown/SKILL.md), [`youtube-transcript`](skills/youtube-transcript/SKILL.md) | ✅ |
+| [`skills/`](skills/) | Global skills — [`architecture-viewer`](skills/architecture-viewer/SKILL.md), [`day`](skills/day/SKILL.md), [`pre-compact`](skills/pre-compact/SKILL.md), [`retire`](skills/retire/SKILL.md), [`visual-summary`](skills/visual-summary/SKILL.md), [`wayfinder-map`](skills/wayfinder-map/SKILL.md), [`reweave`](skills/reweave/SKILL.md), [`teach-research`](skills/teach-research/SKILL.md), [`youtube-breakdown`](skills/youtube-breakdown/SKILL.md), [`youtube-transcript`](skills/youtube-transcript/SKILL.md), [`wispr-inbox`](skills/wispr-inbox/SKILL.md) | ✅ |
 | [`agents/`](agents/) | Global subagents — none right now | ✅ |
 | [`CLAUDE.md`](CLAUDE.md) | Global instructions loaded into every session | ✅ |
 | [`operating-constraints.md`](operating-constraints.md) | Standing behavioral constraints, referenced by `CLAUDE.md` | ✅ |
