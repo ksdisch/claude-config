@@ -13,8 +13,9 @@ after his yes. The Wispr connector is read-only, so "new" is tracked by a local
 ## Arguments
 
 - `/wispr-inbox` — sweep everything since the watermark.
-- `/wispr-inbox <window>` — sweep a window instead ("today", "since Monday", "last 3 days");
-  the watermark still advances only to the newest note swept.
+- `/wispr-inbox <window>` — sweep a window instead ("today", "since Monday", "last 3 days").
+  A window run never moves the watermark; it only adds its notes to `processed`, so notes
+  between the watermark and the window's start still come up on the next plain run.
 
 ## The lanes
 
@@ -101,7 +102,9 @@ Create the 2 Todoist tasks? Fix any line first ("2 is keep", "drop 5", "1 due Fr
 ```
 
 Kyle's reply can move, edit or drop any line; rebuild and show only the changed lines, then
-ask again. Nothing is written before a yes. No todo items → skip the question and go to step 6.
+ask again. Nothing is written before a yes, and the question is always asked: with no todo
+items it becomes "Sort look right?", so a missed todo can still be moved before the notes are
+marked swept.
 
 ### 5. Write the todos
 
@@ -117,10 +120,16 @@ tasks still go; that item stays listed under **Not done** in step 6.
 2. **learn** items → each as its `/compass <topic>` line with the question, for Kyle to start
    when he wants. Don't start one.
 3. **keep** items stay in the report as shown.
-4. Write `~/.claude/state/wispr-inbox.json` (create the folder if missing): `watermark` = the
-   newest `modified_at` swept, `processed` gains every swept note's id and `modified_at`. Drop
-   `processed` entries older than 30 days. Write it **only after** step 5 finished or there
-   were no todos, so a crash mid-run sweeps the same notes again rather than losing them.
+4. Write `~/.claude/state/wispr-inbox.json` (create the folder if missing), **only after** step
+   5 finished or there were no todos, so a crash mid-run sweeps the same notes again rather
+   than losing them:
+   - A note with an item under **Not done** is **unfinished**. Every other swept note is
+     added to `processed` with its `modified_at`.
+   - `watermark` (plain runs only; a window run leaves it alone): the oldest unfinished
+     note's `modified_at` if there is one, else the newest `modified_at` swept. `since` is
+     inclusive, so the unfinished note comes back next run while step 2 drops its finished
+     neighbours.
+   - Drop `processed` entries older than 30 days.
 
 **Done when:** every todo is created or listed under Not done, the paste block and compass
 lines are shown, and the state file holds the new watermark.
