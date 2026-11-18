@@ -40,7 +40,8 @@ mark it `?` in the sort.
    `mcp__claude_ai_Wispr_Flow__get_scratchpad_note`, `mcp__todoist__todoist_create_task`,
    `mcp__todoist__todoist_list_projects`.
 2. Read `~/.claude/state/wispr-inbox.json`:
-   `{"watermark": "<ISO UTC>", "processed": {"<note_id>": "<modified_at>"}}`.
+   `{"watermark": "<ISO UTC>", "processed": {"<note_id>": "<modified_at>"}, "pending": {…}}`
+   (`pending` is defined in step 6).
    Missing file → first run: the window is the last 7 days, and the report's first line says so.
 3. Read the clock: `TZ=America/Chicago date +%Y-%m-%dT%H:%M:%S%z`. All times shown to Kyle are
    America/Chicago; the connector returns UTC.
@@ -52,8 +53,10 @@ mark it `?` in the sort.
 1. `search_scratchpad_notes` with `since` = the window start and `limit` 200. Page with
    `next_cursor` until `has_more` is false.
 2. Drop a note whose id is in `processed` with the same `modified_at` (already swept). A note
-   in `processed` with a newer `modified_at` was edited since: keep it, and tag its items
-   `edited` so Kyle can tell them from fresh ones.
+   in `pending` with the same `modified_at` contributes only its stored items, as todos
+   tagged `retry`, so its finished items aren't created twice. A note in either with a newer
+   `modified_at` was edited since: keep all of it, and tag its items `edited` so Kyle can
+   tell them from fresh ones.
 3. `get_scratchpad_note` for each remaining note; follow the truncation marker until the whole
    text is read. An excerpt is never enough to sort from.
 
@@ -123,8 +126,9 @@ tasks still go; that item stays listed under **Not done** in step 6.
 4. Write `~/.claude/state/wispr-inbox.json` (create the folder if missing), **only after** step
    5 finished or there were no todos, so a crash mid-run sweeps the same notes again rather
    than losing them:
-   - A note with an item under **Not done** is **unfinished**. Every other swept note is
-     added to `processed` with its `modified_at`.
+   - A note with an item under **Not done** is **unfinished**: it goes into `pending` as
+     `{"<note_id>": {"modified_at": …, "items": [<the Not done todo payloads>]}}`. Every
+     other swept note is added to `processed` with its `modified_at`, and leaves `pending`.
    - `watermark` (plain runs only; a window run leaves it alone): the oldest unfinished
      note's `modified_at` if there is one, else the newest `modified_at` swept. `since` is
      inclusive, so the unfinished note comes back next run while step 2 drops its finished
