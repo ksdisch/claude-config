@@ -1065,6 +1065,7 @@ session *in that repo*.
   telling the sending button apart is judgment, with one ask of Kyle before it sends.
 - **Reach for it when:**
   - "Fill this application", "fill in the Acme application", "next page".
+  - "Open the Acme application and fill it": it opens one tab to the saved link first.
   - "Fix the autofill", "answer these screening questions".
   - `tailor-resume`'s final yes, when Kyle takes its offer.
 - **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the cut it fills from,
