@@ -251,6 +251,22 @@ rows get re-pointed to match.
   wrap step. Check-ins ride a session cron, so closing the terminal kills them and `/day`
   re-arms them. Never sends anything; a bulk Todoist cleanup is a separate skill.
 
+#### `wispr-inbox`
+
+- **Run config:** inherits the session · `low` — reading notes and sorting short items into
+  four lanes is light judgment, and nothing is written before your yes.
+- **Reach for it when:**
+  - You've been dictating into Wispr Flow's scratchpad all day and want the todos in Todoist
+    and the life data ready for Life Nodes.
+  - You're starting or wrapping a day and want the loose ends you said out loud caught.
+- **Pairs well with:** [`day`](#day) (sweep first so the brief sees the new tasks),
+  `life-nodes-cowork:log` (plugin — where the paste block goes, in the Life Nodes logging
+  chat), `compass` (not yet merged here — where the learn lane's questions start).
+- **Notes:** the Wispr connector is read-only, so "new since last run" lives in
+  `~/.claude/state/wispr-inbox.json`, and the watermark moves only after the Todoist writes
+  finish. It never writes the Life Nodes vault and never completes or edits a Todoist task.
+  Meeting recordings aren't swept; ask the connector about those directly.
+
 #### `architecture-viewer`
 
 - **Run config:** Opus 5 · `high` — the extraction is judgment (what counts as a module,
@@ -1049,6 +1065,7 @@ session *in that repo*.
   telling the sending button apart is judgment, with one ask of Kyle before it sends.
 - **Reach for it when:**
   - "Fill this application", "fill in the Acme application", "next page".
+  - "Open the Acme application and fill it": it opens one tab to the saved link first.
   - "Fix the autofill", "answer these screening questions".
   - `tailor-resume`'s final yes, when Kyle takes its offer.
 - **Pairs well with:** [`tailor-resume`](#tailor-resume-life-nodes) (the cut it fills from,
