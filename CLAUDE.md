@@ -44,14 +44,24 @@ A spec that fixes its order wins on *placement*; it does not win on *omission*.
 
 ## Planner/Builder Protocol (added 2026-07-27)
 
-How model choice works across my sessions: **Fable 5.1 plans, Opus 5.5 builds, Sonnet 5.5 grinds.**
+How model choice works across my sessions: **the planner plans, the builder builds, the grinder grinds.** The lineup table below is the single source of truth for which model fills each role and its exact ID. Every command, skill, and doc that needs a model name or ID reads it from here instead of restating it, so a new model release is an edit to this table alone.
 
-- Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on Fable 5.1. Well-specified builds run on Opus 5.5. Mechanical, checklist-scoped work runs on Sonnet 5.5.
-- Every plan or handoff written for another session to execute ends with a **Run-config note**: recommended model + effort for that session, a one-clause why, and the literal launch command (e.g. `claude --model claude-opus-5-5 --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults. "Ends with" means it closes the *substance*: it comes after everything the plan or handoff has to say, is never buried mid-document, and is never folded inside a paste-able block. Pure delivery artifacts, such as the paste-able block itself, may follow it. Call it a **note**, never a "block", so it never reads as belonging inside that paste.
+**Lineup (verified 2026-11-12):**
+
+| Role | Model | Model ID |
+|---|---|---|
+| Planner | Claude Fable 5.2 | `claude-fable-5-2` |
+| Builder | Claude Opus 5.5 | `claude-opus-5-5` |
+| Grinder | Claude Sonnet 5.5 | `claude-sonnet-5-5` |
+
+All three run with a native 1M context window, so no `[1m]` variant is needed.
+
+- Judgment-first work — planning, design calls with real tradeoffs, triage/adoption decisions, convention-setting — runs on the planner. Well-specified builds run on the builder. Mechanical, checklist-scoped work runs on the grinder.
+- Every plan or handoff written for another session to execute ends with a **Run-config note**: recommended model + effort for that session, a one-clause why, and the literal launch command, with the model ID taken from the lineup table (e.g. `claude --model <builder ID> --effort high`). `--model` and `--effort` are per-invocation flags — they never touch my saved defaults. "Ends with" means it closes the *substance*: it comes after everything the plan or handoff has to say, is never buried mid-document, and is never folded inside a paste-able block. Pure delivery artifacts, such as the paste-able block itself, may follow it. Call it a **note**, never a "block", so it never reads as belonging inside that paste.
 - **Effort ladder:** `ultracode` for broad, parallelizable, want-exhaustive-coverage work (multi-agent fan-out + adversarial verify) · `max` / `xhigh` for ONE hard problem, design calls with real tradeoffs included (`max` uncapped and fast-burning, `xhigh` hard-but-bounded) · `high` for ordinary build work with judgment in it · `medium` / `low` for mechanical, checklist-scoped work. Effort is independent of the model pick.
 - Builder sessions start **fresh from the plan file**, never from the planning session's transcript. Never recommend switching models mid-session after heavyweight planning: `/model` keeps the conversation but invalidates the per-model prompt cache — the full transcript re-ingests at uncached rates, and the build inherits deliberation noise it doesn't need.
-- **Split planner from builder only when build ≫ plan.** When the work is plan-heavy and build-light, finish it in the Fable session — a handoff would cost more than it saves.
-- In-session alternative for mid-size, decomposable builds: stay in the Fable session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter. Both keys are real, consumed agent-file fields — but a *misspelled* `effort:` only logs a warning and falls back to the default; it never fails the dispatch, so proofread the value.
+- **Split planner from builder only when build ≫ plan.** When the work is plan-heavy and build-light, finish it in the planner session — a handoff would cost more than it saves.
+- In-session alternative for mid-size, decomposable builds: stay in the planner session and dispatch scoped tasks to subagents with `model:` and `effort:` pinned in their frontmatter. Both keys are real, consumed agent-file fields — but a *misspelled* `effort:` only logs a warning and falls back to the default; it never fails the dispatch, so proofread the value.
 
 ---
 
