@@ -1081,6 +1081,21 @@ session *in that repo*.
   government ID or bank details, and never guesses a fact his files don't hold. LinkedIn
   Easy Apply is never filled; its answers are drafted in chat.
 
+#### `apply-round` (Life Nodes)
+
+- **Run config:** Opus 5.5 · `high`, in a vault session started with `claude --chrome` —
+  an orchestrator: it picks, dispatches and relays, and the judgment sits in the skills it
+  runs. Its tailoring subagents run Opus · `high` too.
+- **Reach for it when:**
+  - "Start an apply round", "apply round", "apply to three from my queue".
+- **Pairs well with:** [`hunt-listings`](#hunt-listings-life-nodes) (the queue it picks
+  from), [`tailor-resume`](#tailor-resume-life-nodes) (run in its subagents),
+  [`fill-application`](#fill-application-life-nodes) (run in the session, one application
+  at a time).
+- **Notes:** subagents only tailor; they never talk to Kyle, fill a form or write an entry.
+  Every Stop 1 and Stop 2 reaches him in one batched message. No send without his yes to
+  that application; a confirmation page logs it without another ask.
+
 #### `check-fit` (Life Nodes)
 
 - **Run config:** Builder · `high` — weighing a listing against Kyle's criteria and the
