@@ -1165,6 +1165,18 @@ session *in that repo*.
 - **Notes:** one yes per screen; only take-in and `calendar-ids` write without one. Never
   runs git, and a no-workout run's distance is never written.
 
+#### `rippling-pull` (Life Nodes)
+
+- **Run config:** Builder · `high` — it reads live pages and judges a confirm; start it in
+  the vault with `claude --chrome`, signed in to Rippling in Chrome.
+- **Reach for it when:**
+  - "Pull my shifts from Rippling", once a pay period or after a schedule change.
+  - Answering its flags: "take Rippling's Nov 16", or yes to "missed shift?".
+- **Pairs well with:** [`audit`](#audit-life-nodes) (before and after a live pull),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push to Pay & Shifts fails).
+- **Notes:** reads only; never presses Submit, Export or the earning columns. Never runs git,
+  and stores no pay, URL or location.
+
 #### `job-mail` (Life Nodes)
 
 - **Run config:** Builder · `high` — reading mail into stage moves and drafting notes are
@@ -1184,7 +1196,8 @@ session *in that repo*.
 - **Reach for it when:**
   - Reporting anything to record: a dose, a night's Bevel screenshots, drinks, water.
   - Correcting or scratching an entry ("actually it was 7:45").
-  - Refreshing Gearhead's scheduled shifts from Google Calendar ("pull my shifts").
+  - Refreshing Gearhead's scheduled shifts from Google Calendar, the way back ("pull my shifts
+    from the calendar"); any other "pull my shifts" points at `rippling-pull`.
   - Reporting training news: it points results at Training Plan and planning at `plan-training`, and writes no Training entry.
 - **Pairs well with:** [`review`](#review-life-nodes) (asking about what was logged),
   [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push fails).
