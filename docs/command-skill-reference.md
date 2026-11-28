@@ -122,7 +122,7 @@ A planet-and-powers interactive puzzle game.
 
 ### DogHood
 
-A full-stack dog-walking / pet-care app (Supabase + Postgres + PostGIS).
+A hyperlocal real-time mobile app for dog owners — who is at my dog park right now, and do they want to hang out (Expo + Supabase/PostGIS).
 
 **Skills**
 
@@ -130,16 +130,6 @@ A full-stack dog-walking / pet-care app (Supabase + Postgres + PostGIS).
 |---|---|
 | `adr-new` | Scaffolds the next Architecture Decision Record — auto-increments zero-padded number, copies the template, pre-fills title/status/date, and adds a row to `docs/adr/README.md`. · [config →](usage-playbook.md#adr-new) |
 | `new-migration` | Scaffolds a new Supabase Postgres + PostGIS migration — timestamped SQL file with RLS-by-default boilerplate, plus an optional pgTAP test stub. · [config →](usage-playbook.md#new-migration) |
-
-**Commands**
-
-| Command | What it does |
-|---|---|
-| `/new-scope` | Scaffolds a scope brief in `docs/scopes/` from the canonical template. A scope = one unit of shippable work = one PR. · [config →](usage-playbook.md#new-scope) |
-| `/reconcile-backlog` | Fixes doc ↔ git drift — cross-checks BACKLOG.md, README, and CHANGELOG against what actually merged, shows the drift table, and applies corrections on a `docs/` branch. · [config →](usage-playbook.md#reconcile-backlog) |
-| `/scheduled-reconcile` | Unattended weekly doc-drift reconcile (driven by a Claude Code scheduled trigger). Autonomously fixes unambiguous drift; drafts a PR for ambiguous cases. · [config →](usage-playbook.md#scheduled-reconcile) |
-| `/ship` | Gate-aware commit → push → PR for current work. Applies orchestrator blast-radius + manual-smoke gates, uses the guard-hook-safe PR recipe. Explicitly does not merge. · [config →](usage-playbook.md#ship) |
-| `/verify` | Derives the right verification tier for the current diff — maps changed paths to exact checks (typecheck, deno check, pgTAP, RLS auditor) and produces a paste-ready Verification block for the PR body. · [config →](usage-playbook.md#verify) |
 
 ---
 
