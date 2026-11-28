@@ -1177,6 +1177,19 @@ session *in that repo*.
 - **Notes:** reads only; never presses Submit, Export or the earning columns. Never runs git,
   and stores no pay, URL or location.
 
+#### `rippling-pay` (Life Nodes)
+
+- **Run config:** Builder · `high` — it reads live pages and judges a confirm; start it in
+  the vault with `claude --chrome`, signed in to Rippling in Chrome.
+- **Reach for it when:**
+  - "Pull my pay from Rippling", after a payday.
+  - Answering its flags: "take Rippling's Oct 15".
+- **Pairs well with:** [`rippling-pull`](#rippling-pull-life-nodes) (shifts first, so the
+  hours check has the period's shifts), [`audit`](#audit-life-nodes),
+  [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push to Pay & Shifts fails).
+- **Notes:** opens each stub's panel and reads net, gross and hours only; never presses a
+  download. Never runs git, and stores no tax, deduction, YTD, account, id or URL.
+
 #### `job-mail` (Life Nodes)
 
 - **Run config:** Builder · `high` — reading mail into stage moves and drafting notes are
@@ -1197,7 +1210,8 @@ session *in that repo*.
   - Reporting anything to record: a dose, a night's Bevel screenshots, drinks, water.
   - Correcting or scratching an entry ("actually it was 7:45").
   - Refreshing Gearhead's scheduled shifts from Google Calendar, the way back ("pull my shifts
-    from the calendar"); any other "pull my shifts" points at `rippling-pull`.
+    from the calendar"); any other "pull my shifts" points at `rippling-pull`, and "pull my
+    pay" at `rippling-pay`.
   - Reporting training news: it points results at Training Plan and planning at `plan-training`, and writes no Training entry.
 - **Pairs well with:** [`review`](#review-life-nodes) (asking about what was logged),
   [`rebuild-artifact`](#rebuild-artifact-life-nodes) (when a push fails).
