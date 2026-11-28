@@ -557,8 +557,8 @@ session *in that repo*.
 - **Reach for it when:**
   - A decision was just made and you want it recorded before the reasoning evaporates.
   - You don't want to hand-check which ADR number is next or forget the README row.
-- **Pairs well with:** [`/new-scope`](#new-scope) (scope briefs name the ADRs to write),
-  [`new-migration`](#new-migration) (schema decisions usually want an ADR).
+- **Pairs well with:** [`new-migration`](#new-migration) (schema decisions usually want an
+  ADR), `domain-modeling` (decides whether a decision earns an ADR at all).
 - **Notes:** never delete an ADR — superseded and deprecated ones stay as historical record.
 
 #### `new-migration`
@@ -569,79 +569,11 @@ session *in that repo*.
   - A schema change needs a timestamped migration with RLS-by-default rather than
     RLS-remembered.
   - The change touches policies and wants a pgTAP test stub alongside it.
-- **Pairs well with:** [`adr-new`](#adr-new) (record the decision),
-  [`/verify`](#verify) (picks up pgTAP and the RLS auditor for this diff),
-  [`/ship`](#ship) (a migration altering an existing table stamps the high gate tier).
+- **Pairs well with:** [`adr-new`](#adr-new) (record the decision), the `db-migrator` and
+  `rls-grant-auditor` agents (write it, then review its grants).
 - **Notes:** a migration already on `origin/main` is **never** edited — you write a new one.
   The privacy invariant is hard: no lat/lng column on any user-attributable table. Build-phase
   changes stay additive; drops need a deprecation period.
-
-#### `/new-scope`
-
-- **Run config:** Grinder · `low` — a template scaffold from the canonical brief format.
-- **Reach for it when:**
-  - You're starting a unit of shippable work and want the brief that becomes exactly one PR.
-  - You want the privacy / no-go check and the ADR list forced into the plan up front.
-- **Pairs well with:** [`adr-new`](#adr-new) (the ADRs the brief names),
-  [`/ship`](#ship) (consumes the brief's gate fields),
-  [`/verify`](#verify) (the checks the brief implies).
-- **Notes:** STOPs rather than overwriting an existing brief. Its gate fields (blast radius,
-  manual-smoke-required) are what `/ship` reads later — filling them in casually costs you at
-  ship time.
-
-#### `/reconcile-backlog`
-
-- **Run config:** Grinder · `medium` — a fixed cross-check and a drift table.
-- **Reach for it when:**
-  - The docs claim things the git history doesn't support, or vice versa.
-  - You want the drift shown before anything is edited.
-- **Pairs well with:** [`/scheduled-reconcile`](#scheduled-reconcile) (the unattended weekly
-  twin), `project-wiki` (retired) (the wiki equivalent of the same discipline).
-- **Notes:** ground truth comes from the code and git, never from another doc's claim about
-  the code. It never deletes rows — completed items stay — and it raises genuine uncertainty
-  as a question instead of "fixing" it by guessing.
-
-#### `/scheduled-reconcile`
-
-- **Run config:** Grinder · `medium` — the same reconcile, wrapped for an unattended weekly
-  run.
-- **Reach for it when:**
-  - You want doc drift caught on a schedule instead of noticing it at ship time.
-  - Add `--dry-run` to see what it would do without editing.
-- **Pairs well with:** [`/reconcile-backlog`](#reconcile-backlog) (the interactive original
-  it wraps).
-- **Notes:** nobody's watching, so it asks nothing: it either closes the loop quietly
-  (docs-only, low tier, merged autonomously) or escalates cleanly with a PR for ambiguous
-  cases. It never leaves a half-finished state, and never resolves uncertainty by guessing.
-
-#### `/ship`
-
-- **Run config:** Grinder · `medium` — a gate-aware commit → push → PR recipe with a fixed
-  decision table.
-- **Reach for it when:**
-  - Work is done and you want it landed with the blast-radius tier stamped and the
-    manual-smoke gate honored.
-  - You want the guard-hook-safe PR recipe rather than rediscovering why a heredoc failed.
-- **Pairs well with:** [`/verify`](#verify) (produces the Verification block for the PR
-  body), [`/new-scope`](#new-scope) (the brief it links and reads gates from),
-  `/code-review` (the review gate before a merge).
-- **Notes:** **it explicitly does not merge.** Stages explicit paths only, pushes and opens
-  the PR as separate steps (a guard hook false-positives otherwise), and self-stamps the gate
-  tier when no audit exists.
-
-#### `/verify`
-
-- **Run config:** Grinder · `medium` — deterministic path→check mapping.
-- **Reach for it when:**
-  - You need to know which checks this specific diff actually requires — typecheck, deno
-    check, pgTAP, the RLS auditor — without over- or under-running.
-  - You want a paste-ready Verification block for the PR body.
-- **Pairs well with:** [`/ship`](#ship) (pastes its output),
-  `/smoke-test` (retired) (the manual half),
-  [`new-migration`](#new-migration) (what pulls in the database checks).
-- **Notes:** checks are **cumulative** — every matching row runs, not just the most specific.
-  It never reports a check as passed unless it ran in this session, and environment
-  fallbacks are stated honestly rather than implied as verification.
 
 ### home-base (Learning Hub)
 
